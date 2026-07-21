@@ -16,6 +16,7 @@ import { dashboard } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as itemsIndex } from '@/routes/manager/items';
+import { index as ordersIndex } from '@/routes/manager/orders';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -45,6 +46,11 @@ const menuNavItems: NavItem[] = [
         href: itemsIndex(),
         icon: UtensilsCrossed,
     },
+    {
+    title: 'Orders',
+    href: ordersIndex(),
+    icon: ListOrdered,
+},
 ];
 
 export function AppSidebar() {
