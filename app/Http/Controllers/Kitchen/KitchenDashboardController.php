@@ -10,11 +10,11 @@ class KitchenDashboardController extends Controller
 {
     public function index()
     {
-        $newOrders = Order::where('status', 'confirmed')->count();
-
-        $preparingOrders = Order::where('status', 'preparing')->count();
-
-        $readyOrders = Order::where('status', 'ready')->count();
+        $newOrders = Order::whereIn('status', [
+            'confirmed',
+            'preparing',
+            'ready',
+        ])->count();
 
         $historyOrders = Order::whereIn('status', [
             'completed',
@@ -24,8 +24,6 @@ class KitchenDashboardController extends Controller
         return Inertia::render('kitchen/dashboard', [
             'stats' => [
                 'newOrders' => $newOrders,
-                'preparingOrders' => $preparingOrders,
-                'readyOrders' => $readyOrders,
                 'historyOrders' => $historyOrders,
             ],
         ]);

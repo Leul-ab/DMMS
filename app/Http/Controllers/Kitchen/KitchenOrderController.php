@@ -11,45 +11,10 @@ use Inertia\Inertia;
 class KitchenOrderController extends Controller
 {
     /**
-     * Show the kitchen dashboard.
-     */
-    public function dashboard()
-    {
-        $stats = [
-            'newOrders' => Order::where(
-                'status',
-                'confirmed'
-            )->count(),
-
-            'preparingOrders' => Order::where(
-                'status',
-                'preparing'
-            )->count(),
-
-            'readyOrders' => Order::where(
-                'status',
-                'ready'
-            )->count(),
-
-            'historyOrders' => Order::whereIn(
-                'status',
-                [
-                    'completed',
-                    'cancelled',
-                ]
-            )->count(),
-        ];
-
-        return Inertia::render(
-            'kitchen/dashboard',
-            [
-                'stats' => $stats,
-            ]
-        );
-    }
-
-    /**
-     * Show new orders waiting to be prepared.
+     * Show incoming and pending orders.
+     *
+     * New orders start with the "pending" status.
+     * The kitchen staff can receive them first.
      */
     public function newOrders()
     {
@@ -57,54 +22,15 @@ class KitchenOrderController extends Controller
             'table',
             'orderItems.menuItem',
         ])
-            ->where('status', 'confirmed')
+            ->whereIn('status', [
+                'pending',
+                'received',
+            ])
             ->latest()
             ->get();
 
         return Inertia::render(
             'kitchen/orders/new',
-            [
-                'orders' => $orders,
-            ]
-        );
-    }
-
-    /**
-     * Show orders currently being prepared.
-     */
-    public function preparing()
-    {
-        $orders = Order::with([
-            'table',
-            'orderItems.menuItem',
-        ])
-            ->where('status', 'preparing')
-            ->latest()
-            ->get();
-
-        return Inertia::render(
-            'kitchen/orders/preparing',
-            [
-                'orders' => $orders,
-            ]
-        );
-    }
-
-    /**
-     * Show orders that are ready.
-     */
-    public function ready()
-    {
-        $orders = Order::with([
-            'table',
-            'orderItems.menuItem',
-        ])
-            ->where('status', 'ready')
-            ->latest()
-            ->get();
-
-        return Inertia::render(
-            'kitchen/orders/ready',
             [
                 'orders' => $orders,
             ]
@@ -137,17 +63,24 @@ class KitchenOrderController extends Controller
 
     /**
      * Update the kitchen order status.
+     *
+     * Workflow:
+     *
+     * pending -> received
+     * received -> completed
+     * pending -> cancelled
+     * received -> cancelled
      */
     public function updateStatus(
         Request $request,
         Order $order
     ) {
         $validated = $request->validate([
-            'status' => [
-                'required',
-                'in:confirmed,preparing,ready,completed,cancelled',
-            ],
-        ]);
+    'status' => [
+        'required',
+        'in:pending,received,completed,cancelled',
+    ],
+]);
 
         DB::transaction(function () use (
             $order,
@@ -159,22 +92,33 @@ class KitchenOrderController extends Controller
 
             $table = $order->table()->first();
 
-            if ($table) {
-                if (
-                    $validated['status'] === 'completed' ||
-                    $validated['status'] === 'cancelled'
-                ) {
-                    $table->update([
-                        'status' => 'available',
-                        'current_order_id' => null,
-                    ]);
-                } else {
-                    $table->update([
-                        'status' => 'occupied',
-                        'current_order_id' => $order->id,
-                    ]);
-                }
+            if (! $table) {
+                return;
             }
+
+            /*
+             * When the order is completed or cancelled,
+             * the table becomes available again.
+             */
+            if (
+                $validated['status'] === 'completed' ||
+                $validated['status'] === 'cancelled'
+            ) {
+                $table->update([
+                    'status' => 'available',
+                    'current_order_id' => null,
+                ]);
+
+                return;
+            }
+
+            /*
+             * Received orders keep the table occupied.
+             */
+            $table->update([
+                'status' => 'occupied',
+                'current_order_id' => $order->id,
+            ]);
         });
 
         return back()->with(
