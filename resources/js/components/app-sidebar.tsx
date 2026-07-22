@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Users, UtensilsCrossed, ListOrdered } from 'lucide-react';
+import { LayoutGrid, Users, UtensilsCrossed, ListOrdered, Eye } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -17,6 +17,7 @@ import { index as usersIndex } from '@/routes/admin/users';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
+import { index as menuIndex } from '@/routes/menu';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -24,6 +25,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Digital Menu',
+        href: menuIndex(),
+        icon: Eye,
     },
 ];
 
@@ -47,10 +53,10 @@ const menuNavItems: NavItem[] = [
         icon: UtensilsCrossed,
     },
     {
-    title: 'Orders',
-    href: ordersIndex(),
-    icon: ListOrdered,
-},
+        title: 'Orders',
+        href: ordersIndex(),
+        icon: ListOrdered,
+    },
 ];
 
 export function AppSidebar() {

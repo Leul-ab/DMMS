@@ -49,19 +49,25 @@ class MenuController extends Controller
             ->orderBy('name')
             ->get();
 
-     return Inertia::render('menu/index', [
-     'categories' => $categories,
-     'menuItems' => $menuItems,
-     'selectedCategory' => $selectedCategory
-        ? (int) $selectedCategory
-        : null,
-     'table' => $table,
+        // Get available tables for manual selection
+        $availableTables = RestaurantTable::where('status', 'available')
+            ->orderBy('table_number')
+            ->get();
 
-     'flash' => [
-        'success' => session('success'),
-        'order_number' => session('order_number'),
-     ],
-      ]);
+        return Inertia::render('menu/index', [
+            'categories' => $categories,
+            'menuItems' => $menuItems,
+            'selectedCategory' => $selectedCategory
+                ? (int) $selectedCategory
+                : null,
+            'table' => $table,
+            'availableTables' => $availableTables,
+
+            'flash' => [
+                'success' => session('success'),
+                'order_number' => session('order_number'),
+            ],
+        ]);
     }
     public function myOrder(Request $request)
 {

@@ -34,6 +34,7 @@ type Props = {
     menuItems: MenuItem[];
     selectedCategory: number | null;
     table: RestaurantTable | null;
+    availableTables: RestaurantTable[];
 };
 
 export default function MenuIndex({
@@ -41,6 +42,7 @@ export default function MenuIndex({
     menuItems,
     selectedCategory,
     table,
+    availableTables,
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
    
@@ -217,6 +219,57 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         </div>
     </div>
 )}
+            {/* ================= TABLE SELECTOR ================= */}
+            {!table && availableTables.length > 0 && (
+                <div className="border-b border-orange-200 bg-orange-50">
+                    <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-5 py-4 sm:flex-row sm:justify-between lg:px-8">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-lg text-white">
+                                🍽️
+                            </div>
+                            <div>
+                                <p className="font-bold text-gray-900">
+                                    Select your table
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                    Choose your table number to start ordering.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            {availableTables.map((t) => (
+                                <Link
+                                    key={t.id}
+                                    href={`/menu?table=${t.table_number}`}
+                                    className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold transition hover:border-orange-400 hover:bg-orange-500 hover:text-white"
+                                >
+                                    Table {t.table_number}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {!table && availableTables.length === 0 && (
+                <div className="border-b border-red-200 bg-red-50">
+                    <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-4 lg:px-8">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-lg text-white">
+                            ⚠️
+                        </div>
+                        <div>
+                            <p className="font-bold text-gray-900">
+                                No tables available
+                            </p>
+                            <p className="text-sm text-gray-500">
+                                Please ask staff to register tables before placing an order.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
