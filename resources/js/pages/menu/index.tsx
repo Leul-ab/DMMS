@@ -1,6 +1,13 @@
 
 import { Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type Category = {
     id: number;
@@ -219,57 +226,6 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         </div>
     </div>
 )}
-            {/* ================= TABLE SELECTOR ================= */}
-            {!table && availableTables.length > 0 && (
-                <div className="border-b border-orange-200 bg-orange-50">
-                    <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 px-5 py-4 sm:flex-row sm:justify-between lg:px-8">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-lg text-white">
-                                🍽️
-                            </div>
-                            <div>
-                                <p className="font-bold text-gray-900">
-                                    Select your table
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    Choose your table number to start ordering.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            {availableTables.map((t) => (
-                                <Link
-                                    key={t.id}
-                                    href={`/menu?table=${t.table_number}`}
-                                    className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-bold transition hover:border-orange-400 hover:bg-orange-500 hover:text-white"
-                                >
-                                    Table {t.table_number}
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {!table && availableTables.length === 0 && (
-                <div className="border-b border-red-200 bg-red-50">
-                    <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-4 lg:px-8">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-lg text-white">
-                            ⚠️
-                        </div>
-                        <div>
-                            <p className="font-bold text-gray-900">
-                                No tables available
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                Please ask staff to register tables before placing an order.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -284,24 +240,40 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                         </p>
                     </div>
 
-                    {/* Table Information */}
-                    {table && (
-                        <div className="flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-                                {table.table_number}
+                    {/* Table Selector Dropdown */}
+                    {availableTables.length > 0 ? (
+                        <div className="flex items-center gap-3">
+                            <div className="hidden items-center gap-2 text-sm text-gray-500 sm:flex">
+                                <span>🍽️</span>
+                                <span>Select table:</span>
                             </div>
-
-                            <div className="hidden sm:block">
-                                <p className="text-xs text-gray-500">
-                                    Your table
-                                </p>
-
-                                <p className="text-sm font-bold">
-                                    Table {table.table_number}
-                                </p>
-                            </div>
+                            <Select
+                                value={table ? String(table.table_number) : ''}
+                                onValueChange={(value) => {
+                                    router.get(`/menu?table=${value}`, {}, { preserveScroll: true });
+                                }}
+                            >
+                                <SelectTrigger className="w-[140px] rounded-full border-orange-200 bg-orange-50 font-bold text-gray-900 hover:bg-orange-100">
+                                    <SelectValue placeholder="Choose table" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-xl">
+                                    {availableTables.map((t) => (
+                                        <SelectItem
+                                            key={t.id}
+                                            value={String(t.table_number)}
+                                            className="font-semibold"
+                                        >
+                                            Table {t.table_number}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
+                    ) : !table ? (
+                        <div className="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm text-red-600">
+                            <span>No tables available</span>
+                        </div>
+                    ) : null}
 
                     {/* Cart Counter */}
                     {cartQuantity > 0 && (
@@ -341,19 +313,6 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                             Explore our menu, choose your favorite dishes,
                             and place your order directly from your table.
                         </p>
-
-                        {table && (
-                            <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 px-5 py-3 text-white backdrop-blur">
-                                <span className="text-xl">🍽️</span>
-
-                                <span>
-                                    You are ordering from{' '}
-                                    <strong>
-                                        Table {table.table_number}
-                                    </strong>
-                                </span>
-                            </div>
-                        )}
                     </div>
                 </div>
 
