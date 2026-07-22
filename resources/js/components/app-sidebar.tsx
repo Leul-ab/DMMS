@@ -6,8 +6,6 @@ import {
     ListOrdered,
     Eye,
     ChefHat,
-    Clock,
-    CheckCircle,
     History,
 } from 'lucide-react';
 
@@ -54,6 +52,11 @@ const adminNavItems: NavItem[] = [
         href: usersIndex(),
         icon: Users,
     },
+    {
+        title: 'Kitchen Dashboard',
+        href: '/kitchen/dashboard',
+        icon: ChefHat,
+    },
 ];
 
 const menuNavItems: NavItem[] = [
@@ -85,16 +88,8 @@ const kitchenNavItems: NavItem[] = [
         href: '/kitchen/orders/new',
         icon: ChefHat,
     },
-    {
-        title: 'Preparing',
-        href: '/kitchen/orders/preparing',
-        icon: Clock,
-    },
-    {
-        title: 'Ready Orders',
-        href: '/kitchen/orders/ready',
-        icon: CheckCircle,
-    },
+    
+    
     {
         title: 'Order History',
         href: '/kitchen/orders/history',
