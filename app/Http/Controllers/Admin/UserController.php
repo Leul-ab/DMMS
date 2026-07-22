@@ -48,12 +48,12 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
             'is_active' => ['boolean'],
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        $validated['password'] = Hash::make($validated['password'] ?? '12345678');
         $validated['is_active'] = $request->boolean('is_active');
         $validated['email_verified_at'] = now();
 

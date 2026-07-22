@@ -19,8 +19,7 @@ export default function UserCreate({ roles }: Props) {
         name: '',
         email: '',
         phone: '',
-        password: '',
-        password_confirmation: '',
+        password: '12345678',
         role_id: '',
         is_active: true,
     });
@@ -59,14 +58,8 @@ export default function UserCreate({ roles }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password">Password</Label>
-                                <PasswordInput id="password" value={data.password} onChange={(e) => setData('password', e.target.value)} placeholder="Password" required />
+                                <Input id="password" value={data.password} placeholder="12345678" disabled />
                                 <InputError message={errors.password} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">Confirm Password</Label>
-                                <PasswordInput id="password_confirmation" value={data.password_confirmation} onChange={(e) => setData('password_confirmation', e.target.value)} placeholder="Confirm password" required />
-                                <InputError message={errors.password_confirmation} />
                             </div>
 
                             <div className="grid gap-2">
