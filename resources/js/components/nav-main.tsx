@@ -7,10 +7,12 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useRefreshOnNavigate } from '@/hooks/use-refresh-on-navigate';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items = [], label }: { items: NavItem[]; label?: string }) {
     const { isCurrentUrl } = useCurrentUrl();
+    useRefreshOnNavigate();
 
     return (
         <SidebarGroup className="px-2 py-0">

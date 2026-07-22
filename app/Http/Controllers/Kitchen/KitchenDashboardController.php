@@ -11,9 +11,8 @@ class KitchenDashboardController extends Controller
     public function index()
     {
         $newOrders = Order::whereIn('status', [
-            'confirmed',
-            'preparing',
-            'ready',
+            'pending',
+            'received',
         ])->count();
 
         $historyOrders = Order::whereIn('status', [

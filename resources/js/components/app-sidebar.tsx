@@ -6,7 +6,6 @@ import {
     ListOrdered,
     Eye,
     ChefHat,
-    History,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -33,69 +32,6 @@ import { index as menuIndex } from '@/routes/menu';
 
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Digital Menu',
-        href: menuIndex(),
-        icon: Eye,
-    },
-];
-
-const adminNavItems: NavItem[] = [
-    {
-        title: 'User Management',
-        href: usersIndex(),
-        icon: Users,
-    },
-    {
-        title: 'Kitchen Dashboard',
-        href: '/kitchen/dashboard',
-        icon: ChefHat,
-    },
-];
-
-const menuNavItems: NavItem[] = [
-    {
-        title: 'Menu Categories',
-        href: categoriesIndex(),
-        icon: ListOrdered,
-    },
-    {
-        title: 'Menu Items',
-        href: itemsIndex(),
-        icon: UtensilsCrossed,
-    },
-    {
-        title: 'Orders',
-        href: ordersIndex(),
-        icon: ListOrdered,
-    },
-];
-
-const kitchenNavItems: NavItem[] = [
-    {
-        title: 'Kitchen Dashboard',
-        href: '/kitchen/dashboard',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'New Orders',
-        href: '/kitchen/orders/new',
-        icon: ChefHat,
-    },
-    
-    
-    {
-        title: 'Order History',
-        href: '/kitchen/orders/history',
-        icon: History,
-    },
-];
 export function AppSidebar() {
     const { auth } = usePage<{
         auth: {
@@ -112,6 +48,61 @@ export function AppSidebar() {
     const isAdmin = role === 'super_admin';
     const isManager = role === 'manager';
     const isKitchenStaff = role === 'kitchen_staff';
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        ...(isAdmin || isManager
+            ? [
+                  {
+                      title: 'Menu Categories',
+                      href: categoriesIndex(),
+                      icon: ListOrdered,
+                  },
+                  {
+                      title: 'Menu Items',
+                      href: itemsIndex(),
+                      icon: UtensilsCrossed,
+                  },
+              ]
+            : []),
+        {
+            title: 'Menu',
+            href: menuIndex(),
+            icon: Eye,
+        },
+        ...(isAdmin || isManager
+            ? [
+                  {
+                      title: 'Orders',
+                      href: ordersIndex(),
+                      icon: ListOrdered,
+                  },
+              ]
+            : []),
+        ...(isAdmin || isManager || isKitchenStaff
+            ? [
+                  {
+                      title: 'Kitchen',
+                      href: '/kitchen/dashboard',
+                      icon: ChefHat,
+                  },
+              ]
+            : []),
+    ];
+
+    const adminNavItems: NavItem[] = isAdmin
+        ? [
+              {
+                  title: 'Users',
+                  href: usersIndex(),
+                  icon: Users,
+              },
+          ]
+        : [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -138,25 +129,9 @@ export function AppSidebar() {
                 {isAdmin && (
                     <NavMain
                         items={adminNavItems}
-                        label="Administration"
                     />
                 )}
 
-                {/* Manager Navigation */}
-                {(isAdmin || isManager) && (
-                    <NavMain
-                        items={menuNavItems}
-                        
-                    />
-                )}
-
-                {/* Kitchen Staff Navigation */}
-                {isKitchenStaff && (
-                    <NavMain
-                        items={kitchenNavItems}
-                        label="Kitchen Management"
-                    />
-                )}
             </SidebarContent>
 
             <SidebarFooter>
