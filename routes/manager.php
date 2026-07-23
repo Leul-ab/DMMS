@@ -3,6 +3,7 @@
 use App\Http\Controllers\Manager\MenuCategoryController;
 use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
+use App\Http\Controllers\Manager\RestaurantTableController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:super_admin,manager'])
@@ -101,5 +102,37 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             'orders',
             [OrderController::class, 'index']
         )->name('orders.index');
+        // =========================
+   // Restaurant Tables
+  // =========================
+    Route::get( 
+    'tables',
+    [RestaurantTableController::class, 'index']
+    )->name('tables.index');
 
-    });
+    Route::get(
+    'tables/create',
+    [RestaurantTableController::class, 'create']
+    )->name('tables.create');
+
+    Route::post(
+    'tables',
+    [RestaurantTableController::class, 'store']
+    )->name('tables.store');
+
+    Route::get(
+    'tables/{table}/edit',
+    [RestaurantTableController::class, 'edit']
+    )->name('tables.edit');
+
+    Route::put( 
+    'tables/{table}',
+    [RestaurantTableController::class, 'update']
+    )->name('tables.update'); 
+
+    Route::delete(
+    'tables/{table}',
+    [RestaurantTableController::class, 'destroy']
+    )->name('tables.destroy');
+
+  });

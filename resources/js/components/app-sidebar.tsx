@@ -6,11 +6,13 @@ import {
     ListOrdered,
     Eye,
     ChefHat,
+    Table2,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { index as tablesIndex } from '@/routes/manager/tables';
 
 import {
     Sidebar,
@@ -67,6 +69,11 @@ export function AppSidebar() {
                       href: itemsIndex(),
                       icon: UtensilsCrossed,
                   },
+                  {
+              title: 'Table Management',
+              href: tablesIndex(),
+              icon: Table2,
+          },
               ]
             : []),
         {
