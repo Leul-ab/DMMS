@@ -70,7 +70,7 @@ export function AppSidebar() {
                       icon: UtensilsCrossed,
                   },
                   {
-              title: 'Table Management',
+              title: 'Tables',
               href: tablesIndex(),
               icon: Table2,
           },
