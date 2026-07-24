@@ -18,3 +18,8 @@ require __DIR__.'/kitchen.php';
 // Customer order route
 Route::post('/orders', [OrderController::class, 'store'])
     ->name('orders.store');
+
+// API routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/tables', [App\Http\Controllers\Api\TableController::class, 'index']);
+});

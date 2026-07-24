@@ -6,6 +6,7 @@ import {
     ListOrdered,
     Eye,
     ChefHat,
+    UserCog,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -24,6 +25,7 @@ import {
 
 import { dashboard } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
+import { index as staffIndex } from '@/routes/admin/staff';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
@@ -100,6 +102,11 @@ export function AppSidebar() {
                   title: 'Users',
                   href: usersIndex(),
                   icon: Users,
+              },
+              {
+                  title: 'Staff Management',
+                  href: staffIndex(),
+                  icon: UserCog,
               },
           ]
         : [];
