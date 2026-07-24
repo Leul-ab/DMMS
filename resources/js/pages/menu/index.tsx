@@ -1,5 +1,7 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import BookingSidebar from '@/components/booking-sidebar';
+import AllBookingsSidebar from '@/components/all-bookings-sidebar';
 import {
     Select,
     SelectContent,
@@ -423,7 +425,7 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
             </div>
         )}
 
-       
+
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -472,7 +474,14 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                             <span>No tables available</span>
                         </div>
                     ) : null}
-                       {/* Become a Member Button */}
+                        {/* Booking Button */}
+                        <a
+                            href="/booking"
+                            className="rounded-full bg-blue-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-600"
+                        >
+                            🗓️ Book a Table
+                        </a>
+                        {/* Become a Member Button */}
                         <button
                             type="button"
                             onClick={() => setShowMemberForm(true)}
@@ -837,6 +846,12 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                     </section>
                 )}
             </main>
+
+            {/* Booking Sidebar */}
+            <BookingSidebar />
+
+            {/* All Bookings Sidebar */}
+            <AllBookingsSidebar />
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-20 border-t border-gray-200 bg-white">

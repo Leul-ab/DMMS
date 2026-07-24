@@ -106,7 +106,7 @@ Route::middleware(['auth', 'role:super_admin,manager'])
         // =========================
    // Restaurant Tables
   // =========================
-    Route::get( 
+    Route::get(
     'tables',
     [RestaurantTableController::class, 'index']
     )->name('tables.index');
@@ -126,10 +126,10 @@ Route::middleware(['auth', 'role:super_admin,manager'])
     [RestaurantTableController::class, 'edit']
     )->name('tables.edit');
 
-    Route::put( 
+    Route::put(
     'tables/{table}',
     [RestaurantTableController::class, 'update']
-    )->name('tables.update'); 
+    )->name('tables.update');
 
     Route::delete(
     'tables/{table}',
@@ -144,5 +144,29 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             'customers',
             [CustomerController::class, 'index']
         )->name('customers.index');
+
+
+        // =========================
+        // Booking Management
+        // =========================
+        Route::get(
+            'bookings',
+            [\App\Http\Controllers\Manager\BookingManagementController::class, 'index']
+        )->name('bookings.index');
+
+        Route::post(
+            'bookings/{booking}/cancel',
+            [\App\Http\Controllers\Manager\BookingManagementController::class, 'cancel']
+        )->name('bookings.cancel');
+
+        Route::post(
+            'bookings/{booking}/complete',
+            [\App\Http\Controllers\Manager\BookingManagementController::class, 'complete']
+        )->name('bookings.complete');
+
+        Route::delete(
+            'bookings/{booking}',
+            [\App\Http\Controllers\Manager\BookingManagementController::class, 'destroy']
+        )->name('bookings.destroy');
 
     });

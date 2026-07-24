@@ -8,6 +8,7 @@ import {
     ChefHat,
     Table2,
     UserCog,
+    Calendar,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -34,6 +35,7 @@ import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
 
 import { index as menuIndex } from '@/routes/menu';
+import { index as bookingsIndex } from '@/routes/manager/bookings';
 
 import type { NavItem } from '@/types';
 
@@ -96,6 +98,11 @@ export function AppSidebar() {
                       href: ordersIndex(),
                       icon: ListOrdered,
                   },
+                  {
+                      title: 'Bookings',
+                      href: bookingsIndex(),
+                      icon: Calendar,
+                  },
               ]
             : []),
         ...(isAdmin || isManager || isKitchenStaff
@@ -121,7 +128,7 @@ export function AppSidebar() {
               href: usersIndex(),
               icon: Users,
           },
-          
+
       ]
     : [];
 
