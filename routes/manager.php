@@ -3,6 +3,7 @@
 use App\Http\Controllers\Manager\MenuCategoryController;
 use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
+use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\RestaurantTableController;
 use Illuminate\Support\Facades\Route;
 
@@ -135,4 +136,13 @@ Route::middleware(['auth', 'role:super_admin,manager'])
     [RestaurantTableController::class, 'destroy']
     )->name('tables.destroy');
 
-  });
+
+        // =========================
+        // Registered Members
+        // =========================
+        Route::get(
+            'customers',
+            [CustomerController::class, 'index']
+        )->name('customers.index');
+
+    });
