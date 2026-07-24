@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -30,6 +32,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Role|null $role
+ * @property-read WaiterTableAssignment|null $latestTableAssignment
  */
 #[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'is_active'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -46,6 +49,23 @@ class User extends Authenticatable implements PasskeyUser
     public function hasRole(string $slug): bool
     {
         return $this->role?->slug === $slug;
+    }
+
+    public function tableAssignments(): HasMany
+    {
+        return $this->hasMany(WaiterTableAssignment::class, 'waiter_id');
+    }
+
+    public function latestTableAssignment(): HasOne
+    {
+        return $this->hasOne(WaiterTableAssignment::class, 'waiter_id')->latestOfMany();
+    }
+
+    public function activeTableAssignments(): HasMany
+    {
+        return $this->hasMany(WaiterTableAssignment::class, 'waiter_id')
+            ->whereIn('status', ['assigned', 'serving'])
+            ->with('table');
     }
 
     protected function casts(): array
