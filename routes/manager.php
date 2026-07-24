@@ -3,6 +3,7 @@
 use App\Http\Controllers\Manager\MenuCategoryController;
 use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
+use App\Http\Controllers\Manager\CustomerController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:super_admin,manager'])
@@ -101,5 +102,14 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             'orders',
             [OrderController::class, 'index']
         )->name('orders.index');
+
+
+        // =========================
+        // Registered Members
+        // =========================
+        Route::get(
+            'customers',
+            [CustomerController::class, 'index']
+        )->name('customers.index');
 
     });

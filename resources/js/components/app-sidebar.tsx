@@ -24,6 +24,7 @@ import {
 
 import { dashboard } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
+import { index as customersIndex } from '@/routes/manager/customers';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
@@ -94,15 +95,20 @@ export function AppSidebar() {
             : []),
     ];
 
-    const adminNavItems: NavItem[] = isAdmin
-        ? [
-              {
-                  title: 'Users',
-                  href: usersIndex(),
-                  icon: Users,
-              },
-          ]
-        : [];
+   const adminNavItems: NavItem[] = isAdmin
+    ? [
+          {
+              title: 'Users',
+              href: usersIndex(),
+              icon: Users,
+          },
+          {
+              title: 'Customers',
+              href: customersIndex(),
+              icon: Users,
+          },
+      ]
+    : [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

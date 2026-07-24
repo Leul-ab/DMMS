@@ -1,5 +1,4 @@
-
-import { Link, router } from '@inertiajs/react';
+import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     Select,
@@ -52,13 +51,27 @@ export default function MenuIndex({
     availableTables,
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
-   
+   const [showMemberForm, setShowMemberForm] = useState(false);
+
+const {
+    data: memberData,
+    setData: setMemberData,
+    post: registerMember,
+    processing: isRegistering,
+    errors: memberErrors,
+    reset: resetMemberForm,
+} = useForm({
+    name: '',
+    phone: '',
+    email: '',
+});
 
 const [successMessage, setSuccessMessage] = useState<string | null>(
     null
 );
 
 const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
 
     // Add item to cart
     const addToCart = (item: MenuItem) => {
@@ -198,34 +211,219 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     );
 };
     return (
-        <div className="min-h-screen bg-stone-50 text-gray-900">
-            {successMessage && (
-    <div className="fixed left-1/2 top-6 z-[100] w-[90%] max-w-md -translate-x-1/2">
-        <div className="flex items-center gap-4 rounded-2xl border border-green-200 bg-white p-4 shadow-2xl">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-xl text-green-600">
-                ✓
+    <div className="min-h-screen bg-stone-50 text-gray-900">
+
+        {/* ================= SUCCESS MESSAGE ================= */}
+        {successMessage && (
+            <div className="fixed left-1/2 top-6 z-[100] w-[90%] max-w-md -translate-x-1/2">
+                <div className="flex items-center gap-4 rounded-2xl border border-green-200 bg-white p-4 shadow-2xl">
+
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-xl text-green-600">
+                        ✓
+                    </div>
+
+                    <div className="flex-1">
+                        <p className="font-bold text-gray-900">
+                            Registration Successful
+                        </p>
+
+                        <p className="mt-1 text-sm text-gray-500">
+                            {successMessage}
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setSuccessMessage(null)}
+                        className="text-xl text-gray-400 transition hover:text-gray-700"
+                    >
+                        ×
+                    </button>
+
+                </div>
             </div>
+        )}
 
-            <div className="flex-1">
-                <p className="font-bold text-gray-900">
-                    Order Confirmed
-                </p>
+        {/* ================= MEMBER REGISTRATION MODAL ================= */}
+        {showMemberForm && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
 
-                <p className="mt-1 text-sm text-gray-500">
-                    {successMessage}
-                </p>
+                <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+
+                    {/* Modal Header */}
+                    <div className="flex items-start justify-between">
+
+                        <div>
+                            <p className="font-semibold uppercase tracking-widest text-orange-500">
+                                Join Us
+                            </p>
+
+                            <h2 className="mt-1 text-2xl font-black text-gray-900">
+                                Become a Member
+                            </h2>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Register with us to become a member.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowMemberForm(false);
+                                resetMemberForm();
+                            }}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+                    {/* Registration Form */}
+                    <form
+                        className="mt-6 space-y-5"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+
+                            registerMember('/customer/register', {
+                                preserveScroll: true,
+
+                                onSuccess: () => {
+                                    setShowMemberForm(false);
+                                    resetMemberForm();
+
+                                    setSuccessMessage(
+                                        'You have successfully registered as a member!'
+                                    );
+
+                                    setTimeout(() => {
+                                        setSuccessMessage(null);
+                                    }, 5000);
+                                },
+
+                                onError: (errors) => {
+                                    console.error(
+                                        'Member registration errors:',
+                                        errors
+                                    );
+                                },
+                            });
+                        }}
+                    >
+                        {/* Name */}
+                        <div>
+                            <label className="mb-2 block text-sm font-bold text-gray-700">
+                                Full Name
+                            </label>
+
+                            <input
+                                type="text"
+                                value={memberData.name}
+                                onChange={(e) =>
+                                    setMemberData(
+                                        'name',
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Enter your full name"
+                                className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                            />
+
+                            {memberErrors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.name}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Phone */}
+                        <div>
+                            <label className="mb-2 block text-sm font-bold text-gray-700">
+                                Phone Number
+                            </label>
+
+                            <input
+                                type="tel"
+                                value={memberData.phone}
+                                onChange={(e) =>
+                                    setMemberData(
+                                        'phone',
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Enter your phone number"
+                                className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                            />
+
+                            {memberErrors.phone && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.phone}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Email */}
+                        <div>
+                            <label className="mb-2 block text-sm font-bold text-gray-700">
+                                Email Address
+                                <span className="ml-1 font-normal text-gray-400">
+                                    (Optional)
+                                </span>
+                            </label>
+
+                            <input
+                                type="email"
+                                value={memberData.email}
+                                onChange={(e) =>
+                                    setMemberData(
+                                        'email',
+                                        e.target.value
+                                    )
+                                }
+                                placeholder="Enter your email address"
+                                className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                            />
+
+                            {memberErrors.email && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.email}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3 pt-2">
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowMemberForm(false);
+                                    resetMemberForm();
+                                }}
+                                className="flex-1 rounded-xl border border-gray-200 px-5 py-3.5 font-bold text-gray-700 hover:bg-gray-100"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                disabled={isRegistering}
+                                className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white hover:bg-orange-600 disabled:opacity-60"
+                            >
+                                {isRegistering
+                                    ? 'Registering...'
+                                    : 'Become a Member'}
+                            </button>
+
+                        </div>
+                    </form>
+
+                </div>
             </div>
+        )}
 
-            <button
-                type="button"
-                onClick={() => setSuccessMessage(null)}
-                className="text-xl text-gray-400 transition hover:text-gray-700"
-            >
-                ×
-            </button>
-        </div>
-    </div>
-)}
+       
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -274,7 +472,14 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                             <span>No tables available</span>
                         </div>
                     ) : null}
-
+                       {/* Become a Member Button */}
+                        <button
+                            type="button"
+                            onClick={() => setShowMemberForm(true)}
+                            className="rounded-full bg-orange-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600"
+                        >
+                            👤 Become a Member
+                        </button>
                     {/* Cart Counter */}
                     {cartQuantity > 0 && (
                         <a
