@@ -32,24 +32,17 @@ class BookingController extends Controller
     public function verifyCustomer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:20'],
+            'customer_code' => ['required', 'string', 'max:20'],
         ]);
 
-        $customer = Customer::where('phone', $validated['phone'])->first();
+        $code = trim($validated['customer_code']);
+
+        $customer = Customer::where('customer_code', $code)->first();
 
         if (!$customer) {
             return response()->json([
                 'found' => false,
-                'message' => 'Customer not found. Please register first.',
-            ]);
-        }
-
-        // Verify name matches
-        if (strtolower($customer->name) !== strtolower($validated['name'])) {
-            return response()->json([
-                'found' => false,
-                'message' => 'Name does not match our records. Please check your details.',
+                'message' => 'Customer code not found. Please register or check your code.',
             ]);
         }
 
@@ -59,6 +52,7 @@ class BookingController extends Controller
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'phone' => $customer->phone,
+                'customer_code' => $customer->customer_code,
                 'is_member' => $customer->is_member,
             ],
         ]);

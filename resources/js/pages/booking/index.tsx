@@ -21,8 +21,8 @@ type Props = {
 export default function BookingIndex({ availableTables }: Props) {
     const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
     const [step, setStep] = useState<'select' | 'verify' | 'confirm'>('select');
-    const [customerName, setCustomerName] = useState('');
-    const [customerPhone, setCustomerPhone] = useState('');
+    const [customerCode, setCustomerCode] = useState('');
+    const [customerData, setCustomerData] = useState<{name: string, phone: string, code: string} | null>(null);
     const [customerId, setCustomerId] = useState<number | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
@@ -42,8 +42,8 @@ export default function BookingIndex({ availableTables }: Props) {
     };
 
     const handleVerifyCustomer = async () => {
-        if (!customerName.trim() || !customerPhone.trim()) {
-            setVerificationError('Please enter your name and phone number.');
+        if (!customerCode.trim()) {
+            setVerificationError('Please enter your customer code.');
             return;
         }
 
@@ -51,15 +51,33 @@ export default function BookingIndex({ availableTables }: Props) {
         setVerificationError(null);
 
         try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
             const response = await fetch('/booking/verify-customer', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '' },
-                body: JSON.stringify({ name: customerName, phone: customerPhone }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({ customer_code: customerCode }),
             });
+            
             const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to verify customer.');
+            }
 
             if (data.found) {
                 setCustomerId(data.customer.id);
+                setCustomerData({
+                    name: data.customer.name,
+                    phone: data.customer.phone,
+                    code: data.customer.customer_code,
+                });
                 setStep('confirm');
                 toast.success('Customer verified successfully!');
             } else {
@@ -68,8 +86,8 @@ export default function BookingIndex({ availableTables }: Props) {
                     setShowRegisterDialog(true);
                 }
             }
-        } catch {
-            setVerificationError('Failed to verify customer. Please try again.');
+        } catch (error: any) {
+            setVerificationError(error.message || 'Failed to verify customer. Please try again.');
         } finally {
             setIsVerifying(false);
         }
@@ -238,28 +256,18 @@ export default function BookingIndex({ availableTables }: Props) {
                         <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
                             <div className="mb-6">
                                 <h2 className="text-2xl font-black">Verify Your Identity</h2>
-                                <p className="mt-1 text-gray-500">Enter your name and phone number to verify.</p>
+                                <p className="mt-1 text-gray-500">Enter your customer code to verify.</p>
                             </div>
 
                             <div className="space-y-5">
                                 <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-700">Full Name</label>
+                                    <label className="mb-2 block text-sm font-bold text-gray-700">Customer Code</label>
                                     <input
                                         type="text"
-                                        value={customerName}
-                                        onChange={(e) => setCustomerName(e.target.value)}
-                                        placeholder="Enter your full name"
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-700">Phone Number</label>
-                                    <input
-                                        type="tel"
-                                        value={customerPhone}
-                                        onChange={(e) => setCustomerPhone(e.target.value)}
-                                        placeholder="Enter your phone number"
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500"
+                                        value={customerCode}
+                                        onChange={(e) => setCustomerCode(e.target.value.toUpperCase())}
+                                        placeholder="Enter your customer code (e.g. AB12CD)"
+                                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500 uppercase"
                                     />
                                 </div>
 
@@ -311,8 +319,8 @@ export default function BookingIndex({ availableTables }: Props) {
                                 {/* Customer Info */}
                                 <div className="rounded-2xl bg-stone-50 p-5">
                                     <p className="text-sm font-semibold text-gray-500">Customer</p>
-                                    <p className="mt-1 text-lg font-bold">{customerName}</p>
-                                    <p className="text-sm text-gray-500">{customerPhone}</p>
+                                    <p className="mt-1 text-lg font-bold">{customerData?.name}</p>
+                                    <p className="text-sm text-gray-500">{customerData?.phone} • Code: <span className="font-bold text-gray-900">{customerData?.code}</span></p>
                                 </div>
 
                                 {/* Selected Tables */}

@@ -37,6 +37,9 @@ export default function AllBookingsSidebar() {
     const fetchAllBookings = useCallback(async () => {
         try {
             const response = await fetch('/api/bookings');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const result: BookingsResponse = await response.json();
             setData(result);
         } catch {
@@ -121,8 +124,8 @@ export default function AllBookingsSidebar() {
         return new Date(dateStr).toLocaleDateString([], { month: 'short', day: 'numeric' });
     };
 
-    const activeBookings = data?.bookings.filter(b => b.status === 'active' && !b.is_expired) || [];
-    const otherBookings = data?.bookings.filter(b => b.status !== 'active' || b.is_expired) || [];
+    const activeBookings = data?.bookings?.filter(b => b.status === 'active' && !b.is_expired) || [];
+    const otherBookings = data?.bookings?.filter(b => b.status !== 'active' || b.is_expired) || [];
 
     return (
         <>
@@ -165,7 +168,7 @@ export default function AllBookingsSidebar() {
                         <div className="flex flex-1 items-center justify-center">
                             <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
                         </div>
-                    ) : !data || data.bookings.length === 0 ? (
+                    ) : !data || !data.bookings || data.bookings.length === 0 ? (
                         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
                             <Calendar className="h-16 w-16 text-gray-200" />
                             <h3 className="mt-4 text-lg font-bold text-gray-500">No Bookings</h3>

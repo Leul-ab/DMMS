@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -34,7 +35,12 @@ class CustomerController extends Controller
             ],
         ]);
 
+        do {
+            $code = strtoupper(Str::random(6));
+        } while (Customer::where('customer_code', $code)->exists());
+
         Customer::create([
+            'customer_code' => $code,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'email' => $validated['email'] ?? null,
@@ -43,7 +49,7 @@ class CustomerController extends Controller
 
         return back()->with(
             'success',
-            'You have successfully registered as a member!'
+            "You have successfully registered! Your customer code is: {$code}. Please save it."
         );
     }
 }
