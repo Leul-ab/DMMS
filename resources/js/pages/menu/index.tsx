@@ -52,7 +52,7 @@ export default function MenuIndex({
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
    const [showMemberForm, setShowMemberForm] = useState(false);
-
+   const [tableError, setTableError] = useState<string | null>(null);
 const {
     data: memberData,
     setData: setMemberData,
@@ -481,25 +481,42 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                             👤 Become a Member
                         </button>
                     {/* Cart Counter */}
-                    {cartQuantity > 0 && (
-                        <a
-                            href="#your-order"
-                            className="relative flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
-                        >
-                            <span>🛒</span>
+                    {/* My Order Button */}
+<button
+    type="button"
+    onClick={() => {
+        if (!table) {
+            setTableError(
+                'Please select a table before viewing your order.'
+            );
+            return;
+        }
 
-                            <span className="hidden sm:inline">
-                                Your Order
-                            </span>
+        setTableError(null);
 
-                            <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-xs">
-                                {cartQuantity}
-                            </span>
-                        </a>
-                    )}
+        router.get(
+            `/my-order?table=${table.table_number}`
+        );
+    }}
+    className="relative flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
+>
+    <span>🛒</span>
+
+    <span className="hidden sm:inline">
+        My Order
+    </span>
+
+    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-xs">
+        {cartQuantity}
+    </span>
+</button>
                 </div>
             </header>
-
+                {tableError && (
+    <div className="fixed left-1/2 top-24 z-[100] -translate-x-1/2 rounded-xl bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg">
+        {tableError}
+    </div>
+)}
             {/* ================= HERO ================= */}
             <section className="relative overflow-hidden bg-gray-900">
                 <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">

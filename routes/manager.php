@@ -104,6 +104,19 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             [OrderController::class, 'index']
         )->name('orders.index');
         // =========================
+// Customer Orders
+// Manager can VIEW and VERIFY PAYMENTS
+// =========================
+Route::get(
+    'orders',
+    [OrderController::class, 'index']
+)->name('orders.index');
+
+Route::patch(
+    'orders/{order}/verify-payment',
+    [OrderController::class, 'verifyPayment']
+)->name('orders.verify-payment');
+        // =========================
    // Restaurant Tables
   // =========================
     Route::get( 
