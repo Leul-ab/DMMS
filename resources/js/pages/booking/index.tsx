@@ -5,7 +5,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, Clock, Table2, UserCheck, UserPlus, ListOrdered } from 'lucide-react';
-import AllBookingsSidebar from '@/components/all-bookings-sidebar';
 import { store as bookingStore } from '@/routes/booking';
 
 type RestaurantTable = {
@@ -423,8 +422,6 @@ export default function BookingIndex({ availableTables }: Props) {
                     )}
                 </main>
 
-                {/* All Bookings Sidebar */}
-                <AllBookingsSidebar />
 
                 {/* Footer */}
                 <footer className="mt-12 border-t border-gray-200 bg-white">

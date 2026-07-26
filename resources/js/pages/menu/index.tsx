@@ -1,7 +1,6 @@
 import { Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import BookingSidebar from '@/components/booking-sidebar';
-import AllBookingsSidebar from '@/components/all-bookings-sidebar';
 import {
     Select,
     SelectContent,
@@ -849,9 +848,6 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
             {/* Booking Sidebar */}
             <BookingSidebar />
-
-            {/* All Bookings Sidebar */}
-            <AllBookingsSidebar />
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-20 border-t border-gray-200 bg-white">
