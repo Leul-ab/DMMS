@@ -9,23 +9,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     protected $fillable = [
-        'table_id',
-        'order_number',
-        'status',
-        'total_amount',
-        'estimated_minutes',
-        'customer_name',
-        'customer_phone',
-        'notes',
-    ];
+    'table_id',
+    'order_number',
+    'status',
+    'payment_status',
+    'payment_submitted_at',
+    'total_amount',
+    'estimated_minutes',
+    'customer_name',
+    'customer_phone',
+    'notes',
+];
+    
 
     protected function casts(): array
-    {
-        return [
-            'total_amount' => 'decimal:2',
-            'estimated_minutes' => 'integer',
-        ];
-    }
+{
+    return [
+        'total_amount' => 'decimal:2',
+        'estimated_minutes' => 'integer',
+        'payment_submitted_at' => 'datetime',
+    ];
+}
 
     public function table(): BelongsTo
     {

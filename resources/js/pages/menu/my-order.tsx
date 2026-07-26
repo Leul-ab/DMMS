@@ -1,5 +1,5 @@
-import { Link } from '@inertiajs/react';
-
+import { useEffect, useState } from 'react';
+import { Link, router } from '@inertiajs/react';
 type MenuItem = {
     id: number;
     name: string;
@@ -22,6 +22,8 @@ type Order = {
     id: number;
     order_number: string;
     status: string;
+    payment_status: 'unpaid' | 'pending' | 'paid';
+    payment_submitted_at: string | null;
     total_amount: string;
     estimated_minutes: number | null;
     order_items: OrderItem[];
@@ -36,6 +38,18 @@ export default function MyOrder({
     table,
     order,
 }:Props) {
+const [showPayment, setShowPayment] = useState(false);
+    useEffect(() => {
+    const interval = setInterval(() => {
+        router.reload({
+    only: ['order'],
+});
+    }, 5000);
+
+    return () => {
+        clearInterval(interval);
+    };
+}, []);
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
 
@@ -265,6 +279,113 @@ export default function MyOrder({
                                 </span>
 
                             </div>
+                            {/* ================= PAYMENT ================= */}
+{order.status === 'completed' && (
+    <div className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6 sm:p-8">
+
+        <h2 className="text-2xl font-black">
+            Payment
+        </h2>
+
+        {order.payment_status === 'unpaid' && (
+            <>
+                <p className="mt-2 text-gray-600">
+                    Your order is completed. Please make your payment.
+                </p>
+
+                {!showPayment ? (
+                    <button
+                        type="button"
+                        onClick={() => setShowPayment(true)}
+                        className="mt-6 w-full rounded-xl bg-orange-500 px-6 py-4 font-black text-white transition hover:bg-orange-600 active:scale-[0.98]"
+                    >
+                        Pay Now
+                    </button>
+                ) : (
+                    <div className="mt-6 rounded-2xl bg-white p-6">
+
+                        <h3 className="text-lg font-black">
+                            Payment Instructions
+                        </h3>
+
+                        <p className="mt-3 text-sm text-gray-500">
+                            Please send the exact amount to the payment number below.
+                        </p>
+
+                        <div className="mt-5 rounded-xl bg-gray-100 p-5">
+                            <p className="text-sm font-semibold text-gray-500">
+                                Amount
+                            </p>
+
+                            <p className="mt-1 text-2xl font-black text-orange-500">
+                                {Number(order.total_amount).toFixed(2)} ETB
+                            </p>
+
+                            <p className="mt-5 text-sm font-semibold text-gray-500">
+                                Payment Number
+                            </p>
+
+                            <p className="mt-1 text-xl font-black">
+                                09XXXXXXXX
+                            </p>
+
+                            <p className="mt-5 text-sm font-semibold text-gray-500">
+                                Account Name
+                            </p>
+
+                            <p className="mt-1 font-bold">
+                                DINE Restaurant
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={() => {
+                                router.post(
+                                    `/orders/${order.id}/payment`,
+                                    {},
+                                    {
+                                        preserveScroll: true,
+                                    }
+                                );
+                            }}
+                            className="mt-5 w-full rounded-xl bg-gray-900 px-6 py-4 font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
+                        >
+                            I Have Paid
+                        </button>
+
+                    </div>
+                )}
+            </>
+        )}
+
+        {order.payment_status === 'pending' && (
+            <div className="mt-5 rounded-2xl bg-yellow-100 p-5">
+                <p className="font-bold text-yellow-800">
+                    Payment Pending Verification
+                </p>
+
+                <p className="mt-1 text-sm text-yellow-700">
+                    Your payment has been submitted.
+                    Please wait for the restaurant to confirm it.
+                </p>
+            </div>
+        )}
+
+        {order.payment_status === 'paid' && (
+            <div className="mt-5 rounded-2xl bg-green-100 p-5">
+                <p className="font-bold text-green-800">
+                    Payment Confirmed ✓
+                </p>
+
+                <p className="mt-1 text-sm text-green-700">
+                    Your payment has been successfully verified.
+                </p>
+            </div>
+        )}
+
+    </div>
+)}
 
                         </div>
 

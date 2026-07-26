@@ -90,10 +90,12 @@ class MenuController extends Controller
         ->where('table_id', $table->id)
         ->whereIn('status', [
             'pending',
+            'received',
             'confirmed',
             'preparing',
             'ready',
             'served',
+            'completed',
         ])
         ->latest()
         ->first();

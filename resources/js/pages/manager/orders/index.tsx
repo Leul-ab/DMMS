@@ -1,6 +1,7 @@
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 type MenuItem = {
@@ -25,6 +26,8 @@ type Order = {
     id: number;
     order_number: string;
     status: string;
+    payment_status: string;
+    payment_submitted_at: string | null;
     total_amount: string;
     estimated_minutes: number | null;
     customer_name: string | null;
@@ -59,7 +62,30 @@ const statusLabels: Record<string, string> = {
     cancelled: 'Cancelled',
 };
 
+const paymentColors: Record<string, string> = {
+    unpaid: 'bg-yellow-100 text-yellow-800',
+    pending: 'bg-orange-100 text-orange-800',
+    paid: 'bg-green-100 text-green-800',
+};
+
+const paymentLabels: Record<string, string> = {
+    unpaid: 'Unpaid',
+    pending: 'Payment Pending',
+    paid: 'Paid',
+};
+
 export default function OrdersIndex({ orders }: Props) {
+
+    const verifyPayment = (orderId: number) => {
+        router.patch(
+            `/manager/orders/${orderId}/verify-payment`,
+            {},
+            {
+                preserveScroll: true,
+            }
+        );
+    };
+
     return (
         <>
             <Head title="Customer Orders" />
@@ -67,7 +93,7 @@ export default function OrdersIndex({ orders }: Props) {
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
                 <Heading
                     title="Customer Orders"
-                    description="View customer orders in real time."
+                    description="View customer orders and verify customer payments."
                 />
 
                 {orders.length === 0 ? (
@@ -100,7 +126,7 @@ export default function OrdersIndex({ orders }: Props) {
                                                     {order.order_number}
                                                 </h3>
 
-                                                {/* View-only status */}
+                                                {/* Order Status */}
                                                 <Badge
                                                     className={`capitalize ${
                                                         statusColors[
@@ -111,6 +137,20 @@ export default function OrdersIndex({ orders }: Props) {
                                                     {statusLabels[
                                                         order.status
                                                     ] ?? order.status}
+                                                </Badge>
+
+                                                {/* Payment Status */}
+                                                <Badge
+                                                    className={`capitalize ${
+                                                        paymentColors[
+                                                            order.payment_status
+                                                        ] ?? ''
+                                                    }`}
+                                                >
+                                                    {paymentLabels[
+                                                        order.payment_status
+                                                    ] ??
+                                                        order.payment_status}
                                                 </Badge>
                                             </div>
 
@@ -230,6 +270,66 @@ export default function OrdersIndex({ orders }: Props) {
                                                 ETB
                                             </span>
                                         </div>
+
+                                        {/* Payment Verification */}
+                                        {order.payment_status === 'pending' && (
+                                            <div className="mt-6 rounded-lg border border-orange-200 bg-orange-50 p-4">
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                    <div>
+                                                        <h4 className="font-semibold text-orange-900">
+                                                            Payment Submitted
+                                                        </h4>
+
+                                                        <p className="mt-1 text-sm text-orange-800">
+                                                            The customer says
+                                                            they have paid.
+                                                            Please verify the
+                                                            payment.
+                                                        </p>
+                                                    </div>
+
+                                                    <Button
+                                                        onClick={() =>
+                                                            verifyPayment(
+                                                                order.id
+                                                            )
+                                                        }
+                                                    >
+                                                        Verify Payment
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Paid Message */}
+                                        {order.payment_status === 'paid' && (
+                                            <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
+                                                <p className="font-semibold text-green-800">
+                                                    ✓ Payment Verified
+                                                </p>
+
+                                                <p className="mt-1 text-sm text-green-700">
+                                                    This order has been paid
+                                                    successfully.
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Unpaid Message */}
+                                        {order.payment_status === 'unpaid' &&
+                                            order.status === 'completed' && (
+                                                <div className="mt-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                                                    <p className="font-semibold text-yellow-800">
+                                                        Payment Not Submitted
+                                                    </p>
+
+                                                    <p className="mt-1 text-sm text-yellow-700">
+                                                        The customer has not
+                                                        submitted their payment
+                                                        yet.
+                                                    </p>
+                                                </div>
+                                            )}
                                     </div>
                                 </CardContent>
                             </Card>

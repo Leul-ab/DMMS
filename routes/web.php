@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login')->name('home');
@@ -19,6 +20,10 @@ require __DIR__.'/kitchen.php';
 // Customer order route
 Route::post('/orders', [OrderController::class, 'store'])
     ->name('orders.store');
+Route::post(
+    '/orders/{order}/payment',
+    [PaymentController::class, 'submit']
+)->name('orders.payment.submit');
 
 // API routes
 Route::middleware(['auth'])->group(function () {
