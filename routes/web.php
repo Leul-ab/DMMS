@@ -24,8 +24,26 @@ Route::post(
     '/orders/{order}/payment',
     [PaymentController::class, 'submit']
 )->name('orders.payment.submit');
+Route::post(
+    '/orders/{order}/payment/confirm',
+    [PaymentController::class, 'confirm']
+)->name('orders.payment.confirm');
+Route::post(
+    '/orders/{order}/add-items',
+    [OrderController::class, 'addItems']
+)->name('orders.add-items');
+Route::post(
+    '/orders/{order}/release-table',
+    [OrderController::class, 'releaseTable']
+)->name('orders.release-table');
 
 // API routes
 Route::middleware(['auth'])->group(function () {
     Route::get('/api/tables', [App\Http\Controllers\Api\TableController::class, 'index']);
 });
+
+// Order count API (no auth required for customer-facing)
+Route::get('/api/order-count', [OrderController::class, 'getOrderCount']);
+
+// Customer order details API (no auth required)
+Route::get('/api/orders/{order}', [App\Http\Controllers\Api\OrderApiController::class, 'show']);

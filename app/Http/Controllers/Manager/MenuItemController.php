@@ -98,10 +98,17 @@ class MenuItemController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
+            // Upload new image, delete old one
             if ($item->image) {
                 Storage::disk('public')->delete($item->image);
             }
             $validated['image'] = $request->file('image')->store('menu/items', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            // Remove existing image without uploading a new one
+            if ($item->image) {
+                Storage::disk('public')->delete($item->image);
+            }
+            $validated['image'] = null;
         } else {
             unset($validated['image']);
         }

@@ -108,18 +108,11 @@ class BookingController extends Controller
         // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
 
-        return redirect()->route('booking.show', $booking->id);
-    }
+        $customer = $booking->customer;
 
-    /**
-     * Show a specific booking.
-     */
-    public function show(TableBooking $booking)
-    {
-        $booking->load(['customer', 'tables']);
-
-        return inertia('booking/show', [
-            'booking' => $booking,
+        return redirect()->route('menu.index')->with([
+            'booking_success' => true,
+            'booking_customer_code' => $customer->customer_code,
         ]);
     }
 
@@ -188,6 +181,8 @@ class BookingController extends Controller
             'booking' => [
                 'id' => $booking->id,
                 'customer_name' => $booking->customer->name,
+                'customer_code' => $booking->customer->customer_code,
+                'status' => $booking->status,
                 'tables' => $booking->tables->map(function ($table) {
                     return [
                         'id' => $table->id,
@@ -271,6 +266,61 @@ class BookingController extends Controller
                 'cancelled_at' => $booking->cancelled_at,
                 'is_expired' => $isExpired,
             ],
+        ]);
+    }
+
+    /**
+     * Get booking by customer code (API endpoint).
+     */
+    public function getBookingByCode(string $customerCode): JsonResponse
+    {
+        $customer = Customer::where('customer_code', $customerCode)->first();
+
+        if (!$customer) {
+            return response()->json([
+                'error' => 'Invalid customer code. Please try again.',
+            ], 404);
+        }
+
+        $booking = TableBooking::with(['customer', 'tables'])
+            ->where('customer_id', $customer->id)
+            ->latest()
+            ->first();
+
+        if (!$booking) {
+            return response()->json([
+                'error' => 'No booking found for this customer code.',
+            ], 404);
+        }
+
+        // Check if expired
+        $isExpired = false;
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            $isExpired = true;
+        }
+
+        $timeRemaining = $booking->expires_at
+            ? max(0, Carbon::now()->diffInSeconds($booking->expires_at, false))
+            : 0;
+
+        return response()->json([
+            'booking' => [
+                'id' => $booking->id,
+                'customer_name' => $booking->customer->name,
+                'customer_phone' => $booking->customer->phone,
+                'customer_code' => $booking->customer->customer_code,
+                'status' => $booking->status,
+                'tables' => $booking->tables->map(function ($table) {
+                    return [
+                        'id' => $table->id,
+                        'table_number' => $table->table_number,
+                    ];
+                }),
+                'booked_at' => $booking->booked_at,
+                'expires_at' => $booking->expires_at,
+                'time_remaining_seconds' => $timeRemaining,
+            ],
+            'is_expired' => $isExpired,
         ]);
     }
 }

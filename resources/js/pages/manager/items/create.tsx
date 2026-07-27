@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { create as itemsCreate, index as itemsIndex, store as itemsStore } from '@/routes/manager/items';
+import { useState, useRef } from 'react';
 
 type MenuCategory = {
     id: number;
@@ -24,10 +25,34 @@ export default function ItemCreate({ categories }: Props) {
         name: '',
         description: '',
         price: '',
+        image: '' as string | File,
         preparation_time: '',
         is_available: true,
         featured: false,
     });
+
+    const [preview, setPreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setData('image', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setData('image', '');
+        setPreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,6 +108,39 @@ export default function ItemCreate({ categories }: Props) {
                                 <Label htmlFor="price">Price</Label>
                                 <Input id="price" type="number" step="0.01" min="0" value={data.price} onChange={(e) => setData('price', e.target.value)} placeholder="9.99" required />
                                 <InputError message={errors.price} />
+                            </div>
+
+                            {/* Menu Item Image */}
+                            <div className="grid gap-2">
+                                <Label htmlFor="image">Menu Item Image (optional)</Label>
+                                <div className="flex items-center gap-4">
+                                    <Input
+                                        ref={fileInputRef}
+                                        id="image"
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                                        onChange={handleImageChange}
+                                        className="cursor-pointer"
+                                    />
+                                    {preview && (
+                                        <Button type="button" variant="destructive" size="sm" onClick={handleRemoveImage}>
+                                            Remove
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Accepted formats: JPG, JPEG, PNG, WebP. Max size: 2MB.</p>
+                                <InputError message={errors.image} />
+
+                                {/* Image Preview */}
+                                {preview && (
+                                    <div className="relative mt-2 overflow-hidden rounded-lg border">
+                                        <img
+                                            src={preview}
+                                            alt="Preview"
+                                            className="h-48 w-full object-cover"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">

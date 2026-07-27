@@ -1,6 +1,9 @@
-import { Link, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
-import BookingSidebar from '@/components/booking-sidebar';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
+import { useEffect, useRef, useState } from 'react';
+import MyBookingModal from '@/components/my-booking-modal';
+import RegistrationSuccessDialog from '@/components/registration-success-dialog';
+import BookingSuccessDialog from '@/components/booking-success-dialog';
+import OrderDetailsBottomSheet from '@/components/order-details-bottom-sheet';
 import {
     Select,
     SelectContent,
@@ -36,12 +39,40 @@ type RestaurantTable = {
     status: string;
 };
 
+type MenuItemBrief = {
+    id: number;
+    name: string;
+    image: string | null;
+};
+
+type OrderItemType = {
+    id: number;
+    quantity: number;
+    price: string;
+    status: string;
+    menu_item: MenuItemBrief;
+};
+
+type OrderType = {
+    id: number;
+    order_number: string;
+    status: string;
+    payment_status: string;
+    total_amount: string;
+    estimated_minutes: number | null;
+    created_at: string;
+    order_items: OrderItemType[];
+};
+
 type Props = {
     categories: Category[];
     menuItems: MenuItem[];
     selectedCategory: number | null;
     table: RestaurantTable | null;
     availableTables: RestaurantTable[];
+    orderCount: number;
+    orders: OrderType[];
+    addToOrder?: number | null;
 };
 
 export default function MenuIndex({
@@ -50,10 +81,20 @@ export default function MenuIndex({
     selectedCategory,
     table,
     availableTables,
+    orderCount,
+    orders,
+    addToOrder,
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
-   const [showMemberForm, setShowMemberForm] = useState(false);
-   const [tableError, setTableError] = useState<string | null>(null);
+    const [showMemberForm, setShowMemberForm] = useState(false);
+    const [tableError, setTableError] = useState<string | null>(null);
+    const [showTableDialog, setShowTableDialog] = useState(false);
+    const [isAddToOrder, setIsAddToOrder] = useState(!!addToOrder);
+    const [existingOrderId, setExistingOrderId] = useState(addToOrder || null);
+    const [selectedOrderSheet, setSelectedOrderSheet] = useState<number | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const myOrdersRef = useRef<HTMLDivElement>(null);
+
 const {
     data: memberData,
     setData: setMemberData,
@@ -71,11 +112,64 @@ const [successMessage, setSuccessMessage] = useState<string | null>(
     null
 );
 
+const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+const [regCustomerCode, setRegCustomerCode] = useState('');
+const [regCustomerName, setRegCustomerName] = useState('');
+
 const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
+// My Booking state
+const [showMyBooking, setShowMyBooking] = useState(false);
 
-    // Add item to cart
+// Booking success dialog state
+const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+const [bookingSuccessCode, setBookingSuccessCode] = useState('');
+
+// Read flash data from page props
+const { props: pageProps } = usePage();
+const flash = (pageProps as any).flash as {
+    customer_registered?: boolean;
+    customer_code?: string;
+    customer_name?: string;
+    booking_success?: boolean;
+    booking_customer_code?: string;
+} | undefined;
+
+useEffect(() => {
+    if (flash?.customer_registered && flash?.customer_code) {
+        setRegCustomerCode(flash.customer_code);
+        setRegCustomerName(flash.customer_name || '');
+        setShowSuccessDialog(true);
+    }
+    if (flash?.booking_success && flash?.booking_customer_code) {
+        setBookingSuccessCode(flash.booking_customer_code);
+        setShowBookingSuccess(true);
+    }
+}, [flash?.customer_registered, flash?.customer_code, flash?.customer_name, flash?.booking_success, flash?.booking_customer_code]);
+
+// Auto-polling for order updates
+useEffect(() => {
+    if (!table) return;
+
+    const interval = setInterval(() => {
+        router.reload({
+            only: ['orders', 'orderCount'],
+            preserveScroll: true,
+        });
+    }, 10000);
+
+    return () => {
+        clearInterval(interval);
+    };
+}, [table]);
+
+    // Add item to cart - requires table selection
     const addToCart = (item: MenuItem) => {
+        if (!table) {
+            setShowTableDialog(true);
+            return;
+        }
+
         setCart((currentCart) => {
             const existingItem = currentCart.find(
                 (cartItem) => cartItem.id === item.id
@@ -152,12 +246,10 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         0
     );
 
-    // Place order
+    // Place order or add items to existing order
     const placeOrder = () => {
     if (!table) {
-        alert(
-            'Please scan a table QR code before placing an order.'
-        );
+        setShowTableDialog(true);
         return;
     }
 
@@ -170,77 +262,196 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
     setIsPlacingOrder(true);
 
-    router.post(
-        '/orders',
-        {
-            table_id: table.id,
-            items: cart.map((item) => ({
-                id: item.id,
-                quantity: item.quantity,
-            })),
-        },
-        {
-            onSuccess: () => {
-                setCart([]);
+    const items = cart.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+    }));
 
-                setSuccessMessage(
-                    'Your order has been placed successfully!'
-                );
-
-                setIsPlacingOrder(false);
-
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth',
-                });
-
-                setTimeout(() => {
-                    setSuccessMessage(null);
-                }, 5000);
+    if (isAddToOrder && existingOrderId) {
+        // Add items to existing order
+        router.post(
+            `/orders/${existingOrderId}/add-items`,
+            { items },
+            {
+                onSuccess: () => {
+                    setCart([]);
+                    setIsAddToOrder(false);
+                    setExistingOrderId(null);
+                    setSuccessMessage(
+                        'Items added to your order successfully!'
+                    );
+                    setIsPlacingOrder(false);
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth',
+                    });
+                    setTimeout(() => {
+                        setSuccessMessage(null);
+                    }, 5000);
+                },
+                onError: (errors) => {
+                    console.error(errors);
+                    setIsPlacingOrder(false);
+                    alert(
+                        'There was a problem adding items to your order.'
+                    );
+                },
+            }
+        );
+    } else {
+        // Create new order
+        router.post(
+            '/orders',
+            {
+                table_id: table.id,
+                items,
             },
+            {
+                onSuccess: () => {
+                    setCart([]);
 
-            onError: (errors) => {
-                console.error(errors);
+                    setSuccessMessage(
+                        'Your order has been placed successfully!'
+                    );
 
-                setIsPlacingOrder(false);
+                    setIsPlacingOrder(false);
 
-                alert(
-                    'There was a problem placing your order.'
-                );
-            },
-        }
-    );
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth',
+                    });
+
+                    setTimeout(() => {
+                        setSuccessMessage(null);
+                    }, 5000);
+                },
+
+                onError: (errors) => {
+                    console.error(errors);
+
+                    setIsPlacingOrder(false);
+
+                    alert(
+                        'There was a problem placing your order.'
+                    );
+                },
+            }
+        );
+    }
 };
+
+    // Get status color for order badges
+    const getStatusBadgeColor = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'received':
+                return 'bg-blue-100 text-blue-800';
+            case 'preparing':
+                return 'bg-purple-100 text-purple-800';
+            case 'served':
+                return 'bg-teal-100 text-teal-800';
+            case 'completed':
+                return 'bg-green-100 text-green-800';
+            case 'cancelled':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    // Format short date/time for card view
+    const formatShortDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    // Open bottom sheet for a specific order
+    const openOrderDetails = (orderId: number) => {
+        setSelectedOrderSheet(orderId);
+        setIsSheetOpen(true);
+    };
+
+    // Close bottom sheet
+    const closeOrderDetails = () => {
+        setIsSheetOpen(false);
+        setSelectedOrderSheet(null);
+    };
+
+    // Scroll to my orders section
+    const scrollToMyOrders = () => {
+        if (!table) {
+            setShowTableDialog(true);
+            return;
+        }
+        if (myOrdersRef.current) {
+            myOrdersRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
     return (
     <div className="min-h-screen bg-stone-50 text-gray-900">
 
-        {/* ================= SUCCESS MESSAGE ================= */}
-        {successMessage && (
-            <div className="fixed left-1/2 top-6 z-[100] w-[90%] max-w-md -translate-x-1/2">
-                <div className="flex items-center gap-4 rounded-2xl border border-green-200 bg-white p-4 shadow-2xl">
-
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-xl text-green-600">
-                        ✓
+        {/* ================= TABLE SELECTION DIALOG ================= */}
+        {showTableDialog && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
+                <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 text-2xl">
+                                🍽️
+                            </div>
+                            <h2 className="mt-4 text-xl font-black text-gray-900">
+                                Select a Table
+                            </h2>
+                            <p className="mt-2 text-sm text-gray-500">
+                                Please select a table before placing an order.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setShowTableDialog(false)}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200"
+                        >
+                            ×
+                        </button>
                     </div>
 
-                    <div className="flex-1">
-                        <p className="font-bold text-gray-900">
-                            Registration Successful
-                        </p>
-
-                        <p className="mt-1 text-sm text-gray-500">
-                            {successMessage}
-                        </p>
-                    </div>
+                    {availableTables.length > 0 ? (
+                        <div className="mt-6 grid grid-cols-3 gap-3">
+                            {availableTables.map((t) => (
+                                <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => {
+                                        router.get(`/menu?table=${t.table_number}`, {}, { preserveScroll: true });
+                                        setShowTableDialog(false);
+                                    }}
+                                    className="rounded-xl border-2 border-gray-200 p-4 text-center font-bold transition hover:border-orange-500 hover:bg-orange-50"
+                                >
+                                    <div className="text-2xl">🍽️</div>
+                                    <div className="mt-1 text-sm">Table {t.table_number}</div>
+                                </button>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="mt-6 rounded-xl bg-red-50 p-4 text-center text-sm text-red-600">
+                            No tables available at the moment.
+                        </div>
+                    )}
 
                     <button
                         type="button"
-                        onClick={() => setSuccessMessage(null)}
-                        className="text-xl text-gray-400 transition hover:text-gray-700"
+                        onClick={() => setShowTableDialog(false)}
+                        className="mt-4 w-full rounded-xl border border-gray-200 px-5 py-3.5 font-bold text-gray-700 hover:bg-gray-100"
                     >
-                        ×
+                        Cancel
                     </button>
-
                 </div>
             </div>
         )}
@@ -439,20 +650,28 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                         </p>
                     </div>
 
-                    {/* Table Selector Dropdown */}
-                    {availableTables.length > 0 ? (
-                        <div className="flex items-center gap-3">
+                    {/* Right-side buttons */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Table Selector Dropdown */}
+                        {availableTables.length > 0 ? (
                             <div className="hidden items-center gap-2 text-sm text-gray-500 sm:flex">
                                 <span>🍽️</span>
                                 <span>Select table:</span>
                             </div>
+                        ) : !table ? (
+                            <div className="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm text-red-600">
+                                <span>No tables available</span>
+                            </div>
+                        ) : null}
+
+                        {availableTables.length > 0 && (
                             <Select
                                 value={table ? String(table.table_number) : ''}
                                 onValueChange={(value) => {
                                     router.get(`/menu?table=${value}`, {}, { preserveScroll: true });
                                 }}
                             >
-                                <SelectTrigger className="w-[140px] rounded-full border-orange-200 bg-orange-50 font-bold text-gray-900 hover:bg-orange-100">
+                                <SelectTrigger className="w-[120px] sm:w-[140px] rounded-full border-orange-200 bg-orange-50 font-bold text-gray-900 hover:bg-orange-100">
                                     <SelectValue placeholder="Choose table" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-xl">
@@ -467,64 +686,55 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
-                    ) : !table ? (
-                        <div className="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm text-red-600">
-                            <span>No tables available</span>
-                        </div>
-                    ) : null}
-                        {/* Booking Button */}
+                        )}
+
+                        {/* Book a Table Button */}
                         <a
                             href="/booking"
-                            className="rounded-full bg-blue-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-600"
+                            className="hidden sm:inline-block rounded-full bg-blue-500 px-3 py-2 sm:px-4 text-xs sm:text-sm font-bold text-white transition hover:bg-blue-600"
                         >
-                            🗓️ Book a Table
+                            🗓️ Book
                         </a>
-                        {/* Become a Member Button */}
+
+                        {/* My Booking Button */}
                         <button
                             type="button"
-                            onClick={() => setShowMemberForm(true)}
-                            className="rounded-full bg-orange-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600"
+                            onClick={() => setShowMyBooking(true)}
+                            className="hidden sm:inline-block rounded-full bg-purple-600 px-3 py-2 sm:px-4 text-xs sm:text-sm font-bold text-white transition hover:bg-purple-700"
                         >
-                            👤 Become a Member
+                            📋 Booking
                         </button>
-                    {/* Cart Counter */}
-                    {/* My Order Button */}
-<button
-    type="button"
-    onClick={() => {
-        if (!table) {
-            setTableError(
-                'Please select a table before viewing your order.'
-            );
-            return;
-        }
 
-        setTableError(null);
-
-        router.get(
-            `/my-order?table=${table.table_number}`
-        );
-    }}
-    className="relative flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
->
-    <span>🛒</span>
-
-    <span className="hidden sm:inline">
-        My Order
-    </span>
-
-    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-xs">
-        {cartQuantity}
-    </span>
-</button>
+                        {/* My Orders Button - scrolls to orders section */}
+                        <button
+                            type="button"
+                            onClick={scrollToMyOrders}
+                            className="relative flex items-center gap-2 rounded-full bg-gray-900 px-3 py-2 sm:px-4 text-xs sm:text-sm font-bold text-white transition hover:bg-orange-500"
+                        >
+                            <span>🛒</span>
+                            <span className="hidden sm:inline">Orders</span>
+                            {orderCount > 0 && (
+                                <span className="flex h-5 min-w-5 sm:h-6 sm:min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] sm:text-xs">
+                                    {orderCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </header>
-                {tableError && (
-    <div className="fixed left-1/2 top-24 z-[100] -translate-x-1/2 rounded-xl bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg">
-        {tableError}
-    </div>
-)}
+
+            {tableError && (
+                <div className="fixed left-1/2 top-24 z-[100] -translate-x-1/2 rounded-xl bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-lg">
+                    {tableError}
+                </div>
+            )}
+
+            {successMessage && (
+                <div className="fixed left-1/2 top-24 z-[100] -translate-x-1/2 rounded-xl bg-green-500 px-6 py-3 text-sm font-semibold text-white shadow-lg">
+                    {successMessage}
+                </div>
+            )}
+
             {/* ================= HERO ================= */}
             <section className="relative overflow-hidden bg-gray-900">
                 <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-24">
@@ -678,6 +888,83 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                             Please check back later.
                         </p>
                     </div>
+                )}
+
+                {/* ================= MY ORDERS SECTION ================= */}
+                {table && orders.length > 0 && (
+                    <section ref={myOrdersRef} className="mt-20 scroll-mt-24">
+                        <div className="mb-6">
+                            <p className="font-semibold uppercase tracking-widest text-orange-500">
+                                Your Orders
+                            </p>
+                            <h2 className="mt-1 text-3xl font-black">
+                                My Orders
+                            </h2>
+                            <p className="mt-2 text-gray-500">
+                                Click on an order to view details.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {orders.map((orderItem) => {
+                                const isActive = ['pending', 'received', 'preparing'].includes(orderItem.status);
+                                return (
+                                    <button
+                                        key={orderItem.id}
+                                        type="button"
+                                        onClick={() => openOrderDetails(orderItem.id)}
+                                        className={`w-full text-left ${
+                                            isActive ? 'ring-2 ring-orange-400 ring-offset-2' : ''
+                                        }`}
+                                    >
+                                        <div className={`flex items-center justify-between gap-4 rounded-2xl border p-5 shadow-sm transition hover:border-orange-200 hover:shadow-md active:scale-[0.99] ${
+                                            isActive ? 'border-orange-300 bg-orange-50/50' : 'border-gray-100 bg-white'
+                                        }`}>
+                                            <div className="flex items-center gap-4">
+                                                {/* Order Icon */}
+                                                <div className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl text-xl ${
+                                                    isActive ? 'bg-orange-100' : 'bg-orange-50'
+                                                }`}>
+                                                    {isActive ? '🔄' : '🧾'}
+                                                </div>
+
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900">
+                                                        {orderItem.order_number}
+                                                    </h3>
+                                                    <p className="mt-0.5 text-sm text-gray-500">
+                                                        {formatShortDateTime(orderItem.created_at)}
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs text-gray-400">
+                                                        {orderItem.order_items.length} item{orderItem.order_items.length !== 1 ? 's' : ''}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col items-end gap-2">
+                                                <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${getStatusBadgeColor(orderItem.status)}`}>
+                                                    {orderItem.status}
+                                                </span>
+                                                <span className="text-sm font-black text-orange-500">
+                                                    {Number(orderItem.total_amount).toFixed(2)} ETB
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Active order indicator */}
+                        {orders.some((o) => ['pending', 'received', 'preparing'].includes(o.status)) && (
+                            <div className="mt-4 rounded-xl bg-orange-50 border border-orange-200 p-4">
+                                <p className="flex items-center gap-2 text-sm font-bold text-orange-700">
+                                    <span className="inline-block h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                                    Orders highlighted in orange are currently active
+                                </p>
+                            </div>
+                        )}
+                    </section>
                 )}
 
                 {/* ================= ORDER / CART ================= */}
@@ -846,10 +1133,10 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     {isPlacingOrder ? (
         <span className="flex items-center justify-center gap-2">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            Placing Order...
+            {isAddToOrder ? 'Adding Items...' : 'Placing Order...'}
         </span>
     ) : (
-        'Place Order →'
+        isAddToOrder ? 'Add to Existing Order →' : 'Place Order →'
     )}
 </button>
 
@@ -863,8 +1150,49 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                 )}
             </main>
 
-            {/* Booking Sidebar */}
-            <BookingSidebar />
+            {/* ================= ORDER DETAILS BOTTOM SHEET ================= */}
+            {table && (
+                <OrderDetailsBottomSheet
+                    orderId={selectedOrderSheet}
+                    tableNumber={table.table_number}
+                    isOpen={isSheetOpen}
+                    onClose={closeOrderDetails}
+                />
+            )}
+
+            {/* Registration Success Dialog */}
+            <RegistrationSuccessDialog
+                isOpen={showSuccessDialog}
+                customerCode={regCustomerCode}
+                customerName={regCustomerName}
+                onClose={() => setShowSuccessDialog(false)}
+            />
+
+            {/* Booking Success Dialog */}
+            <BookingSuccessDialog
+                isOpen={showBookingSuccess}
+                customerCode={bookingSuccessCode}
+                onClose={() => setShowBookingSuccess(false)}
+            />
+
+            {/* My Booking Modal */}
+            <MyBookingModal
+                isOpen={showMyBooking}
+                onClose={() => setShowMyBooking(false)}
+            />
+
+            {/* Become a Member Button (mobile) */}
+            {!showMemberForm && (
+                <div className="fixed bottom-6 right-6 z-50 sm:hidden">
+                    <button
+                        type="button"
+                        onClick={() => setShowMemberForm(true)}
+                        className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-500 text-2xl text-white shadow-xl transition hover:bg-orange-600 active:scale-95"
+                    >
+                        👤
+                    </button>
+                </div>
+            )}
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-20 border-t border-gray-200 bg-white">
@@ -881,4 +1209,3 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         </div>
     );
 }
-

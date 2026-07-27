@@ -118,6 +118,7 @@ export default function ItemsIndex({ items, categories, filters }: Props) {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b text-left text-sm text-muted-foreground">
+                                    <th className="px-4 py-3 font-medium">Image</th>
                                     <th className="px-4 py-3 font-medium">Name</th>
                                     <th className="px-4 py-3 font-medium">Category</th>
                                     <th className="px-4 py-3 font-medium">Price</th>
@@ -130,13 +131,28 @@ export default function ItemsIndex({ items, categories, filters }: Props) {
                             <tbody>
                                 {items.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                        <td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">
                                             No menu items found.
                                         </td>
                                     </tr>
                                 ) : (
                                     items.data.map((item) => (
                                         <tr key={item.id} className="border-b last:border-0">
+                                            <td className="px-4 py-3">
+                                                <div className="h-12 w-12 overflow-hidden rounded-md bg-stone-100">
+                                                    {item.image ? (
+                                                        <img
+                                                            src={`/storage/${item.image}`}
+                                                            alt={item.name}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center text-lg">
+                                                            🍽️
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-3 text-sm font-medium">{item.name}</td>
                                             <td className="px-4 py-3">
                                                 <Badge variant="secondary">{item.category?.name || 'Uncategorized'}</Badge>

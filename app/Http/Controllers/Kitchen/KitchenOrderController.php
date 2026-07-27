@@ -67,7 +67,8 @@ class KitchenOrderController extends Controller
      * Workflow:
      *
      * pending -> received
-     * received -> completed
+     * received -> preparing
+     * preparing -> completed
      * pending -> cancelled
      * received -> cancelled
      */
@@ -78,7 +79,7 @@ class KitchenOrderController extends Controller
         $validated = $request->validate([
     'status' => [
         'required',
-        'in:pending,received,completed,cancelled',
+        'in:pending,received,preparing,completed,cancelled',
     ],
 ]);
 

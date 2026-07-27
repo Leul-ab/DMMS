@@ -54,6 +54,40 @@ class MenuController extends Controller
             ->orderBy('table_number')
             ->get();
 
+        // Get active order count for this table
+        $orderCount = 0;
+        $orders = collect();
+        if ($table) {
+            $orderCount = Order::where('table_id', $table->id)
+                ->whereIn('status', ['pending', 'received', 'preparing'])
+                ->count();
+
+            // Get all orders for this table to display in the menu page
+            $orders = Order::with([
+                'orderItems.menuItem',
+            ])
+                ->where('table_id', $table->id)
+                ->whereIn('status', [
+                    'pending',
+                    'received',
+                    'preparing',
+                    'served',
+                    'completed',
+                    'cancelled',
+                ])
+                ->latest()
+                ->get();
+        }
+
+        // Check if we're adding to an existing order
+        $addToOrder = $request->query('add_to_order');
+        if ($addToOrder) {
+            $existingOrder = Order::find($addToOrder);
+            if (!$existingOrder || $existingOrder->table_id !== ($table->id ?? null)) {
+                $addToOrder = null;
+            }
+        }
+
         return Inertia::render('menu/index', [
             'categories' => $categories,
             'menuItems' => $menuItems,
@@ -62,10 +96,16 @@ class MenuController extends Controller
                 : null,
             'table' => $table,
             'availableTables' => $availableTables,
+            'orderCount' => $orderCount,
+            'orders' => $orders,
+            'addToOrder' => $addToOrder ? (int) $addToOrder : null,
 
             'flash' => [
                 'success' => session('success'),
                 'order_number' => session('order_number'),
+                'customer_registered' => session('customer_registered'),
+                'customer_code' => session('customer_code'),
+                'customer_name' => session('customer_name'),
             ],
         ]);
     }
@@ -84,25 +124,31 @@ class MenuController extends Controller
         $tableNumber
     )->firstOrFail();
 
-    $order = Order::with([
+    $orders = Order::with([
         'orderItems.menuItem',
     ])
         ->where('table_id', $table->id)
         ->whereIn('status', [
             'pending',
             'received',
-            'confirmed',
             'preparing',
-            'ready',
-            'served',
             'completed',
         ])
         ->latest()
-        ->first();
+        ->get();
+
+    $order = $orders->first();
+
+    // Get active order count for this table
+    $orderCount = Order::where('table_id', $table->id)
+        ->whereIn('status', ['pending', 'received', 'preparing'])
+        ->count();
 
     return Inertia::render('menu/my-order', [
         'table' => $table,
         'order' => $order,
+        'orders' => $orders,
+        'orderCount' => $orderCount,
     ]);
 }
 }

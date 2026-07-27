@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
+import OrderDetailsBottomSheet from '@/components/order-details-bottom-sheet';
+
 type MenuItem = {
     id: number;
     name: string;
+    image: string | null;
 };
 
 type OrderItem = {
@@ -27,29 +30,110 @@ type Order = {
     total_amount: string;
     estimated_minutes: number | null;
     order_items: OrderItem[];
+    created_at: string;
 };
 
 type Props = {
     table: RestaurantTable;
     order: Order | null;
+    orders: Order[];
+    orderCount: number;
 };
 
 export default function MyOrder({
     table,
     order,
-}:Props) {
-const [showPayment, setShowPayment] = useState(false);
-    useEffect(() => {
-    const interval = setInterval(() => {
-        router.reload({
-    only: ['order'],
-});
-    }, 5000);
+    orders,
+    orderCount,
+}: Props) {
+    const [showPayment, setShowPayment] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    return () => {
-        clearInterval(interval);
+    // Auto-polling for the current order
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['order', 'orders'],
+            });
+        }, 5000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
+    // Format date/time
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
     };
-}, []);
+
+    // Format short date/time for card view
+    const formatShortDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    // Get status color
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-500';
+            case 'received':
+                return 'bg-blue-500';
+            case 'preparing':
+                return 'bg-purple-500';
+            case 'completed':
+                return 'bg-green-500';
+            case 'cancelled':
+                return 'bg-red-500';
+            default:
+                return 'bg-gray-500';
+        }
+    };
+
+    // Get status badge color (lighter for card backgrounds)
+    const getStatusBadgeColor = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'received':
+                return 'bg-blue-100 text-blue-800';
+            case 'preparing':
+                return 'bg-purple-100 text-purple-800';
+            case 'completed':
+                return 'bg-green-100 text-green-800';
+            case 'cancelled':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    // Open bottom sheet for a specific order
+    const openOrderDetails = (orderId: number) => {
+        setSelectedOrderId(orderId);
+        setIsSheetOpen(true);
+    };
+
+    // Close bottom sheet
+    const closeOrderDetails = () => {
+        setIsSheetOpen(false);
+        setSelectedOrderId(null);
+    };
+
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
 
@@ -103,17 +187,25 @@ const [showPayment, setShowPayment] = useState(false);
                     </p>
 
                     <h1 className="mt-2 text-4xl font-black sm:text-5xl">
-                        My Order
+                        My Orders
                     </h1>
 
                     <p className="mt-3 text-gray-500">
-                        Track your order and enjoy your meal.
+                        Track your orders and enjoy your meal.
                     </p>
+
+                    {/* Order Count Badge */}
+                    {orderCount > 0 && (
+                        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-2 text-sm font-bold text-orange-700">
+                            <span>📋</span>
+                            <span>{orderCount} active order{orderCount > 1 ? 's' : ''}</span>
+                        </div>
+                    )}
 
                 </div>
 
-                {/* ================= NO ORDER ================= */}
-                {!order && (
+                {/* ================= NO ORDERS ================= */}
+                {orders.length === 0 && (
                     <div className="rounded-3xl border border-gray-100 bg-white p-10 text-center shadow-sm">
 
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
@@ -121,11 +213,11 @@ const [showPayment, setShowPayment] = useState(false);
                         </div>
 
                         <h2 className="mt-6 text-2xl font-black">
-                            No Active Order
+                            No Orders Yet
                         </h2>
 
                         <p className="mt-2 text-gray-500">
-                            You don't have an active order yet.
+                            You haven't placed any orders yet.
                         </p>
 
                         <Link
@@ -138,11 +230,21 @@ const [showPayment, setShowPayment] = useState(false);
                     </div>
                 )}
 
-                {/* ================= ORDER ================= */}
+                {/* ================= LATEST ORDER (Full View) ================= */}
                 {order && (
                     <div className="space-y-6">
 
-                        {/* Order Header */}
+                        {/* Active Order Highlight */}
+                        {order.status !== 'completed' && order.status !== 'cancelled' && (
+                            <div className="rounded-2xl border border-orange-200 bg-orange-50/50 p-4">
+                                <p className="flex items-center gap-2 text-sm font-bold text-orange-700">
+                                    <span className="inline-block h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                                    Currently Active Order
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Order Header Card */}
                         <div className="overflow-hidden rounded-3xl bg-gray-900 text-white shadow-xl">
 
                             <div className="p-7">
@@ -161,10 +263,15 @@ const [showPayment, setShowPayment] = useState(false);
                                         <p className="mt-2 text-gray-400">
                                             Table {table.table_number}
                                         </p>
+
+                                        {/* Order Date/Time */}
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {formatDateTime(order.created_at)}
+                                        </p>
                                     </div>
 
                                     {/* Status */}
-                                    <span className="w-fit rounded-full bg-orange-500 px-5 py-2 text-sm font-black capitalize text-white">
+                                    <span className={`w-fit rounded-full ${getStatusColor(order.status)} px-5 py-2 text-sm font-black capitalize text-white`}>
                                         {order.status}
                                     </span>
 
@@ -208,7 +315,7 @@ const [showPayment, setShowPayment] = useState(false);
                             </div>
                         )}
 
-                        {/* Order Items */}
+                        {/* Order Items Section */}
                         <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
 
                             <div className="mb-6">
@@ -231,21 +338,35 @@ const [showPayment, setShowPayment] = useState(false);
                                             key={item.id}
                                             className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-stone-50 p-4"
                                         >
+                                            <div className="flex items-center gap-4">
+                                                {/* Item Image Thumbnail */}
+                                                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-stone-200">
+                                                    {item.menu_item.image ? (
+                                                        <img
+                                                            src={`/storage/${item.menu_item.image}`}
+                                                            alt={item.menu_item.name}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center text-2xl">
+                                                            🍽️
+                                                        </div>
+                                                    )}
+                                                </div>
 
-                                            <div>
+                                                <div>
+                                                    <h3 className="font-bold">
+                                                        {item.menu_item.name}
+                                                    </h3>
 
-                                                <h3 className="font-bold">
-                                                    {item.menu_item.name}
-                                                </h3>
-
-                                                <p className="mt-1 text-sm text-gray-500">
-                                                    {item.quantity} ×{' '}
-                                                    {Number(
-                                                        item.price
-                                                    ).toFixed(2)}{' '}
-                                                    ETB
-                                                </p>
-
+                                                    <p className="mt-1 text-sm text-gray-500">
+                                                        {item.quantity} ×{' '}
+                                                        {Number(
+                                                            item.price
+                                                        ).toFixed(2)}{' '}
+                                                        ETB
+                                                    </p>
+                                                </div>
                                             </div>
 
                                             <div className="whitespace-nowrap font-black">
@@ -279,6 +400,19 @@ const [showPayment, setShowPayment] = useState(false);
                                 </span>
 
                             </div>
+
+                            {/* ================= ADD ORDER BUTTON ================= */}
+                            {order.status !== 'completed' && order.status !== 'cancelled' && (
+                                <div className="mt-6">
+                                    <Link
+                                        href={`/menu?table=${table.table_number}&add_to_order=${order.id}`}
+                                        className="block w-full rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4 text-center font-black text-orange-600 transition hover:border-orange-500 hover:bg-orange-100 active:scale-[0.98]"
+                                    >
+                                        + Add More Items to This Order
+                                    </Link>
+                                </div>
+                            )}
+
                             {/* ================= PAYMENT ================= */}
 {order.status === 'completed' && (
     <div className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6 sm:p-8">
@@ -389,18 +523,97 @@ const [showPayment, setShowPayment] = useState(false);
 
                         </div>
 
-                        {/* Back to Menu */}
+                    </div>
+                )}
+
+                {/* ================= ALL ORDERS LIST ================= */}
+                {orders.length > 1 && (
+                    <div className="mt-12">
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-black">
+                                Order History
+                            </h2>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Click on an order to view more details
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {orders.map((orderItem) => (
+                                <button
+                                    key={orderItem.id}
+                                    type="button"
+                                    onClick={() => openOrderDetails(orderItem.id)}
+                                    className="w-full text-left"
+                                >
+                                    <div className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:border-orange-200 hover:shadow-md active:scale-[0.99]">
+                                        <div className="flex items-center gap-4">
+                                            {/* Order Icon */}
+                                            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-orange-50 text-xl">
+                                                🧾
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-bold text-gray-900">
+                                                    {orderItem.order_number}
+                                                </h3>
+                                                <p className="mt-0.5 text-sm text-gray-500">
+                                                    {formatShortDateTime(orderItem.created_at)}
+                                                </p>
+                                                <p className="mt-0.5 text-xs text-gray-400">
+                                                    {orderItem.order_items.length} item{orderItem.order_items.length !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col items-end gap-2">
+                                            <span className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${getStatusBadgeColor(orderItem.status)}`}>
+                                                {orderItem.status}
+                                            </span>
+                                            <span className="text-sm font-black text-orange-500">
+                                                {Number(orderItem.total_amount).toFixed(2)} ETB
+                                            </span>
+                                        </div>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ================= SINGLE ORDER BACKUP (when only 1 order) ================= */}
+                {orders.length === 1 && order && (
+                    <div className="mt-8">
                         <Link
                             href={`/menu?table=${table.table_number}`}
                             className="block w-full rounded-xl bg-gray-900 px-6 py-4 text-center font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
                         >
                             ← Back to Menu
                         </Link>
+                    </div>
+                )}
 
+                {/* ================= MULTIPLE ORDERS BACK ================= */}
+                {orders.length > 1 && (
+                    <div className="mt-8">
+                        <Link
+                            href={`/menu?table=${table.table_number}`}
+                            className="block w-full rounded-xl bg-gray-900 px-6 py-4 text-center font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
+                        >
+                            ← Back to Menu
+                        </Link>
                     </div>
                 )}
 
             </main>
+
+            {/* ================= ORDER DETAILS BOTTOM SHEET ================= */}
+            <OrderDetailsBottomSheet
+                orderId={selectedOrderId}
+                tableNumber={table.table_number}
+                isOpen={isSheetOpen}
+                onClose={closeOrderDetails}
+            />
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-12 border-t border-gray-200 bg-white">

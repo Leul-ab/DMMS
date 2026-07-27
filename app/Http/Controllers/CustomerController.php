@@ -36,10 +36,10 @@ class CustomerController extends Controller
         ]);
 
         do {
-            $code = strtoupper(Str::random(6));
+            $code = 'CUS-' . str_pad((string) mt_rand(1, 999999), 6, '0', STR_PAD_LEFT);
         } while (Customer::where('customer_code', $code)->exists());
 
-        Customer::create([
+        $customer = Customer::create([
             'customer_code' => $code,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
@@ -47,9 +47,10 @@ class CustomerController extends Controller
             'is_member' => true,
         ]);
 
-        return back()->with(
-            'success',
-            "You have successfully registered! Your customer code is: {$code}. Please save it."
-        );
+        return redirect()->back()->with([
+            'customer_registered' => true,
+            'customer_code' => $customer->customer_code,
+            'customer_name' => $customer->name,
+        ]);
     }
 }

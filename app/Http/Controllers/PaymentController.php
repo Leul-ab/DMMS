@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\RestaurantTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -36,6 +38,30 @@ class PaymentController extends Controller
         return back()->with(
             'success',
             'Payment submitted successfully. Please wait for confirmation.'
+        );
+    }
+
+    /**
+     * Confirm payment and release the table.
+     */
+    public function confirm(Order $order)
+    {
+        DB::transaction(function () use ($order) {
+            $order->update([
+                'payment_status' => 'paid',
+                'status' => 'cancelled',
+            ]);
+
+            // Release the table
+            $table = $order->table;
+            if ($table) {
+                $table->update(['status' => 'available']);
+            }
+        });
+
+        return back()->with(
+            'success',
+            'Payment confirmed. Table has been released.'
         );
     }
 }
