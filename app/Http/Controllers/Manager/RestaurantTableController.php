@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\RestaurantTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
 
 class RestaurantTableController extends Controller
 {
@@ -55,10 +58,24 @@ class RestaurantTableController extends Controller
             ],
         ]);
 
+        $qrPath = null;
+        if (!empty($validated['qr_code'])) {
+            $qrPath = $validated['qr_code'];
+        } else {
+            // Generate QR code for the table menu/booking URL
+            $menuUrl = route('booking.index') . '?table=' . $validated['table_number'];
+            $qrCode = new QrCode($menuUrl);
+            $writer = new PngWriter();
+            $result = $writer->write($qrCode);
+            
+            $fileName = 'qrcodes/table_' . $validated['table_number'] . '_' . uniqid() . '.png';
+            Storage::disk('public')->put($fileName, $result->getString());
+            $qrPath = $fileName;
+        }
+
         RestaurantTable::create([
             'table_number' => $validated['table_number'],
-            'qr_code' => $validated['qr_code']
-                ?? 'TABLE-' . $validated['table_number'],
+            'qr_code' => $qrPath,
             'status' => 'available',
         ]);
 
@@ -137,6 +154,10 @@ class RestaurantTableController extends Controller
             );
         }
 
+        if ($table->qr_code && Storage::disk('public')->exists($table->qr_code)) {
+            Storage::disk('public')->delete($table->qr_code);
+        }
+        
         $table->delete();
 
         return back()->with(

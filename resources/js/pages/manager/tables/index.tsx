@@ -88,7 +88,6 @@ export default function TablesIndex({ tables }: Props) {
         useState<RestaurantTable | null>(null);
 
     const [tableNumber, setTableNumber] = useState('');
-    const [qrCode, setQrCode] = useState('');
 
     const filteredTables = useMemo(() => {
         return tables.filter((table) => {
@@ -110,14 +109,12 @@ export default function TablesIndex({ tables }: Props) {
 
     const openAddModal = () => {
         setTableNumber('');
-        setQrCode('');
         setIsAddOpen(true);
     };
 
     const openEditModal = (table: RestaurantTable) => {
         setSelectedTable(table);
         setTableNumber(table.table_number.toString());
-        setQrCode(table.qr_code);
         setIsEditOpen(true);
     };
 
@@ -140,13 +137,11 @@ export default function TablesIndex({ tables }: Props) {
             tablesStore().url,
             {
                 table_number: Number(tableNumber),
-                qr_code: qrCode || undefined,
             },
             {
                 onSuccess: () => {
                     setIsAddOpen(false);
                     setTableNumber('');
-                    setQrCode('');
                 },
             },
         );
@@ -161,7 +156,6 @@ export default function TablesIndex({ tables }: Props) {
             tablesUpdate(selectedTable.id).url,
             {
                 table_number: Number(tableNumber),
-                qr_code: qrCode || undefined,
             },
             {
                 onSuccess: () => {
@@ -189,7 +183,32 @@ export default function TablesIndex({ tables }: Props) {
     };
 
     const handlePrintQr = () => {
-        window.print();
+        if (!selectedTable?.qr_code) return;
+        
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print QR Code - Table ${selectedTable.table_number}</title>
+                        <style>
+                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+                            img { max-width: 60vw; max-height: 60vh; }
+                            h1 { font-size: 3rem; margin-bottom: 20px; }
+                            @media print {
+                                @page { margin: 0; }
+                                body { height: 100%; display: block; text-align: center; padding-top: 2in; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Table ${selectedTable.table_number}</h1>
+                        <img src="/storage/${selectedTable.qr_code}" onload="window.print(); window.close();" />
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
     };
 
     return (
@@ -308,7 +327,11 @@ export default function TablesIndex({ tables }: Props) {
                                                 </td>
 
                                                 <td className="p-3">
-                                                    {table.qr_code}
+                                                    {table.qr_code?.endsWith('.png') || table.qr_code?.endsWith('.jpg') ? (
+                                                        <img src={`/storage/${table.qr_code}`} alt="QR" className="h-10 w-10 object-contain rounded-md border bg-white" />
+                                                    ) : (
+                                                        table.qr_code
+                                                    )}
                                                 </td>
 
                                                 <td className="p-3">
@@ -406,20 +429,6 @@ export default function TablesIndex({ tables }: Props) {
                                 placeholder="Example: 1"
                             />
                         </div>
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                QR Code
-                            </label>
-
-                            <Input
-                                value={qrCode}
-                                onChange={(event) =>
-                                    setQrCode(event.target.value)
-                                }
-                                placeholder="Optional - auto-generated if empty"
-                            />
-                        </div>
                     </div>
 
                     <DialogFooter>
@@ -466,19 +475,6 @@ export default function TablesIndex({ tables }: Props) {
                                 }
                             />
                         </div>
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                QR Code
-                            </label>
-
-                            <Input
-                                value={qrCode}
-                                onChange={(event) =>
-                                    setQrCode(event.target.value)
-                                }
-                            />
-                        </div>
                     </div>
 
                     <DialogFooter>
@@ -513,14 +509,14 @@ export default function TablesIndex({ tables }: Props) {
                     </DialogHeader>
 
                     <div className="flex flex-col items-center gap-4 py-6">
-                        <div className="rounded-lg border p-8 text-center">
-                            <p className="text-2xl font-bold">
-                                QR Code
-                            </p>
-
-                            <p className="mt-2 text-sm text-muted-foreground">
-                                {selectedTable?.qr_code}
-                            </p>
+                        <div className="rounded-lg border p-8 text-center bg-gray-50 flex flex-col items-center justify-center">
+                            {selectedTable?.qr_code?.endsWith('.png') || selectedTable?.qr_code?.endsWith('.jpg') ? (
+                                <img src={`/storage/${selectedTable.qr_code}`} alt="QR Code" className="max-w-[200px] w-full h-auto mix-blend-multiply" />
+                            ) : (
+                                <p className="text-sm text-muted-foreground break-all">
+                                    {selectedTable?.qr_code}
+                                </p>
+                            )}
                         </div>
 
                         <Button onClick={handlePrintQr}>
