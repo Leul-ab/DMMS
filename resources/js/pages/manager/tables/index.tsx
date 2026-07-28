@@ -165,7 +165,20 @@ export default function TablesIndex({ tables }: Props) {
             },
         );
     };
+  const handleToggleStatus = (table: RestaurantTable) => {
+    // Do not manually change tables that are awaiting payment.
+    if (table.status === 'awaiting_payment') {
+        return;
+    }
 
+    router.patch(
+        `/manager/tables/${table.id}/toggle-status`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
     const handleDelete = () => {
         if (!selectedTable) {
             return;
@@ -334,22 +347,63 @@ export default function TablesIndex({ tables }: Props) {
                                                     )}
                                                 </td>
 
-                                                <td className="p-3">
-                                                    <Badge
-                                                        className={
-                                                            statusColors[
-                                                                table.status
-                                                            ]
-                                                        }
-                                                    >
-                                                        {
-                                                            statusLabels[
-                                                                table.status
-                                                            ]
-                                                        }
-                                                    </Badge>
-                                                </td>
+                                               <td className="p-3">
+    <div className="flex items-center gap-2">
+        <button
+            type="button"
+            onClick={() =>
+                handleToggleStatus(table)
+            }
+            disabled={
+                table.status ===
+                'awaiting_payment'
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                table.status === 'available'
+                    ? 'bg-green-500'
+                    : table.status === 'occupied'
+                      ? 'bg-red-500'
+                      : 'bg-gray-300'
+            } ${
+                table.status ===
+                'awaiting_payment'
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'cursor-pointer'
+            }`}
+            title={
+                table.status ===
+                'available'
+                    ? 'Mark table as occupied'
+                    : table.status ===
+                        'occupied'
+                      ? 'Mark table as available'
+                      : 'Awaiting payment'
+            }
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    table.status === 'occupied'
+                        ? 'translate-x-6'
+                        : 'translate-x-1'
+                }`}
+            />
+        </button>
 
+        <Badge
+            className={
+                statusColors[
+                    table.status
+                ]
+            }
+        >
+            {
+                statusLabels[
+                    table.status
+                ]
+            }
+        </Badge>
+    </div>
+</td>
                                                 <td className="p-3">
                                                     <div className="flex justify-end gap-2">
                                                         <Button
