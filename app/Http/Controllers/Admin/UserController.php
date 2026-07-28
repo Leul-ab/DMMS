@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -99,17 +100,47 @@ class UserController extends Controller
     }
 
     public function destroy(User $user): RedirectResponse
-    {
-        if ($user->id === auth()->id()) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'You cannot delete your own account.']);
+{
+    if ($user->id === Auth::id()) {
+        Inertia::flash('toast', [
+            'type' => 'error',
+            'message' => 'You cannot delete your own account.',
+        ]);
 
-            return back();
-        }
-
-        $user->delete();
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'User deleted successfully.']);
-
-        return to_route('admin.users.index');
+        return back();
     }
+
+    $user->delete();
+
+    Inertia::flash('toast', [
+        'type' => 'success',
+        'message' => 'User deleted successfully.',
+    ]);
+
+    return to_route('admin.users.index');
+}
+   public function toggleStatus(User $user): RedirectResponse
+{
+    if ($user->id === Auth::id()) {
+        Inertia::flash('toast', [
+            'type' => 'error',
+            'message' => 'You cannot deactivate your own account.',
+        ]);
+
+        return back();
+    }
+
+    $user->update([
+        'is_active' => ! $user->is_active,
+    ]);
+
+    Inertia::flash('toast', [
+        'type' => 'success',
+        'message' => $user->is_active
+            ? 'User activated successfully.'
+            : 'User deactivated successfully.',
+    ]);
+
+    return back();
+}
 }
