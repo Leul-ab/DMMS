@@ -1,6 +1,7 @@
 import { Link, router, useForm } from '@inertiajs/react';
-import { useState } from 'react';
-import BookingSidebar from '@/components/booking-sidebar';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import MyBooking from '@/pages/booking/my-booking';
 import {
     Select,
     SelectContent,
@@ -8,6 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { CheckCircle2, Copy } from 'lucide-react';
 
 type Category = {
     id: number;
@@ -42,6 +44,8 @@ type Props = {
     selectedCategory: number | null;
     table: RestaurantTable | null;
     availableTables: RestaurantTable[];
+    booking_success?: boolean;
+    customer_code?: string;
 };
 
 export default function MenuIndex({
@@ -50,6 +54,8 @@ export default function MenuIndex({
     selectedCategory,
     table,
     availableTables,
+    booking_success = false,
+    customer_code = '',
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
    const [showMemberForm, setShowMemberForm] = useState(false);
@@ -67,12 +73,37 @@ const {
     email: '',
 });
 
-const [successMessage, setSuccessMessage] = useState<string | null>(
-    null
-);
+    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    const [showMyBooking, setShowMyBooking] = useState(false);
+    const [hasActiveBooking, setHasActiveBooking] = useState(false);
+    const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+    const [registeredCustomerCode, setRegisteredCustomerCode] = useState('');
+    const [copied, setCopied] = useState(false);
+    const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+    const [bookingCodeCopied, setBookingCodeCopied] = useState(false);
 
-const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+    // Show booking success dialog when redirected from booking
+    useEffect(() => {
+        if (booking_success && customer_code) {
+            setShowBookingSuccess(true);
+        }
+    }, [booking_success, customer_code]);
 
+    // Check for active booking on mount
+    useEffect(() => {
+        const checkActiveBooking = async () => {
+            try {
+                const response = await fetch('/api/active-booking');
+                const data = await response.json();
+                setHasActiveBooking(!!data.booking);
+            } catch {
+                setHasActiveBooking(false);
+            }
+        };
+        checkActiveBooking();
+        const interval = setInterval(checkActiveBooking, 15000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Add item to cart
     const addToCart = (item: MenuItem) => {
@@ -183,9 +214,7 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
             onSuccess: () => {
                 setCart([]);
 
-                setSuccessMessage(
-                    'Your order has been placed successfully!'
-                );
+                toast.success('You successfully placed an order.');
 
                 setIsPlacingOrder(false);
 
@@ -193,10 +222,6 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                     top: 0,
                     behavior: 'smooth',
                 });
-
-                setTimeout(() => {
-                    setSuccessMessage(null);
-                }, 5000);
             },
 
             onError: (errors) => {
@@ -211,36 +236,222 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         }
     );
 };
+
+    const handleRegisterMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!memberData.name.trim() || !memberData.phone.trim()) {
+            return;
+        }
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch('/customer/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({
+                    name: memberData.name,
+                    phone: memberData.phone,
+                    email: memberData.email || null,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setShowMemberForm(false);
+                resetMemberForm();
+                setRegisteredCustomerCode(data.customer_code);
+                setShowRegistrationSuccess(true);
+                setCopied(false);
+            } else {
+                alert(data.message || 'Registration failed. Please try again.');
+            }
+        } catch {
+            alert('Registration failed. Please try again.');
+        }
+    };
+
+    const handleCopyCode = async () => {
+        try {
+            await navigator.clipboard.writeText(registeredCustomerCode);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = registeredCustomerCode;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const handleCopyBookingCode = async () => {
+        try {
+            await navigator.clipboard.writeText(customer_code);
+            setBookingCodeCopied(true);
+            toast.success('Customer code copied successfully.');
+            setTimeout(() => setBookingCodeCopied(false), 2000);
+        } catch {
+            const textArea = document.createElement('textarea');
+            textArea.value = customer_code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setBookingCodeCopied(true);
+            toast.success('Customer code copied successfully.');
+            setTimeout(() => setBookingCodeCopied(false), 2000);
+        }
+    };
+
+    const handleMyOrderClick = () => {
+        if (!table) {
+            setTableError(
+                'Please select a table before viewing your order.'
+            );
+            return;
+        }
+
+        setTableError(null);
+        router.get(`/my-order?table=${table.table_number}`);
+    };
+
     return (
     <div className="min-h-screen bg-stone-50 text-gray-900">
 
-        {/* ================= SUCCESS MESSAGE ================= */}
-        {successMessage && (
-            <div className="fixed left-1/2 top-6 z-[100] w-[90%] max-w-md -translate-x-1/2">
-                <div className="flex items-center gap-4 rounded-2xl border border-green-200 bg-white p-4 shadow-2xl">
-
-                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-xl text-green-600">
-                        ✓
+        {/* ================= BOOKING SUCCESS DIALOG ================= */}
+        {showBookingSuccess && (
+            <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 p-4">
+                <div className="w-full max-w-md animate-[fadeIn_0.3s_ease-out] scale-100 transform rounded-3xl bg-white p-8 shadow-2xl text-center transition-all duration-300">
+                    {/* Success Icon */}
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                        <span className="text-4xl font-black text-green-600">✓</span>
                     </div>
 
-                    <div className="flex-1">
-                        <p className="font-bold text-gray-900">
-                            Registration Successful
-                        </p>
+                    {/* Title */}
+                    <h2 className="mt-5 text-2xl font-black text-gray-900">
+                        Booking Successful!
+                    </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
-                            {successMessage}
+                    <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+                        Your table has been booked successfully.
+                    </p>
+
+                    {/* Customer Code Card */}
+                    <div className="mt-6 mx-auto max-w-[240px] rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-5">
+                        <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-1">
+                            Customer Code
+                        </p>
+                        <p className="text-2xl font-black tracking-wider text-orange-600 font-mono">
+                            {customer_code}
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setSuccessMessage(null)}
-                        className="text-xl text-gray-400 transition hover:text-gray-700"
-                    >
-                        ×
-                    </button>
+                    {/* Warning */}
+                    <p className="mt-4 text-xs text-gray-400 leading-relaxed">
+                        ⚠ Please save this code carefully.<br />
+                        You will need it to view your booking details later.
+                    </p>
 
+                    {/* Buttons */}
+                    <div className="mt-6 flex gap-3">
+                        <button
+                            type="button"
+                            onClick={handleCopyBookingCode}
+                            className="flex-1 rounded-xl border-2 border-orange-500 bg-white px-5 py-3.5 font-bold text-orange-600 transition hover:bg-orange-50 flex items-center justify-center gap-2"
+                        >
+                            <Copy className="h-4 w-4" />
+                            {bookingCodeCopied ? 'Copied!' : 'Copy Customer Code'}
+                        </button>
+
+                        <Link
+                            href="/menu"
+                            className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600 text-center"
+                            onClick={() => setShowBookingSuccess(false)}
+                        >
+                            Go to Menu
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ================= REGISTRATION SUCCESS MODAL ================= */}
+        {showRegistrationSuccess && (
+            <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 p-4">
+                <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl text-center">
+                    {/* Success Icon */}
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                        <CheckCircle2 className="h-10 w-10 text-green-600" />
+                    </div>
+
+                    {/* Title */}
+                    <h2 className="mt-5 text-2xl font-black text-gray-900">
+                        Registration Successful
+                    </h2>
+
+                    <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+                        Congratulations! You have successfully become a member.
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-500">
+                        Your Customer Code is:
+                    </p>
+
+                    {/* Customer Code Box */}
+                    <div className="mt-4 mx-auto max-w-[220px] rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4">
+                        <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-1">
+                            Customer Code
+                        </p>
+                        <p className="text-2xl font-black tracking-wider text-orange-600 font-mono">
+                            {registeredCustomerCode}
+                        </p>
+                    </div>
+
+                    <p className="mt-4 text-xs text-gray-400 leading-relaxed">
+                        Please save this code. You will need it for future bookings, orders, and member verification.
+                    </p>
+
+                    {/* Buttons */}
+                    <div className="mt-6 flex gap-3">
+                        <button
+                            type="button"
+                            onClick={handleCopyCode}
+                            className="flex-1 rounded-xl border-2 border-orange-500 bg-white px-5 py-3.5 font-bold text-orange-600 transition hover:bg-orange-50 flex items-center justify-center gap-2"
+                        >
+                            {copied ? (
+                                <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Copied!
+                                </>
+                            ) : (
+                                <>
+                                    <Copy className="h-4 w-4" />
+                                    Copy Code
+                                </>
+                            )}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowRegistrationSuccess(false)}
+                            className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600"
+                        >
+                            Continue
+                        </button>
+                    </div>
                 </div>
             </div>
         )}
@@ -284,33 +495,7 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                     {/* Registration Form */}
                     <form
                         className="mt-6 space-y-5"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-
-                            registerMember('/customer/register', {
-                                preserveScroll: true,
-
-                                onSuccess: () => {
-                                    setShowMemberForm(false);
-                                    resetMemberForm();
-
-                                    setSuccessMessage(
-                                        'You have successfully registered as a member!'
-                                    );
-
-                                    setTimeout(() => {
-                                        setSuccessMessage(null);
-                                    }, 5000);
-                                },
-
-                                onError: (errors) => {
-                                    console.error(
-                                        'Member registration errors:',
-                                        errors
-                                    );
-                                },
-                            });
-                        }}
+                        onSubmit={handleRegisterMember}
                     >
                         {/* Name */}
                         <div>
@@ -424,7 +609,6 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
             </div>
         )}
 
-
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -488,36 +672,32 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                         >
                             👤 Become a Member
                         </button>
-                    {/* Cart Counter */}
-                    {/* My Order Button */}
-<button
-    type="button"
-    onClick={() => {
-        if (!table) {
-            setTableError(
-                'Please select a table before viewing your order.'
-            );
-            return;
-        }
+                    {/* My Booking Button */}
+                    {hasActiveBooking && (
+                        <button
+                            type="button"
+                            onClick={() => setShowMyBooking(true)}
+                            className="rounded-full bg-orange-500 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600"
+                        >
+                            📋 My Booking
+                        </button>
+                    )}
+                    {/* My Order Button - Navigates directly to orders page */}
+                    <button
+                        type="button"
+                        onClick={handleMyOrderClick}
+                        className="relative flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
+                    >
+                        <span>🛒</span>
 
-        setTableError(null);
+                        <span className="hidden sm:inline">
+                            My Order
+                        </span>
 
-        router.get(
-            `/my-order?table=${table.table_number}`
-        );
-    }}
-    className="relative flex items-center gap-2 rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
->
-    <span>🛒</span>
-
-    <span className="hidden sm:inline">
-        My Order
-    </span>
-
-    <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-xs">
-        {cartQuantity}
-    </span>
-</button>
+                        <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-orange-500 px-1 text-xs">
+                            {cartQuantity}
+                        </span>
+                    </button>
                 </div>
             </header>
                 {tableError && (
@@ -863,8 +1043,10 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
                 )}
             </main>
 
-            {/* Booking Sidebar */}
-            <BookingSidebar />
+            {/* My Booking Modal */}
+            {showMyBooking && (
+                <MyBooking onClose={() => setShowMyBooking(false)} />
+            )}
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-20 border-t border-gray-200 bg-white">
@@ -881,4 +1063,3 @@ const [isPlacingOrder, setIsPlacingOrder] = useState(false);
         </div>
     );
 }
-

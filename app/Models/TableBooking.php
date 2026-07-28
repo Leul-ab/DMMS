@@ -3,39 +3,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TableBooking extends Model
 {
     protected $fillable = [
-        'table_id',
-        'customer_name',
-        'customer_phone',
-        'customer_email',
-        'booking_date',
-        'booking_time',
-        'number_of_guests',
+        'customer_id',
         'status',
-        'special_request',
+        'booked_at',
+        'expires_at',
+        'cancelled_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'booking_date' => 'date',
-            'booking_time' => 'datetime',
-            'number_of_guests' => 'integer',
+            'booked_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 
     /**
-     * The restaurant table associated with this booking.
+     * The customer who made this booking.
      */
-    public function table(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(
-            RestaurantTable::class,
-            'table_id'
-        );
+        return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * The restaurant tables associated with this booking (many-to-many).
+     */
+    public function tables(): BelongsToMany
+    {
+        return $this->belongsToMany(RestaurantTable::class, 'booking_tables', 'booking_id', 'table_id');
     }
 }
-

@@ -12,9 +12,6 @@ Route::post('/booking/verify-customer', [BookingController::class, 'verifyCustom
 Route::post('/booking', [BookingController::class, 'store'])
     ->name('booking.store');
 
-Route::get('/booking/{booking}', [BookingController::class, 'show'])
-    ->name('booking.show');
-
 Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])
     ->name('booking.cancel');
 
@@ -26,3 +23,6 @@ Route::get('/api/bookings', [BookingController::class, 'getAllBookings']);
 
 // API route for single booking details
 Route::get('/api/bookings/{booking}', [BookingController::class, 'getBookingDetails']);
+
+// API route to find booking by customer code
+Route::post('/api/bookings/lookup', [BookingController::class, 'lookupByCustomerCode']);

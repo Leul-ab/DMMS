@@ -19,14 +19,7 @@ require __DIR__.'/menu.php';
 require __DIR__.'/booking.php';
 require __DIR__.'/kitchen.php';
 
-// Customer order route
-Route::post('/orders', [OrderController::class, 'store'])
-    ->name('orders.store');
-
-Route::post(
-    '/orders/{order}/payment',
-    [PaymentController::class, 'submit']
-)->name('orders.payment.submit');
+require __DIR__.'/orders.php';
 
 // API routes
 Route::middleware(['auth'])->group(function () {

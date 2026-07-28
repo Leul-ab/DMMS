@@ -63,7 +63,7 @@ export default function BookingIndex({ availableTables }: Props) {
                 },
                 body: JSON.stringify({ customer_code: customerCode }),
             });
-            
+
             const data = await response.json();
 
             if (!response.ok) {
@@ -78,7 +78,6 @@ export default function BookingIndex({ availableTables }: Props) {
                     code: data.customer.customer_code,
                 });
                 setStep('confirm');
-                toast.success('Customer verified successfully!');
             } else {
                 setVerificationError(data.message || 'Customer not found.');
                 if (data.message?.includes('register')) {
@@ -100,9 +99,7 @@ export default function BookingIndex({ availableTables }: Props) {
             customer_id: customerId,
             table_ids: Array.from(selectedTables),
         }, {
-            onSuccess: () => {
-                toast.success('Tables booked successfully!');
-            },
+            onSuccess: () => {},
             onError: (errors) => {
                 const errorMsg = errors.tables || 'Failed to create booking.';
                 toast.error(errorMsg);

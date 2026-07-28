@@ -35,11 +35,14 @@ class CustomerController extends Controller
             ],
         ]);
 
+        // Generate unique customer code
         do {
-            $code = strtoupper(Str::random(6));
+            $lastCustomer = Customer::latest('id')->first();
+            $nextNumber = $lastCustomer ? $lastCustomer->id + 1 : 1;
+            $code = 'CUS-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
         } while (Customer::where('customer_code', $code)->exists());
 
-        Customer::create([
+        $customer = Customer::create([
             'customer_code' => $code,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
@@ -47,9 +50,21 @@ class CustomerController extends Controller
             'is_member' => true,
         ]);
 
-        return back()->with(
-            'success',
-            "You have successfully registered! Your customer code is: {$code}. Please save it."
-        );
+        // Store in session for order tracking
+        session(['customer_code' => $customer->customer_code]);
+
+        // Return JSON response for modal display
+        return response()->json([
+            'success' => true,
+            'message' => 'Registration successful!',
+            'customer_code' => $customer->customer_code,
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
+            ],
+        ]);
     }
+
 }

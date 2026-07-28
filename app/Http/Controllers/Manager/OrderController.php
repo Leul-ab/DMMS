@@ -44,11 +44,21 @@ class OrderController extends Controller
 
         $order->update([
             'payment_status' => 'paid',
+            'status' => 'completed',
         ]);
+
+        // Release the table when payment is verified
+        $table = $order->table;
+        if ($table && $table->current_order_id === $order->id) {
+            $table->update([
+                'status' => 'available',
+                'current_order_id' => null,
+            ]);
+        }
 
         return back()->with(
             'success',
-            'Payment verified successfully.'
+            'Payment verified successfully. Table released.'
         );
     }
 }

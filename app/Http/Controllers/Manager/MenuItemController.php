@@ -102,6 +102,11 @@ class MenuItemController extends Controller
                 Storage::disk('public')->delete($item->image);
             }
             $validated['image'] = $request->file('image')->store('menu/items', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            if ($item->image) {
+                Storage::disk('public')->delete($item->image);
+            }
+            $validated['image'] = null;
         } else {
             unset($validated['image']);
         }
