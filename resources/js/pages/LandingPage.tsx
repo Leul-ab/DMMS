@@ -1,12 +1,103 @@
-import { Head, Link, usePage, router } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { useState, useEffect, useRef } from 'react';
-import { login, register } from '@/routes';
+import { login } from '@/routes';
 import menuRoutes from '@/routes/menu';
-import bookingRoutes from '@/routes/booking';
+import { CheckCircle2, Copy } from 'lucide-react';
 
 export default function LandingPage() {
     const { auth } = usePage().props;
     const [scrolled, setScrolled] = useState(false);
+    const [showMemberForm, setShowMemberForm] = useState(false);
+    const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+    const [registeredCustomerCode, setRegisteredCustomerCode] = useState('');
+    const [copied, setCopied] = useState(false);
+
+    const [memberData, setMemberData] = useState({
+        name: '',
+        phone: '',
+        email: '',
+    });
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [memberErrors, setMemberErrors] = useState<Record<string, string>>({});
+
+    const resetMemberForm = () => {
+        setMemberData({ name: '', phone: '', email: '' });
+        setMemberErrors({});
+    };
+
+    const handleRegisterMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (!memberData.name.trim() || !memberData.phone.trim()) {
+            return;
+        }
+
+        setIsRegistering(true);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch('/customer/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({
+                    name: memberData.name,
+                    phone: memberData.phone,
+                    email: memberData.email || null,
+                }),
+            });
+
+            if (response.status === 422) {
+                const errorData = await response.json();
+                setMemberErrors(errorData.errors || {});
+                const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
+                alert(firstError);
+                setIsRegistering(false);
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                setShowMemberForm(false);
+                resetMemberForm();
+                setRegisteredCustomerCode(data.customer_code);
+                setShowRegistrationSuccess(true);
+                setCopied(false);
+            } else {
+                alert(data.message || 'Registration failed. Please try again.');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Registration failed. Please try again.');
+        } finally {
+            setIsRegistering(false);
+        }
+    };
+
+    const handleCopyCode = async () => {
+        try {
+            await navigator.clipboard.writeText(registeredCustomerCode);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            const textArea = document.createElement('textarea');
+            textArea.value = registeredCustomerCode;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        }
+    };
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -54,12 +145,13 @@ export default function LandingPage() {
                                         >
                                             Log in
                                         </Link>
-                                        <Link
-                                            href={register()}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowMemberForm(true)}
                                             className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-sm font-medium rounded-full hover:shadow-lg hover:shadow-orange-200 transition-all duration-300"
                                         >
-                                            Get Started
-                                        </Link>
+                                            Become a Member
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -68,7 +160,7 @@ export default function LandingPage() {
                 </nav>
 
                 {/* Hero Section */}
-                <HeroSection />
+                <HeroSection openMemberForm={() => setShowMemberForm(true)} />
 
                 {/* Features Section */}
                 <FeaturesSection />
@@ -80,22 +172,197 @@ export default function LandingPage() {
                 <MenuPreviewSection />
 
                 {/* Benefits Section */}
-                <BenefitsSection />
+                <BenefitsSection openMemberForm={() => setShowMemberForm(true)} />
 
                 {/* Customer Experience */}
                 <CustomerExperienceSection />
 
                 {/* CTA Section */}
-                <CTASection />
+                <CTASection openMemberForm={() => setShowMemberForm(true)} />
 
                 {/* Footer */}
                 <FooterSection />
             </div>
+
+            {/* ================= MEMBER REGISTRATION MODAL ================= */}
+            {showMemberForm && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+                        {/* Modal Header */}
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <p className="font-semibold uppercase tracking-widest text-orange-500">
+                                    Join Us
+                                </p>
+                                <h2 className="mt-1 text-2xl font-black text-gray-900">
+                                    Become a Member
+                                </h2>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Register with us to become a member.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowMemberForm(false);
+                                    resetMemberForm();
+                                }}
+                                className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Registration Form */}
+                        <form className="mt-6 space-y-5" onSubmit={handleRegisterMember}>
+                            {/* Name */}
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Full Name
+                                </label>
+                                <input
+                                    type="text"
+                                    value={memberData.name}
+                                    onChange={(e) => setMemberData({ ...memberData, name: e.target.value })}
+                                    placeholder="Enter your full name"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                />
+                                {memberErrors.name && (
+                                    <p className="mt-1 text-sm text-red-500">{memberErrors.name}</p>
+                                )}
+                            </div>
+
+                            {/* Phone */}
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Phone Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    value={memberData.phone}
+                                    onChange={(e) => setMemberData({ ...memberData, phone: e.target.value })}
+                                    placeholder="Enter your phone number"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                />
+                                {memberErrors.phone && (
+                                    <p className="mt-1 text-sm text-red-500">{memberErrors.phone}</p>
+                                )}
+                            </div>
+
+                            {/* Email */}
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Email Address
+                                    <span className="ml-1 font-normal text-gray-400">(Optional)</span>
+                                </label>
+                                <input
+                                    type="email"
+                                    value={memberData.email}
+                                    onChange={(e) => setMemberData({ ...memberData, email: e.target.value })}
+                                    placeholder="Enter your email address"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                />
+                                {memberErrors.email && (
+                                    <p className="mt-1 text-sm text-red-500">{memberErrors.email}</p>
+                                )}
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowMemberForm(false);
+                                        resetMemberForm();
+                                    }}
+                                    className="flex-1 rounded-xl border border-gray-200 px-5 py-3.5 font-bold text-gray-700 hover:bg-gray-100"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isRegistering}
+                                    className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white hover:bg-orange-600 disabled:opacity-60"
+                                >
+                                    {isRegistering ? 'Registering...' : 'Become a Member'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* ================= REGISTRATION SUCCESS MODAL ================= */}
+            {showRegistrationSuccess && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 p-4">
+                    <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl text-center">
+                        {/* Success Icon */}
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                            <CheckCircle2 className="h-10 w-10 text-green-600" />
+                        </div>
+
+                        {/* Title */}
+                        <h2 className="mt-5 text-2xl font-black text-gray-900">
+                            Registration Successful
+                        </h2>
+
+                        <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+                            Congratulations! You have successfully become a member.
+                        </p>
+
+                        <p className="mt-1 text-sm text-gray-500">
+                            Your Customer Code is:
+                        </p>
+
+                        {/* Customer Code Box */}
+                        <div className="mt-4 mx-auto max-w-[220px] rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4">
+                            <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-1">
+                                Customer Code
+                            </p>
+                            <p className="text-2xl font-black tracking-wider text-orange-600 font-mono">
+                                {registeredCustomerCode}
+                            </p>
+                        </div>
+
+                        <p className="mt-4 text-xs text-gray-400 leading-relaxed">
+                            Please save this code. You will need it for future bookings, orders, and member verification.
+                        </p>
+
+                        {/* Buttons */}
+                        <div className="mt-6 flex gap-3">
+                            <button
+                                type="button"
+                                onClick={handleCopyCode}
+                                className="flex-1 rounded-xl border-2 border-orange-500 bg-white px-5 py-3.5 font-bold text-orange-600 transition hover:bg-orange-50 flex items-center justify-center gap-2"
+                            >
+                                {copied ? (
+                                    <>
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Copied!
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="h-4 w-4" />
+                                        Copy Code
+                                    </>
+                                )}
+                            </button>
+
+                            <Link
+                                href={menuRoutes.index()}
+                                className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600 inline-flex items-center justify-center"
+                            >
+                                Continue to Menu
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
 
-function HeroSection() {
+function HeroSection({ openMemberForm }: { openMemberForm: () => void }) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -136,15 +403,16 @@ function HeroSection() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                 </svg>
                             </Link>
-                            <Link
-                                href={bookingRoutes.index()}
+                            <button
+                                type="button"
+                                onClick={openMemberForm}
                                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-700 font-semibold rounded-full border-2 border-gray-200 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg transition-all duration-300"
                             >
-                                Book a Table
+                                Become a Member
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                                 </svg>
-                            </Link>
+                            </button>
                         </div>
                         <div className="flex items-center gap-8 pt-4">
                             <div className="flex -space-x-2">
@@ -536,7 +804,7 @@ function MenuPreviewSection() {
     );
 }
 
-function BenefitsSection() {
+function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
     const benefits = [
         'Reduce waiting time for customers',
         'Digital ordering experience',
@@ -612,15 +880,16 @@ function BenefitsSection() {
                             ))}
                         </div>
 
-                        <Link
-                            href={register()}
+                        <button
+                            type="button"
+                            onClick={openMemberForm}
                             className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-orange-200 hover:scale-105 transition-all duration-300"
                         >
-                            Get Started Now
+                            Become a Member
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -725,7 +994,7 @@ function CustomerExperienceSection() {
     );
 }
 
-function CTASection() {
+function CTASection({ openMemberForm }: { openMemberForm: () => void }) {
     return (
         <section className="py-20 lg:py-28 relative overflow-hidden">
             {/* Background with gradient */}
@@ -757,15 +1026,16 @@ function CTASection() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </Link>
-                    <Link
-                        href={bookingRoutes.index()}
+                    <button
+                        type="button"
+                        onClick={openMemberForm}
                         className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white/10 text-white font-semibold rounded-full border-2 border-white/30 hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300"
                     >
-                        Reserve Your Table
+                        Become a Member
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                         </svg>
-                    </Link>
+                    </button>
                 </div>
             </div>
         </section>
@@ -816,7 +1086,6 @@ function FooterSection() {
                             {[
                                 { name: 'Home', href: '/' },
                                 { name: 'Menu', href: menuRoutes.index() },
-                                { name: 'Booking', href: bookingRoutes.index() },
                                 { name: 'About', href: '#' },
                                 { name: 'Contact', href: '#' },
                             ].map((link) => (
