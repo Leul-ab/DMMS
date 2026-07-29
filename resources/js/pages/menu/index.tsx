@@ -219,7 +219,7 @@ const {
     const placeOrder = () => {
     if (!table) {
         alert(
-            'Please scan a table QR code before placing an order.'
+            'No table assigned. Please scan the QR code on your table to begin ordering.'
         );
         return;
     }
@@ -732,15 +732,22 @@ const {
                         </p>
                     </div>
 
-                    {/* Table Selector Dropdown */}
-                    {availableTables.length > 0 ? (
+                    {/* Table Selector / QR-assigned Badge */}
+                    {table ? (
+                        // Table was pre-assigned by QR scan — show locked badge
+                        <div className="flex items-center gap-2 rounded-full border-2 border-orange-300 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-700">
+                            <span>🍽️</span>
+                            <span>Table {table.table_number}</span>
+                            <span className="rounded-full bg-orange-200 px-2 py-0.5 text-xs font-semibold text-orange-700">QR Assigned</span>
+                        </div>
+                    ) : availableTables.length > 0 ? (
                         <div className="flex items-center gap-3">
                             <div className="hidden items-center gap-2 text-sm text-gray-500 sm:flex">
                                 <span>🍽️</span>
                                 <span>Select table:</span>
                             </div>
                             <Select
-                                value={table ? String(table.table_number) : ''}
+                                value={table ? String((table as RestaurantTable).table_number) : ''}
                                 onValueChange={(value) => {
                                     router.get(`/menu?table=${value}`, {}, { preserveScroll: true });
                                 }}
@@ -761,11 +768,11 @@ const {
                                 </SelectContent>
                             </Select>
                         </div>
-                    ) : !table ? (
+                    ) : (
                         <div className="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm text-red-600">
                             <span>No tables available</span>
                         </div>
-                    ) : null}
+                    )}
                         {/* Booking Button */}
                         <a
                             href="/booking"

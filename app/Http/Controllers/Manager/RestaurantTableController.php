@@ -62,8 +62,9 @@ class RestaurantTableController extends Controller
         if (!empty($validated['qr_code'])) {
             $qrPath = $validated['qr_code'];
         } else {
-            // Generate QR code for the table menu/booking URL
-            $menuUrl = route('booking.index') . '?table=' . $validated['table_number'];
+            // Generate QR code pointing directly to the menu with the table pre-assigned.
+            // Customers who scan this will go straight to the menu, bypassing table selection.
+            $menuUrl = route('menu.index') . '?table=' . $validated['table_number'];
             $qrCode = new QrCode($menuUrl);
             $writer = new PngWriter();
             $result = $writer->write($qrCode);
