@@ -175,7 +175,7 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $recentBookings = TableBooking::with('table')
+        $recentBookings = TableBooking::with('tables')
             ->latest()
             ->take(5)
             ->get();

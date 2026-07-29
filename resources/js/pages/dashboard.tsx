@@ -94,9 +94,9 @@ type RecentBooking = {
     customer_phone?: string;
     number_of_guests?: number;
 
-    table?: {
+    tables?: Array<{
         table_number: number;
-    } | null;
+    }>;
 };
 
 type Props = {
@@ -976,8 +976,8 @@ export default function Dashboard({
                                                         </td>
 
                                                         <td className="px-5 py-4 text-sm">
-                                                            {booking.table?.table_number
-                                                                ? `Table ${booking.table.table_number}`
+                                                            {booking.tables && booking.tables.length > 0
+                                                                ? booking.tables.map((table) => `Table ${table.table_number}`).join(', ')
                                                                 : '—'}
                                                         </td>
 
