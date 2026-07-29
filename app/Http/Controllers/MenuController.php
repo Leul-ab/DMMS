@@ -34,8 +34,8 @@ class MenuController extends Controller
         // Get selected category
         $selectedCategory = $request->query('category');
 
-        // Get available menu items
-        $menuItemsQuery = MenuItem::available();
+        // Get menu items
+        $menuItemsQuery = MenuItem::with('category');
 
         // Filter by category if selected
         if ($selectedCategory) {

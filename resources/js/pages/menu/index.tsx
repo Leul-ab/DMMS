@@ -25,6 +25,8 @@ type MenuItem = {
     price: string;
     image: string | null;
     preparation_time: number | null;
+    is_available: boolean;
+    category: Category | null;
 };
 
 type CartItem = MenuItem & {
@@ -779,7 +781,7 @@ const {
                             {menuItems.map((item) => (
                                 <article
                                     key={item.id}
-                                    className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
+                                    className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
                                 >
                                     {/* Food Image */}
                                     <div className="relative overflow-hidden">
@@ -788,6 +790,17 @@ const {
                                                 src={`/storage/${item.image}`}
                                                 alt={item.name}
                                                 className="h-60 w-full object-cover transition duration-500 group-hover:scale-105"
+                                                onError={(e) => {
+                                                    const target = e.currentTarget;
+                                                    target.style.display = 'none';
+                                                    const parent = target.parentElement;
+                                                    if (parent) {
+                                                        const placeholder = document.createElement('div');
+                                                        placeholder.className = 'flex h-60 items-center justify-center bg-stone-100';
+                                                        placeholder.innerHTML = '<div class="text-center"><span class="text-5xl">🍽️</span><p class="mt-2 text-sm text-gray-400">No image available</p></div>';
+                                                        parent.appendChild(placeholder);
+                                                    }
+                                                }}
                                             />
                                         ) : (
                                             <div className="flex h-60 items-center justify-center bg-stone-100">
@@ -795,13 +808,21 @@ const {
                                                     <span className="text-5xl">
                                                         🍽️
                                                     </span>
-
                                                     <p className="mt-2 text-sm text-gray-400">
                                                         No image available
                                                     </p>
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* Availability Badge */}
+                                        <div className={`absolute left-4 top-4 rounded-full px-3 py-1.5 text-xs font-bold shadow ${
+                                            item.is_available
+                                                ? 'bg-green-500 text-white'
+                                                : 'bg-red-500 text-white'
+                                        }`}>
+                                            {item.is_available ? '🟢 Available' : '🔴 Unavailable'}
+                                        </div>
 
                                         {/* Preparation Time */}
                                         {item.preparation_time && (
@@ -812,7 +833,7 @@ const {
                                     </div>
 
                                     {/* Food Details */}
-                                    <div className="p-6">
+                                    <div className="flex flex-1 flex-col p-6">
                                         <div className="flex items-start justify-between gap-4">
                                             <h3 className="text-xl font-black">
                                                 {item.name}
@@ -826,21 +847,38 @@ const {
                                             </span>
                                         </div>
 
+                                        {/* Category */}
+                                        {item.category && (
+                                            <p className="mt-2 text-sm font-medium text-gray-400">
+                                                Category: {item.category.name}
+                                            </p>
+                                        )}
+
                                         {item.description && (
                                             <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-gray-500">
                                                 {item.description}
                                             </p>
                                         )}
 
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                addToCart(item)
-                                            }
-                                            className="mt-6 w-full rounded-xl bg-gray-900 px-5 py-3.5 font-bold text-white transition hover:bg-orange-500 active:scale-[0.98]"
-                                        >
-                                            + Add to Order
-                                        </button>
+                                        {/* Spacer */}
+                                        <div className="flex-1" />
+
+                                        {/* Order Button - only if available */}
+                                        {item.is_available ? (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    addToCart(item)
+                                                }
+                                                className="mt-6 w-full rounded-xl bg-gray-900 px-5 py-3.5 font-bold text-white transition hover:bg-orange-500 active:scale-[0.98]"
+                                            >
+                                                + Add to Order
+                                            </button>
+                                        ) : (
+                                            <div className="mt-6 w-full rounded-xl bg-gray-200 px-5 py-3.5 text-center text-sm font-bold text-gray-500 cursor-not-allowed">
+                                                Currently Unavailable
+                                            </div>
+                                        )}
                                     </div>
                                 </article>
                             ))}
