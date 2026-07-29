@@ -45,6 +45,11 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             [MenuCategoryController::class, 'destroy']
         )->name('categories.destroy');
 
+        Route::patch(
+            'categories/{category}/toggle-status',
+            [MenuCategoryController::class, 'toggleStatus']
+        )->name('categories.toggle-status');
+
 
         // =========================
         // Menu Items
@@ -148,6 +153,11 @@ Route::patch(
     'tables/{table}',
     [RestaurantTableController::class, 'destroy']
     )->name('tables.destroy');
+
+    Route::patch(
+        'tables/{table}/toggle-status',
+        [RestaurantTableController::class, 'toggleStatus']
+    )->name('tables.toggle-status');
 // =========================
 // Customers CRUD
 // =========================
@@ -181,6 +191,11 @@ Route::delete(
     'customers/{customer}',
     [CustomerController::class, 'destroy']
 )->name('customers.destroy');
+
+Route::patch(
+    'customers/{customer}/toggle-membership',
+    [CustomerController::class, 'toggleMembership']
+)->name('customers.toggle-membership');
 
         // =========================
         // Booking Management

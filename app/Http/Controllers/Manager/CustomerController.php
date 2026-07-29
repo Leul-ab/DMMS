@@ -122,4 +122,16 @@ class CustomerController extends Controller
             ->route('manager.customers.index')
             ->with('success', 'Customer deleted successfully.');
     }
+
+    /**
+     * Toggle the membership status of a customer.
+     */
+    public function toggleMembership(Customer $customer)
+    {
+        $customer->update([
+            'is_member' => !$customer->is_member,
+        ]);
+
+        return back()->with('success', 'Membership status updated successfully.');
+    }
 }

@@ -256,6 +256,7 @@ const {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-XSRF-TOKEN': getXsrfToken(),
                 },
                 body: JSON.stringify({
@@ -264,6 +265,13 @@ const {
                     email: memberData.email || null,
                 }),
             });
+
+            if (response.status === 422) {
+                const errorData = await response.json();
+                const firstError = Object.values(errorData.errors)[0]?.[0] || 'Validation failed.';
+                alert(firstError);
+                return;
+            }
 
             const data = await response.json();
 
@@ -276,7 +284,8 @@ const {
             } else {
                 alert(data.message || 'Registration failed. Please try again.');
             }
-        } catch {
+        } catch (e) {
+            console.error(e);
             alert('Registration failed. Please try again.');
         }
     };

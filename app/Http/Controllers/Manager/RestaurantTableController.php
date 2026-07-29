@@ -165,4 +165,20 @@ class RestaurantTableController extends Controller
             'Restaurant table deleted successfully.'
         );
     }
+
+    /**
+     * Toggle the status of a table (available <-> occupied).
+     */
+    public function toggleStatus(RestaurantTable $table)
+    {
+        if ($table->status === 'awaiting_payment') {
+            return back()->with('error', 'Cannot manually change status of a table awaiting payment.');
+        }
+
+        $table->update([
+            'status' => $table->status === 'available' ? 'occupied' : 'available',
+        ]);
+
+        return back()->with('success', 'Table status updated successfully.');
+    }
 }

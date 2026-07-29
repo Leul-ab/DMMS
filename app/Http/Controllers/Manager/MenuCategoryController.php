@@ -114,4 +114,13 @@ class MenuCategoryController extends Controller
 
         return to_route('manager.categories.index');
     }
+
+    public function toggleStatus(MenuCategory $category): RedirectResponse
+    {
+        $category->update([
+            'is_active' => !$category->is_active,
+        ]);
+
+        return back()->with('success', 'Category status updated successfully.');
+    }
 }
