@@ -19,4 +19,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::put('staff/{user}', [StaffController::class, 'update'])->name('staff.update');
     Route::delete('staff/{user}', [StaffController::class, 'destroy'])->name('staff.destroy');
     Route::post('staff/assign-table', [StaffController::class, 'assignTable'])->name('staff.assign-table');
+
+    // Payment Management
+    Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/{order}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
+    Route::patch('payments/{order}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateStatus'])->name('payments.update-status');
+    Route::get('payments/{order}/receipt', [\App\Http\Controllers\Admin\PaymentController::class, 'printReceipt'])->name('payments.receipt');
 });

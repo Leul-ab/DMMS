@@ -9,6 +9,7 @@ import {
     Table2,
     UserCog,
     Calendar,
+    CreditCard,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -128,7 +129,11 @@ export function AppSidebar() {
               href: usersIndex(),
               icon: Users,
           },
-
+          {
+              title: 'Payment',
+              href: '/admin/payments',
+              icon: CreditCard,
+          },
       ]
     : [];
 

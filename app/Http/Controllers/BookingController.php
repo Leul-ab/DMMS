@@ -22,8 +22,15 @@ class BookingController extends Controller
             ->orderBy('table_number')
             ->get(['id', 'table_number', 'status']);
 
+        // Get the scanned table from session if available
+        $scannedTable = null;
+        if (session()->has('scanned_table_id')) {
+            $scannedTable = RestaurantTable::find(session('scanned_table_id'));
+        }
+
         return inertia('booking/index', [
             'availableTables' => $availableTables,
+            'scannedTable' => $scannedTable,
         ]);
     }
 

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\RestaurantTable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\Writer\SvgWriter;
+use Illuminate\Validation\ValidationException;
 
 class RestaurantTableController extends Controller
 {
@@ -62,16 +64,48 @@ class RestaurantTableController extends Controller
         if (!empty($validated['qr_code'])) {
             $qrPath = $validated['qr_code'];
         } else {
-            // Generate QR code pointing directly to the menu with the table pre-assigned.
-            // Customers who scan this will go straight to the menu, bypassing table selection.
-            $menuUrl = route('menu.index') . '?table=' . $validated['table_number'];
-            $qrCode = new QrCode($menuUrl);
-            $writer = new PngWriter();
-            $result = $writer->write($qrCode);
-            
-            $fileName = 'qrcodes/table_' . $validated['table_number'] . '_' . uniqid() . '.png';
-            Storage::disk('public')->put($fileName, $result->getString());
-            $qrPath = $fileName;
+            try {
+                // Generate QR code pointing directly to the menu with the table pre-assigned.
+                // Customers who scan this will go straight to the menu, bypassing table selection.
+                $menuUrl = route('menu.index', ['table' => $validated['table_number']]);
+
+                // Validate that the generated URL is not empty and the route exists
+                if (empty($menuUrl) || !filter_var($menuUrl, FILTER_VALIDATE_URL)) {
+                    throw new \RuntimeException('Generated menu URL is invalid: ' . ($menuUrl ?: 'empty'));
+                }
+
+                // Ensure the qrcodes storage directory exists
+                $qrcodeDir = 'qrcodes';
+                if (!Storage::disk('public')->exists($qrcodeDir)) {
+                    Storage::disk('public')->makeDirectory($qrcodeDir);
+                }
+
+                $qrCode = new QrCode($menuUrl);
+                $writer = new SvgWriter();
+                $result = $writer->write($qrCode);
+
+                $fileName = $qrcodeDir . '/table_' . $validated['table_number'] . '_' . uniqid('qr_', true) . '.svg';
+                $saved = Storage::disk('public')->put($fileName, $result->getString());
+
+                if ($saved === false) {
+                    throw new \RuntimeException('Failed to save QR code image to storage.');
+                }
+
+                $qrPath = $fileName;
+            } catch (\Exception $e) {
+                Log::error('QR code generation failed for table #' . $validated['table_number'], [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'table_number' => $validated['table_number'],
+                    'menu_url' => $menuUrl ?? 'not generated',
+                ]);
+
+                return back()->withErrors([
+                    'table_number' => 'Failed to generate QR code for this table. Please check server configuration and try again.',
+                ])->withInput();
+            }
         }
 
         RestaurantTable::create([
@@ -80,10 +114,12 @@ class RestaurantTableController extends Controller
             'status' => 'available',
         ]);
 
-        return back()->with(
-            'success',
-            'Restaurant table created successfully.'
-        );
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Restaurant table created successfully.',
+        ]);
+
+        return back();
     }
 
     /**
@@ -137,10 +173,12 @@ class RestaurantTableController extends Controller
                 ?? $table->qr_code,
         ]);
 
-        return back()->with(
-            'success',
-            'Restaurant table updated successfully.'
-        );
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Restaurant table updated successfully.',
+        ]);
+
+        return back();
     }
 
     /**
@@ -149,22 +187,26 @@ class RestaurantTableController extends Controller
     public function destroy(RestaurantTable $table)
     {
         if ($table->status !== 'available') {
-            return back()->with(
-                'error',
-                'You cannot delete a table that is currently occupied.'
-            );
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'You cannot delete a table that is currently occupied.',
+            ]);
+
+            return back();
         }
 
         if ($table->qr_code && Storage::disk('public')->exists($table->qr_code)) {
             Storage::disk('public')->delete($table->qr_code);
         }
-        
+
         $table->delete();
 
-        return back()->with(
-            'success',
-            'Restaurant table deleted successfully.'
-        );
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Restaurant table deleted successfully.',
+        ]);
+
+        return back();
     }
 
     /**
@@ -173,13 +215,23 @@ class RestaurantTableController extends Controller
     public function toggleStatus(RestaurantTable $table)
     {
         if ($table->status === 'awaiting_payment') {
-            return back()->with('error', 'Cannot manually change status of a table awaiting payment.');
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Cannot manually change status of a table awaiting payment.',
+            ]);
+
+            return back();
         }
 
         $table->update([
             'status' => $table->status === 'available' ? 'occupied' : 'available',
         ]);
 
-        return back()->with('success', 'Table status updated successfully.');
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Table status updated successfully.',
+        ]);
+
+        return back();
     }
 }
