@@ -177,7 +177,15 @@ const handleUpdate = () => {
         },
     );
 };
-
+const handleToggleMembership = (customer: Customer) => {
+    router.patch(
+        `/manager/customers/${customer.id}/toggle-membership`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
 // Delete Customer
 const handleDelete = () => {
     if (!selectedCustomer) {
@@ -313,16 +321,45 @@ return (
                                                 </td>
 
                                                 <td className="p-3">
-                                                    {customer.is_member ? (
-                                                        <Badge>
-                                                            Member
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="secondary">
-                                                            Not a Member
-                                                        </Badge>
-                                                    )}
-                                                </td>
+    <div className="flex items-center gap-2">
+        <button
+            type="button"
+            onClick={() =>
+                handleToggleMembership(customer)
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                customer.is_member
+                    ? 'bg-green-500'
+                    : 'bg-gray-300'
+            }`}
+            title={
+                customer.is_member
+                    ? 'Change to Not a Member'
+                    : 'Change to Member'
+            }
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    customer.is_member
+                        ? 'translate-x-6'
+                        : 'translate-x-1'
+                }`}
+            />
+        </button>
+
+        <Badge
+            variant={
+                customer.is_member
+                    ? 'default'
+                    : 'secondary'
+            }
+        >
+            {customer.is_member
+                ? 'Member'
+                : 'Not a Member'}
+        </Badge>
+    </div>
+</td>
 
                                                 <td className="p-3">
                                                     <div className="flex justify-end gap-2">

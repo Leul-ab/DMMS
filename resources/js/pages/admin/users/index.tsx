@@ -264,7 +264,19 @@ export default function UsersIndex({
     // -----------------------------
     // Delete User
     // -----------------------------
+// -----------------------------
+// Toggle User Status
+// -----------------------------
 
+const handleToggleStatus = (user: User) => {
+    router.patch(
+        `/admin/users/${user.id}/toggle-status`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
     const handleDelete = () => {
         if (!selectedUser) {
             return;
@@ -437,19 +449,43 @@ export default function UsersIndex({
                                                     </td>
 
                                                     <td className="p-3">
-                                                        <Badge
-                                                            variant={
-                                                                user.is_active
-                                                                    ? 'default'
-                                                                    : 'destructive'
-                                                            }
-                                                        >
-                                                            {user.is_active
-                                                                ? 'Active'
-                                                                : 'Inactive'}
-                                                        </Badge>
-                                                    </td>
+    <div className="flex items-center gap-2">
+        <button
+            type="button"
+            onClick={() => handleToggleStatus(user)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                user.is_active
+                    ? 'bg-green-500'
+                    : 'bg-gray-300'
+            }`}
+            title={
+                user.is_active
+                    ? 'Deactivate user'
+                    : 'Activate user'
+            }
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    user.is_active
+                        ? 'translate-x-6'
+                        : 'translate-x-1'
+                }`}
+            />
+        </button>
 
+        <Badge
+            variant={
+                user.is_active
+                    ? 'default'
+                    : 'destructive'
+            }
+        >
+            {user.is_active
+                ? 'Active'
+                : 'Inactive'}
+        </Badge>
+    </div>
+</td>
                                                     <td className="p-3">
                                                         <div className="flex justify-end gap-2">
 

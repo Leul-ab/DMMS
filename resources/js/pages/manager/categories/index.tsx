@@ -282,7 +282,15 @@ export default function CategoriesIndex({
             },
         );
     };
-
+const handleToggleStatus = (category: MenuCategory) => {
+    router.patch(
+        `/manager/categories/${category.id}/toggle-status`,
+        {},
+        {
+            preserveScroll: true,
+        },
+    );
+};
     // -----------------------------------------
     // Delete Category
     // -----------------------------------------
@@ -427,19 +435,46 @@ export default function CategoriesIndex({
                                                         }
                                                     </td>
 
-                                                    <td className="p-3">
-                                                        <Badge
-                                                            variant={
-                                                                category.is_active
-                                                                    ? 'default'
-                                                                    : 'destructive'
-                                                            }
-                                                        >
-                                                            {category.is_active
-                                                                ? 'Active'
-                                                                : 'Inactive'}
-                                                        </Badge>
-                                                    </td>
+                                                   <td className="p-3">
+    <div className="flex items-center gap-2">
+        <button
+            type="button"
+            onClick={() =>
+                handleToggleStatus(category)
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                category.is_active
+                    ? 'bg-green-500'
+                    : 'bg-gray-300'
+            }`}
+            title={
+                category.is_active
+                    ? 'Deactivate category'
+                    : 'Activate category'
+            }
+        >
+            <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    category.is_active
+                        ? 'translate-x-6'
+                        : 'translate-x-1'
+                }`}
+            />
+        </button>
+
+        <Badge
+            variant={
+                category.is_active
+                    ? 'default'
+                    : 'destructive'
+            }
+        >
+            {category.is_active
+                ? 'Active'
+                : 'Inactive'}
+        </Badge>
+    </div>
+</td>
 
                                                     <td className="p-3">
                                                         <div className="flex justify-end gap-2">
