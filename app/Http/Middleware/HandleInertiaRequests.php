@@ -43,6 +43,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'booking_success' => session('booking_success', false),
+            'booking_data' => session('booking_data'),
             'customer_code' => session('customer_code', ''),
             'order_count' => function () use ($request) {
                 if ($request->session()->has('customer_code')) {

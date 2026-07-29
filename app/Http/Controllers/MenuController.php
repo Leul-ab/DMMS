@@ -69,40 +69,41 @@ class MenuController extends Controller
             ],
         ]);
     }
+
     public function myOrder(Request $request)
-{
-    $tableNumber = $request->query('table');
+    {
+        $tableNumber = $request->query('table');
 
-    if (!$tableNumber) {
-        return redirect()
-            ->route('menu.index')
-            ->with('error', 'No table was selected.');
-    }
+        if (!$tableNumber) {
+            return redirect()
+                ->route('menu.index')
+                ->with('error', 'No table was selected.');
+        }
 
-    $table = RestaurantTable::where(
-        'table_number',
-        $tableNumber
-    )->firstOrFail();
+        $table = RestaurantTable::where(
+            'table_number',
+            $tableNumber
+        )->firstOrFail();
 
-    $order = Order::with([
-        'orderItems.menuItem',
-    ])
-        ->where('table_id', $table->id)
-        ->whereIn('status', [
-            'pending',
-            'received',
-            'confirmed',
-            'preparing',
-            'ready',
-            'served',
-            'completed',
+        $order = Order::with([
+            'orderItems.menuItem',
         ])
-        ->latest()
-        ->first();
+            ->where('table_id', $table->id)
+            ->whereIn('status', [
+                'pending',
+                'received',
+                'confirmed',
+                'preparing',
+                'ready',
+                'served',
+                'completed',
+            ])
+            ->latest()
+            ->first();
 
-    return Inertia::render('menu/my-order', [
-        'table' => $table,
-        'order' => $order,
-    ]);
-}
+        return Inertia::render('menu/my-order', [
+            'table' => $table,
+            'order' => $order,
+        ]);
+    }
 }

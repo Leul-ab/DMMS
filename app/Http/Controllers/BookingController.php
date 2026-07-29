@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BookingController extends Controller
 {
@@ -108,8 +109,21 @@ class BookingController extends Controller
         // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
 
+        // Build booking data for the success dialog
+        $customer = $booking->customer;
+        $tablesList = $booking->tables->pluck('table_number')->toArray();
+
         return redirect()->route('menu.index')->with([
             'booking_success' => true,
+            'booking_data' => [
+                'id' => $booking->id,
+                'customer_name' => $customer?->name ?? 'Unknown',
+                'customer_code' => $customer?->customer_code ?? '',
+                'tables' => $tablesList,
+                'booked_at' => $booking->booked_at,
+                'expires_at' => $booking->expires_at,
+                'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 600,
+            ],
             'customer_code' => $booking->customer->customer_code,
         ]);
     }

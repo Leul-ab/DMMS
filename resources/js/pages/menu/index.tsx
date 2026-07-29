@@ -40,6 +40,16 @@ type RestaurantTable = {
     status: string;
 };
 
+type BookingData = {
+    id: number;
+    customer_name: string;
+    customer_code: string;
+    tables: number[];
+    booked_at: string;
+    expires_at: string;
+    expires_in_seconds: number;
+};
+
 type Props = {
     categories: Category[];
     menuItems: MenuItem[];
@@ -47,7 +57,15 @@ type Props = {
     table: RestaurantTable | null;
     availableTables: RestaurantTable[];
     booking_success?: boolean;
+    booking_data?: BookingData | null;
     customer_code?: string;
+};
+
+const formatCountdown = (seconds: number): string => {
+    if (seconds <= 0) return 'Expired';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 export default function MenuIndex({
@@ -57,6 +75,7 @@ export default function MenuIndex({
     table,
     availableTables,
     booking_success = false,
+    booking_data = null,
     customer_code = '',
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -83,13 +102,24 @@ const {
     const [copied, setCopied] = useState(false);
     const [showBookingSuccess, setShowBookingSuccess] = useState(false);
     const [bookingCodeCopied, setBookingCodeCopied] = useState(false);
+    const [countdown, setCountdown] = useState(booking_data?.expires_in_seconds ?? 600);
 
     // Show booking success dialog when redirected from booking
     useEffect(() => {
         if (booking_success && customer_code) {
             setShowBookingSuccess(true);
+            setCountdown(booking_data?.expires_in_seconds ?? 600);
         }
     }, [booking_success, customer_code]);
+
+    // Countdown timer for booking expiration
+    useEffect(() => {
+        if (!showBookingSuccess) return;
+        const interval = setInterval(() => {
+            setCountdown((prev) => Math.max(0, prev - 1));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [showBookingSuccess]);
 
     // Check for active booking on mount
     useEffect(() => {
@@ -268,7 +298,7 @@ const {
 
             if (response.status === 422) {
                 const errorData = await response.json();
-                const firstError = Object.values(errorData.errors)[0]?.[0] || 'Validation failed.';
+                const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
                 alert(firstError);
                 return;
             }
@@ -342,58 +372,126 @@ const {
     return (
     <div className="min-h-screen bg-stone-50 text-gray-900">
 
-        {/* ================= BOOKING SUCCESS DIALOG ================= */}
+        {/* ================= BOOKING CONFIRMED DIALOG ================= */}
         {showBookingSuccess && (
             <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/60 p-4">
-                <div className="w-full max-w-md animate-[fadeIn_0.3s_ease-out] scale-100 transform rounded-3xl bg-white p-8 shadow-2xl text-center transition-all duration-300">
+                <div
+                    className="w-full max-w-md animate-[fadeIn_0.3s_ease-out] scale-100 transform rounded-3xl bg-white shadow-2xl transition-all duration-300"
+                    style={{ maxHeight: '90vh', overflowY: 'auto' }}
+                >
                     {/* Success Icon */}
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
-                        <span className="text-4xl font-black text-green-600">✓</span>
+                    <div className="pt-8 pb-2 text-center">
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+                            <svg className="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                        </div>
                     </div>
 
                     {/* Title */}
-                    <h2 className="mt-5 text-2xl font-black text-gray-900">
-                        Booking Successful!
-                    </h2>
-
-                    <p className="mt-3 text-sm text-gray-500 leading-relaxed">
-                        Your table has been booked successfully.
-                    </p>
-
-                    {/* Customer Code Card */}
-                    <div className="mt-6 mx-auto max-w-[240px] rounded-2xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-5">
-                        <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-1">
-                            Customer Code
-                        </p>
-                        <p className="text-2xl font-black tracking-wider text-orange-600 font-mono">
-                            {customer_code}
+                    <div className="px-8 text-center">
+                        <h2 className="text-2xl font-black text-gray-900">
+                            Booking Confirmed!
+                        </h2>
+                        <p className="mt-2 text-sm text-gray-500 leading-relaxed">
+                            Your table has been booked successfully.
                         </p>
                     </div>
 
-                    {/* Warning */}
-                    <p className="mt-4 text-xs text-gray-400 leading-relaxed">
-                        ⚠ Please save this code carefully.<br />
-                        You will need it to view your booking details later.
-                    </p>
+                    {/* Booking Info Card */}
+                    <div className="mx-6 mt-6 rounded-2xl border border-gray-100 bg-stone-50 p-5 space-y-3.5">
+                        {/* Booking ID */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Booking ID</span>
+                            <span className="text-sm font-bold text-gray-900">#{booking_data?.id}</span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Customer Name */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Customer</span>
+                            <span className="text-sm font-bold text-gray-900">{booking_data?.customer_name}</span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Customer Code */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Customer Code</span>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-orange-100 px-3 py-1 font-mono text-sm font-black text-orange-600">
+                                {booking_data?.customer_code || customer_code}
+                            </span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Table Number */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Table</span>
+                            <span className="text-sm font-bold text-gray-900">
+                                {booking_data?.tables?.join(', ') || 'N/A'}
+                            </span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Booking Date */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Date</span>
+                            <span className="text-sm font-bold text-gray-900">
+                                {booking_data?.booked_at ? new Date(booking_data.booked_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}
+                            </span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Booking Time */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Time</span>
+                            <span className="text-sm font-bold text-gray-900">
+                                {booking_data?.booked_at ? new Date(booking_data.booked_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}
+                            </span>
+                        </div>
+                        <div className="border-t border-gray-100" />
+
+                        {/* Countdown Timer */}
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Booking Expires In</span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-sm font-bold text-orange-600">
+                                <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+                                {formatCountdown(countdown)}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Customer Code Warning */}
+                    <div className="mx-6 mt-4 rounded-xl bg-orange-50 border border-orange-100 p-4">
+                        <div className="flex items-start gap-3">
+                            <span className="mt-0.5 text-lg">⚠️</span>
+                            <div>
+                                <p className="text-sm font-bold text-orange-800">Save Your Customer Code</p>
+                                <p className="mt-1 text-xs text-orange-600 leading-relaxed">
+                                    Your customer code is required to view or manage your booking later. Please save it.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
                     {/* Buttons */}
-                    <div className="mt-6 flex gap-3">
+                    <div className="px-6 pb-8 mt-6 flex gap-3">
                         <button
                             type="button"
-                            onClick={handleCopyBookingCode}
-                            className="flex-1 rounded-xl border-2 border-orange-500 bg-white px-5 py-3.5 font-bold text-orange-600 transition hover:bg-orange-50 flex items-center justify-center gap-2"
-                        >
-                            <Copy className="h-4 w-4" />
-                            {bookingCodeCopied ? 'Copied!' : 'Copy Customer Code'}
-                        </button>
-
-                        <Link
-                            href="/menu"
-                            className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600 text-center"
                             onClick={() => setShowBookingSuccess(false)}
+                            className="flex-1 rounded-xl border-2 border-gray-200 bg-white px-5 py-3.5 font-bold text-gray-700 transition hover:bg-gray-50"
                         >
-                            Go to Menu
-                        </Link>
+                            Done
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowBookingSuccess(false);
+                                setShowMyBooking(true);
+                            }}
+                            className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600"
+                        >
+                            View My Booking
+                        </button>
                     </div>
                 </div>
             </div>

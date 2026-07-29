@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -35,12 +34,8 @@ class CustomerController extends Controller
             ],
         ]);
 
-        // Generate unique customer code
-        do {
-            $lastCustomer = Customer::latest('id')->first();
-            $nextNumber = $lastCustomer ? $lastCustomer->id + 1 : 1;
-            $code = 'CUS-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-        } while (Customer::where('customer_code', $code)->exists());
+        // Generate a unique random customer code
+        $code = Customer::generateUniqueCode();
 
         $customer = Customer::create([
             'customer_code' => $code,

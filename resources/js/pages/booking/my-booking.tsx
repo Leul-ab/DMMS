@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2, SearchX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +29,11 @@ type Props = {
 };
 
 export default function MyBooking({ onClose }: Props) {
+    const [step, setStep] = useState<'code' | 'booking'>('code');
+    const [customerCodeInput, setCustomerCodeInput] = useState('');
+    const [codeError, setCodeError] = useState<string | null>(null);
+    const [isVerifying, setIsVerifying] = useState(false);
+
     const [booking, setBooking] = useState<BookingData | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<string>('');
     const [isExpired, setIsExpired] = useState(false);
@@ -43,7 +48,17 @@ export default function MyBooking({ onClose }: Props) {
         }
 
         try {
-            const response = await fetch('/api/active-booking');
+            const getXsrfToken = () => {
+                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch('/api/active-booking', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+            });
             const data = await response.json();
 
             if (data.booking) {
@@ -70,8 +85,60 @@ export default function MyBooking({ onClose }: Props) {
     }, [booking]);
 
     useEffect(() => {
-        fetchActiveBooking();
+        // Don't fetch on mount - wait for code verification
+        setIsLoading(false);
     }, []);
+
+    const handleVerifyCode = async () => {
+        const trimmedCode = customerCodeInput.trim();
+
+        if (!trimmedCode) {
+            setCodeError('Customer Code is required.');
+            return;
+        }
+
+        setCodeError(null);
+        setIsVerifying(true);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch('/api/bookings/lookup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({ customer_code: trimmedCode }),
+            });
+
+            const data = await response.json();
+
+            if (data.found && data.booking) {
+                setBooking(data.booking);
+                setIsExpired(data.booking.is_expired || false);
+                setError(null);
+                setStep('booking');
+                setIsLoading(false);
+            } else {
+                setIsLoading(false);
+                if (data.found && !data.booking) {
+                    setError('No active booking found for this customer.');
+                    setStep('booking');
+                } else {
+                    setCodeError('Invalid Customer Code. Please try again.');
+                }
+            }
+        } catch {
+            setCodeError('Failed to verify code. Please try again.');
+        } finally {
+            setIsVerifying(false);
+        }
+    };
 
     // Real-time countdown
     useEffect(() => {
@@ -206,29 +273,105 @@ export default function MyBooking({ onClose }: Props) {
 
                 {/* Content */}
                 <div className="p-6">
-                    {isLoading ? (
+                    {/* Step 1: Enter Customer Code */}
+                    {step === 'code' && (
+                        <div>
+                            <div className="text-center mb-6">
+                                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
+                                    <User className="h-8 w-8 text-orange-500" />
+                                </div>
+                                <h3 className="mt-4 text-xl font-black text-gray-900">Enter Customer Code</h3>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Please enter your Customer Code to view your booking.
+                                </p>
+                            </div>
+
+                            <div className="mt-6">
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Customer Code
+                                </label>
+                                <input
+                                    type="text"
+                                    value={customerCodeInput}
+                                    onChange={(e) => {
+                                        setCustomerCodeInput(e.target.value.toUpperCase());
+                                        setCodeError(null);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleVerifyCode();
+                                        }
+                                    }}
+                                    placeholder="Enter your customer code"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500 uppercase"
+                                    autoFocus
+                                />
+                                {codeError && (
+                                    <p className="mt-2 text-sm text-red-500">{codeError}</p>
+                                )}
+                            </div>
+
+                            <div className="mt-6 flex gap-3">
+                                <Button
+                                    variant="outline"
+                                    onClick={onClose}
+                                    className="flex-1 rounded-xl py-3.5 font-bold"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleVerifyCode}
+                                    disabled={isVerifying}
+                                    className="flex-1 rounded-xl bg-orange-500 py-3.5 font-bold text-white hover:bg-orange-600"
+                                >
+                                    {isVerifying ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Verifying...
+                                        </span>
+                                    ) : (
+                                        'View Booking'
+                                    )}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Step 2: Show Booking Details */}
+                    {step === 'booking' && isLoading ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                             <p className="mt-3 text-sm text-gray-500">Loading your booking...</p>
                         </div>
-                    ) : error && !booking ? (
+                    ) : step === 'booking' && error && !booking ? (
                         <div className="text-center py-12">
                             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                                <Calendar className="h-8 w-8 text-gray-400" />
+                                <SearchX className="h-8 w-8 text-gray-400" />
                             </div>
                             <h3 className="mt-4 text-xl font-black text-gray-900">No Active Booking</h3>
                             <p className="mt-2 text-sm text-gray-500">
-                                You don't have an active booking right now.
+                                {error}
                             </p>
                             <Button
                                 variant="outline"
+                                onClick={() => {
+                                    setStep('code');
+                                    setCustomerCodeInput('');
+                                    setCodeError(null);
+                                }}
+                                className="mt-4 rounded-xl py-3.5 px-6 font-bold"
+                            >
+                                Try Again
+                            </Button>
+                            <Button
+                                variant="ghost"
                                 onClick={onClose}
-                                className="mt-6 rounded-xl py-3.5 px-6 font-bold"
+                                className="mt-2 rounded-xl py-3.5 px-6 font-bold text-gray-500"
                             >
                                 Close
                             </Button>
                         </div>
-                    ) : booking && (
+                    ) : step === 'booking' && booking && (
                         <div className="space-y-5">
                             {/* Timer Section */}
                             {booking.status === 'active' && !isExpired ? (
