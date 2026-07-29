@@ -1,16 +1,27 @@
+
 import { Head, router } from '@inertiajs/react';
-import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import {
+    Eye,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-react';
 
 import Heading from '@/components/heading';
+import StatusToggle from '@/components/status-toggle';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
 import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+
 import {
     Dialog,
     DialogContent,
@@ -19,7 +30,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+
 import { Input } from '@/components/ui/input';
+
 import {
     Select,
     SelectContent,
@@ -40,7 +53,6 @@ import type { PaginatedData } from '@/types';
 type Role = {
     id: number;
     name: string;
-    slug: string;
 };
 
 type User = {
@@ -49,8 +61,8 @@ type User = {
     email: string;
     phone: string | null;
     is_active: boolean;
+    role_id: number;
     role: Role | null;
-    created_at: string;
 };
 
 type Props = {
@@ -67,34 +79,46 @@ export default function UsersIndex({
     roles,
     filters,
 }: Props) {
-    // Search
+    // -----------------------------------------
+    // Search and filters
+    // -----------------------------------------
+
     const [search, setSearch] = useState(
         filters.search || '',
     );
 
+    // -----------------------------------------
     // Modal states
+    // -----------------------------------------
+
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
+    // -----------------------------------------
     // Selected user
+    // -----------------------------------------
+
     const [selectedUser, setSelectedUser] =
         useState<User | null>(null);
 
+    // -----------------------------------------
     // Form fields
+    // -----------------------------------------
+
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [roleId, setRoleId] = useState('');
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] =
         useState('');
-    const [roleId, setRoleId] = useState('');
     const [isActive, setIsActive] = useState(true);
 
-    // -----------------------------
+    // -----------------------------------------
     // Search
-    // -----------------------------
+    // -----------------------------------------
 
     const handleSearch = (value: string) => {
         setSearch(value);
@@ -112,9 +136,9 @@ export default function UsersIndex({
         );
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Role filter
-    // -----------------------------
+    // -----------------------------------------
 
     const handleRoleFilter = (value: string) => {
         router.get(
@@ -133,34 +157,42 @@ export default function UsersIndex({
         );
     };
 
-    // -----------------------------
-    // Open Add Modal
-    // -----------------------------
+    // -----------------------------------------
+    // Reset form
+    // -----------------------------------------
 
-    const openAddModal = () => {
+    const resetForm = () => {
         setName('');
         setEmail('');
         setPhone('');
+        setRoleId('');
         setPassword('');
         setPasswordConfirmation('');
-        setRoleId('');
         setIsActive(true);
+    };
 
+    // -----------------------------------------
+    // Open Add Modal
+    // -----------------------------------------
+
+    const openAddModal = () => {
+        resetForm();
+        setSelectedUser(null);
         setIsAddOpen(true);
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Open View Modal
-    // -----------------------------
+    // -----------------------------------------
 
     const openViewModal = (user: User) => {
         setSelectedUser(user);
         setIsViewOpen(true);
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Open Edit Modal
-    // -----------------------------
+    // -----------------------------------------
 
     const openEditModal = (user: User) => {
         setSelectedUser(user);
@@ -168,122 +200,118 @@ export default function UsersIndex({
         setName(user.name);
         setEmail(user.email);
         setPhone(user.phone || '');
+        setRoleId(String(user.role_id));
         setPassword('');
         setPasswordConfirmation('');
-        setRoleId(
-            user.role
-                ? String(user.role.id)
-                : '',
-        );
         setIsActive(user.is_active);
 
         setIsEditOpen(true);
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Open Delete Modal
-    // -----------------------------
+    // -----------------------------------------
 
     const openDeleteModal = (user: User) => {
         setSelectedUser(user);
         setIsDeleteOpen(true);
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Add User
-    // -----------------------------
+    // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name || !email || !roleId) {
+        if (
+            !name.trim() ||
+            !email.trim() ||
+            !roleId
+        ) {
             return;
         }
 
         router.post(
-            usersStore().url,
+            usersStore.url(),
             {
                 name,
                 email,
                 phone: phone || null,
-                password: password || undefined,
-                password_confirmation:
-                    passwordConfirmation ||
-                    undefined,
                 role_id: Number(roleId),
+                password: password || null,
+                password_confirmation:
+                    passwordConfirmation || null,
                 is_active: isActive,
             },
             {
                 onSuccess: () => {
                     setIsAddOpen(false);
-
-                    setName('');
-                    setEmail('');
-                    setPhone('');
-                    setPassword('');
-                    setPasswordConfirmation('');
-                    setRoleId('');
-                    setIsActive(true);
+                    resetForm();
                 },
             },
         );
     };
 
-    // -----------------------------
+    // -----------------------------------------
     // Update User
-    // -----------------------------
+    // -----------------------------------------
 
     const handleUpdate = () => {
-        if (!selectedUser || !name || !email || !roleId) {
+        if (
+            !selectedUser ||
+            !name.trim() ||
+            !email.trim() ||
+            !roleId
+        ) {
             return;
         }
 
         router.put(
-            usersUpdate(selectedUser.id).url,
+            usersUpdate.url(selectedUser.id),
             {
                 name,
                 email,
                 phone: phone || null,
-                password: password || undefined,
-                password_confirmation:
-                    passwordConfirmation ||
-                    undefined,
                 role_id: Number(roleId),
+                password: password || null,
+                password_confirmation:
+                    passwordConfirmation || null,
                 is_active: isActive,
             },
             {
                 onSuccess: () => {
                     setIsEditOpen(false);
                     setSelectedUser(null);
-
-                    setPassword('');
-                    setPasswordConfirmation('');
+                    resetForm();
                 },
             },
         );
     };
 
-    // -----------------------------
-    // Delete User
-    // -----------------------------
-// -----------------------------
-// Toggle User Status
-// -----------------------------
+    // -----------------------------------------
+    // Toggle User Status
+    // -----------------------------------------
 
-const handleToggleStatus = (user: User) => {
-    router.patch(
-        `/admin/users/${user.id}/toggle-status`,
-        {},
-        {
-            preserveScroll: true,
-        },
-    );
-};
+    const handleToggleStatus = (user: User) => {
+        router.patch(
+            `/admin/users/${user.id}/toggle-status`,
+            {},
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    // -----------------------------------------
+    // Delete User
+    // -----------------------------------------
+
     const handleDelete = () => {
         if (!selectedUser) {
             return;
         }
 
         router.delete(
-            usersDestroy(selectedUser.id).url,
+            usersDestroy.url(selectedUser.id),
             {
                 onSuccess: () => {
                     setIsDeleteOpen(false);
@@ -295,15 +323,18 @@ const handleToggleStatus = (user: User) => {
 
     return (
         <>
-            <Head title="User Management" />
+            <Head title="Users" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
 
-                {/* Page Header */}
+                {/* =========================================
+                    PAGE HEADER
+                ========================================= */}
+
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
-                        title="User Management"
-                        description="Manage all users and their roles."
+                        title="Users"
+                        description="Manage system users and their roles."
                     />
 
                     <Button onClick={openAddModal}>
@@ -312,20 +343,25 @@ const handleToggleStatus = (user: User) => {
                     </Button>
                 </div>
 
-                {/* Search and Filter */}
+                {/* =========================================
+                    USERS CARD
+                ========================================= */}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            Users
+                            System Users
                         </CardTitle>
 
-                        <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+                        <div className="flex flex-wrap gap-3 pt-4">
+
                             {/* Search */}
-                            <div className="relative flex-1">
+
+                            <div className="relative max-w-sm flex-1">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
                                 <Input
-                                    placeholder="Search by name or email..."
+                                    placeholder="Search users..."
                                     value={search}
                                     onChange={(event) =>
                                         handleSearch(
@@ -337,17 +373,17 @@ const handleToggleStatus = (user: User) => {
                             </div>
 
                             {/* Role Filter */}
+
                             <Select
                                 value={
-                                    filters.role ||
-                                    'all'
+                                    filters.role || 'all'
                                 }
                                 onValueChange={
                                     handleRoleFilter
                                 }
                             >
-                                <SelectTrigger className="w-full sm:w-[200px]">
-                                    <SelectValue placeholder="Filter by role" />
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="All Roles" />
                                 </SelectTrigger>
 
                                 <SelectContent>
@@ -370,7 +406,6 @@ const handleToggleStatus = (user: User) => {
                         </div>
                     </CardHeader>
 
-                    {/* Users Table */}
                     <CardContent>
                         {users.data.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -385,8 +420,10 @@ const handleToggleStatus = (user: User) => {
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
+
                                     <thead>
                                         <tr className="border-b text-left">
+
                                             <th className="p-3">
                                                 Name
                                             </th>
@@ -410,6 +447,7 @@ const handleToggleStatus = (user: User) => {
                                             <th className="p-3 text-right">
                                                 Actions
                                             </th>
+
                                         </tr>
                                     </thead>
 
@@ -417,79 +455,78 @@ const handleToggleStatus = (user: User) => {
                                         {users.data.map(
                                             (user) => (
                                                 <tr
-                                                    key={
-                                                        user.id
-                                                    }
-                                                    className="border-b last:border-0"
+                                                    key={user.id}
+                                                    className="border-b last:border-0 hover:bg-muted/50"
                                                 >
+
+                                                    {/* Name */}
+
                                                     <td className="p-3 font-medium">
-                                                        {
-                                                            user.name
-                                                        }
+                                                        {user.name}
                                                     </td>
 
+                                                    {/* Email */}
+
                                                     <td className="p-3 text-muted-foreground">
-                                                        {
-                                                            user.email
-                                                        }
+                                                        {user.email}
                                                     </td>
+
+                                                    {/* Phone */}
 
                                                     <td className="p-3 text-muted-foreground">
                                                         {user.phone ||
                                                             '—'}
                                                     </td>
 
+                                                    {/* Role */}
+
                                                     <td className="p-3">
                                                         <Badge variant="secondary">
-                                                            {user
-                                                                .role
+                                                            {user.role
                                                                 ?.name ||
-                                                                'No role'}
+                                                                'No Role'}
                                                         </Badge>
                                                     </td>
 
-                                                    <td className="p-3">
-    <div className="flex items-center gap-2">
-        <button
-            type="button"
-            onClick={() => handleToggleStatus(user)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                user.is_active
-                    ? 'bg-green-500'
-                    : 'bg-gray-300'
-            }`}
-            title={
-                user.is_active
-                    ? 'Deactivate user'
-                    : 'Activate user'
-            }
-        >
-            <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    user.is_active
-                        ? 'translate-x-6'
-                        : 'translate-x-1'
-                }`}
-            />
-        </button>
+                                                    {/* Status */}
 
-        <Badge
-            variant={
-                user.is_active
-                    ? 'default'
-                    : 'destructive'
-            }
-        >
-            {user.is_active
-                ? 'Active'
-                : 'Inactive'}
-        </Badge>
-    </div>
-</td>
                                                     <td className="p-3">
-                                                        <div className="flex justify-end gap-2">
+                                                        <Badge
+                                                            variant={
+                                                                user.is_active
+                                                                    ? 'default'
+                                                                    : 'destructive'
+                                                            }
+                                                        >
+                                                            {user.is_active
+                                                                ? 'Active'
+                                                                : 'Inactive'}
+                                                        </Badge>
+                                                    </td>
+
+                                                    {/* Actions */}
+
+                                                    <td className="p-3">
+                                                        <div className="flex items-center justify-end gap-2">
+
+                                                            {/* Shared Status Toggle */}
+
+                                                            <StatusToggle
+                                                                checked={
+                                                                    user.is_active
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    handleToggleStatus(
+                                                                        user,
+                                                                    )
+                                                                }
+                                                                onLabel="Active"
+                                                                offLabel="Inactive"
+                                                                ariaLabel={`Toggle status for ${user.name}`}
+                                                            />
 
                                                             {/* View */}
+
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
@@ -498,11 +535,13 @@ const handleToggleStatus = (user: User) => {
                                                                         user,
                                                                     )
                                                                 }
+                                                                title="View user"
                                                             >
                                                                 <Eye className="h-4 w-4" />
                                                             </Button>
 
                                                             {/* Edit */}
+
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
@@ -511,11 +550,13 @@ const handleToggleStatus = (user: User) => {
                                                                         user,
                                                                     )
                                                                 }
+                                                                title="Edit user"
                                                             >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
 
                                                             {/* Delete */}
+
                                                             <Button
                                                                 variant="destructive"
                                                                 size="icon"
@@ -524,12 +565,14 @@ const handleToggleStatus = (user: User) => {
                                                                         user,
                                                                     )
                                                                 }
+                                                                title="Delete user"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
 
                                                         </div>
                                                     </td>
+
                                                 </tr>
                                             ),
                                         )}
@@ -537,73 +580,83 @@ const handleToggleStatus = (user: User) => {
                                 </table>
                             </div>
                         )}
+
+                        {/* =========================================
+                            PAGINATION
+                        ========================================= */}
+
+                        {users.last_page > 1 && (
+                            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+
+                                {users.links.map(
+                                    (link, index) => (
+                                        <Button
+                                            key={index}
+                                            variant={
+                                                link.active
+                                                    ? 'default'
+                                                    : 'outline'
+                                            }
+                                            size="sm"
+                                            disabled={
+                                                !link.url
+                                            }
+                                            onClick={() => {
+                                                if (
+                                                    link.url
+                                                ) {
+                                                    router.get(
+                                                        link.url,
+                                                        {},
+                                                        {
+                                                            preserveState: true,
+                                                        },
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            <span
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        </Button>
+                                    ),
+                                )}
+
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
-
-                {/* Pagination */}
-                {users.last_page > 1 && (
-                    <div className="flex items-center justify-center gap-2">
-                        {users.links.map(
-                            (link, index) => (
-                                <Button
-                                    key={index}
-                                    variant={
-                                        link.active
-                                            ? 'default'
-                                            : 'outline'
-                                    }
-                                    size="sm"
-                                    disabled={!link.url}
-                                    onClick={() => {
-                                        if (link.url) {
-                                            router.get(
-                                                link.url,
-                                                {},
-                                                {
-                                                    preserveState: true,
-                                                    preserveScroll: true,
-                                                },
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <span
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                </Button>
-                            ),
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* =====================================================
+            {/* =========================================
                 ADD USER MODAL
-            ====================================================== */}
+            ========================================= */}
 
             <Dialog
                 open={isAddOpen}
                 onOpenChange={setIsAddOpen}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+
                     <DialogHeader>
                         <DialogTitle>
-                            Add New User
+                            Add User
                         </DialogTitle>
 
                         <DialogDescription>
-                            Create a new user account and assign a role.
+                            Create a new system user.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
 
                         {/* Name */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Name
+                                Full Name
                             </label>
 
                             <Input
@@ -613,11 +666,12 @@ const handleToggleStatus = (user: User) => {
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Enter user name"
+                                placeholder="Enter full name"
                             />
                         </div>
 
                         {/* Email */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Email
@@ -636,6 +690,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Phone */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Phone
@@ -653,6 +708,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Role */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Role
@@ -667,21 +723,26 @@ const handleToggleStatus = (user: User) => {
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map((role) => (
-                                        <SelectItem
-                                            key={role.id}
-                                            value={String(
-                                                role.id,
-                                            )}
-                                        >
-                                            {role.name}
-                                        </SelectItem>
-                                    ))}
+                                    {roles.map(
+                                        (role) => (
+                                            <SelectItem
+                                                key={
+                                                    role.id
+                                                }
+                                                value={String(
+                                                    role.id,
+                                                )}
+                                            >
+                                                {role.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         {/* Password */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Password
@@ -697,9 +758,14 @@ const handleToggleStatus = (user: User) => {
                                 }
                                 placeholder="Leave empty for default password"
                             />
+
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                If left empty, the default password will be used.
+                            </p>
                         </div>
 
                         {/* Confirm Password */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Confirm Password
@@ -719,7 +785,8 @@ const handleToggleStatus = (user: User) => {
                             />
                         </div>
 
-                        {/* Status */}
+                        {/* Active */}
+
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"
@@ -736,6 +803,7 @@ const handleToggleStatus = (user: User) => {
                                 Active User
                             </label>
                         </div>
+
                     </div>
 
                     <DialogFooter>
@@ -752,91 +820,106 @@ const handleToggleStatus = (user: User) => {
                             Add User
                         </Button>
                     </DialogFooter>
+
                 </DialogContent>
             </Dialog>
 
-            {/* =====================================================
+            {/* =========================================
                 VIEW USER MODAL
-            ====================================================== */}
+            ========================================= */}
 
             <Dialog
                 open={isViewOpen}
                 onOpenChange={setIsViewOpen}
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-[500px]">
+
                     <DialogHeader>
                         <DialogTitle>
                             User Details
                         </DialogTitle>
 
                         <DialogDescription>
-                            View information about this user.
+                            View user account information.
                         </DialogDescription>
                     </DialogHeader>
 
                     {selectedUser && (
-                        <div className="space-y-4 py-4">
+                        <div className="space-y-5 py-4">
 
-                            <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Name
-                                </p>
+                            <div className="grid gap-4 sm:grid-cols-2">
 
-                                <p className="font-medium">
-                                    {selectedUser.name}
-                                </p>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Name
+                                    </p>
+
+                                    <p className="font-medium">
+                                        {
+                                            selectedUser.name
+                                        }
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Role
+                                    </p>
+
+                                    <Badge variant="secondary">
+                                        {
+                                            selectedUser.role
+                                                ?.name ||
+                                                'No Role'
+                                        }
+                                    </Badge>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Email
+                                    </p>
+
+                                    <p className="font-medium">
+                                        {
+                                            selectedUser.email
+                                        }
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Phone
+                                    </p>
+
+                                    <p className="font-medium">
+                                        {
+                                            selectedUser.phone ||
+                                                'Not provided'
+                                        }
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Status
+                                    </p>
+
+                                    <Badge
+                                        variant={
+                                            selectedUser.is_active
+                                                ? 'default'
+                                                : 'destructive'
+                                        }
+                                    >
+                                        {selectedUser.is_active
+                                            ? 'Active'
+                                            : 'Inactive'}
+                                    </Badge>
+                                </div>
+
                             </div>
 
-                            <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Email
-                                </p>
-
-                                <p className="font-medium">
-                                    {selectedUser.email}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Phone
-                                </p>
-
-                                <p className="font-medium">
-                                    {selectedUser.phone ||
-                                        'Not provided'}
-                                </p>
-                            </div>
-
-                            <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Role
-                                </p>
-
-                                <Badge variant="secondary">
-                                    {selectedUser
-                                        .role?.name ||
-                                        'No role'}
-                                </Badge>
-                            </div>
-
-                            <div className="rounded-lg border p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Status
-                                </p>
-
-                                <Badge
-                                    variant={
-                                        selectedUser.is_active
-                                            ? 'default'
-                                            : 'destructive'
-                                    }
-                                >
-                                    {selectedUser.is_active
-                                        ? 'Active'
-                                        : 'Inactive'}
-                                </Badge>
-                            </div>
                         </div>
                     )}
 
@@ -849,34 +932,37 @@ const handleToggleStatus = (user: User) => {
                             Close
                         </Button>
                     </DialogFooter>
+
                 </DialogContent>
             </Dialog>
 
-            {/* =====================================================
+            {/* =========================================
                 EDIT USER MODAL
-            ====================================================== */}
+            ========================================= */}
 
             <Dialog
                 open={isEditOpen}
                 onOpenChange={setIsEditOpen}
             >
-                <DialogContent>
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
+
                     <DialogHeader>
                         <DialogTitle>
                             Edit User
                         </DialogTitle>
 
                         <DialogDescription>
-                            Update this user's account information.
+                            Update the user's account information.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
 
                         {/* Name */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Name
+                                Full Name
                             </label>
 
                             <Input
@@ -890,6 +976,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Email */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Email
@@ -907,6 +994,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Phone */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Phone
@@ -923,6 +1011,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Role */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Role
@@ -937,21 +1026,26 @@ const handleToggleStatus = (user: User) => {
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map((role) => (
-                                        <SelectItem
-                                            key={role.id}
-                                            value={String(
-                                                role.id,
-                                            )}
-                                        >
-                                            {role.name}
-                                        </SelectItem>
-                                    ))}
+                                    {roles.map(
+                                        (role) => (
+                                            <SelectItem
+                                                key={
+                                                    role.id
+                                                }
+                                                value={String(
+                                                    role.id,
+                                                )}
+                                            >
+                                                {role.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         {/* New Password */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 New Password
@@ -970,6 +1064,7 @@ const handleToggleStatus = (user: User) => {
                         </div>
 
                         {/* Confirm New Password */}
+
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Confirm New Password
@@ -989,7 +1084,8 @@ const handleToggleStatus = (user: User) => {
                             />
                         </div>
 
-                        {/* Status */}
+                        {/* Active */}
+
                         <div className="flex items-center gap-2">
                             <input
                                 type="checkbox"
@@ -1006,6 +1102,7 @@ const handleToggleStatus = (user: User) => {
                                 Active User
                             </label>
                         </div>
+
                     </div>
 
                     <DialogFooter>
@@ -1022,18 +1119,20 @@ const handleToggleStatus = (user: User) => {
                             Update User
                         </Button>
                     </DialogFooter>
+
                 </DialogContent>
             </Dialog>
 
-            {/* =====================================================
+            {/* =========================================
                 DELETE USER MODAL
-            ====================================================== */}
+            ========================================= */}
 
             <Dialog
                 open={isDeleteOpen}
                 onOpenChange={setIsDeleteOpen}
             >
                 <DialogContent>
+
                     <DialogHeader>
                         <DialogTitle>
                             Delete User?
@@ -1049,6 +1148,7 @@ const handleToggleStatus = (user: User) => {
                     </DialogHeader>
 
                     <DialogFooter>
+
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -1064,7 +1164,9 @@ const handleToggleStatus = (user: User) => {
                         >
                             Delete User
                         </Button>
+
                     </DialogFooter>
+
                 </DialogContent>
             </Dialog>
         </>
@@ -1074,8 +1176,9 @@ const handleToggleStatus = (user: User) => {
 UsersIndex.layout = {
     breadcrumbs: [
         {
-            title: 'User Management',
+            title: 'Users',
             href: usersIndex.url(),
         },
     ],
 };
+

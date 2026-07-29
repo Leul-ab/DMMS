@@ -30,4 +30,15 @@ Route::prefix('kitchen')->name('kitchen.')->group(function () {
         'updateStatus'
     ])->name('orders.update-status');
 
+    // Edit Order
+    Route::put('/orders/{order}', [
+        KitchenOrderController::class,
+        'update'
+    ])->name('orders.update');
+
+    // Delete Order
+    Route::delete('/orders/{order}', [
+        KitchenOrderController::class,
+        'destroy'
+    ])->name('orders.destroy');
 });

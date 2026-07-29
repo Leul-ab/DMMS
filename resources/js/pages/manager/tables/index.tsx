@@ -1,3 +1,4 @@
+
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import {
@@ -10,6 +11,8 @@ import {
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
+import StatusToggle from '@/components/status-toggle';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +21,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+
 import {
     Dialog,
     DialogContent,
@@ -26,7 +30,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+
 import { Input } from '@/components/ui/input';
+
 import {
     Select,
     SelectContent,
@@ -40,6 +46,7 @@ import {
     store as tablesStore,
     update as tablesUpdate,
     destroy as tablesDestroy,
+    toggleStatus,
 } from '@/routes/manager/tables';
 
 type TableStatus =
@@ -67,14 +74,9 @@ const statusLabels: Record<TableStatus, string> = {
     awaiting_payment: 'Awaiting Payment',
 };
 
-const statusColors: Record<TableStatus, string> = {
-    available: 'bg-green-100 text-green-800',
-    occupied: 'bg-red-100 text-red-800',
-    awaiting_payment: 'bg-yellow-100 text-yellow-800',
-};
-
 export default function TablesIndex({ tables }: Props) {
     const [search, setSearch] = useState('');
+
     const [statusFilter, setStatusFilter] = useState<
         'all' | TableStatus
     >('all');
@@ -89,15 +91,21 @@ export default function TablesIndex({ tables }: Props) {
 
     const [tableNumber, setTableNumber] = useState('');
 
+    // -----------------------------------------
+    // Filter Tables
+    // -----------------------------------------
+
     const filteredTables = useMemo(() => {
         return tables.filter((table) => {
+            const searchTerm = search.toLowerCase();
+
             const matchesSearch =
                 table.table_number
                     .toString()
-                    .includes(search.toLowerCase()) ||
+                    .includes(searchTerm) ||
                 table.qr_code
                     .toLowerCase()
-                    .includes(search.toLowerCase());
+                    .includes(searchTerm);
 
             const matchesStatus =
                 statusFilter === 'all' ||
@@ -107,26 +115,56 @@ export default function TablesIndex({ tables }: Props) {
         });
     }, [tables, search, statusFilter]);
 
+    // -----------------------------------------
+    // Open Add Modal
+    // -----------------------------------------
+
     const openAddModal = () => {
         setTableNumber('');
         setIsAddOpen(true);
     };
 
-    const openEditModal = (table: RestaurantTable) => {
+    // -----------------------------------------
+    // Open Edit Modal
+    // -----------------------------------------
+
+    const openEditModal = (
+        table: RestaurantTable,
+    ) => {
         setSelectedTable(table);
-        setTableNumber(table.table_number.toString());
+
+        setTableNumber(
+            table.table_number.toString(),
+        );
+
         setIsEditOpen(true);
     };
 
-    const openViewModal = (table: RestaurantTable) => {
+    // -----------------------------------------
+    // Open View Modal
+    // -----------------------------------------
+
+    const openViewModal = (
+        table: RestaurantTable,
+    ) => {
         setSelectedTable(table);
         setIsViewOpen(true);
     };
 
-    const openDeleteModal = (table: RestaurantTable) => {
+    // -----------------------------------------
+    // Open Delete Modal
+    // -----------------------------------------
+
+    const openDeleteModal = (
+        table: RestaurantTable,
+    ) => {
         setSelectedTable(table);
         setIsDeleteOpen(true);
     };
+
+    // -----------------------------------------
+    // Add Table
+    // -----------------------------------------
 
     const handleAdd = () => {
         if (!tableNumber) {
@@ -134,7 +172,7 @@ export default function TablesIndex({ tables }: Props) {
         }
 
         router.post(
-            tablesStore().url,
+            tablesStore.url(),
             {
                 table_number: Number(tableNumber),
             },
@@ -147,15 +185,23 @@ export default function TablesIndex({ tables }: Props) {
         );
     };
 
+    // -----------------------------------------
+    // Update Table
+    // -----------------------------------------
+
     const handleUpdate = () => {
         if (!selectedTable || !tableNumber) {
             return;
         }
 
         router.put(
-            tablesUpdate(selectedTable.id).url,
+            tablesUpdate(
+                selectedTable.id,
+            ).url,
             {
-                table_number: Number(tableNumber),
+                table_number: Number(
+                    tableNumber,
+                ),
             },
             {
                 onSuccess: () => {
@@ -165,27 +211,49 @@ export default function TablesIndex({ tables }: Props) {
             },
         );
     };
-  const handleToggleStatus = (table: RestaurantTable) => {
-    // Do not manually change tables that are awaiting payment.
-    if (table.status === 'awaiting_payment') {
-        return;
-    }
 
-    router.patch(
-        `/manager/tables/${table.id}/toggle-status`,
-        {},
-        {
-            preserveScroll: true,
-        },
-    );
-};
+    // -----------------------------------------
+    // Toggle Table Status
+    //
+    // Available = Toggle ON
+    // Occupied = Toggle OFF
+    // Awaiting Payment = Disabled
+    // -----------------------------------------
+
+    const handleToggleStatus = (
+        table: RestaurantTable,
+    ) => {
+        if (
+            table.status ===
+            'awaiting_payment'
+        ) {
+            return;
+        }
+
+        router.patch(
+            toggleStatus.url(
+                table.id,
+            ),
+            {},
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    // -----------------------------------------
+    // Delete Table
+    // -----------------------------------------
+
     const handleDelete = () => {
         if (!selectedTable) {
             return;
         }
 
         router.delete(
-            tablesDestroy(selectedTable.id).url,
+            tablesDestroy(
+                selectedTable.id,
+            ).url,
             {
                 onSuccess: () => {
                     setIsDeleteOpen(false);
@@ -195,31 +263,78 @@ export default function TablesIndex({ tables }: Props) {
         );
     };
 
+    // -----------------------------------------
+    // Print QR Code
+    // -----------------------------------------
+
     const handlePrintQr = () => {
-        if (!selectedTable?.qr_code) return;
-        
-        const printWindow = window.open('', '_blank');
+        if (!selectedTable?.qr_code) {
+            return;
+        }
+
+        const printWindow =
+            window.open(
+                '',
+                '_blank',
+            );
+
         if (printWindow) {
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>Print QR Code - Table ${selectedTable.table_number}</title>
+                        <title>
+                            Print QR Code - Table ${selectedTable.table_number}
+                        </title>
+
                         <style>
-                            body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
-                            img { max-width: 60vw; max-height: 60vh; }
-                            h1 { font-size: 3rem; margin-bottom: 20px; }
+                            body {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100vh;
+                                margin: 0;
+                                font-family: sans-serif;
+                            }
+
+                            img {
+                                max-width: 60vw;
+                                max-height: 60vh;
+                            }
+
+                            h1 {
+                                font-size: 3rem;
+                                margin-bottom: 20px;
+                            }
+
                             @media print {
-                                @page { margin: 0; }
-                                body { height: 100%; display: block; text-align: center; padding-top: 2in; }
+                                @page {
+                                    margin: 0;
+                                }
+
+                                body {
+                                    height: 100%;
+                                    display: block;
+                                    text-align: center;
+                                    padding-top: 2in;
+                                }
                             }
                         </style>
                     </head>
+
                     <body>
-                        <h1>Table ${selectedTable.table_number}</h1>
-                        <img src="/storage/${selectedTable.qr_code}" onload="window.print(); window.close();" />
+                        <h1>
+                            Table ${selectedTable.table_number}
+                        </h1>
+
+                        <img
+                            src="/storage/${selectedTable.qr_code}"
+                            onload="window.print(); window.close();"
+                        />
                     </body>
                 </html>
             `);
+
             printWindow.document.close();
         }
     };
@@ -229,39 +344,62 @@ export default function TablesIndex({ tables }: Props) {
             <Head title="Table Management" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
+
+                {/* Page Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Table Management"
                         description="Manage your restaurant tables and QR codes."
                     />
 
-                    <Button onClick={openAddModal}>
+                    <Button
+                        onClick={
+                            openAddModal
+                        }
+                    >
                         <Plus className="mr-2 h-4 w-4" />
                         Add Table
                     </Button>
                 </div>
 
+                {/* Tables Card */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Restaurant Tables</CardTitle>
+                        <CardTitle>
+                            Restaurant Tables
+                        </CardTitle>
 
+                        {/* Search and Filter */}
                         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+
+                            {/* Search */}
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
                                 <Input
                                     placeholder="Search by table number or QR code..."
                                     value={search}
-                                    onChange={(event) =>
-                                        setSearch(event.target.value)
+                                    onChange={(
+                                        event,
+                                    ) =>
+                                        setSearch(
+                                            event
+                                                .target
+                                                .value,
+                                        )
                                     }
                                     className="pl-9"
                                 />
                             </div>
 
+                            {/* Status Filter */}
                             <Select
-                                value={statusFilter}
-                                onValueChange={(value) =>
+                                value={
+                                    statusFilter
+                                }
+                                onValueChange={(
+                                    value,
+                                ) =>
                                     setStatusFilter(
                                         value as
                                             | 'all'
@@ -295,7 +433,8 @@ export default function TablesIndex({ tables }: Props) {
                     </CardHeader>
 
                     <CardContent>
-                        {filteredTables.length === 0 ? (
+                        {filteredTables.length ===
+                        0 ? (
                             <div className="flex flex-col items-center justify-center py-12 text-center">
                                 <p className="text-lg font-medium">
                                     No tables found
@@ -329,122 +468,138 @@ export default function TablesIndex({ tables }: Props) {
                                     </thead>
 
                                     <tbody>
-                                        {filteredTables.map((table) => (
-                                            <tr
-                                                key={table.id}
-                                                className="border-b last:border-0"
-                                            >
-                                                <td className="p-3 font-medium">
-                                                    Table{' '}
-                                                    {table.table_number}
-                                                </td>
+                                        {filteredTables.map(
+                                            (
+                                                table,
+                                            ) => (
+                                                <tr
+                                                    key={
+                                                        table.id
+                                                    }
+                                                    className="border-b last:border-0 hover:bg-muted/50"
+                                                >
+                                                    {/* Table Number */}
+                                                    <td className="p-3 font-medium">
+                                                        Table{' '}
+                                                        {
+                                                            table.table_number
+                                                        }
+                                                    </td>
 
-                                                <td className="p-3">
-                                                    {table.qr_code?.endsWith('.png') || table.qr_code?.endsWith('.jpg') ? (
-                                                        <img src={`/storage/${table.qr_code}`} alt="QR" className="h-10 w-10 object-contain rounded-md border bg-white" />
-                                                    ) : (
-                                                        table.qr_code
-                                                    )}
-                                                </td>
+                                                    {/* QR Code */}
+                                                    <td className="p-3">
+                                                        {table.qr_code?.endsWith(
+                                                            '.png',
+                                                        ) ||
+                                                        table.qr_code?.endsWith(
+                                                            '.jpg',
+                                                        ) ? (
+                                                            <img
+                                                                src={`/storage/${table.qr_code}`}
+                                                                alt="QR"
+                                                                className="h-10 w-10 rounded-md border bg-white object-contain"
+                                                            />
+                                                        ) : (
+                                                            table.qr_code
+                                                        )}
+                                                    </td>
 
-                                               <td className="p-3">
-    <div className="flex items-center gap-2">
-        <button
-            type="button"
-            onClick={() =>
-                handleToggleStatus(table)
-            }
-            disabled={
-                table.status ===
-                'awaiting_payment'
-            }
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                table.status === 'available'
-                    ? 'bg-green-500'
-                    : table.status === 'occupied'
-                      ? 'bg-red-500'
-                      : 'bg-gray-300'
-            } ${
-                table.status ===
-                'awaiting_payment'
-                    ? 'cursor-not-allowed opacity-60'
-                    : 'cursor-pointer'
-            }`}
-            title={
-                table.status ===
-                'available'
-                    ? 'Mark table as occupied'
-                    : table.status ===
-                        'occupied'
-                      ? 'Mark table as available'
-                      : 'Awaiting payment'
-            }
-        >
-            <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                    table.status === 'occupied'
-                        ? 'translate-x-6'
-                        : 'translate-x-1'
-                }`}
-            />
-        </button>
-
-        <Badge
-            className={
-                statusColors[
-                    table.status
-                ]
-            }
-        >
-            {
-                statusLabels[
-                    table.status
-                ]
-            }
-        </Badge>
-    </div>
-</td>
-                                                <td className="p-3">
-                                                    <div className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openViewModal(
-                                                                    table,
-                                                                )
+                                                    {/* Status */}
+                                                    <td className="p-3">
+                                                        <Badge
+                                                            className={
+                                                                table.status ===
+                                                                'available'
+                                                                    ? 'bg-black text-white hover:bg-black'
+                                                                    : table.status ===
+                                                                        'occupied'
+                                                                      ? 'bg-red-600 text-white hover:bg-red-600'
+                                                                      : 'bg-yellow-500 text-white hover:bg-yellow-500'
                                                             }
                                                         >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    table,
-                                                                )
+                                                            {
+                                                                statusLabels[
+                                                                    table.status
+                                                                ]
                                                             }
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
+                                                        </Badge>
+                                                    </td>
 
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    table,
-                                                                )
-                                                            }
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                    {/* Actions */}
+                                                    <td className="p-3">
+                                                        <div className="flex items-center justify-end gap-2">
+
+                                                            {/* Status Toggle */}
+                                                            <StatusToggle
+                                                                checked={
+                                                                    table.status ===
+                                                                    'available'
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    handleToggleStatus(
+                                                                        table,
+                                                                    )
+                                                                }
+                                                                onLabel="Mark occupied"
+                                                                offLabel="Mark available"
+                                                                ariaLabel={
+                                                                    table.status ===
+                                                                    'available'
+                                                                        ? 'Mark table occupied'
+                                                                        : 'Mark table available'
+                                                                }
+                                                                disabled={
+                                                                    table.status ===
+                                                                    'awaiting_payment'
+                                                                }
+                                                            />
+
+                                                            {/* View */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openViewModal(
+                                                                        table,
+                                                                    )
+                                                                }
+                                                                title="View table"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+
+                                                            {/* Edit */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openEditModal(
+                                                                        table,
+                                                                    )
+                                                                }
+                                                                title="Edit table"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+
+                                                            {/* Delete */}
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openDeleteModal(
+                                                                        table,
+                                                                    )
+                                                                }
+                                                                title="Delete table"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ),
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -453,14 +608,21 @@ export default function TablesIndex({ tables }: Props) {
                 </Card>
             </div>
 
-            {/* Add Table Modal */}
+            {/* =========================================
+                ADD TABLE MODAL
+            ========================================= */}
+
             <Dialog
                 open={isAddOpen}
-                onOpenChange={setIsAddOpen}
+                onOpenChange={
+                    setIsAddOpen
+                }
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Add Restaurant Table</DialogTitle>
+                        <DialogTitle>
+                            Add Restaurant Table
+                        </DialogTitle>
 
                         <DialogDescription>
                             Create a new restaurant table.
@@ -476,9 +638,17 @@ export default function TablesIndex({ tables }: Props) {
                             <Input
                                 type="number"
                                 min="1"
-                                value={tableNumber}
-                                onChange={(event) =>
-                                    setTableNumber(event.target.value)
+                                value={
+                                    tableNumber
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setTableNumber(
+                                        event
+                                            .target
+                                            .value,
+                                    )
                                 }
                                 placeholder="Example: 1"
                             />
@@ -488,26 +658,41 @@ export default function TablesIndex({ tables }: Props) {
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsAddOpen(false)}
+                            onClick={() =>
+                                setIsAddOpen(
+                                    false,
+                                )
+                            }
                         >
                             Cancel
                         </Button>
 
-                        <Button onClick={handleAdd}>
+                        <Button
+                            onClick={
+                                handleAdd
+                            }
+                        >
                             Add Table
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* Edit Table Modal */}
+            {/* =========================================
+                EDIT TABLE MODAL
+            ========================================= */}
+
             <Dialog
                 open={isEditOpen}
-                onOpenChange={setIsEditOpen}
+                onOpenChange={
+                    setIsEditOpen
+                }
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Edit Table</DialogTitle>
+                        <DialogTitle>
+                            Edit Table
+                        </DialogTitle>
 
                         <DialogDescription>
                             Update the restaurant table information.
@@ -523,9 +708,17 @@ export default function TablesIndex({ tables }: Props) {
                             <Input
                                 type="number"
                                 min="1"
-                                value={tableNumber}
-                                onChange={(event) =>
-                                    setTableNumber(event.target.value)
+                                value={
+                                    tableNumber
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setTableNumber(
+                                        event
+                                            .target
+                                            .value,
+                                    )
                                 }
                             />
                         </div>
@@ -534,27 +727,43 @@ export default function TablesIndex({ tables }: Props) {
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsEditOpen(false)}
+                            onClick={() =>
+                                setIsEditOpen(
+                                    false,
+                                )
+                            }
                         >
                             Cancel
                         </Button>
 
-                        <Button onClick={handleUpdate}>
+                        <Button
+                            onClick={
+                                handleUpdate
+                            }
+                        >
                             Update Table
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
-            {/* QR Code View Modal */}
+            {/* =========================================
+                QR CODE VIEW MODAL
+            ========================================= */}
+
             <Dialog
                 open={isViewOpen}
-                onOpenChange={setIsViewOpen}
+                onOpenChange={
+                    setIsViewOpen
+                }
             >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
-                            Table {selectedTable?.table_number}
+                            Table{' '}
+                            {
+                                selectedTable?.table_number
+                            }
                         </DialogTitle>
 
                         <DialogDescription>
@@ -563,17 +772,32 @@ export default function TablesIndex({ tables }: Props) {
                     </DialogHeader>
 
                     <div className="flex flex-col items-center gap-4 py-6">
-                        <div className="rounded-lg border p-8 text-center bg-gray-50 flex flex-col items-center justify-center">
-                            {selectedTable?.qr_code?.endsWith('.png') || selectedTable?.qr_code?.endsWith('.jpg') ? (
-                                <img src={`/storage/${selectedTable.qr_code}`} alt="QR Code" className="max-w-[200px] w-full h-auto mix-blend-multiply" />
+                        <div className="flex flex-col items-center justify-center rounded-lg border bg-gray-50 p-8 text-center">
+                            {selectedTable?.qr_code?.endsWith(
+                                '.png',
+                            ) ||
+                            selectedTable?.qr_code?.endsWith(
+                                '.jpg',
+                            ) ? (
+                                <img
+                                    src={`/storage/${selectedTable.qr_code}`}
+                                    alt="QR Code"
+                                    className="h-auto w-full max-w-[200px] mix-blend-multiply"
+                                />
                             ) : (
-                                <p className="text-sm text-muted-foreground break-all">
-                                    {selectedTable?.qr_code}
+                                <p className="break-all text-sm text-muted-foreground">
+                                    {
+                                        selectedTable?.qr_code
+                                    }
                                 </p>
                             )}
                         </div>
 
-                        <Button onClick={handlePrintQr}>
+                        <Button
+                            onClick={
+                                handlePrintQr
+                            }
+                        >
                             <Printer className="mr-2 h-4 w-4" />
                             Print
                         </Button>
@@ -581,10 +805,15 @@ export default function TablesIndex({ tables }: Props) {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Confirmation Modal */}
+            {/* =========================================
+                DELETE CONFIRMATION MODAL
+            ========================================= */}
+
             <Dialog
                 open={isDeleteOpen}
-                onOpenChange={setIsDeleteOpen}
+                onOpenChange={
+                    setIsDeleteOpen
+                }
             >
                 <DialogContent>
                     <DialogHeader>
@@ -594,22 +823,30 @@ export default function TablesIndex({ tables }: Props) {
 
                         <DialogDescription>
                             Are you sure you want to delete Table{' '}
-                            {selectedTable?.table_number}? This action
-                            cannot be undone.
+                            {
+                                selectedTable?.table_number
+                            }
+                            ? This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setIsDeleteOpen(false)}
+                            onClick={() =>
+                                setIsDeleteOpen(
+                                    false,
+                                )
+                            }
                         >
                             Cancel
                         </Button>
 
                         <Button
                             variant="destructive"
-                            onClick={handleDelete}
+                            onClick={
+                                handleDelete
+                            }
                         >
                             Delete Table
                         </Button>
@@ -619,3 +856,13 @@ export default function TablesIndex({ tables }: Props) {
         </>
     );
 }
+
+TablesIndex.layout = {
+    breadcrumbs: [
+        {
+            title: 'Table Management',
+            href: tablesIndex.url(),
+        },
+    ],
+};
+
