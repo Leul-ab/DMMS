@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Http\Controllers\Manager\MenuCategoryController;
@@ -101,123 +102,143 @@ Route::middleware(['auth', 'role:super_admin,manager'])
 
 
         // =========================
-        // Customer Orders
-        // Manager can VIEW only
-        // =========================
-        Route::get(
-            'orders',
-            [OrderController::class, 'index']
-        )->name('orders.index');
-        // =========================
 // Customer Orders
-// Manager can VIEW and VERIFY PAYMENTS
+// Manager can VIEW, EDIT,
+// DELETE and VERIFY PAYMENTS
 // =========================
+
 Route::get(
     'orders',
     [OrderController::class, 'index']
 )->name('orders.index');
 
+Route::put(
+    'orders/{order}',
+    [OrderController::class, 'update']
+)->name('orders.update');
+
+Route::delete(
+    'orders/{order}',
+    [OrderController::class, 'destroy']
+)->name('orders.destroy');
+
 Route::patch(
     'orders/{order}/verify-payment',
     [OrderController::class, 'verifyPayment']
 )->name('orders.verify-payment');
+
         // =========================
-   // Restaurant Tables
-  // =========================
-    Route::get(
-    'tables',
-    [RestaurantTableController::class, 'index']
-    )->name('tables.index');
+        // Restaurant Tables
+        // =========================
+        Route::get(
+            'tables',
+            [RestaurantTableController::class, 'index']
+        )->name('tables.index');
 
-    Route::get(
-    'tables/create',
-    [RestaurantTableController::class, 'create']
-    )->name('tables.create');
+        Route::get(
+            'tables/create',
+            [RestaurantTableController::class, 'create']
+        )->name('tables.create');
 
-    Route::post(
-    'tables',
-    [RestaurantTableController::class, 'store']
-    )->name('tables.store');
+        Route::post(
+            'tables',
+            [RestaurantTableController::class, 'store']
+        )->name('tables.store');
 
-    Route::get(
-    'tables/{table}/edit',
-    [RestaurantTableController::class, 'edit']
-    )->name('tables.edit');
+        Route::get(
+            'tables/{table}/edit',
+            [RestaurantTableController::class, 'edit']
+        )->name('tables.edit');
 
-    Route::put(
-    'tables/{table}',
-    [RestaurantTableController::class, 'update']
-    )->name('tables.update');
+        Route::put(
+            'tables/{table}',
+            [RestaurantTableController::class, 'update']
+        )->name('tables.update');
 
-    Route::delete(
-    'tables/{table}',
-    [RestaurantTableController::class, 'destroy']
-    )->name('tables.destroy');
+        Route::delete(
+            'tables/{table}',
+            [RestaurantTableController::class, 'destroy']
+        )->name('tables.destroy');
 
-    Route::patch(
-        'tables/{table}/toggle-status',
-        [RestaurantTableController::class, 'toggleStatus']
-    )->name('tables.toggle-status');
-// =========================
-// Customers CRUD
-// =========================
+        Route::patch(
+            'tables/{table}/toggle-status',
+            [RestaurantTableController::class, 'toggleStatus']
+        )->name('tables.toggle-status');
 
-Route::get(
-    'customers',
-    [CustomerController::class, 'index']
-)->name('customers.index');
 
-Route::get(
-    'customers/create',
-    [CustomerController::class, 'create']
-)->name('customers.create');
+        // =========================
+        // Customers CRUD
+        // =========================
+        Route::get(
+            'customers',
+            [CustomerController::class, 'index']
+        )->name('customers.index');
 
-Route::post(
-    'customers',
-    [CustomerController::class, 'store']
-)->name('customers.store');
+        Route::get(
+            'customers/create',
+            [CustomerController::class, 'create']
+        )->name('customers.create');
 
-Route::get(
-    'customers/{customer}/edit',
-    [CustomerController::class, 'edit']
-)->name('customers.edit');
+        Route::post(
+            'customers',
+            [CustomerController::class, 'store']
+        )->name('customers.store');
 
-Route::put(
-    'customers/{customer}',
-    [CustomerController::class, 'update']
-)->name('customers.update');
+        Route::get(
+            'customers/{customer}/edit',
+            [CustomerController::class, 'edit']
+        )->name('customers.edit');
 
-Route::delete(
-    'customers/{customer}',
-    [CustomerController::class, 'destroy']
-)->name('customers.destroy');
+        Route::put(
+            'customers/{customer}',
+            [CustomerController::class, 'update']
+        )->name('customers.update');
 
-Route::patch(
-    'customers/{customer}/toggle-membership',
-    [CustomerController::class, 'toggleMembership']
-)->name('customers.toggle-membership');
+        Route::delete(
+            'customers/{customer}',
+            [CustomerController::class, 'destroy']
+        )->name('customers.destroy');
+
+        Route::patch(
+            'customers/{customer}/toggle-membership',
+            [CustomerController::class, 'toggleMembership']
+        )->name('customers.toggle-membership');
+
 
         // =========================
         // Booking Management
         // =========================
         Route::get(
             'bookings',
-            [\App\Http\Controllers\Manager\BookingManagementController::class, 'index']
+            [
+                \App\Http\Controllers\Manager\BookingManagementController::class,
+                'index'
+            ]
         )->name('bookings.index');
 
         Route::post(
             'bookings/{booking}/cancel',
-            [\App\Http\Controllers\Manager\BookingManagementController::class, 'cancel']
+            [
+                \App\Http\Controllers\Manager\BookingManagementController::class,
+                'cancel'
+            ]
         )->name('bookings.cancel');
 
         Route::post(
             'bookings/{booking}/complete',
-            [\App\Http\Controllers\Manager\BookingManagementController::class, 'complete']
+            [
+                \App\Http\Controllers\Manager\BookingManagementController::class,
+                'complete'
+            ]
         )->name('bookings.complete');
 
         Route::delete(
             'bookings/{booking}',
-            [\App\Http\Controllers\Manager\BookingManagementController::class, 'destroy']
+            [
+                \App\Http\Controllers\Manager\BookingManagementController::class,
+                'destroy'
+            ]
         )->name('bookings.destroy');
 
     });
+
