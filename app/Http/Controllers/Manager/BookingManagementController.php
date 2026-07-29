@@ -48,7 +48,32 @@ class BookingManagementController extends Controller
 
         $bookings = $query->orderBy('created_at', 'desc')
             ->paginate(15)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function ($booking) {
+                $isExpired = false;
+                if ($booking->status === 'active' && $booking->expires_at) {
+                    $isExpired = Carbon::now()->greaterThan($booking->expires_at);
+                }
+
+                return (object) [
+                    'id' => $booking->id,
+                    'customer_name' => $booking->customer?->name ?? 'Unknown',
+                    'customer_phone' => $booking->customer?->phone ?? 'N/A',
+                    'customer_email' => $booking->customer?->email ?? null,
+                    'tables' => $booking->tables->map(fn($t) => [
+                        'id' => $t->id,
+                        'table_number' => $t->table_number,
+                    ]),
+                    'status' => $booking->status,
+                    'booked_at' => $booking->booked_at,
+                    'expires_at' => $booking->expires_at,
+                    'cancelled_at' => $booking->cancelled_at,
+                    'is_expired' => $isExpired,
+                    'time_remaining_seconds' => !$isExpired && $booking->status === 'active' && $booking->expires_at
+                        ? max(0, Carbon::now()->diffInSeconds($booking->expires_at, false))
+                        : null,
+                ];
+            });
 
         // Dashboard statistics
         $totalBookings = TableBooking::count();

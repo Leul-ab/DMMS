@@ -263,19 +263,15 @@ return (
                                 <thead>
                                     <tr className="border-b text-left">
                                         <th className="p-3">
-                                            #
-                                        </th>
-
-                                        <th className="p-3">
                                             Customer Code
                                         </th>
 
                                         <th className="p-3">
-                                            Name
+                                            Full Name
                                         </th>
 
                                         <th className="p-3">
-                                            Phone
+                                            Phone Number
                                         </th>
 
                                         <th className="p-3">
@@ -283,7 +279,11 @@ return (
                                         </th>
 
                                         <th className="p-3">
-                                            Membership
+                                            Registration Date
+                                        </th>
+
+                                        <th className="p-3">
+                                            Status
                                         </th>
 
                                         <th className="p-3 text-right">
@@ -294,20 +294,18 @@ return (
 
                                 <tbody>
                                     {filteredCustomers.map(
-                                        (customer, index) => (
+                                        (customer) => (
                                             <tr
                                                 key={customer.id}
                                                 className="border-b last:border-0 hover:bg-muted/50"
                                             >
-                                                <td className="p-3 text-muted-foreground">
-                                                    {index + 1}
+                                                <td className="p-3">
+                                                    <span className="font-mono font-bold text-orange-600">
+                                                        {customer.customer_code}
+                                                    </span>
                                                 </td>
 
                                                 <td className="p-3 font-medium">
-                                                    {customer.customer_code}
-                                                </td>
-
-                                                <td className="p-3">
                                                     {customer.name}
                                                 </td>
 
@@ -318,6 +316,14 @@ return (
                                                 <td className="p-3 text-muted-foreground">
                                                     {customer.email ||
                                                         'Not provided'}
+                                                </td>
+
+                                                <td className="p-3 text-muted-foreground">
+                                                    {new Date(customer.created_at).toLocaleDateString('en-US', {
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })}
                                                 </td>
 
                                                 <td className="p-3">

@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TableBooking extends Model
 {
@@ -31,8 +32,9 @@ class TableBooking extends Model
         return $this->belongsTo(Customer::class);
     }
 
+
     /**
-     * The restaurant tables associated with this booking.
+     * The restaurant tabless associated with this booking (many-to-many).
      */
     public function tables()
     {
@@ -44,4 +46,3 @@ class TableBooking extends Model
         );
     }
 }
-

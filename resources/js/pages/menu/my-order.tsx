@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
+import { toast } from 'sonner';
+
 type MenuItem = {
     id: number;
     name: string;
@@ -16,6 +18,7 @@ type OrderItem = {
 type RestaurantTable = {
     id: number;
     table_number: number;
+    status: string;
 };
 
 type Order = {
@@ -26,7 +29,11 @@ type Order = {
     payment_submitted_at: string | null;
     total_amount: string;
     estimated_minutes: number | null;
+    table_id: number;
+    created_at: string;
+    updated_at: string;
     order_items: OrderItem[];
+    table: RestaurantTable;
 };
 
 type Props = {
@@ -37,19 +44,82 @@ type Props = {
 export default function MyOrder({
     table,
     order,
-}:Props) {
-const [showPayment, setShowPayment] = useState(false);
-    useEffect(() => {
-    const interval = setInterval(() => {
-        router.reload({
-    only: ['order'],
-});
-    }, 5000);
+}: Props) {
+    const [showPayment, setShowPayment] = useState(false);
+    const [isCancelling, setIsCancelling] = useState(false);
 
-    return () => {
-        clearInterval(interval);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['order'],
+            });
+        }, 5000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
+    // Format date/time
+    const formatDateTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
     };
-}, []);
+
+    // Get status color
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-500';
+            case 'confirmed':
+                return 'bg-blue-500';
+            case 'preparing':
+                return 'bg-orange-500';
+            case 'ready':
+                return 'bg-purple-500';
+            case 'served':
+                return 'bg-teal-500';
+            case 'completed':
+                return 'bg-green-500';
+            case 'cancelled':
+                return 'bg-red-500';
+            default:
+                return 'bg-gray-500';
+        }
+    };
+
+    // Cancel order
+    const cancelOrder = () => {
+        if (!order) return;
+
+        if (!confirm('Are you sure you want to cancel this order?')) {
+            return;
+        }
+
+        setIsCancelling(true);
+
+        router.post(
+            `/api/orders/${order.id}/cancel`,
+            {},
+            {
+                onSuccess: () => {
+                    setIsCancelling(false);
+                    toast.success('Order cancelled successfully.');
+                },
+                onError: () => {
+                    setIsCancelling(false);
+                    toast.error('Failed to cancel order.');
+                },
+            }
+        );
+    };
+
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
 
@@ -161,12 +231,20 @@ const [showPayment, setShowPayment] = useState(false);
                                         <p className="mt-2 text-gray-400">
                                             Table {table.table_number}
                                         </p>
+
+                                        {/* Order Date/Time */}
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            {formatDateTime(order.created_at)}
+                                        </p>
                                     </div>
 
                                     {/* Status */}
-                                    <span className="w-fit rounded-full bg-orange-500 px-5 py-2 text-sm font-black capitalize text-white">
-                                        {order.status}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`h-3 w-3 rounded-full ${getStatusColor(order.status)}`}></span>
+                                        <span className="w-fit rounded-full bg-orange-500 px-5 py-2 text-sm font-black capitalize text-white">
+                                            {order.status}
+                                        </span>
+                                    </div>
 
                                 </div>
 
@@ -246,6 +324,16 @@ const [showPayment, setShowPayment] = useState(false);
                                                     ETB
                                                 </p>
 
+                                                {/* Item Status */}
+                                                <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
+                                                    item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                    item.status === 'preparing' ? 'bg-orange-100 text-orange-700' :
+                                                    item.status === 'ready' ? 'bg-green-100 text-green-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {item.status}
+                                                </span>
+
                                             </div>
 
                                             <div className="whitespace-nowrap font-black">
@@ -279,123 +367,148 @@ const [showPayment, setShowPayment] = useState(false);
                                 </span>
 
                             </div>
+
                             {/* ================= PAYMENT ================= */}
-{order.status === 'completed' && (
-    <div className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6 sm:p-8">
+                            {order.status === 'completed' && (
+                                <div className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6 sm:p-8">
 
-        <h2 className="text-2xl font-black">
-            Payment
-        </h2>
+                                    <h2 className="text-2xl font-black">
+                                        Payment
+                                    </h2>
 
-        {order.payment_status === 'unpaid' && (
-            <>
-                <p className="mt-2 text-gray-600">
-                    Your order is completed. Please make your payment.
-                </p>
+                                    {order.payment_status === 'unpaid' && (
+                                        <>
+                                            <p className="mt-2 text-gray-600">
+                                                Your order is completed. Please make your payment.
+                                            </p>
 
-                {!showPayment ? (
-                    <button
-                        type="button"
-                        onClick={() => setShowPayment(true)}
-                        className="mt-6 w-full rounded-xl bg-orange-500 px-6 py-4 font-black text-white transition hover:bg-orange-600 active:scale-[0.98]"
-                    >
-                        Pay Now
-                    </button>
-                ) : (
-                    <div className="mt-6 rounded-2xl bg-white p-6">
+                                            {!showPayment ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPayment(true)}
+                                                    className="mt-6 w-full rounded-xl bg-orange-500 px-6 py-4 font-black text-white transition hover:bg-orange-600 active:scale-[0.98]"
+                                                >
+                                                    Pay Now
+                                                </button>
+                                            ) : (
+                                                <div className="mt-6 rounded-2xl bg-white p-6">
 
-                        <h3 className="text-lg font-black">
-                            Payment Instructions
-                        </h3>
+                                                    <h3 className="text-lg font-black">
+                                                        Payment Instructions
+                                                    </h3>
 
-                        <p className="mt-3 text-sm text-gray-500">
-                            Please send the exact amount to the payment number below.
-                        </p>
+                                                    <p className="mt-3 text-sm text-gray-500">
+                                                        Please send the exact amount to the payment number below.
+                                                    </p>
 
-                        <div className="mt-5 rounded-xl bg-gray-100 p-5">
-                            <p className="text-sm font-semibold text-gray-500">
-                                Amount
-                            </p>
+                                                    <div className="mt-5 rounded-xl bg-gray-100 p-5">
+                                                        <p className="text-sm font-semibold text-gray-500">
+                                                            Amount
+                                                        </p>
 
-                            <p className="mt-1 text-2xl font-black text-orange-500">
-                                {Number(order.total_amount).toFixed(2)} ETB
-                            </p>
+                                                        <p className="mt-1 text-2xl font-black text-orange-500">
+                                                            {Number(order.total_amount).toFixed(2)} ETB
+                                                        </p>
 
-                            <p className="mt-5 text-sm font-semibold text-gray-500">
-                                Payment Number
-                            </p>
+                                                        <p className="mt-5 text-sm font-semibold text-gray-500">
+                                                            Payment Number
+                                                        </p>
 
-                            <p className="mt-1 text-xl font-black">
-                                09XXXXXXXX
-                            </p>
+                                                        <p className="mt-1 text-xl font-black">
+                                                            09XXXXXXXX
+                                                        </p>
 
-                            <p className="mt-5 text-sm font-semibold text-gray-500">
-                                Account Name
-                            </p>
+                                                        <p className="mt-5 text-sm font-semibold text-gray-500">
+                                                            Account Name
+                                                        </p>
 
-                            <p className="mt-1 font-bold">
-                                DINE Restaurant
-                            </p>
+                                                        <p className="mt-1 font-bold">
+                                                            DINE Restaurant
+                                                        </p>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            router.post(
+                                                                `/orders/${order.id}/payment`,
+                                                                {},
+                                                                {
+                                                                    preserveScroll: true,
+                                                                }
+                                                            );
+                                                        }}
+                                                        className="mt-5 w-full rounded-xl bg-gray-900 px-6 py-4 font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
+                                                    >
+                                                        I Have Paid
+                                                    </button>
+
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {order.payment_status === 'pending' && (
+                                        <div className="mt-5 rounded-2xl bg-yellow-100 p-5">
+                                            <p className="font-bold text-yellow-800">
+                                                Payment Pending Verification
+                                            </p>
+
+                                            <p className="mt-1 text-sm text-yellow-700">
+                                                Your payment has been submitted.
+                                                Please wait for the restaurant to confirm it.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {order.payment_status === 'paid' && (
+                                        <div className="mt-5 rounded-2xl bg-green-100 p-5">
+                                            <p className="font-bold text-green-800">
+                                                Payment Confirmed ✓
+                                            </p>
+
+                                            <p className="mt-1 text-sm text-green-700">
+                                                Your payment has been successfully verified.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                </div>
+                            )}
+
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                router.post(
-                                    `/orders/${order.id}/payment`,
-                                    {},
-                                    {
-                                        preserveScroll: true,
-                                    }
-                                );
-                            }}
-                            className="mt-5 w-full rounded-xl bg-gray-900 px-6 py-4 font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
-                        >
-                            I Have Paid
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="space-y-3">
+                            {/* Add Order Button - Only show for active orders (not completed/cancelled) */}
+                            {!['completed', 'cancelled'].includes(order.status) && (
+                                <Link
+                                    href={`/menu?table=${table.table_number}&order_id=${order.id}`}
+                                    className="block w-full rounded-xl bg-orange-500 px-6 py-4 text-center font-black text-white transition hover:bg-orange-600 active:scale-[0.98]"
+                                >
+                                    + Add Order
+                                </Link>
+                            )}
 
-                    </div>
-                )}
-            </>
-        )}
+                            {/* Cancel Order Button - Only show for active orders */}
+                            {!['completed', 'cancelled'].includes(order.status) && (
+                                <button
+                                    type="button"
+                                    onClick={cancelOrder}
+                                    disabled={isCancelling}
+                                    className="block w-full rounded-xl border-2 border-red-200 bg-white px-6 py-4 text-center font-black text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
+                                >
+                                    {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+                                </button>
+                            )}
 
-        {order.payment_status === 'pending' && (
-            <div className="mt-5 rounded-2xl bg-yellow-100 p-5">
-                <p className="font-bold text-yellow-800">
-                    Payment Pending Verification
-                </p>
-
-                <p className="mt-1 text-sm text-yellow-700">
-                    Your payment has been submitted.
-                    Please wait for the restaurant to confirm it.
-                </p>
-            </div>
-        )}
-
-        {order.payment_status === 'paid' && (
-            <div className="mt-5 rounded-2xl bg-green-100 p-5">
-                <p className="font-bold text-green-800">
-                    Payment Confirmed ✓
-                </p>
-
-                <p className="mt-1 text-sm text-green-700">
-                    Your payment has been successfully verified.
-                </p>
-            </div>
-        )}
-
-    </div>
-)}
-
+                            <Link
+                                href={`/menu?table=${table.table_number}`}
+                                className="block w-full rounded-xl bg-gray-900 px-6 py-4 text-center font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
+                            >
+                                ← Back to Menu
+                            </Link>
                         </div>
-
-                        {/* Back to Menu */}
-                        <Link
-                            href={`/menu?table=${table.table_number}`}
-                            className="block w-full rounded-xl bg-gray-900 px-6 py-4 text-center font-black text-white transition hover:bg-orange-500 active:scale-[0.98]"
-                        >
-                            ← Back to Menu
-                        </Link>
 
                     </div>
                 )}

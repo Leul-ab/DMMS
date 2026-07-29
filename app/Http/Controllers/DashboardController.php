@@ -175,10 +175,24 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-      $recentBookings = TableBooking::with('tables')
+      $recentBookings = TableBooking::with(['customer', 'tables'])
     ->latest()
     ->take(5)
-    ->get();
+    ->get()
+            ->map(function ($booking) {
+                return (object) [
+                    'id' => $booking->id,
+                    'customer_name' => $booking->customer?->name ?? 'Unknown',
+                    'customer_phone' => $booking->customer?->phone ?? 'N/A',
+                    'tables' => $booking->tables->map(fn($t) => [
+                        'id' => $t->id,
+                        'table_number' => $t->table_number,
+                    ]),
+                    'status' => $booking->status,
+                    'booked_at' => $booking->booked_at,
+                    'expires_at' => $booking->expires_at,
+                ];
+            });
 
 
         /*

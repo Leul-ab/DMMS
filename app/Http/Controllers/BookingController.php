@@ -108,7 +108,10 @@ class BookingController extends Controller
         // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
 
-        return redirect()->route('booking.show', $booking->id);
+        return redirect()->route('menu.index')->with([
+            'booking_success' => true,
+            'customer_code' => $booking->customer->customer_code,
+        ]);
     }
 
     /**
@@ -116,11 +119,7 @@ class BookingController extends Controller
      */
     public function show(TableBooking $booking)
     {
-        $booking->load(['customer', 'tables']);
-
-        return inertia('booking/show', [
-            'booking' => $booking,
-        ]);
+        return redirect()->route('menu.index');
     }
 
     /**
@@ -147,7 +146,7 @@ class BookingController extends Controller
     }
 
     /**
-     * Get the customer's active booking (API endpoint for the booking sidebar).
+     * Get the customer's active booking (API endpoint for the booking sidebar / My Booking).
      */
     public function getActiveBooking(): JsonResponse
     {
@@ -159,7 +158,6 @@ class BookingController extends Controller
 
         $booking = TableBooking::with(['customer', 'tables'])
             ->where('id', $bookingId)
-            ->where('status', 'active')
             ->first();
 
         if (!$booking) {
@@ -167,8 +165,8 @@ class BookingController extends Controller
             return response()->json(['booking' => null]);
         }
 
-        // Check if expired
-        if (Carbon::now()->greaterThan($booking->expires_at)) {
+        $isExpired = false;
+        if ($booking->status === 'active' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
             $booking->update([
                 'status' => 'cancelled',
                 'cancelled_at' => Carbon::now(),
@@ -182,21 +180,29 @@ class BookingController extends Controller
             return response()->json(['booking' => null, 'expired' => true]);
         }
 
-        $timeRemaining = Carbon::now()->diffInSeconds($booking->expires_at, false);
+        $timeRemaining = null;
+        if ($booking->status === 'active' && $booking->expires_at) {
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
+        }
 
         return response()->json([
             'booking' => [
                 'id' => $booking->id,
-                'customer_name' => $booking->customer->name,
+                'customer_name' => $booking->customer?->name ?? 'Unknown',
+                'customer_code' => $booking->customer?->customer_code ?? '',
+                'customer_id' => $booking->customer?->id,
                 'tables' => $booking->tables->map(function ($table) {
                     return [
                         'id' => $table->id,
                         'table_number' => $table->table_number,
                     ];
                 }),
+                'status' => $booking->status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,
-                'time_remaining_seconds' => max(0, $timeRemaining),
+                'cancelled_at' => $booking->cancelled_at,
+                'time_remaining_seconds' => $timeRemaining,
+                'is_expired' => $isExpired,
             ],
         ]);
     }
@@ -243,6 +249,67 @@ class BookingController extends Controller
             'bookings' => $bookings,
             'total' => $bookings->count(),
             'active_count' => $bookings->where('status', 'active')->where('is_expired', false)->count(),
+        ]);
+    }
+
+    /**
+     * Look up booking by customer code (API endpoint for My Booking).
+     */
+    public function lookupByCustomerCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'customer_code' => ['required', 'string', 'max:20'],
+        ]);
+
+        $code = trim($validated['customer_code']);
+
+        $customer = Customer::where('customer_code', $code)->first();
+
+        if (!$customer) {
+            return response()->json([
+                'found' => false,
+                'message' => 'Invalid customer code. Please try again.',
+            ]);
+        }
+
+        $booking = TableBooking::with(['customer', 'tables'])
+            ->where('customer_id', $customer->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$booking) {
+            return response()->json([
+                'found' => false,
+                'message' => 'No booking found for this customer code.',
+            ]);
+        }
+
+        $isExpired = false;
+        if ($booking->status === 'active' && $booking->expires_at) {
+            $isExpired = Carbon::now()->greaterThan($booking->expires_at);
+        }
+
+        $timeRemaining = null;
+        if ($booking->status === 'active' && $booking->expires_at && !$isExpired) {
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
+        }
+
+        return response()->json([
+            'found' => true,
+            'booking' => [
+                'id' => $booking->id,
+                'customer_name' => $booking->customer?->name ?? 'Unknown',
+                'customer_phone' => $booking->customer?->phone ?? 'N/A',
+                'customer_code' => $booking->customer?->customer_code ?? '',
+                'customer_id' => $booking->customer?->id,
+                'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
+                'status' => $booking->status,
+                'booked_at' => $booking->booked_at,
+                'expires_at' => $booking->expires_at,
+                'cancelled_at' => $booking->cancelled_at,
+                'time_remaining_seconds' => $timeRemaining,
+                'is_expired' => $isExpired,
+            ],
         ]);
     }
 

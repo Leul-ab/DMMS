@@ -13,3 +13,4 @@ Route::get('/my-order', [MenuController::class, 'myOrder'])
 // Customer membership registration
 Route::post('/customer/register', [CustomerController::class, 'store'])
     ->name('customer.register');
+

@@ -10,6 +10,7 @@ class Order extends Model
 {
     protected $fillable = [
     'table_id',
+    'customer_id',
     'order_number',
     'status',
     'payment_status',
@@ -20,7 +21,7 @@ class Order extends Model
     'customer_phone',
     'notes',
 ];
-    
+
 
     protected function casts(): array
 {
@@ -45,5 +46,10 @@ class Order extends Model
             OrderItem::class,
             'order_id'
         );
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 }
