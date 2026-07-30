@@ -7,7 +7,8 @@ use App\Http\Controllers\Manager\OrderController;
 use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\RestaurantTableController;
 use Illuminate\Support\Facades\Route;
-
+use Inertia\Inertia;
+use App\Http\Controllers\Manager\ReportController;
 Route::middleware(['auth', 'role:super_admin,manager'])
     ->prefix('manager')
     ->name('manager.')
@@ -239,6 +240,17 @@ Route::patch(
                 'destroy'
             ]
         )->name('bookings.destroy');
+        // =========================
+// Reports
+// =========================
+Route::get(
+    'reports',
+    function () {
+        return Inertia::render('manager/reports/index');
+    }
+)->name('reports.index');
+Route::get('/reports', [ReportController::class, 'index'])
+    ->name('reports.index');
 
     });
 
