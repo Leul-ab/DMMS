@@ -100,6 +100,7 @@ type Props = {
     booking_success?: boolean;
     booking_data?: BookingData | null;
     customer_code?: string;
+    tableError?: string | null;
 };
 
 const formatCountdown = (seconds: number): string => {
@@ -127,11 +128,12 @@ export default function MenuIndex({
     booking_success = false,
     booking_data = null,
     customer_code = '',
+    tableError: propTableError = null,
 }: Props) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [showMemberForm, setShowMemberForm] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [tableError, setTableError] = useState<string | null>(null);
+    const [tableError, setTableError] = useState<string | null>(propTableError);
     const [animatingItems, setAnimatingItems] = useState<Set<number>>(new Set());
     const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
     const cartBtnRef = useRef<HTMLButtonElement>(null);

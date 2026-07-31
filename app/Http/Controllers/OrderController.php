@@ -15,9 +15,12 @@ class OrderController extends Controller
 {
     public function store(Request $request)
     {
+        // Use the table_id from the request, or fall back to the session-scanned table
+        $tableId = $request->input('table_id') ?? session('scanned_table_id');
+
         $validated = $request->validate([
             'table_id' => [
-                'required',
+                'nullable',
                 'exists:restaurant_tables,id',
             ],
 
@@ -45,9 +48,14 @@ class OrderController extends Controller
             ],
         ]);
 
-        $table = RestaurantTable::findOrFail(
-            $validated['table_id']
-        );
+        // If no table_id in request, use the session-scanned table
+        if (!$tableId) {
+            return back()->withErrors([
+                'table' => 'No table selected. Please scan the QR code on your table.',
+            ])->withInput();
+        }
+
+        $table = RestaurantTable::findOrFail($tableId);
 
         // Check if table already has an active order
         $activeOrderExists = Order::where('table_id', $table->id)

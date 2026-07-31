@@ -1,4 +1,3 @@
-
 import { Head, router } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import {
@@ -6,12 +5,14 @@ import {
     Pencil,
     Plus,
     Printer,
+    QrCode,
     Search,
     Trash2,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { QrPreviewModal } from '@/components/qr-preview-modal';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,7 @@ export default function TablesIndex({ tables }: Props) {
 
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isQrPreviewOpen, setIsQrPreviewOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
@@ -90,6 +92,9 @@ export default function TablesIndex({ tables }: Props) {
         useState<RestaurantTable | null>(null);
 
     const [tableNumber, setTableNumber] = useState('');
+
+    // Validation errors from the server
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // -----------------------------------------
     // Filter Tables
@@ -121,6 +126,7 @@ export default function TablesIndex({ tables }: Props) {
 
     const openAddModal = () => {
         setTableNumber('');
+        setErrors({});
         setIsAddOpen(true);
     };
 
@@ -138,6 +144,17 @@ export default function TablesIndex({ tables }: Props) {
         );
 
         setIsEditOpen(true);
+    };
+
+    // -----------------------------------------
+    // Open QR Preview Modal
+    // -----------------------------------------
+
+    const openQrPreview = (
+        table: RestaurantTable,
+    ) => {
+        setSelectedTable(table);
+        setIsQrPreviewOpen(true);
     };
 
     // -----------------------------------------
@@ -168,8 +185,11 @@ export default function TablesIndex({ tables }: Props) {
 
     const handleAdd = () => {
         if (!tableNumber) {
+            setErrors({ table_number: 'Please enter a table number.' });
             return;
         }
+
+        setErrors({});
 
         router.post(
             tablesStore.url(),
@@ -177,9 +197,15 @@ export default function TablesIndex({ tables }: Props) {
                 table_number: Number(tableNumber),
             },
             {
+                preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
                     setIsAddOpen(false);
                     setTableNumber('');
+                    setErrors({});
+                },
+                onError: (serverErrors) => {
+                    setErrors(serverErrors);
                 },
             },
         );
@@ -204,9 +230,14 @@ export default function TablesIndex({ tables }: Props) {
                 ),
             },
             {
+                preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
                     setIsEditOpen(false);
                     setSelectedTable(null);
+                },
+                onError: (serverErrors) => {
+                    setErrors(serverErrors);
                 },
             },
         );
@@ -255,6 +286,7 @@ export default function TablesIndex({ tables }: Props) {
                 selectedTable.id,
             ).url,
             {
+                preserveScroll: true,
                 onSuccess: () => {
                     setIsDeleteOpen(false);
                     setSelectedTable(null);
@@ -493,14 +525,31 @@ export default function TablesIndex({ tables }: Props) {
                                                         ) ||
                                                         table.qr_code?.endsWith(
                                                             '.jpg',
+                                                        ) ||
+                                                        table.qr_code?.endsWith(
+                                                            '.svg',
                                                         ) ? (
-                                                            <img
-                                                                src={`/storage/${table.qr_code}`}
-                                                                alt="QR"
-                                                                className="h-10 w-10 rounded-md border bg-white object-contain"
-                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openQrPreview(table)}
+                                                                title="Click to preview QR code"
+                                                                className="cursor-pointer transition hover:opacity-80"
+                                                            >
+                                                                <img
+                                                                    src={`/storage/${table.qr_code}`}
+                                                                    alt="QR"
+                                                                    className="h-10 w-10 rounded-md border bg-white object-contain"
+                                                                />
+                                                            </button>
                                                         ) : (
-                                                            table.qr_code
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openQrPreview(table)}
+                                                                title="Click to preview QR code"
+                                                                className="cursor-pointer text-sm text-blue-600 hover:underline"
+                                                            >
+                                                                {table.qr_code}
+                                                            </button>
                                                         )}
                                                     </td>
 
@@ -614,9 +663,12 @@ export default function TablesIndex({ tables }: Props) {
 
             <Dialog
                 open={isAddOpen}
-                onOpenChange={
-                    setIsAddOpen
-                }
+                onOpenChange={(open) => {
+                    setIsAddOpen(open);
+                    if (!open) {
+                        setErrors({});
+                    }
+                }}
             >
                 <DialogContent>
                     <DialogHeader>
@@ -643,26 +695,42 @@ export default function TablesIndex({ tables }: Props) {
                                 }
                                 onChange={(
                                     event,
-                                ) =>
+                                ) => {
                                     setTableNumber(
                                         event
                                             .target
                                             .value,
-                                    )
-                                }
+                                    );
+                                    // Clear error when user starts typing
+                                    if (errors.table_number) {
+                                        setErrors((prev) => {
+                                            const next = { ...prev };
+                                            delete next.table_number;
+                                            return next;
+                                        });
+                                    }
+                                }}
                                 placeholder="Example: 1"
                             />
+
+                            {/* Display validation error */}
+                            {errors.table_number && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.table_number}
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() =>
+                            onClick={() => {
                                 setIsAddOpen(
                                     false,
-                                )
-                            }
+                                );
+                                setErrors({});
+                            }}
                         >
                             Cancel
                         </Button>
@@ -778,6 +846,9 @@ export default function TablesIndex({ tables }: Props) {
                             ) ||
                             selectedTable?.qr_code?.endsWith(
                                 '.jpg',
+                            ) ||
+                            selectedTable?.qr_code?.endsWith(
+                                '.svg',
                             ) ? (
                                 <img
                                     src={`/storage/${selectedTable.qr_code}`}
@@ -853,6 +924,16 @@ export default function TablesIndex({ tables }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* =========================================
+                QR CODE PREVIEW MODAL
+            ========================================= */}
+
+            <QrPreviewModal
+                table={selectedTable}
+                open={isQrPreviewOpen}
+                onOpenChange={setIsQrPreviewOpen}
+            />
         </>
     );
 }
@@ -865,4 +946,3 @@ TablesIndex.layout = {
         },
     ],
 };
-
