@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { toast } from 'sonner';
 
@@ -32,6 +32,7 @@ type Order = {
     preparation_time: number | null;
     preparation_started_at: string | null;
     preparation_status: string;
+    special_instructions: string | null;
     table_id: number;
     created_at: string;
     updated_at: string;
@@ -90,9 +91,41 @@ export default function MyOrder({
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const [progressPercent, setProgressPercent] = useState<number>(0);
     const [showCompletion, setShowCompletion] = useState(false);
+    const prevPrepTimeRef = useRef<number | null>(null);
+
+    // Detect when the chef adds additional preparation time and notify the customer.
+    useEffect(() => {
+        if (!order) return;
+        const currentPrepTime = order.preparation_time;
+
+        if (
+            prevPrepTimeRef.current !== null &&
+            currentPrepTime !== null &&
+            currentPrepTime > prevPrepTimeRef.current &&
+            order.status === 'preparing'
+        ) {
+            const addedMinutes = currentPrepTime - prevPrepTimeRef.current;
+            toast.info(
+                `Preparation time has been updated. Your order will take approximately ${addedMinutes} additional minutes.`,
+                { duration: 5000 }
+            );
+        }
+
+        prevPrepTimeRef.current = currentPrepTime;
+    }, [order?.preparation_time, order?.status]);
 
     // Live countdown timer and progress calculation
     useEffect(() => {
+        // If the chef marked the order as ready (early finish), stop the
+        // countdown immediately and complete the progress bar.
+        if (order && order.status === 'ready') {
+            setRemainingSeconds(0);
+            setProgressPercent(100);
+            setShowCompletion(true);
+            return;
+        }
+
+        // No active preparation timer yet
         if (!order || !order.preparation_started_at || !order.preparation_time) {
             setRemainingSeconds(null);
             setProgressPercent(0);
@@ -104,6 +137,9 @@ export default function MyOrder({
             const startedAt = new Date(order.preparation_started_at!).getTime();
             const now = Date.now();
             const elapsed = Math.floor((now - startedAt) / 1000);
+            // The total may have been increased by the chef ("Add Time").
+            // Recalculating based on the updated preparation_time automatically
+            // bumps the remaining time and resets the progress percentage.
             const total = order.preparation_time! * 60;
             const remaining = Math.max(0, total - elapsed);
             const progress = Math.min(100, Math.round((elapsed / total) * 100));
@@ -118,7 +154,7 @@ export default function MyOrder({
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [order?.preparation_started_at, order?.preparation_time]);
+    }, [order?.preparation_started_at, order?.preparation_time, order?.status]);
 
     // Poll for order updates every 5 seconds
     useEffect(() => {
@@ -513,16 +549,6 @@ export default function MyOrder({
                                                     ETB
                                                 </p>
 
-                                                {/* Item Status */}
-                                                <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${
-                                                    item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                    item.status === 'preparing' ? 'bg-orange-100 text-orange-700' :
-                                                    item.status === 'ready' ? 'bg-green-100 text-green-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
-                                                    {item.status}
-                                                </span>
-
                                             </div>
 
                                             <div className="whitespace-nowrap font-black">
@@ -540,6 +566,19 @@ export default function MyOrder({
                                 )}
 
                             </div>
+
+                            {/* Additional Instructions */}
+                            {order.special_instructions && (
+                                <div className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                                    <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                                        <span>📝</span>
+                                        Additional Instructions
+                                    </h3>
+                                    <p className="mt-2 whitespace-pre-line text-sm text-amber-900">
+                                        {order.special_instructions}
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Total */}
                             <div className="mt-7 flex items-center justify-between border-t border-gray-200 pt-6">

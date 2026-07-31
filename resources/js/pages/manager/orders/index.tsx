@@ -59,6 +59,7 @@ type Order = {
     customer_name: string | null;
     customer_phone: string | null;
     notes: string | null;
+    special_instructions: string | null;
     created_at: string;
     table: RestaurantTable | null;
     order_items: OrderItem[];
@@ -508,6 +509,27 @@ export default function OrdersIndex({
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Special Instructions */}
+                                    {order.special_instructions && (
+                                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                            <div className="flex gap-2">
+                                                <FileText className="size-4 text-amber-700" />
+
+                                                <div>
+                                                    <p className="text-sm font-semibold text-amber-900">
+                                                        Additional Instructions
+                                                    </p>
+
+                                                    <p className="mt-1 whitespace-pre-line text-sm text-amber-800">
+                                                        {
+                                                            order.special_instructions
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Notes */}
                                     {order.notes && (

@@ -13,6 +13,7 @@ import {
     Check,
     RefreshCw,
     Loader2,
+    Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ type Order = {
     customer_name: string | null;
     customer_phone: string | null;
     notes: string | null;
+    special_instructions: string | null;
     created_at: string;
     estimated_minutes: number | null;
     preparation_time: number | null;
@@ -118,6 +120,8 @@ export default function KitchenDashboard({
     const [liveTimers, setLiveTimers] = useState<Record<number, number>>({});
     const [newOrderAlert, setNewOrderAlert] = useState(false);
     const [dialogTimerSeconds, setDialogTimerSeconds] = useState<number | null>(null);
+    const [addTimeDialog, setAddTimeDialog] = useState<Order | null>(null);
+    const [addTimeValue, setAddTimeValue] = useState<number>(10);
     const dialogTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Track new orders for notification
@@ -318,6 +322,38 @@ export default function KitchenDashboard({
         });
     };
 
+    /**
+     * Open the Add Time dialog for an order currently being prepared.
+     */
+    const openAddTimeDialog = (order: Order) => {
+        setAddTimeValue(10);
+        setAddTimeDialog(order);
+    };
+
+    /**
+     * Submit the additional time to the backend. The backend increases
+     * preparation_time so the customer's countdown and progress recalculate.
+     */
+    const submitAddTime = () => {
+        if (!addTimeDialog || !addTimeValue || addTimeValue <= 0) return;
+        setIsProcessing(true);
+        router.patch(`/kitchen/orders/${addTimeDialog.id}/add-time`, {
+            additional_minutes: addTimeValue,
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => {
+                toast.success(`Added ${addTimeValue} minute(s) to order ${addTimeDialog.order_number}.`);
+                setAddTimeDialog(null);
+                setIsProcessing(false);
+            },
+            onError: () => {
+                toast.error('Failed to add time');
+                setIsProcessing(false);
+            },
+        });
+    };
+
     const completeOrder = (order: Order) => {
         setIsProcessing(true);
         router.patch(`/kitchen/orders/${order.id}/complete`, {}, {
@@ -406,13 +442,13 @@ export default function KitchenDashboard({
                         {timeAgo(order.created_at)}
                     </div>
 
-                    {/* Preparation Time Display (locked after timer starts) */}
+                    {/* Preparation Time Display */}
                     {order.preparation_time && (
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                             <Timer className="h-3 w-3" />
                             {order.preparation_status === 'preparing' ? (
                                 <span className="font-semibold text-orange-600">
-                                    {order.preparation_time} min (locked)
+                                    {order.preparation_time} min total
                                 </span>
                             ) : (
                                 <span>Est. {order.preparation_time} min</span>
@@ -433,6 +469,19 @@ export default function KitchenDashboard({
                         <div className="rounded-lg bg-green-100 p-2 text-center text-sm font-bold text-green-600">
                             <CheckCircle2 className="h-4 w-4 inline mr-1" />
                             Time's up! Ready to serve.
+                        </div>
+                    )}
+
+                    {/* Special Instructions */}
+                    {order.special_instructions && (
+                        <div className="rounded-lg bg-amber-50 border border-amber-300 p-3">
+                            <p className="text-xs font-bold text-amber-800 flex items-center gap-1">
+                                <span>📝</span>
+                                Additional Instructions
+                            </p>
+                            <p className="mt-1 whitespace-pre-line text-xs text-amber-900">
+                                {order.special_instructions}
+                            </p>
                         </div>
                     )}
 
@@ -468,15 +517,29 @@ export default function KitchenDashboard({
                             </Button>
                         )}
                         {column === 'preparing' && order.preparation_status === 'preparing' && (
-                            <Button
-                                size="sm"
-                                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => markReady(order)}
-                                disabled={isProcessing}
-                            >
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
-                                Mark Ready
-                            </Button>
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                                        onClick={() => openAddTimeDialog(order)}
+                                        disabled={isProcessing}
+                                    >
+                                        <Plus className="h-4 w-4 mr-1" />
+                                        Add Time
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        onClick={() => markReady(order)}
+                                        disabled={isProcessing}
+                                    >
+                                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                                        Mark Ready
+                                    </Button>
+                                </div>
+                            </div>
                         )}
                         {column === 'ready' && (
                             <Button
@@ -668,6 +731,19 @@ export default function KitchenDashboard({
                                 )}
                             </div>
 
+                            {/* Special Instructions */}
+                            {prepDialog.special_instructions && (
+                                <div className="rounded-lg bg-amber-50 border border-amber-300 p-3">
+                                    <p className="text-sm font-bold text-amber-800 flex items-center gap-1">
+                                        <span>📝</span>
+                                        Additional Instructions
+                                    </p>
+                                    <p className="mt-1 whitespace-pre-line text-sm text-amber-900">
+                                        {prepDialog.special_instructions}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Estimated Time Display */}
                             <div className="flex items-center gap-2 text-sm text-gray-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
                                 <Clock className="h-4 w-4 text-orange-500" />
@@ -780,6 +856,109 @@ export default function KitchenDashboard({
                                 )}
                             </Button>
                         )}
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Additional Time Dialog */}
+            <Dialog open={!!addTimeDialog} onOpenChange={(open) => !open && setAddTimeDialog(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Plus className="h-5 w-5 text-orange-500" />
+                            Add Preparation Time
+                        </DialogTitle>
+                        <DialogDescription>
+                            Add additional time for order {addTimeDialog?.order_number}. The customer's remaining time and progress bar will update automatically.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {addTimeDialog && (
+                        <div className="py-4 space-y-5">
+                            {/* Current Total Time Display */}
+                            <div className="flex items-center gap-2 text-sm text-gray-600 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                                <Timer className="h-4 w-4 text-orange-500" />
+                                <span>
+                                    Current Total:{' '}
+                                    <strong className="text-orange-700">
+                                        {addTimeDialog.preparation_time || addTimeDialog.estimated_minutes || 0} Minutes
+                                    </strong>
+                                </span>
+                            </div>
+
+                            {/* Quick Add Options */}
+                            <div>
+                                <p className="text-sm font-medium text-gray-700 mb-3">Add Time</p>
+                                <div className="flex gap-2 flex-wrap">
+                                    {[5, 10, 15, 20, 30].map((minutes) => (
+                                        <button
+                                            key={minutes}
+                                            type="button"
+                                            onClick={() => setAddTimeValue(minutes)}
+                                            className={`flex-shrink-0 min-w-[3.5rem] px-3 py-2 rounded-lg text-sm font-bold transition-all duration-150 ${
+                                                addTimeValue === minutes
+                                                    ? 'bg-orange-500 text-white shadow-md ring-2 ring-orange-300 scale-105'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm'
+                                            }`}
+                                        >
+                                            +{minutes} min
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Custom Minutes Input */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                    Custom Minutes
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={120}
+                                    value={addTimeValue}
+                                    onChange={(e) => {
+                                        const val = parseInt(e.target.value, 10);
+                                        if (!isNaN(val) && val >= 1 && val <= 120) {
+                                            setAddTimeValue(val);
+                                        }
+                                    }}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                    placeholder="Enter minutes (1-120)"
+                                />
+                            </div>
+
+                            {/* New Total Preview */}
+                            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                                <p className="text-xs text-amber-700 font-semibold">
+                                    New Total:{' '}
+                                    <strong className="text-amber-900">
+                                        {(addTimeDialog.preparation_time || addTimeDialog.estimated_minutes || 0) + addTimeValue} Minutes
+                                    </strong>
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="sm:justify-between">
+                        <Button
+                            variant="outline"
+                            onClick={() => setAddTimeDialog(null)}
+                            disabled={isProcessing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitAddTime}
+                            disabled={isProcessing || !addTimeValue || addTimeValue <= 0}
+                            className="bg-orange-500 hover:bg-orange-600 min-w-[140px]"
+                        >
+                            {isProcessing ? (
+                                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...</>
+                            ) : (
+                                <><Plus className="h-4 w-4 mr-2" /> Add Time</>
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

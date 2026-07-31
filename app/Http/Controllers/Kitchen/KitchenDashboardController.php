@@ -101,16 +101,52 @@ class KitchenDashboardController extends Controller
         return back()->with('success', 'Preparation started. Timer is now running.');
     }
 
+    /**
+     * Add additional preparation time to an order that is currently being prepared.
+     * The total preparation_time is increased so the customer's countdown and
+     * progress bar recalculate automatically.
+     */
+    public function addTime(Request $request, Order $order)
+    {
+        if ($order->status !== 'preparing') {
+            return back()->with('error', 'Order is not in preparing status.');
+        }
+
+        $validated = $request->validate([
+            'additional_minutes' => ['required', 'integer', 'min:1', 'max:120'],
+        ]);
+
+        $newTotal = ($order->preparation_time ?? 0) + $validated['additional_minutes'];
+
+        $order->update([
+            'preparation_time' => $newTotal,
+            'estimated_minutes' => $newTotal,
+        ]);
+
+        return back()->with('success', 'Additional preparation time added successfully.');
+    }
+
     public function markReady(Order $order)
     {
         if ($order->status !== 'preparing') {
             return back()->with('error', 'Order cannot be marked as ready.');
         }
 
+        // When the chef marks the order as ready early, stop the timer
+        // by setting preparation_time to the elapsed time so the customer's
+        // progress bar instantly reaches 100%.
+        $elapsedMinutes = 0;
+        if ($order->preparation_started_at) {
+            $elapsedSeconds = max(0, now()->getTimestamp() - $order->preparation_started_at->getTimestamp());
+            $elapsedMinutes = max(1, ceil($elapsedSeconds / 60));
+        }
+
         $order->update([
             'status' => 'ready',
             'preparation_status' => 'ready',
             'preparation_completed_at' => now(),
+            // Set preparation_time to elapsed time so the customer progress bar completes instantly
+            'preparation_time' => $elapsedMinutes,
         ]);
 
         return back()->with('success', 'Order marked as ready to serve.');

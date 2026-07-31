@@ -17,6 +17,9 @@ Route::prefix('kitchen')->name('kitchen.')->group(function () {
     // Start Preparation Timer
     Route::patch('/orders/{order}/start-preparation', [KitchenDashboardController::class, 'startPreparation'])->name('orders.start-preparation');
 
+    // Add Additional Preparation Time
+    Route::patch('/orders/{order}/add-time', [KitchenDashboardController::class, 'addTime'])->name('orders.add-time');
+
     // Mark as Ready (Preparing → Ready)
     Route::patch('/orders/{order}/mark-ready', [KitchenDashboardController::class, 'markReady'])->name('orders.mark-ready');
 

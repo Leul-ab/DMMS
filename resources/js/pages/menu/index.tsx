@@ -23,6 +23,7 @@ import {
     Pill,
     Leaf,
     Flame,
+    MessageSquareText,
 } from 'lucide-react';
 import MyBooking from '@/pages/booking/my-booking';
 import { Button } from '@/components/ui/button';
@@ -153,6 +154,7 @@ export default function MenuIndex({
         email: '',
     });
 
+    const [specialInstructions, setSpecialInstructions] = useState('');
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [showMyBooking, setShowMyBooking] = useState(false);
     const [hasActiveBooking, setHasActiveBooking] = useState(false);
@@ -277,6 +279,7 @@ export default function MenuIndex({
             {
                 table_id: table.id,
                 items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
+                special_instructions: specialInstructions.trim() || null,
             },
             {
                 onSuccess: () => {
@@ -396,7 +399,7 @@ export default function MenuIndex({
           )
         : menuItems;
 
-    const CartContent = ({ inSheet = false }: { inSheet?: boolean }) => (
+    const renderCartContent = (inSheet = false) => (
         <div className="flex h-full flex-col">
             {!inSheet && (
                 <div className="flex items-center justify-between border-b border-orange-200/60 p-4">
@@ -484,6 +487,33 @@ export default function MenuIndex({
 
             {cart.length > 0 && (
                 <div className="border-t border-orange-200/60 bg-gradient-to-t from-white to-orange-50/30 p-4">
+                    {/* Additional Instructions (Mobile) */}
+                    <div className="mb-3">
+                        <label htmlFor="special-instructions-mobile" className="flex items-center gap-2 text-sm font-bold text-stone-800">
+                            <MessageSquareText className="h-4 w-4 text-orange-500" />
+                            Additional Instructions
+                        </label>
+                        <textarea
+                            id="special-instructions-mobile"
+                            value={specialInstructions}
+                            onChange={(e) => {
+                                if (e.target.value.length <= 500) {
+                                    setSpecialInstructions(e.target.value);
+                                }
+                            }}
+                            rows={3}
+                            maxLength={500}
+                            placeholder={`Example:\n• No onions\n• Extra spicy\n• Less sugar\n• Separate the sauce\n• Allergy: No peanuts`}
+                            className="mt-2 w-full resize-y rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm text-stone-700 placeholder:text-amber-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                        />
+                        <div className="mt-1 flex items-center justify-between text-xs">
+                            <span className="text-amber-500">Optional</span>
+                            <span className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-500' : 'text-amber-500'}`}>
+                                {specialInstructions.length} / 500
+                            </span>
+                        </div>
+                    </div>
+
                     <div className="mb-3 space-y-2">
                         <div className="flex items-center justify-between text-sm text-amber-700">
                             <span>Subtotal ({cartQuantity} items)</span>
@@ -849,7 +879,7 @@ export default function MenuIndex({
                             )}
                         </SheetTitle>
                     </SheetHeader>
-                    <CartContent />
+                    {renderCartContent()}
                 </SheetContent>
             </Sheet>
 
@@ -1209,6 +1239,33 @@ export default function MenuIndex({
                                     <div className="flex justify-between text-sm text-orange-200">
                                         <span>Table</span>
                                         <span>{table ? `Table ${table.table_number}` : 'Not selected'}</span>
+                                    </div>
+                                </div>
+
+                                {/* Additional Instructions */}
+                                <div className="mt-6 border-b border-white/10 pb-6">
+                                    <label htmlFor="special-instructions" className="flex items-center gap-2 text-sm font-bold text-white">
+                                        <MessageSquareText className="h-4 w-4 text-orange-400" />
+                                        Additional Instructions
+                                    </label>
+                                    <textarea
+                                        id="special-instructions"
+                                        value={specialInstructions}
+                                        onChange={(e) => {
+                                            if (e.target.value.length <= 500) {
+                                                setSpecialInstructions(e.target.value);
+                                            }
+                                        }}
+                                        rows={4}
+                                        maxLength={500}
+                                        placeholder={`Example:\n• No onions\n• Extra spicy\n• Less sugar\n• Separate the sauce\n• Allergy: No peanuts`}
+                                        className="mt-3 w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-orange-200/40 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                                    />
+                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                        <span className="text-orange-300/60">Optional</span>
+                                        <span className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-400' : 'text-orange-200/60'}`}>
+                                            {specialInstructions.length} / 500
+                                        </span>
                                     </div>
                                 </div>
 

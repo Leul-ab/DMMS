@@ -44,6 +44,7 @@ type Order = {
     total_amount: string;
     customer_name: string | null;
     customer_phone: string | null;
+    special_instructions: string | null;
     created_at: string;
     table: { id: number; table_number: number } | null;
     customer: { id: number; customer_code: string; name: string } | null;
@@ -212,6 +213,19 @@ export default function PaymentOrderDetail({ order }: Props) {
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Special Instructions */}
+                                {order.special_instructions && (
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                                        <p className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                                            <span>📝</span>
+                                            Additional Instructions
+                                        </p>
+                                        <p className="mt-1 whitespace-pre-line text-sm text-amber-900">
+                                            {order.special_instructions}
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Divider */}
                                 <div className="border-t border-dashed border-gray-200" />

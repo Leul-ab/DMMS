@@ -25,6 +25,7 @@ class Order extends Model
         'preparation_started_at',
         'preparation_completed_at',
         'preparation_status',
+        'special_instructions',
     ];
 
 
