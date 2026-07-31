@@ -22,6 +22,10 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
 
     // Payment Management
     Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/today', [\App\Http\Controllers\Admin\PaymentController::class, 'todayRevenue'])->name('payments.today');
+    Route::get('payments/revenue', [\App\Http\Controllers\Admin\PaymentController::class, 'revenue'])->name('payments.revenue');
+    Route::get('payments/orders', [\App\Http\Controllers\Admin\PaymentController::class, 'orders'])->name('payments.orders');
+    Route::get('payments/orders/{order}/detail', [\App\Http\Controllers\Admin\PaymentController::class, 'orderDetail'])->name('payments.orders.detail');
     Route::get('payments/{order}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
     Route::patch('payments/{order}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateStatus'])->name('payments.update-status');
     Route::get('payments/{order}/receipt', [\App\Http\Controllers\Admin\PaymentController::class, 'printReceipt'])->name('payments.receipt');

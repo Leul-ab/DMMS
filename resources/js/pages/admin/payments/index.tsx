@@ -155,6 +155,16 @@ const paymentMethods: Record<string, string> = {
     card: 'Card',
 };
 
+type StatCard = {
+    label: string;
+    value: string | number;
+    icon: React.ReactNode;
+    bgColor: string;
+    iconColor: string;
+    filterParams: Record<string, string | undefined>;
+    route?: string;
+};
+
 export default function PaymentsIndex({ orders, stats, tables, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || '');
@@ -169,9 +179,100 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
     const [statusAction, setStatusAction] = useState<string>('');
     const [statusMethod, setStatusMethod] = useState<string>('cash');
     const [statusRef, setStatusRef] = useState('');
+    const [dateError, setDateError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const navigateToFilter = (params: Record<string, string | undefined>, route?: string) => {
+        const cleaned: Record<string, string> = {};
+        for (const [key, value] of Object.entries(params)) {
+            if (value !== undefined && value !== '') {
+                cleaned[key] = value;
+            }
+        }
+        if (route) {
+            router.get(route, cleaned, { preserveState: true });
+        } else {
+            router.get('/admin/payments/orders', cleaned, { preserveState: true });
+        }
+    };
+
+    const statCards: StatCard[] = useMemo(() => [
+        {
+            label: 'Total Orders',
+            value: stats.total_orders,
+            icon: <CreditCard className="h-6 w-6" />,
+            bgColor: 'bg-blue-100',
+            iconColor: 'text-blue-600',
+            filterParams: {},
+        },
+        {
+            label: 'Pending',
+            value: stats.pending_payments,
+            icon: <AlertCircle className="h-6 w-6" />,
+            bgColor: 'bg-yellow-100',
+            iconColor: 'text-yellow-600',
+            filterParams: { payment_status: 'pending' },
+        },
+        {
+            label: 'Paid',
+            value: stats.paid_orders,
+            icon: <CheckCircle2 className="h-6 w-6" />,
+            bgColor: 'bg-green-100',
+            iconColor: 'text-green-600',
+            filterParams: { payment_status: 'paid' },
+        },
+        {
+            label: 'Unpaid',
+            value: stats.unpaid_orders,
+            icon: <XCircle className="h-6 w-6" />,
+            bgColor: 'bg-red-100',
+            iconColor: 'text-red-600',
+            filterParams: { payment_status: 'unpaid' },
+        },
+        {
+            label: 'Cancelled',
+            value: stats.cancelled_payments,
+            icon: <Ban className="h-6 w-6" />,
+            bgColor: 'bg-gray-100',
+            iconColor: 'text-gray-600',
+            filterParams: { payment_status: 'cancelled' },
+        },
+        {
+            label: "Today's Revenue",
+            value: `${Number(stats.today_revenue).toFixed(2)} ETB`,
+            icon: <DollarSign className="h-6 w-6" />,
+            bgColor: 'bg-orange-100',
+            iconColor: 'text-orange-600',
+            filterParams: {
+                payment_status: 'paid',
+                order_status: 'completed',
+                date_from: todayStr,
+                date_to: todayStr,
+            },
+        },
+        {
+            label: 'Total Revenue',
+            value: `${Number(stats.total_revenue).toFixed(2)} ETB`,
+            icon: <Wallet className="h-6 w-6" />,
+            bgColor: 'bg-green-100',
+            iconColor: 'text-green-600',
+            filterParams: {
+                payment_status: 'paid',
+                order_status: 'completed',
+            },
+        },
+    ], [stats, todayStr]);
+
     const applyFilters = () => {
+        // Validate date range
+        if (dateFrom && dateTo && dateTo < dateFrom) {
+            setDateError('End date cannot be before start date.');
+            return;
+        }
+        setDateError('');
+
         const params: Record<string, string> = {};
         if (search) params.search = search;
         if (paymentStatus) params.payment_status = paymentStatus;
@@ -181,6 +282,28 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
         if (dateFrom) params.date_from = dateFrom;
         if (dateTo) params.date_to = dateTo;
         router.get('/admin/payments', params, { preserveState: true });
+    };
+
+    const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDateFrom(e.target.value);
+        if (dateError) setDateError('');
+    };
+
+    const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDateTo(e.target.value);
+        if (dateError) setDateError('');
+    };
+
+    const clearFilters = () => {
+        setSearch('');
+        setPaymentStatus('');
+        setOrderStatus('');
+        setTableId('');
+        setPaymentMethod('');
+        setDateFrom('');
+        setDateTo('');
+        setDateError('');
+        router.get('/admin/payments', {}, { preserveState: true });
     };
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -243,83 +366,23 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
 
                 {/* Stats Cards */}
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-blue-100 p-3">
-                                <CreditCard className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Total Orders</p>
-                                <p className="text-2xl font-black">{stats.total_orders}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-yellow-100 p-3">
-                                <AlertCircle className="h-6 w-6 text-yellow-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Pending</p>
-                                <p className="text-2xl font-black">{stats.pending_payments}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-green-100 p-3">
-                                <CheckCircle2 className="h-6 w-6 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Paid</p>
-                                <p className="text-2xl font-black">{stats.paid_orders}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-red-100 p-3">
-                                <XCircle className="h-6 w-6 text-red-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Unpaid</p>
-                                <p className="text-2xl font-black">{stats.unpaid_orders}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-gray-100 p-3">
-                                <Ban className="h-6 w-6 text-gray-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Cancelled</p>
-                                <p className="text-2xl font-black">{stats.cancelled_payments}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-orange-100 p-3">
-                                <DollarSign className="h-6 w-6 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Today's Revenue</p>
-                                <p className="text-2xl font-black">{Number(stats.today_revenue).toFixed(2)} ETB</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-green-100 p-3">
-                                <Wallet className="h-6 w-6 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                                <p className="text-2xl font-black">{Number(stats.total_revenue).toFixed(2)} ETB</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {statCards.map((card) => (
+                        <Card
+                            key={card.label}
+                            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+                            onClick={() => navigateToFilter(card.filterParams, card.route)}
+                        >
+                            <CardContent className="flex items-center gap-4 p-6">
+                                <div className={`rounded-full ${card.bgColor} p-3 ${card.iconColor}`}>
+                                    {card.icon}
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">{card.label}</p>
+                                    <p className="text-2xl font-black">{card.value}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
 
                 {/* Filters */}
@@ -389,14 +452,14 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                             <Input
                                 type="date"
                                 value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
+                                onChange={handleDateFromChange}
                                 className="w-[160px]"
                                 placeholder="From"
                             />
                             <Input
                                 type="date"
                                 value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
+                                onChange={handleDateToChange}
                                 className="w-[160px]"
                                 placeholder="To"
                             />
@@ -404,6 +467,12 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                 <Search className="mr-2 h-4 w-4" />
                                 Search
                             </Button>
+                            <Button variant="outline" onClick={clearFilters}>
+                                Clear
+                            </Button>
+                            {dateError && (
+                                <div className="w-full text-sm text-red-500">{dateError}</div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
