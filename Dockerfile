@@ -1,4 +1,4 @@
-FROM php:8.4-fpm
+FROM php:8.4-fpm-alpine
 
 # System dependencies (incl. nginx, supervisor, build deps for PHP extensions)
 RUN apk add --no-cache \
