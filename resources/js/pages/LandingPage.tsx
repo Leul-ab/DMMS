@@ -404,19 +404,6 @@ function HeroSection() {
                                 </svg>
                             </Link>
                         </div>
-                        <div className="flex items-center gap-8 pt-4">
-                            <div className="flex -space-x-2">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                                        {String.fromCharCode(64 + i)}
-                                    </div>
-                                ))}
-                                <div className="w-10 h-10 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-orange-600 text-xs font-bold">+2k</div>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                <span className="font-bold text-gray-900">2,000+</span> Happy Customers
-                            </div>
-                        </div>
                     </div>
 
                     {/* Right Content - Hero Image with floating cards */}
@@ -821,7 +808,7 @@ function BenefitsSection() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                     {/* Left - Image */}
-                    <div className={`relative transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+                    <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
                         <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                             <img
                                 src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80"
@@ -829,20 +816,6 @@ function BenefitsSection() {
                                 className="w-full h-[400px] lg:h-[500px] object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                        </div>
-                        {/* Floating badge */}
-                        <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-gray-900">98%</p>
-                                    <p className="text-xs text-gray-500">Satisfaction Rate</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -1005,7 +978,7 @@ function FooterSection() {
     return (
         <footer className="bg-gray-900 text-gray-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {/* Brand */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
@@ -1086,23 +1059,6 @@ function FooterSection() {
                         </ul>
                     </div>
 
-                    {/* Newsletter */}
-                    <div>
-                        <h3 className="text-white font-semibold mb-4">Newsletter</h3>
-                        <p className="text-sm text-gray-400 mb-4">
-                            Subscribe to get the latest updates and offers.
-                        </p>
-                        <div className="flex">
-                            <input
-                                type="email"
-                                placeholder="Your email"
-                                className="flex-1 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-l-lg text-white text-sm focus:outline-none focus:border-orange-500 placeholder-gray-500"
-                            />
-                            <button className="px-4 py-2.5 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-sm font-medium rounded-r-lg hover:from-orange-500 hover:to-orange-700 transition-all duration-300">
-                                Subscribe
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Divider */}
