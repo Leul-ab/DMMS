@@ -160,7 +160,7 @@ export default function LandingPage() {
                 </nav>
 
                 {/* Hero Section */}
-                <HeroSection openMemberForm={() => setShowMemberForm(true)} />
+                <HeroSection />
 
                 {/* Features Section */}
                 <FeaturesSection />
@@ -172,13 +172,13 @@ export default function LandingPage() {
                 <MenuPreviewSection />
 
                 {/* Benefits Section */}
-                <BenefitsSection openMemberForm={() => setShowMemberForm(true)} />
+                <BenefitsSection />
 
                 {/* Customer Experience */}
                 <CustomerExperienceSection />
 
                 {/* CTA Section */}
-                <CTASection openMemberForm={() => setShowMemberForm(true)} />
+                <CTASection />
 
                 {/* Footer */}
                 <FooterSection />
@@ -362,7 +362,7 @@ export default function LandingPage() {
     );
 }
 
-function HeroSection({ openMemberForm }: { openMemberForm: () => void }) {
+function HeroSection() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -403,16 +403,6 @@ function HeroSection({ openMemberForm }: { openMemberForm: () => void }) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                 </svg>
                             </Link>
-                            <button
-                                type="button"
-                                onClick={openMemberForm}
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-700 font-semibold rounded-full border-2 border-gray-200 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg transition-all duration-300"
-                            >
-                                Become a Member
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                </svg>
-                            </button>
                         </div>
                         <div className="flex items-center gap-8 pt-4">
                             <div className="flex -space-x-2">
@@ -804,7 +794,7 @@ function MenuPreviewSection() {
     );
 }
 
-function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
+function BenefitsSection() {
     const benefits = [
         'Reduce waiting time for customers',
         'Digital ordering experience',
@@ -880,16 +870,6 @@ function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
                             ))}
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={openMemberForm}
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-orange-200 hover:scale-105 transition-all duration-300"
-                        >
-                            Become a Member
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -994,7 +974,7 @@ function CustomerExperienceSection() {
     );
 }
 
-function CTASection({ openMemberForm }: { openMemberForm: () => void }) {
+function CTASection() {
     return (
         <section className="py-20 lg:py-28 relative overflow-hidden">
             {/* Background with gradient */}
@@ -1013,30 +993,9 @@ function CTASection({ openMemberForm }: { openMemberForm: () => void }) {
                     Ready to Transform Your
                     <span className="block">Restaurant Experience?</span>
                 </h2>
-                <p className="text-lg sm:text-xl text-orange-100 mb-10 max-w-2xl mx-auto">
+                <p className="text-lg sm:text-xl text-orange-100 mb-0 max-w-2xl mx-auto">
                     Join thousands of restaurants using DMMS to streamline their operations and delight their customers.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link
-                        href={menuRoutes.index()}
-                        className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-orange-600 font-semibold rounded-full hover:shadow-xl hover:shadow-orange-300 hover:scale-105 transition-all duration-300"
-                    >
-                        Start Ordering
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={openMemberForm}
-                        className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white/10 text-white font-semibold rounded-full border-2 border-white/30 hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300"
-                    >
-                        Become a Member
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
-                    </button>
-                </div>
             </div>
         </section>
     );
