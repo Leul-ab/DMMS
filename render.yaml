@@ -14,10 +14,7 @@ services:
       - key: APP_NAME
         value: DMMS
       - key: APP_URL
-        fromService:
-          name: dmms
-          type: web
-          property: url
+        value: https://dmms.onrender.com
       - key: APP_KEY
         generateValue: true
       - key: APP_LOCALE
