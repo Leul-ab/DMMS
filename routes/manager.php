@@ -6,6 +6,7 @@ use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
 use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\RestaurantTableController;
+use App\Http\Controllers\Manager\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:super_admin,manager'])
@@ -204,7 +205,13 @@ Route::patch(
             [CustomerController::class, 'toggleMembership']
         )->name('customers.toggle-membership');
 
-
+                    // =========================
+            // Reports
+            // =========================
+            Route::get(
+                'reports',
+                [ReportController::class, 'index']
+            )->name('reports.index');
         // =========================
         // Booking Management
         // =========================
