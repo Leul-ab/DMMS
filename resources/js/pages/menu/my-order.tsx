@@ -29,6 +29,9 @@ type Order = {
     payment_submitted_at: string | null;
     total_amount: string;
     estimated_minutes: number | null;
+    preparation_time: number | null;
+    preparation_started_at: string | null;
+    preparation_status: string;
     table_id: number;
     created_at: string;
     updated_at: string;
@@ -41,13 +44,83 @@ type Props = {
     order: Order | null;
 };
 
+// Get progress bar color based on percentage
+function getProgressColor(percentage: number): string {
+    if (percentage >= 100) return 'bg-green-500';
+    if (percentage >= 81) return 'bg-green-400';
+    if (percentage >= 51) return 'bg-orange-500';
+    return 'bg-blue-500';
+}
+
+// Get progress bar background color based on percentage
+function getProgressBgColor(percentage: number): string {
+    if (percentage >= 100) return 'bg-green-100';
+    if (percentage >= 81) return 'bg-green-100';
+    if (percentage >= 51) return 'bg-orange-100';
+    return 'bg-blue-100';
+}
+
+// Get status message and emoji
+function getStatusInfo(status: string, preparationStatus: string): { emoji: string; message: string } {
+    switch (status) {
+        case 'pending':
+            return { emoji: '⏳', message: 'Waiting for Kitchen' };
+        case 'preparing':
+            if (preparationStatus === 'preparing') {
+                return { emoji: '🍳', message: 'Preparing Your Order' };
+            }
+            return { emoji: '⏳', message: 'Waiting for Kitchen' };
+        case 'ready':
+            return { emoji: '✅', message: 'Ready for Pickup / Ready to Serve' };
+        case 'completed':
+            return { emoji: '🎉', message: 'Order Completed' };
+        case 'cancelled':
+            return { emoji: '❌', message: 'Order Cancelled' };
+        default:
+            return { emoji: '📋', message: 'Order Received' };
+    }
+}
+
 export default function MyOrder({
     table,
     order,
 }: Props) {
     const [showPayment, setShowPayment] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+    const [progressPercent, setProgressPercent] = useState<number>(0);
+    const [showCompletion, setShowCompletion] = useState(false);
 
+    // Live countdown timer and progress calculation
+    useEffect(() => {
+        if (!order || !order.preparation_started_at || !order.preparation_time) {
+            setRemainingSeconds(null);
+            setProgressPercent(0);
+            setShowCompletion(false);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const startedAt = new Date(order.preparation_started_at!).getTime();
+            const now = Date.now();
+            const elapsed = Math.floor((now - startedAt) / 1000);
+            const total = order.preparation_time! * 60;
+            const remaining = Math.max(0, total - elapsed);
+            const progress = Math.min(100, Math.round((elapsed / total) * 100));
+
+            setRemainingSeconds(remaining);
+            setProgressPercent(progress);
+
+            // Show completion animation when progress reaches 100%
+            if (progress >= 100) {
+                setShowCompletion(true);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [order?.preparation_started_at, order?.preparation_time]);
+
+    // Poll for order updates every 5 seconds
     useEffect(() => {
         const interval = setInterval(() => {
             router.reload({
@@ -72,6 +145,15 @@ export default function MyOrder({
         });
     };
 
+    // Format time only (e.g., "2:35 PM")
+    const formatTimeOnly = (date: Date) => {
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+        });
+    };
+
     // Get status color
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -91,6 +173,24 @@ export default function MyOrder({
                 return 'bg-red-500';
             default:
                 return 'bg-gray-500';
+        }
+    };
+
+    // Get status emoji
+    const getStatusEmoji = (status: string) => {
+        switch (status) {
+            case 'pending':
+                return '⏳';
+            case 'preparing':
+                return '🍳';
+            case 'ready':
+                return '✅';
+            case 'completed':
+                return '✔️';
+            case 'cancelled':
+                return '❌';
+            default:
+                return '📋';
         }
     };
 
@@ -119,6 +219,23 @@ export default function MyOrder({
             }
         );
     };
+
+    // Determine the preparation time to display
+    const displayPrepTime = order?.preparation_time || order?.estimated_minutes;
+    const isTimerRunning = order?.preparation_started_at && order?.preparation_time && remainingSeconds !== null && remainingSeconds > 0;
+    const isTimerExpired = remainingSeconds !== null && remainingSeconds <= 0;
+
+    // Calculate expected ready time
+    const expectedReadyTime = order?.preparation_started_at && order?.preparation_time
+        ? new Date(new Date(order.preparation_started_at).getTime() + order.preparation_time * 60 * 1000)
+        : null;
+
+    // Get status info
+    const statusInfo = order ? getStatusInfo(order.status, order.preparation_status) : { emoji: '', message: '' };
+
+    // Progress bar color
+    const progressColor = getProgressColor(progressPercent);
+    const progressBgColor = getProgressBgColor(progressPercent);
 
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
@@ -242,7 +359,7 @@ export default function MyOrder({
                                     <div className="flex items-center gap-2">
                                         <span className={`h-3 w-3 rounded-full ${getStatusColor(order.status)}`}></span>
                                         <span className="w-fit rounded-full bg-orange-500 px-5 py-2 text-sm font-black capitalize text-white">
-                                            {order.status}
+                                            {order.status} {getStatusEmoji(order.status)}
                                         </span>
                                     </div>
 
@@ -254,35 +371,107 @@ export default function MyOrder({
                             <div className="border-t border-white/10 bg-white/5 px-7 py-5">
 
                                 <p className="text-sm text-gray-300">
-                                    Your order is currently{' '}
-                                    <strong className="capitalize text-orange-400">
-                                        {order.status}
+                                    <span className="text-lg">{statusInfo.emoji}</span>{' '}
+                                    <strong className="text-orange-400">
+                                        {statusInfo.message}
                                     </strong>
-                                    .
                                 </p>
 
                             </div>
 
                         </div>
 
-                        {/* Estimated Time */}
-                        {order.estimated_minutes && (
-                            <div className="flex items-center gap-4 rounded-2xl border border-orange-100 bg-orange-50 p-5">
+                        {/* Preparation Time Section with Progress Bar */}
+                        {displayPrepTime && (
+                            <div className={`rounded-2xl border p-6 ${
+                                isTimerRunning
+                                    ? 'border-orange-100 bg-orange-50'
+                                    : isTimerExpired || showCompletion
+                                        ? 'border-green-100 bg-green-50'
+                                        : 'border-orange-100 bg-orange-50'
+                            }`}>
+                                {/* Completion Animation */}
+                                {showCompletion && (
+                                    <div className="mb-4 text-center animate-bounce">
+                                        <span className="text-4xl">🎉</span>
+                                        <p className="mt-2 text-lg font-bold text-green-600">
+                                            Your order is ready!
+                                        </p>
+                                    </div>
+                                )}
 
-                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 text-xl">
-                                    ⏱️
+                                <div className="flex items-center gap-4">
+                                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-xl ${
+                                        isTimerExpired || showCompletion ? 'bg-green-500' : 'bg-orange-500'
+                                    }`}>
+                                        {isTimerExpired || showCompletion ? '✅' : '⏱️'}
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <p className="text-sm font-semibold text-gray-500">
+                                            {isTimerRunning
+                                                ? 'Preparing'
+                                                : isTimerExpired || showCompletion
+                                                    ? 'Ready to Serve'
+                                                    : 'Estimated Ready Time'}
+                                        </p>
+
+                                        <p className="mt-1 text-lg font-black">
+                                            {order.preparation_time || order.estimated_minutes} Minutes
+                                        </p>
+
+                                        {isTimerExpired && !showCompletion && (
+                                            <p className="mt-1 text-sm font-bold text-green-600">
+                                                Your order is ready! A waiter will bring it to you shortly.
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <p className="text-sm font-semibold text-gray-500">
-                                        Estimated preparation time
-                                    </p>
+                                {/* Progress Bar */}
+                                {(isTimerRunning || showCompletion) && (
+                                    <div className="mt-5">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-sm font-semibold text-gray-500">Preparation Progress</p>
+                                            <span className={`text-sm font-bold ${
+                                                progressPercent >= 100 ? 'text-green-600' :
+                                                progressPercent >= 81 ? 'text-green-500' :
+                                                progressPercent >= 51 ? 'text-orange-600' :
+                                                'text-blue-600'
+                                            }`}>
+                                                {progressPercent}%
+                                            </span>
+                                        </div>
 
-                                    <p className="mt-1 text-lg font-black">
-                                        {order.estimated_minutes} minutes
-                                    </p>
-                                </div>
+                                        {/* Progress Bar Track */}
+                                        <div className={`w-full rounded-full h-5 ${progressBgColor} overflow-hidden`}>
+                                            <div
+                                                className={`h-full rounded-full ${progressColor} transition-all duration-1000 ease-linear`}
+                                                style={{ width: `${Math.min(100, progressPercent)}%` }}
+                                            >
+                                                {/* Completion Checkmark */}
+                                                {progressPercent >= 100 && (
+                                                    <div className="flex items-center justify-center h-full text-white text-sm font-bold">
+                                                        ✅
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
 
+                                        {/* Expected Ready Time */}
+                                        {expectedReadyTime && (
+                                            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                                                <span>⏰</span>
+                                                <span>
+                                                    Expected Ready:{' '}
+                                                    <strong className="text-gray-700">
+                                                        {formatTimeOnly(expectedReadyTime)}
+                                                    </strong>
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
 

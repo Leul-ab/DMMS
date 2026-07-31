@@ -1,44 +1,25 @@
 <?php
 
 use App\Http\Controllers\Kitchen\KitchenDashboardController;
-use App\Http\Controllers\Kitchen\KitchenOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('kitchen')->name('kitchen.')->group(function () {
 
     // Kitchen Dashboard
-    Route::get('/dashboard', [
-        KitchenDashboardController::class,
-        'index'
-    ])->name('dashboard');
+    Route::get('/dashboard', [KitchenDashboardController::class, 'index'])->name('dashboard');
 
-    // Active Orders
-    Route::get('/orders/new', [
-        KitchenOrderController::class,
-        'newOrders'
-    ])->name('orders.new');
+    // Accept Order (Pending → Preparing)
+    Route::patch('/orders/{order}/accept', [KitchenDashboardController::class, 'acceptOrder'])->name('orders.accept');
 
-    // Order History
-    Route::get('/orders/history', [
-        KitchenOrderController::class,
-        'history'
-    ])->name('orders.history');
+    // Update Estimated Time (for customer sync before timer starts)
+    Route::patch('/orders/{order}/update-estimated-time', [KitchenDashboardController::class, 'updateEstimatedTime'])->name('orders.update-estimated-time');
 
-    // Update Order Status
-    Route::patch('/orders/{order}/status', [
-        KitchenOrderController::class,
-        'updateStatus'
-    ])->name('orders.update-status');
+    // Start Preparation Timer
+    Route::patch('/orders/{order}/start-preparation', [KitchenDashboardController::class, 'startPreparation'])->name('orders.start-preparation');
 
-    // Edit Order
-    Route::put('/orders/{order}', [
-        KitchenOrderController::class,
-        'update'
-    ])->name('orders.update');
+    // Mark as Ready (Preparing → Ready)
+    Route::patch('/orders/{order}/mark-ready', [KitchenDashboardController::class, 'markReady'])->name('orders.mark-ready');
 
-    // Delete Order
-    Route::delete('/orders/{order}', [
-        KitchenOrderController::class,
-        'destroy'
-    ])->name('orders.destroy');
+    // Complete Order (Ready → Completed)
+    Route::patch('/orders/{order}/complete', [KitchenDashboardController::class, 'completeOrder'])->name('orders.complete');
 });
