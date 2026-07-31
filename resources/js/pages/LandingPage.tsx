@@ -160,7 +160,7 @@ export default function LandingPage() {
                 </nav>
 
                 {/* Hero Section */}
-                <HeroSection openMemberForm={() => setShowMemberForm(true)} />
+                <HeroSection />
 
                 {/* Features Section */}
                 <FeaturesSection />
@@ -172,13 +172,13 @@ export default function LandingPage() {
                 <MenuPreviewSection />
 
                 {/* Benefits Section */}
-                <BenefitsSection openMemberForm={() => setShowMemberForm(true)} />
+                <BenefitsSection />
 
                 {/* Customer Experience */}
                 <CustomerExperienceSection />
 
                 {/* CTA Section */}
-                <CTASection openMemberForm={() => setShowMemberForm(true)} />
+                <CTASection />
 
                 {/* Footer */}
                 <FooterSection />
@@ -362,7 +362,7 @@ export default function LandingPage() {
     );
 }
 
-function HeroSection({ openMemberForm }: { openMemberForm: () => void }) {
+function HeroSection() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -403,29 +403,6 @@ function HeroSection({ openMemberForm }: { openMemberForm: () => void }) {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                                 </svg>
                             </Link>
-                            <button
-                                type="button"
-                                onClick={openMemberForm}
-                                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-700 font-semibold rounded-full border-2 border-gray-200 hover:border-orange-400 hover:text-orange-600 hover:shadow-lg transition-all duration-300"
-                            >
-                                Become a Member
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-8 pt-4">
-                            <div className="flex -space-x-2">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-300 to-orange-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
-                                        {String.fromCharCode(64 + i)}
-                                    </div>
-                                ))}
-                                <div className="w-10 h-10 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-orange-600 text-xs font-bold">+2k</div>
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                <span className="font-bold text-gray-900">2,000+</span> Happy Customers
-                            </div>
                         </div>
                     </div>
 
@@ -804,7 +781,7 @@ function MenuPreviewSection() {
     );
 }
 
-function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
+function BenefitsSection() {
     const benefits = [
         'Reduce waiting time for customers',
         'Digital ordering experience',
@@ -831,7 +808,7 @@ function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                     {/* Left - Image */}
-                    <div className={`relative transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
+                    <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
                         <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                             <img
                                 src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&q=80"
@@ -839,20 +816,6 @@ function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
                                 className="w-full h-[400px] lg:h-[500px] object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                        </div>
-                        {/* Floating badge */}
-                        <div className="absolute -bottom-4 -right-4 bg-white rounded-xl shadow-xl p-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                                    <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p className="text-sm font-bold text-gray-900">98%</p>
-                                    <p className="text-xs text-gray-500">Satisfaction Rate</p>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -880,16 +843,6 @@ function BenefitsSection({ openMemberForm }: { openMemberForm: () => void }) {
                             ))}
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={openMemberForm}
-                            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-400 to-orange-600 text-white font-semibold rounded-full hover:shadow-xl hover:shadow-orange-200 hover:scale-105 transition-all duration-300"
-                        >
-                            Become a Member
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -994,7 +947,7 @@ function CustomerExperienceSection() {
     );
 }
 
-function CTASection({ openMemberForm }: { openMemberForm: () => void }) {
+function CTASection() {
     return (
         <section className="py-20 lg:py-28 relative overflow-hidden">
             {/* Background with gradient */}
@@ -1013,30 +966,9 @@ function CTASection({ openMemberForm }: { openMemberForm: () => void }) {
                     Ready to Transform Your
                     <span className="block">Restaurant Experience?</span>
                 </h2>
-                <p className="text-lg sm:text-xl text-orange-100 mb-10 max-w-2xl mx-auto">
+                <p className="text-lg sm:text-xl text-orange-100 mb-0 max-w-2xl mx-auto">
                     Join thousands of restaurants using DMMS to streamline their operations and delight their customers.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link
-                        href={menuRoutes.index()}
-                        className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-orange-600 font-semibold rounded-full hover:shadow-xl hover:shadow-orange-300 hover:scale-105 transition-all duration-300"
-                    >
-                        Start Ordering
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
-                    </Link>
-                    <button
-                        type="button"
-                        onClick={openMemberForm}
-                        className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white/10 text-white font-semibold rounded-full border-2 border-white/30 hover:bg-white/20 hover:border-white/50 hover:scale-105 transition-all duration-300"
-                    >
-                        Become a Member
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                        </svg>
-                    </button>
-                </div>
             </div>
         </section>
     );
@@ -1046,7 +978,7 @@ function FooterSection() {
     return (
         <footer className="bg-gray-900 text-gray-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-10">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {/* Brand */}
                     <div>
                         <div className="flex items-center gap-2 mb-4">
@@ -1127,23 +1059,6 @@ function FooterSection() {
                         </ul>
                     </div>
 
-                    {/* Newsletter */}
-                    <div>
-                        <h3 className="text-white font-semibold mb-4">Newsletter</h3>
-                        <p className="text-sm text-gray-400 mb-4">
-                            Subscribe to get the latest updates and offers.
-                        </p>
-                        <div className="flex">
-                            <input
-                                type="email"
-                                placeholder="Your email"
-                                className="flex-1 px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-l-lg text-white text-sm focus:outline-none focus:border-orange-500 placeholder-gray-500"
-                            />
-                            <button className="px-4 py-2.5 bg-gradient-to-r from-orange-400 to-orange-600 text-white text-sm font-medium rounded-r-lg hover:from-orange-500 hover:to-orange-700 transition-all duration-300">
-                                Subscribe
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Divider */}
