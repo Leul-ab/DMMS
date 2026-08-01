@@ -1,10 +1,23 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    Loader2,
+    Clock,
+    Table2,
+    UserCheck,
+    UserPlus,
+    ListOrdered,
+    Calendar,
+    ArrowRight,
+    X,
+    Sparkles,
+    Utensils,
+    CheckCircle2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Clock, Table2, UserCheck, UserPlus, ListOrdered } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { store as bookingStore } from '@/routes/booking';
 
 type RestaurantTable = {
@@ -31,11 +44,13 @@ export default function BookingIndex({ availableTables }: Props) {
     const toggleTableSelection = (tableId: string) => {
         setSelectedTables((prev) => {
             const next = new Set(prev);
+
             if (next.has(tableId)) {
                 next.delete(tableId);
             } else {
                 next.add(tableId);
             }
+
             return next;
         });
     };
@@ -43,6 +58,7 @@ export default function BookingIndex({ availableTables }: Props) {
     const handleVerifyCustomer = async () => {
         if (!customerCode.trim()) {
             setVerificationError('Please enter your customer code.');
+
             return;
         }
 
@@ -52,6 +68,7 @@ export default function BookingIndex({ availableTables }: Props) {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -80,6 +97,7 @@ export default function BookingIndex({ availableTables }: Props) {
                 setStep('confirm');
             } else {
                 setVerificationError(data.message || 'Customer not found.');
+
                 if (data.message?.includes('register')) {
                     setShowRegisterDialog(true);
                 }
@@ -92,7 +110,9 @@ export default function BookingIndex({ availableTables }: Props) {
     };
 
     const handleBooking = () => {
-        if (!customerId || selectedTables.size === 0) return;
+        if (!customerId || selectedTables.size === 0) {
+return;
+}
 
         setIsBooking(true);
         router.post(bookingStore.url(), {
@@ -117,60 +137,116 @@ export default function BookingIndex({ availableTables }: Props) {
     return (
         <>
             <Head title="Book a Table" />
-            <div className="min-h-screen bg-stone-50 text-gray-900">
-                {/* Header */}
-                <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
+            <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50/30 to-white text-stone-800 selection:bg-orange-200 selection:text-orange-900">
+                {/* ================= HEADER ================= */}
+                <header className="sticky top-0 z-50 border-b border-orange-200/60 bg-white/80 shadow-sm backdrop-blur-xl">
                     <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-                        <div>
-                            <h1 className="text-2xl font-black tracking-tight">
+                        <Link href="/booking" className="group">
+                            <h1 className="text-2xl font-black tracking-tight text-stone-800 transition group-hover:text-orange-600">
                                 DINE<span className="text-orange-500">.</span>
                             </h1>
-                            <p className="text-xs font-medium uppercase tracking-widest text-gray-500">
-                                Digital Menu
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-500">
+                                Reserve a Table
                             </p>
-                        </div>
-                        <a
-                            href="/menu"
-                            className="rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-500"
-                        >
-                            ← Back to Menu
-                        </a>
+                        </Link>
+
+                        <nav className="flex items-center gap-1.5 sm:gap-2.5">
+                            <Link href="/menu">
+                                <Button variant="ghost" size="sm" className="rounded-full text-amber-600 hover:bg-orange-100 hover:text-orange-700">
+                                    <Utensils className="h-3.5 w-3.5" />
+                                    <span className="hidden sm:inline">Menu</span>
+                                </Button>
+                            </Link>
+                            <Link href="/menu">
+                                <Button size="sm" className="rounded-full">
+                                    <Calendar className="h-3.5 w-3.5" />
+                                    <span className="hidden xs:inline">Back to</span>
+                                    Menu
+                                </Button>
+                            </Link>
+                        </nav>
                     </div>
                 </header>
 
-                {/* Main Content */}
-                <main className="mx-auto max-w-4xl px-5 py-12">
+                {/* ================= HERO ================= */}
+                <section className="relative overflow-hidden bg-gradient-to-br from-orange-950 via-orange-900 to-amber-900">
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+                    <div className="absolute -right-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-orange-500/15 blur-3xl" />
+                    <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] animate-pulse rounded-full bg-amber-500/10 blur-3xl" style={{ animationDelay: '1s' }} />
+
+                    <div className="relative mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+                        <div className="max-w-2xl">
+                            <Badge variant="secondary" className="mb-4 animate-in fade-in slide-in-from-left-4 bg-orange-500/15 text-orange-200 backdrop-blur-sm fill-mode-both">
+                                <Sparkles className="mr-1 h-3 w-3" />
+                                Reserve Your Table
+                            </Badge>
+
+                            <h2 className="animate-in fade-in slide-in-from-bottom-4 fill-mode-both text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl" style={{ animationDelay: '100ms' }}>
+                                Book your table,
+                                <br />
+                                <span className="bg-gradient-to-r from-orange-200 via-orange-300 to-amber-200 bg-clip-text text-transparent">
+                                    we'll save your seat.
+                                </span>
+                            </h2>
+
+                            <p className="mt-5 max-w-xl animate-in fade-in slide-in-from-bottom-4 fill-mode-both text-base leading-relaxed text-orange-200/80 sm:text-lg" style={{ animationDelay: '200ms' }}>
+                                Select your tables, verify your identity, and reserve your spot in just a few
+                                easy steps. Your table will be held for you once confirmed.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ================= MAIN CONTENT ================= */}
+                <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
                     {/* Page Header */}
-                    <div className="mb-10 text-center">
-                        <p className="font-semibold uppercase tracking-widest text-orange-500">
-                            Reserve Your Table
-                        </p>
-                        <h1 className="mt-2 text-4xl font-black sm:text-5xl">
+                    <div className="mb-8 text-center">
+                        <Badge variant="secondary" className="mb-2 bg-orange-100 text-orange-700">
+                            <Calendar className="mr-1 h-3 w-3" />
                             Book a Table
+                        </Badge>
+                        <h1 className="text-3xl font-black tracking-tight text-stone-800 sm:text-4xl">
+                            Choose Your Table
                         </h1>
-                        <p className="mt-3 text-gray-500">
+                        <p className="mt-2 text-amber-600">
                             Select your tables and verify your identity to book.
                         </p>
                     </div>
 
                     {/* Step Indicator */}
-                    <div className="mb-10 flex items-center justify-center gap-4">
-                        <div className={`flex items-center gap-2 ${step === 'select' || step === 'verify' || step === 'confirm' ? 'text-orange-500' : 'text-gray-400'}`}>
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${step === 'select' ? 'bg-orange-500 text-white' : step === 'verify' || step === 'confirm' ? 'bg-orange-100 text-orange-500' : 'bg-gray-100'}`}>
+                    <div className="mb-10 flex items-center justify-center gap-3 sm:gap-4">
+                        <div className={`flex items-center gap-2 ${step === 'select' || step === 'verify' || step === 'confirm' ? 'text-orange-600' : 'text-amber-400'}`}>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                step === 'select'
+                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
+                                    : step === 'verify' || step === 'confirm'
+                                    ? 'bg-orange-100 text-orange-600'
+                                    : 'border border-orange-200 bg-white text-amber-400'
+                            }`}>
                                 1
                             </div>
                             <span className="text-sm font-semibold">Select Tables</span>
                         </div>
-                        <div className="h-px w-12 bg-gray-300" />
-                        <div className={`flex items-center gap-2 ${step === 'verify' || step === 'confirm' ? 'text-orange-500' : 'text-gray-400'}`}>
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${step === 'verify' ? 'bg-orange-500 text-white' : step === 'confirm' ? 'bg-orange-100 text-orange-500' : 'bg-gray-100'}`}>
+                        <div className="h-px w-10 bg-orange-200 sm:w-12" />
+                        <div className={`flex items-center gap-2 ${step === 'verify' || step === 'confirm' ? 'text-orange-600' : 'text-amber-400'}`}>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                step === 'verify'
+                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
+                                    : step === 'confirm'
+                                    ? 'bg-orange-100 text-orange-600'
+                                    : 'border border-orange-200 bg-white text-amber-400'
+                            }`}>
                                 2
                             </div>
                             <span className="text-sm font-semibold">Verify</span>
                         </div>
-                        <div className="h-px w-12 bg-gray-300" />
-                        <div className={`flex items-center gap-2 ${step === 'confirm' ? 'text-orange-500' : 'text-gray-400'}`}>
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${step === 'confirm' ? 'bg-orange-500 text-white' : 'bg-gray-100'}`}>
+                        <div className="h-px w-10 bg-orange-200 sm:w-12" />
+                        <div className={`flex items-center gap-2 ${step === 'confirm' ? 'text-orange-600' : 'text-amber-400'}`}>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                step === 'confirm'
+                                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
+                                    : 'border border-orange-200 bg-white text-amber-400'
+                            }`}>
                                 3
                             </div>
                             <span className="text-sm font-semibold">Confirm</span>
@@ -179,46 +255,55 @@ export default function BookingIndex({ availableTables }: Props) {
 
                     {/* Step 1: Select Tables */}
                     {step === 'select' && (
-                        <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                        <div className="rounded-3xl border border-orange-200/60 bg-white p-6 shadow-sm sm:p-8">
                             <div className="mb-6">
-                                <h2 className="text-2xl font-black">Select Tables</h2>
-                                <p className="mt-1 text-gray-500">Choose one or more tables to book.</p>
+                                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
+                                    <Table2 className="h-5 w-5 text-orange-500" />
+                                    Select Tables
+                                </h2>
+                                <p className="mt-1 text-amber-600">Choose one or more tables to book.</p>
                             </div>
 
                             {availableTables.length === 0 ? (
-                                <div className="rounded-2xl bg-stone-50 p-10 text-center">
-                                    <Table2 className="mx-auto h-12 w-12 text-gray-300" />
-                                    <p className="mt-4 text-lg font-bold text-gray-500">No tables available</p>
-                                    <p className="mt-1 text-sm text-gray-400">All tables are currently occupied or booked.</p>
+                                <div className="rounded-2xl border border-orange-100/80 bg-orange-50/50 p-10 text-center">
+                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100">
+                                        <Table2 className="h-8 w-8 text-amber-400" />
+                                    </div>
+                                    <p className="mt-4 text-lg font-bold text-stone-800">No tables available</p>
+                                    <p className="mt-1 text-sm text-amber-600">All tables are currently occupied or booked.</p>
                                 </div>
                             ) : (
                                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                     {availableTables.map((table) => {
                                         const tableId = String(table.id);
                                         const isChecked = selectedTables.has(tableId);
+
                                         return (
                                             <label
                                                 key={table.id}
-                                                className={`flex cursor-pointer items-center gap-4 rounded-2xl border-2 p-5 transition-all ${
+                                                className={`flex cursor-pointer items-center gap-4 rounded-2xl border-2 p-5 transition-all duration-200 active:scale-[0.98] ${
                                                     isChecked
-                                                        ? 'border-orange-500 bg-orange-50 shadow-md'
-                                                        : 'border-gray-100 hover:border-orange-200 hover:bg-orange-50/50'
+                                                        ? 'border-orange-500 bg-orange-50 shadow-md shadow-orange-200/50'
+                                                        : 'border-orange-100/80 hover:border-orange-300 hover:bg-orange-50/50 hover:shadow-sm'
                                                 }`}
                                             >
                                                 <Checkbox
                                                     checked={isChecked}
                                                     onCheckedChange={() => toggleTableSelection(tableId)}
-                                                    className="h-5 w-5"
+                                                    className="h-5 w-5 border-orange-300 text-orange-600 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
                                                 />
-                                                <div className="flex items-center justify-between w-full">
+                                                <div className="flex w-full items-center justify-between">
                                                     <div>
-                                                        <span className="text-lg font-bold">Table {table.table_number}</span>
-                                                        <p className="text-xs text-gray-400 mt-0.5">
+                                                        <span className="text-lg font-bold text-stone-800">Table {table.table_number}</span>
+                                                        <p className="mt-0.5 text-xs text-amber-500">
                                                             {table.status === 'available' ? 'Available' : table.status}
                                                         </p>
                                                     </div>
-                                                    <Badge variant={table.status === 'available' ? 'default' : 'secondary'} className="capitalize">
-                                                        {table.status}
+                                                    <Badge
+                                                        variant={table.status === 'available' ? 'default' : 'secondary'}
+                                                        className={table.status === 'available' ? 'bg-orange-100 text-orange-700 hover:bg-orange-100' : ''}
+                                                    >
+                                                        <span className="capitalize">{table.status}</span>
                                                     </Badge>
                                                 </div>
                                             </label>
@@ -228,8 +313,9 @@ export default function BookingIndex({ availableTables }: Props) {
                             )}
 
                             {selectedTables.size > 0 && (
-                                <div className="mt-6 rounded-2xl bg-orange-50 p-4">
-                                    <p className="text-sm font-semibold text-orange-700">
+                                <div className="mt-6 rounded-2xl border border-orange-200/60 bg-orange-50 p-4">
+                                    <p className="flex items-center gap-2 text-sm font-bold text-orange-700">
+                                        <CheckCircle2 className="h-4 w-4" />
                                         {selectedTables.size} table(s) selected
                                     </p>
                                 </div>
@@ -239,9 +325,10 @@ export default function BookingIndex({ availableTables }: Props) {
                                 <Button
                                     onClick={() => setStep('verify')}
                                     disabled={selectedTables.size === 0}
-                                    className="rounded-xl bg-gray-900 px-8 py-6 text-base font-bold hover:bg-orange-500"
+                                    className="rounded-xl px-8 py-6 text-base font-bold shadow-lg shadow-orange-500/25"
                                 >
-                                    Continue to Verify →
+                                    Continue to Verify
+                                    <ArrowRight className="h-4 w-4" />
                                 </Button>
                             </div>
                         </div>
@@ -249,42 +336,46 @@ export default function BookingIndex({ availableTables }: Props) {
 
                     {/* Step 2: Verify Customer */}
                     {step === 'verify' && (
-                        <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                        <div className="rounded-3xl border border-orange-200/60 bg-white p-6 shadow-sm sm:p-8">
                             <div className="mb-6">
-                                <h2 className="text-2xl font-black">Verify Your Identity</h2>
-                                <p className="mt-1 text-gray-500">Enter your customer code to verify.</p>
+                                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
+                                    <UserCheck className="h-5 w-5 text-orange-500" />
+                                    Verify Your Identity
+                                </h2>
+                                <p className="mt-1 text-amber-600">Enter your customer code to verify.</p>
                             </div>
 
                             <div className="space-y-5">
                                 <div>
-                                    <label className="mb-2 block text-sm font-bold text-gray-700">Customer Code</label>
+                                    <label className="mb-2 block text-sm font-bold text-stone-700">Customer Code</label>
                                     <input
                                         type="text"
                                         value={customerCode}
                                         onChange={(e) => setCustomerCode(e.target.value.toUpperCase())}
                                         placeholder="Enter your customer code (e.g. AB12CD)"
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500 uppercase"
+                                        className="h-11 w-full rounded-xl border border-orange-200 bg-white px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                                     />
                                 </div>
 
                                 {verificationError && (
-                                    <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
                                         {verificationError}
                                     </div>
                                 )}
 
-                                <div className="flex gap-3">
+                                <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button
                                         variant="outline"
                                         onClick={handleBackToSelect}
-                                        className="flex-1 rounded-xl py-6"
+                                        className="flex-1 rounded-xl border-orange-200 py-6 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                                     >
-                                        ← Back
+                                        <ArrowRight className="h-4 w-4 rotate-180" />
+                                        Back
                                     </Button>
                                     <Button
                                         onClick={handleVerifyCustomer}
                                         disabled={isVerifying}
-                                        className="flex-1 rounded-xl bg-gray-900 py-6 text-base font-bold hover:bg-orange-500"
+                                        className="flex-1 rounded-xl py-6 text-base font-bold shadow-lg shadow-orange-500/25"
                                     >
                                         {isVerifying ? (
                                             <span className="flex items-center justify-center gap-2">
@@ -305,28 +396,35 @@ export default function BookingIndex({ availableTables }: Props) {
 
                     {/* Step 3: Confirm Booking */}
                     {step === 'confirm' && (
-                        <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                        <div className="rounded-3xl border border-orange-200/60 bg-white p-6 shadow-sm sm:p-8">
                             <div className="mb-6">
-                                <h2 className="text-2xl font-black">Confirm Booking</h2>
-                                <p className="mt-1 text-gray-500">Review your booking details before confirming.</p>
+                                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
+                                    <ListOrdered className="h-5 w-5 text-orange-500" />
+                                    Confirm Booking
+                                </h2>
+                                <p className="mt-1 text-amber-600">Review your booking details before confirming.</p>
                             </div>
 
                             <div className="space-y-6">
                                 {/* Customer Info */}
-                                <div className="rounded-2xl bg-stone-50 p-5">
-                                    <p className="text-sm font-semibold text-gray-500">Customer</p>
-                                    <p className="mt-1 text-lg font-bold">{customerData?.name}</p>
-                                    <p className="text-sm text-gray-500">{customerData?.phone} • Code: <span className="font-bold text-gray-900">{customerData?.code}</span></p>
+                                <div className="rounded-2xl border border-orange-100/80 bg-orange-50/40 p-5">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">Customer</p>
+                                    <p className="mt-1 text-lg font-black text-stone-800">{customerData?.name}</p>
+                                    <p className="mt-0.5 text-sm text-amber-600">
+                                        {customerData?.phone} • Code:{' '}
+                                        <span className="font-bold text-orange-600">{customerData?.code}</span>
+                                    </p>
                                 </div>
 
                                 {/* Selected Tables */}
-                                <div className="rounded-2xl bg-stone-50 p-5">
-                                    <p className="text-sm font-semibold text-gray-500">Selected Tables</p>
+                                <div className="rounded-2xl border border-orange-100/80 bg-orange-50/40 p-5">
+                                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">Selected Tables</p>
                                     <div className="mt-2 flex flex-wrap gap-2">
                                         {Array.from(selectedTables).map((id) => {
                                             const table = availableTables.find((t) => String(t.id) === id);
+
                                             return table ? (
-                                                <Badge key={id} variant="default" className="px-3 py-1.5 text-sm">
+                                                <Badge key={id} variant="secondary" className="bg-orange-100 px-3 py-1.5 text-sm text-orange-700">
                                                     Table {table.table_number}
                                                 </Badge>
                                             ) : null;
@@ -335,28 +433,31 @@ export default function BookingIndex({ availableTables }: Props) {
                                 </div>
 
                                 {/* Timer Info */}
-                                <div className="flex items-center gap-3 rounded-2xl bg-orange-50 p-5">
-                                    <Clock className="h-6 w-6 text-orange-500" />
+                                <div className="flex items-center gap-3 rounded-2xl border border-orange-200/60 bg-gradient-to-r from-orange-50 to-amber-50 p-5">
+                                    <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-orange-100">
+                                        <Clock className="h-6 w-6 text-orange-500" />
+                                    </div>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-700">Booking Expiration</p>
-                                        <p className="text-sm text-gray-500">
-                                            Your booking will expire in <strong>10 minutes</strong> if not confirmed.
+                                        <p className="text-sm font-bold text-stone-800">Booking Expiration</p>
+                                        <p className="text-sm text-amber-600">
+                                            Your booking will expire in <strong className="text-orange-600">10 minutes</strong> if not confirmed.
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-3">
+                                <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button
                                         variant="outline"
                                         onClick={handleBackToSelect}
-                                        className="flex-1 rounded-xl py-6"
+                                        className="flex-1 rounded-xl border-orange-200 py-6 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                                     >
-                                        ← Change Tables
+                                        <ArrowRight className="h-4 w-4 rotate-180" />
+                                        Change Tables
                                     </Button>
                                     <Button
                                         onClick={handleBooking}
                                         disabled={isBooking}
-                                        className="flex-1 rounded-xl bg-orange-500 py-6 text-base font-bold hover:bg-orange-600"
+                                        className="flex-1 rounded-xl py-6 text-base font-bold shadow-lg shadow-orange-500/25"
                                     >
                                         {isBooking ? (
                                             <span className="flex items-center justify-center gap-2">
@@ -364,7 +465,10 @@ export default function BookingIndex({ availableTables }: Props) {
                                                 Booking...
                                             </span>
                                         ) : (
-                                            'Confirm Booking →'
+                                            <span className="flex items-center justify-center gap-2">
+                                                Confirm Booking
+                                                <ArrowRight className="h-4 w-4" />
+                                            </span>
                                         )}
                                     </Button>
                                 </div>
@@ -375,60 +479,61 @@ export default function BookingIndex({ availableTables }: Props) {
                     {/* Register Dialog */}
                     {showRegisterDialog && (
                         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4">
-                            <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
+                            <div className="w-full max-w-md rounded-3xl border border-orange-200 bg-white p-7 shadow-2xl">
                                 <div className="flex items-start justify-between">
                                     <div>
-                                        <p className="font-semibold uppercase tracking-widest text-orange-500">
+                                        <Badge variant="secondary" className="mb-1 bg-orange-100 text-orange-700">
                                             Not Registered
-                                        </p>
-                                        <h2 className="mt-1 text-2xl font-black text-gray-900">
+                                        </Badge>
+                                        <h2 className="mt-1 text-2xl font-black text-stone-800">
                                             Register First
                                         </h2>
-                                        <p className="mt-2 text-sm text-gray-500">
+                                        <p className="mt-2 text-sm text-amber-600">
                                             You need to register as a member before making a booking.
                                         </p>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setShowRegisterDialog(false)}
-                                        className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-xl text-gray-500 hover:bg-gray-200"
+                                        className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 text-amber-600 transition hover:bg-orange-200"
                                     >
-                                        ×
+                                        <X className="h-4 w-4" />
                                     </button>
                                 </div>
-                                <div className="mt-6 flex gap-3">
+                                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                                     <Button
                                         variant="outline"
                                         onClick={() => setShowRegisterDialog(false)}
-                                        className="flex-1 rounded-xl py-3"
+                                        className="flex-1 rounded-xl border-orange-200 py-3 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                                     >
                                         Cancel
                                     </Button>
-                                    <a
-                                        href="/menu"
-                                        className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 text-center font-bold text-white hover:bg-orange-600"
-                                    >
-                                        <span className="flex items-center justify-center gap-2">
-                                            <UserPlus className="h-5 w-5" />
+                                    <Link href="/menu" className="flex-1">
+                                        <Button className="w-full rounded-xl py-3">
+                                            <UserPlus className="h-4 w-4" />
                                             Register Now
-                                        </span>
-                                    </a>
+                                        </Button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
                     )}
                 </main>
 
-
-                {/* Footer */}
-                <footer className="mt-12 border-t border-gray-200 bg-white">
-                    <div className="mx-auto max-w-5xl px-5 py-8 text-center">
-                        <p className="font-black">
+                {/* ================= FOOTER ================= */}
+                <footer className="mt-20 border-t border-orange-200/60 bg-gradient-to-b from-white to-orange-50/50">
+                    <div className="mx-auto max-w-5xl px-5 py-10 text-center">
+                        <p className="text-xl font-black text-stone-800">
                             DINE<span className="text-orange-500">.</span>
                         </p>
-                        <p className="mt-2 text-sm text-gray-500">
-                            Thank you for dining with us.
+                        <p className="mt-2 text-sm text-amber-600">
+                            Thank you for dining with us. We hope to see you again!
                         </p>
+                        <div className="mt-4 flex items-center justify-center gap-4 text-xs text-amber-400">
+                            <span>© 2026 DINE Restaurant</span>
+                            <span>·</span>
+                            <span>Digital Menu System</span>
+                        </div>
                     </div>
                 </footer>
             </div>
