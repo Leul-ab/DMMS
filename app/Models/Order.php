@@ -21,6 +21,11 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'notes',
+        'preparation_time',
+        'preparation_started_at',
+        'preparation_completed_at',
+        'preparation_status',
+        'special_instructions',
     ];
 
 
@@ -29,7 +34,10 @@ class Order extends Model
         return [
             'total_amount' => 'decimal:2',
             'estimated_minutes' => 'integer',
+            'preparation_time' => 'integer',
             'payment_submitted_at' => 'datetime',
+            'preparation_started_at' => 'datetime',
+            'preparation_completed_at' => 'datetime',
         ];
     }
 

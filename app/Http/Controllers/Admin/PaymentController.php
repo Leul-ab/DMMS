@@ -35,7 +35,9 @@ class PaymentController extends Controller
 
         // Filter by payment status
         if ($paymentStatus = $request->query('payment_status')) {
-            if ($paymentStatus === 'pending') {
+            if ($paymentStatus === 'all') {
+                // No filter
+            } elseif ($paymentStatus === 'pending') {
                 $query->where(function ($q) {
                     $q->where('payment_status', 'pending')
                       ->orWhereNull('payment_status');
@@ -47,19 +49,25 @@ class PaymentController extends Controller
 
         // Filter by order status
         if ($orderStatus = $request->query('order_status')) {
-            $query->where('status', $orderStatus);
+            if ($orderStatus !== 'all') {
+                $query->where('status', $orderStatus);
+            }
         }
 
         // Filter by table
         if ($tableId = $request->query('table_id')) {
-            $query->where('table_id', $tableId);
+            if ($tableId !== 'all') {
+                $query->where('table_id', $tableId);
+            }
         }
 
         // Filter by payment method
         if ($paymentMethod = $request->query('payment_method')) {
-            $query->whereHas('payment', function ($pq) use ($paymentMethod) {
-                $pq->where('payment_method', $paymentMethod);
-            });
+            if ($paymentMethod !== 'all') {
+                $query->whereHas('payment', function ($pq) use ($paymentMethod) {
+                    $pq->where('payment_method', $paymentMethod);
+                });
+            }
         }
 
         // Date range
@@ -83,11 +91,17 @@ class PaymentController extends Controller
             })->count(),
             'paid_orders' => Order::where('payment_status', 'paid')->count(),
             'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
-            'cancelled_payments' => Order::where('payment_status', 'cancelled')->count(),
-            'today_revenue' => Payment::whereDate('paid_at', today())
-                ->where('payment_status', 'paid')
-                ->sum('amount'),
-            'total_revenue' => Payment::where('payment_status', 'paid')->sum('amount'),
+            'cancelled_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'cancelled')
+                  ->orWhere('status', 'cancelled');
+            })->count(),
+            'today_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->whereDate('created_at', today())
+                ->sum('total_amount'),
+            'total_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->sum('total_amount'),
         ];
 
         $tables = RestaurantTable::orderBy('table_number')
@@ -101,6 +115,188 @@ class PaymentController extends Controller
                 'search', 'payment_status', 'order_status',
                 'table_id', 'payment_method', 'date_from', 'date_to',
             ]),
+        ]);
+    }
+
+    public function orders(Request $request)
+    {
+        $query = Order::with([
+            'table',
+            'customer',
+            'orderItems.menuItem',
+            'payment.cashier',
+        ]);
+
+        // Filter by payment status
+        if ($paymentStatus = $request->query('payment_status')) {
+            if ($paymentStatus === 'pending') {
+                $query->where(function ($q) {
+                    $q->where('payment_status', 'pending')
+                      ->orWhereNull('payment_status');
+                });
+            } else {
+                $query->where('payment_status', $paymentStatus);
+            }
+        }
+
+        // Filter by order status
+        if ($orderStatus = $request->query('order_status')) {
+            $query->where('status', $orderStatus);
+        }
+
+        // Date range (for today's revenue)
+        if ($dateFrom = $request->query('date_from')) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo = $request->query('date_to')) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $orders = $query->latest()->paginate(15)->withQueryString();
+
+        $stats = [
+            'total_orders' => Order::count(),
+            'pending_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'pending')->orWhereNull('payment_status');
+            })->count(),
+            'paid_orders' => Order::where('payment_status', 'paid')->count(),
+            'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
+            'cancelled_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'cancelled')->orWhere('status', 'cancelled');
+            })->count(),
+            'today_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->whereDate('created_at', today())
+                ->sum('total_amount'),
+            'total_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+        ];
+
+        $tables = RestaurantTable::orderBy('table_number')->get(['id', 'table_number']);
+
+        return Inertia::render('admin/payments/orders', [
+            'orders' => $orders,
+            'stats' => $stats,
+            'tables' => $tables,
+            'filters' => $request->only([
+                'payment_status', 'order_status', 'date_from', 'date_to',
+            ]),
+        ]);
+    }
+
+    public function orderDetail(Order $order)
+    {
+        $order->load([
+            'table',
+            'customer',
+            'orderItems.menuItem',
+            'payment.cashier',
+        ]);
+
+        return Inertia::render('admin/payments/order-detail', [
+            'order' => $order,
+        ]);
+    }
+
+    public function todayRevenue()
+    {
+        $query = Order::with([
+            'table',
+            'customer',
+            'orderItems.menuItem',
+            'payment.cashier',
+        ])->where('payment_status', 'paid')
+          ->where('status', 'completed')
+          ->whereDate('created_at', today());
+
+        $orders = $query->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $stats = [
+            'total_orders' => Order::count(),
+            'pending_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'pending')
+                  ->orWhereNull('payment_status');
+            })->count(),
+            'paid_orders' => Order::where('payment_status', 'paid')->count(),
+            'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
+            'cancelled_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'cancelled')
+                  ->orWhere('status', 'cancelled');
+            })->count(),
+            'today_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->whereDate('created_at', today())
+                ->sum('total_amount'),
+            'total_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+        ];
+
+        $tables = RestaurantTable::orderBy('table_number')
+            ->get(['id', 'table_number']);
+
+        return Inertia::render('admin/payments/index', [
+            'orders' => $orders,
+            'stats' => $stats,
+            'tables' => $tables,
+            'filters' => [
+                'payment_status' => 'paid',
+                'order_status' => 'completed',
+                'date_from' => today()->toDateString(),
+                'date_to' => today()->toDateString(),
+            ],
+        ]);
+    }
+
+    public function revenue()
+    {
+        $query = Order::with([
+            'table',
+            'customer',
+            'orderItems.menuItem',
+            'payment.cashier',
+        ])->where('payment_status', 'paid')
+          ->where('status', 'completed');
+
+        $orders = $query->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $stats = [
+            'total_orders' => Order::count(),
+            'pending_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'pending')
+                  ->orWhereNull('payment_status');
+            })->count(),
+            'paid_orders' => Order::where('payment_status', 'paid')->count(),
+            'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
+            'cancelled_payments' => Order::where(function ($q) {
+                $q->where('payment_status', 'cancelled')
+                  ->orWhere('status', 'cancelled');
+            })->count(),
+            'today_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->whereDate('created_at', today())
+                ->sum('total_amount'),
+            'total_revenue' => Order::where('payment_status', 'paid')
+                ->where('status', 'completed')
+                ->sum('total_amount'),
+        ];
+
+        $tables = RestaurantTable::orderBy('table_number')
+            ->get(['id', 'table_number']);
+
+        return Inertia::render('admin/payments/index', [
+            'orders' => $orders,
+            'stats' => $stats,
+            'tables' => $tables,
+            'filters' => [
+                'payment_status' => 'paid',
+                'order_status' => 'completed',
+            ],
         ]);
     }
 

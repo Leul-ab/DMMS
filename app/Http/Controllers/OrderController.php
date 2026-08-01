@@ -46,6 +46,12 @@ class OrderController extends Controller
                 'string',
                 'exists:customers,customer_code',
             ],
+
+            'special_instructions' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
         ]);
 
         // If no table_id in request, use the session-scanned table
@@ -90,6 +96,9 @@ class OrderController extends Controller
                 ),
                 'status' => 'pending',
                 'total_amount' => 0,
+                'special_instructions' => !empty($validated['special_instructions'])
+                    ? trim($validated['special_instructions'])
+                    : null,
             ]);
 
             foreach ($validated['items'] as $item) {
