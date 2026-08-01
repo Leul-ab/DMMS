@@ -1,0 +1,61 @@
+services:
+  - type: web
+    name: dmms
+    runtime: docker
+    plan: free
+    rootDir: .
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: DMMS
+      - key: APP_URL
+        value: https://dmms.onrender.com
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_LOCALE
+        value: en
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_DATABASE
+        fromDatabase:
+          name: dmms-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: dmms-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: dmms-db
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: dmms-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: dmms-db
+          property: port
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: FILESYSTEM_DISK
+        value: local
+      - key: MAIL_MAILER
+        value: log
+      - key: VITE_APP_NAME
+        value: DMMS
+
+databases:
+  - name: dmms-db
+    plan: free
