@@ -1,3 +1,4 @@
+
 import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
@@ -10,6 +11,7 @@ import {
     UserCog,
     Calendar,
     CreditCard,
+    BarChart3,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -63,6 +65,7 @@ export function AppSidebar() {
             href: dashboard(),
             icon: LayoutGrid,
         },
+
         ...(isAdmin || isManager
             ? [
                   {
@@ -76,24 +79,26 @@ export function AppSidebar() {
                       icon: UtensilsCrossed,
                   },
                   {
-              title: 'Tables',
-              href: tablesIndex(),
-              icon: Table2,
-          },
+                      title: 'Tables',
+                      href: tablesIndex(),
+                      icon: Table2,
+                  },
               ]
             : []),
+
         {
             title: 'Menu',
             href: menuIndex(),
             icon: Eye,
         },
+
         ...(isAdmin || isManager
             ? [
-                {
-                    title: 'Staff',
+                  {
+                      title: 'Staff',
                       href: staffIndex(),
                       icon: UserCog,
-                },
+                  },
                   {
                       title: 'Orders',
                       href: ordersIndex(),
@@ -104,8 +109,14 @@ export function AppSidebar() {
                       href: bookingsIndex(),
                       icon: Calendar,
                   },
+                  {
+                      title: 'Reports',
+                      href: '/manager/reports',
+                      icon: BarChart3,
+                  },
               ]
             : []),
+
         ...(isAdmin || isManager || isKitchenStaff
             ? [
                   {
@@ -117,25 +128,24 @@ export function AppSidebar() {
             : []),
     ];
 
-   const adminNavItems: NavItem[] = isAdmin
-    ? [
-        {
-              title: 'Customers',
-              href: customersIndex(),
-              icon: Users,
-          },
-          {
-              title: 'Users',
-              href: usersIndex(),
-              icon: Users,
-          },
+    const adminNavItems: NavItem[] = isAdmin
+        ? [
+              {
+                  title: 'Customers',
+                  href: customersIndex(),
+                  icon: Users,
+              },
+              {
+                  title: 'Users',
+                  href: usersIndex(),
+                  icon: Users,
+              },
           {
               title: 'Payment',
               href: '/admin/payments',
               icon: CreditCard,
-          },
-      ]
-    : [];
+          },          ]
+        : [];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -164,7 +174,6 @@ export function AppSidebar() {
                         items={adminNavItems}
                     />
                 )}
-
             </SidebarContent>
 
             <SidebarFooter>
@@ -173,3 +182,4 @@ export function AppSidebar() {
         </Sidebar>
     );
 }
+
