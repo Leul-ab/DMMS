@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Tags } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,7 @@ export default function CategoryEdit({ category }: Props) {
         <>
             <Head title={`Edit ${category.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title={`Edit: ${category.name}`} description="Update menu category details" />
+                <Heading title={`Edit: ${category.name}`} description="Update menu category details" icon={Tags} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

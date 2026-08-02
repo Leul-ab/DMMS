@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { User } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,6 +40,7 @@ export default function EditCustomer({ customer }: Props) {
                 <Heading
                     title="Edit Customer"
                     description="Update customer information."
+                    icon={User}
                 />
 
                 <Card className="max-w-2xl">

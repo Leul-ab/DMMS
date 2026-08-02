@@ -362,6 +362,7 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                 <Heading
                     title="Payment Management"
                     description="Manage all customer payments from one centralized page."
+                    icon={Wallet}
                 />
 
                 {/* Stats Cards */}

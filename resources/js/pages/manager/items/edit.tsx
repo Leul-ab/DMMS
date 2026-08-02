@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import { Utensils } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -108,7 +109,7 @@ export default function ItemEdit({ item, categories }: Props) {
         <>
             <Head title={`Edit ${item.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title={`Edit: ${item.name}`} description="Update menu item details" />
+                <Heading title={`Edit: ${item.name}`} description="Update menu item details" icon={Utensils} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

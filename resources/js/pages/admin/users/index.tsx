@@ -7,6 +7,7 @@ import {
     Plus,
     Search,
     Trash2,
+    Users,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
@@ -335,6 +336,7 @@ export default function UsersIndex({
                     <Heading
                         title="Users"
                         description="Manage system users and their roles."
+                        icon={Users}
                     />
 
                     <Button onClick={openAddModal}>

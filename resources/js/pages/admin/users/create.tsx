@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { UserPlus } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -33,7 +34,7 @@ export default function UserCreate({ roles }: Props) {
         <>
             <Head title="Create User" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title="Create User" description="Add a new user to the system" />
+                <Heading title="Create User" description="Add a new user to the system" icon={UserPlus} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

@@ -6,6 +6,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Tags,
     Trash2,
 } from 'lucide-react';
 
@@ -349,6 +350,7 @@ export default function CategoriesIndex({
                     <Heading
                         title="Menu Categories"
                         description="Manage your menu categories."
+                        icon={Tags}
                     />
 
                     <Button onClick={openAddModal}>

@@ -1,13 +1,14 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import {
-Plus,
-Pencil,
-Trash2,
-Search,
-Eye,
-Loader2,
-UtensilsCrossed,
-Table2,
+    Plus,
+    Pencil,
+    Trash2,
+    Search,
+    Eye,
+    Loader2,
+    UtensilsCrossed,
+    Table2,
+    UserCog,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -1200,6 +1201,7 @@ return (
                 <Heading
                     title="Staff Management"
                     description="Manage waiters and kitchen staff"
+                    icon={UserCog}
                 />
 
                 <Button

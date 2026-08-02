@@ -275,7 +275,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
             <Head title="Booking Management" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading title="Booking Management" description="Manage all customer table bookings" />
+                    <Heading title="Booking Management" description="Manage all customer table bookings" icon={Calendar} />
                 </div>
 
                 {/* Stats Cards */}

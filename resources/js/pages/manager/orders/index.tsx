@@ -27,6 +27,7 @@ import {
     User,
     Phone,
     FileText,
+    ClipboardList,
 } from 'lucide-react';
 
 type MenuItem = {
@@ -339,6 +340,7 @@ export default function OrdersIndex({
                 <Heading
                     title="Customer Orders"
                     description="Manage customer orders, edit order details, and verify payments."
+                    icon={ClipboardList}
                 />
 
                 {orders.length === 0 ? (

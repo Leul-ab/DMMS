@@ -7,6 +7,7 @@ import {
     Plus,
     Search,
     Trash2,
+    Users,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
@@ -290,6 +291,7 @@ export default function CustomersIndex({
                     <Heading
                         title="Customer Management"
                         description="Manage registered customers and members."
+                        icon={Users}
                     />
 
                     <Button

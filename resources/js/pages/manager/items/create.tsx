@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useRef, useState } from 'react';
+import { Utensils } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,7 @@ export default function ItemCreate({ categories }: Props) {
         <>
             <Head title="Create Menu Item" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title="Create Menu Item" description="Add a new item to the menu" />
+                <Heading title="Create Menu Item" description="Add a new item to the menu" icon={Utensils} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

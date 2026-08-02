@@ -8,6 +8,7 @@ import {
     QrCode,
     RefreshCw,
     Search,
+    Table2,
     Trash2,
 } from 'lucide-react';
 
@@ -411,6 +412,7 @@ export default function TablesIndex({ tables }: Props) {
                     <Heading
                         title="Table Management"
                         description="Manage your restaurant tables and QR codes."
+                        icon={Table2}
                     />
 
                     <Button

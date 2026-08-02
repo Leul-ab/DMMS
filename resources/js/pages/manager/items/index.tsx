@@ -1,11 +1,12 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
-Eye,
-Pencil,
-Plus,
-Search,
-Trash2,
+    Eye,
+    Pencil,
+    Plus,
+    Search,
+    Trash2,
+    Utensils,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
@@ -504,6 +505,7 @@ return (
                 <Heading
                     title="Menu Items"
                     description="Manage all menu items."
+                    icon={Utensils}
                 />
 
                 <Button

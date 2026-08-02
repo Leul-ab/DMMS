@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
+import { Settings } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -36,6 +37,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             <Heading
                 title="Settings"
                 description="Manage your profile and account settings"
+                icon={Settings}
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">

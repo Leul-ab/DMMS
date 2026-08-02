@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { UserPlus } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +27,7 @@ export default function CreateCustomer() {
                 <Heading
                     title="Add Customer"
                     description="Create a new customer record."
+                    icon={UserPlus}
                 />
 
                 <Card className="max-w-2xl">
