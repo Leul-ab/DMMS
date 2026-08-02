@@ -7,7 +7,6 @@ import {
     ClipboardList,
     Clock,
     DollarSign,
-    Plus,
     Star,
     Table2,
     TrendingUp,
@@ -55,22 +54,6 @@ type DashboardStats = {
     featuredMenuItems: number;
 };
 
-type RecentOrder = {
-    id: number;
-    order_number: string;
-    status: string;
-    payment_status: string;
-    total_amount: string | number;
-    customer_name: string | null;
-    customer_phone: string | null;
-    table_id: number | null;
-    created_at: string;
-
-    table?: {
-        table_number: number;
-    } | null;
-};
-
 type OrderStatusOverview = {
     status: string;
     count: number;
@@ -80,21 +63,6 @@ type PopularMenuItem = {
     id: number;
     name: string;
     total_quantity: number;
-};
-
-type RecentBooking = {
-    id: number;
-    status: string;
-    created_at: string;
-    booking_date?: string;
-    booking_time?: string;
-    customer_name?: string;
-    customer_phone?: string;
-    number_of_guests?: number;
-
-    tables?: Array<{
-        table_number: number;
-    }>;
 };
 
 type RevenueTrendPoint = {
@@ -117,10 +85,8 @@ type PaymentStatusItem = {
 
 type Props = {
     stats: DashboardStats;
-    recentOrders: RecentOrder[];
     orderStatusOverview: OrderStatusOverview[];
     popularMenuItems: PopularMenuItem[];
-    recentBookings: RecentBooking[];
     revenueTrend: RevenueTrendPoint[];
     salesByCategory: SalesByCategoryItem[];
     paymentStatusOverview: PaymentStatusItem[];
@@ -180,10 +146,8 @@ const ORDER_STATUS_STYLES: Record<
 
 export default function Dashboard({
     stats,
-    recentOrders,
     orderStatusOverview,
     popularMenuItems,
-    recentBookings,
     revenueTrend,
     salesByCategory,
     paymentStatusOverview,
@@ -199,71 +163,6 @@ export default function Dashboard({
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         })}`;
-    };
-
-    const formatDateTime = (date: string) => {
-        if (!date) {
-            return '—';
-        }
-
-        return new Date(date).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-        });
-    };
-
-    const getStatusVariant = (
-        status: string
-    ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-        switch (status) {
-            case 'completed':
-                return 'default';
-            case 'cancelled':
-                return 'destructive';
-            case 'received':
-            case 'preparing':
-            case 'ready':
-            case 'served':
-            case 'confirmed':
-                return 'secondary';
-            case 'pending':
-                return 'outline';
-            default:
-                return 'outline';
-        }
-    };
-
-    const getPaymentVariant = (
-        status: string
-    ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-        switch (status) {
-            case 'paid':
-                return 'default';
-            case 'pending':
-                return 'secondary';
-            case 'unpaid':
-                return 'outline';
-            default:
-                return 'outline';
-        }
-    };
-
-    const getBookingStatusVariant = (
-        status: string
-    ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-        switch (status) {
-            case 'confirmed':
-                return 'default';
-            case 'cancelled':
-                return 'destructive';
-            case 'pending':
-                return 'secondary';
-            default:
-                return 'outline';
-        }
     };
 
     /*
@@ -330,29 +229,6 @@ export default function Dashboard({
                                     Overview of your restaurant's performance
                                     and finances.
                                 </p>
-                            </div>
-
-                            <div className="flex flex-wrap gap-3">
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="rounded-full border-orange-200 bg-white font-bold text-amber-700 shadow-sm hover:border-orange-400 hover:text-orange-700"
-                                >
-                                    <Link href="/manager/orders">
-                                        <ClipboardList className="mr-2 h-4 w-4" />
-                                        View Orders
-                                    </Link>
-                                </Button>
-
-                                <Button
-                                    asChild
-                                    className="rounded-full bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:shadow-xl hover:shadow-orange-500/40"
-                                >
-                                    <Link href="/manager/items/create">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Menu Item
-                                    </Link>
-                                </Button>
                             </div>
                         </div>
                     </Reveal>
@@ -868,288 +744,6 @@ export default function Dashboard({
                         </Reveal>
                     </div>
 
-                    {/* ================================================= */}
-                    {/* RECENT ORDERS */}
-                    {/* ================================================= */}
-
-                    <Reveal>
-                        <div className="overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100/80 p-6">
-                                <div>
-                                    <h2 className="text-lg font-black text-stone-800">
-                                        Recent Orders
-                                    </h2>
-
-                                    <p className="text-sm text-amber-600">
-                                        Latest orders placed in your restaurant
-                                    </p>
-                                </div>
-
-                                <Button asChild variant="ghost" size="sm">
-                                    <Link href="/manager/orders">
-                                        View All
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-
-                            {recentOrders.length === 0 ? (
-                                <div className="py-16 text-center text-sm text-amber-600">
-                                    No orders found.
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-orange-100/80 bg-orange-50/40 text-left text-xs font-bold uppercase tracking-wider text-amber-600">
-                                                <th className="px-6 py-4">
-                                                    Order
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Customer
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Table
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Status
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Payment
-                                                </th>
-                                                <th className="px-6 py-4 text-right">
-                                                    Total
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {recentOrders.map((order) => (
-                                                <tr
-                                                    key={order.id}
-                                                    className="border-b border-orange-100/50 transition last:border-0 hover:bg-orange-50/40"
-                                                >
-                                                    <td className="px-6 py-4 text-sm font-bold text-stone-800">
-                                                        {order.order_number}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-stone-600">
-                                                        {order.customer_name ||
-                                                            'Walk-in Customer'}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-amber-600">
-                                                        {order.table
-                                                            ?.table_number
-                                                            ? `Table ${order.table.table_number}`
-                                                            : '—'}
-                                                    </td>
-
-                                                    <td className="px-6 py-4">
-                                                        <Badge
-                                                            variant={getStatusVariant(
-                                                                order.status
-                                                            )}
-                                                            className="rounded-full capitalize"
-                                                        >
-                                                            {order.status}
-                                                        </Badge>
-                                                    </td>
-
-                                                    <td className="px-6 py-4">
-                                                        <Badge
-                                                            variant={getPaymentVariant(
-                                                                order.payment_status
-                                                            )}
-                                                            className="rounded-full capitalize"
-                                                        >
-                                                            {order.payment_status}
-                                                        </Badge>
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-right text-sm font-black text-stone-800">
-                                                        {formatCurrency(
-                                                            order.total_amount
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </Reveal>
-
-                    {/* ================================================= */}
-                    {/* RECENT BOOKINGS */}
-                    {/* ================================================= */}
-
-                    <Reveal delay={100}>
-                        <div className="overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
-                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100/80 p-6">
-                                <div>
-                                    <h2 className="text-lg font-black text-stone-800">
-                                        Recent Table Bookings
-                                    </h2>
-
-                                    <p className="text-sm text-amber-600">
-                                        Latest reservation activity
-                                    </p>
-                                </div>
-
-                                <Button asChild variant="ghost" size="sm">
-                                    <Link href="/manager/bookings">
-                                        View All
-                                        <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-
-                            {recentBookings.length === 0 ? (
-                                <div className="py-16 text-center text-sm text-amber-600">
-                                    No recent bookings found.
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-orange-100/80 bg-orange-50/40 text-left text-xs font-bold uppercase tracking-wider text-amber-600">
-                                                <th className="px-6 py-4">
-                                                    Customer
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Table
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Guests
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Status
-                                                </th>
-                                                <th className="px-6 py-4">
-                                                    Created
-                                                </th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {recentBookings.map((booking) => (
-                                                <tr
-                                                    key={booking.id}
-                                                    className="border-b border-orange-100/50 transition last:border-0 hover:bg-orange-50/40"
-                                                >
-                                                    <td className="px-6 py-4 text-sm font-bold text-stone-800">
-                                                        {booking.customer_name ||
-                                                            'Customer'}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-amber-600">
-                                                        {booking.tables &&
-                                                        booking.tables.length >
-                                                            0
-                                                            ? booking.tables
-                                                                  .map(
-                                                                      (table) =>
-                                                                          `Table ${table.table_number}`
-                                                                  )
-                                                                  .join(', ')
-                                                            : '—'}
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-stone-600">
-                                                        {booking.number_of_guests ||
-                                                            '—'}
-                                                    </td>
-
-                                                    <td className="px-6 py-4">
-                                                        <Badge
-                                                            variant={getBookingStatusVariant(
-                                                                booking.status
-                                                            )}
-                                                            className="rounded-full capitalize"
-                                                        >
-                                                            {booking.status}
-                                                        </Badge>
-                                                    </td>
-
-                                                    <td className="px-6 py-4 text-sm text-amber-600">
-                                                        {formatDateTime(
-                                                            booking.created_at
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
-                    </Reveal>
-
-                    {/* ================================================= */}
-                    {/* QUICK ACTIONS */}
-                    {/* ================================================= */}
-
-                    <Reveal delay={100}>
-                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
-                            <div className="mb-6">
-                                <h2 className="text-lg font-black text-stone-800">
-                                    Quick Actions
-                                </h2>
-
-                                <p className="text-sm text-amber-600">
-                                    Shortcuts to common tasks
-                                </p>
-                            </div>
-
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
-                                >
-                                    <Link href="/manager/items/create">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Menu Item
-                                    </Link>
-                                </Button>
-
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
-                                >
-                                    <Link href="/manager/categories/create">
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Category
-                                    </Link>
-                                </Button>
-
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
-                                >
-                                    <Link href="/manager/orders">
-                                        <ClipboardList className="mr-2 h-4 w-4" />
-                                        Manage Orders
-                                    </Link>
-                                </Button>
-
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
-                                >
-                                    <Link href="/admin/users/create">
-                                        <Users className="mr-2 h-4 w-4" />
-                                        Add User
-                                    </Link>
-                                </Button>
-                            </div>
-                        </div>
-                    </Reveal>
                 </div>
             </div>
         </>
