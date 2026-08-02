@@ -33,7 +33,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 
-import { dashboard } from '@/routes';
+import { dashboard, home } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
 import { index as customersIndex } from '@/routes/manager/customers';
 import { index as staffIndex } from '@/routes/admin/staff';
@@ -159,7 +159,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                            <Link href={home()} prefetch>
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
