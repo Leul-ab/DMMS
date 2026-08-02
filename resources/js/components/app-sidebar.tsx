@@ -12,6 +12,8 @@ import {
     Calendar,
     CreditCard,
     BarChart3,
+    PanelLeftClose,
+    PanelLeftOpen,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -28,6 +30,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarSeparator,
+    useSidebar,
 } from '@/components/ui/sidebar';
 
 import { dashboard } from '@/routes';
@@ -53,6 +56,8 @@ export function AppSidebar() {
             } | null;
         };
     }>().props;
+
+    const { state, toggleSidebar } = useSidebar();
 
     const role = auth.user?.role?.slug;
 
@@ -179,6 +184,19 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            size="sm"
+                            onClick={toggleSidebar}
+                            className="text-sidebar-foreground/80 hover:bg-orange-100/80 hover:text-orange-700"
+                            tooltip={{ children: state === 'collapsed' ? 'Expand sidebar' : 'Collapse sidebar' }}
+                        >
+                            {state === 'collapsed' ? <PanelLeftOpen /> : <PanelLeftClose />}
+                            <span>{state === 'collapsed' ? 'Expand' : 'Collapse'}</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

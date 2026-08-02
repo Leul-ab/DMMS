@@ -220,17 +220,17 @@ export default function MyOrderView({
     const getStatusEmoji = (status: string) => {
         switch (status) {
             case 'pending':
-                return '⏳';
+                return '';
             case 'preparing':
-                return '🍳';
+                return '';
             case 'ready':
-                return '✅';
+                return '';
             case 'completed':
-                return '✔️';
+                return '';
             case 'cancelled':
-                return '❌';
+                return '';
             default:
-                return '📋';
+                return '';
         }
     };
 
@@ -443,7 +443,7 @@ export default function MyOrderView({
                                 {/* Completion Animation */}
                                 {showCompletion && (
                                     <div className="mb-4 text-center animate-bounce">
-                                        <span className="text-4xl">🎉</span>
+                                        <span className="text-4xl"></span>
                                         <p className="mt-2 text-lg font-bold text-green-600">
                                             Your order is ready!
                                         </p>

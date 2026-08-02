@@ -1242,8 +1242,8 @@ export function MenuView({
 
                             <div className="h-fit rounded-2xl bg-gradient-to-br from-stone-900 to-stone-800 p-7 text-white shadow-xl shadow-stone-900/20 lg:sticky lg:top-24">
                                 <h3 className="flex items-center gap-2 text-xl font-black">
-                                    <ShoppingBag className="h-5 w-5 text-orange-400" />
-                                    Order Summary
+                                        <ShoppingBag className="h-5 w-5 text-orange-400" />
+                                        Order Summary
                                 </h3>
 
                                 <div className="mt-6 space-y-3 border-b border-white/10 pb-6">
