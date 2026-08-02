@@ -13,7 +13,6 @@ import {
     CreditCard,
     BarChart3,
     ShieldCheck,
-    KeyRound,
     PanelLeftClose,
     PanelLeftOpen,
 } from 'lucide-react';
@@ -39,7 +38,6 @@ import {
 import { dashboard, home } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
 import { index as rolesIndex } from '@/routes/admin/roles';
-import { index as permissionsIndex } from '@/routes/admin/permissions';
 import { index as customersIndex } from '@/routes/manager/customers';
 import { index as staffIndex } from '@/routes/admin/staff';
 import { index as categoriesIndex } from '@/routes/manager/categories';
@@ -161,8 +159,7 @@ export function AppSidebar() {
         can('view customers') ||
         can('view users') ||
         can('view payments') ||
-        can('view roles') ||
-        can('view permissions');
+        can('view roles');
 
     const adminNavItems: NavItem[] = [
         ...(can('view customers')
@@ -201,16 +198,6 @@ export function AppSidebar() {
                       title: 'Roles',
                       href: rolesIndex(),
                       icon: ShieldCheck,
-                  },
-              ]
-            : []),
-
-        ...(can('view permissions')
-            ? [
-                  {
-                      title: 'Permissions',
-                      href: permissionsIndex(),
-                      icon: KeyRound,
                   },
               ]
             : []),
