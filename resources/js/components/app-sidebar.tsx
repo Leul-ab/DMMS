@@ -1,5 +1,5 @@
 
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import {
     LayoutGrid,
     Users,
@@ -12,6 +12,8 @@ import {
     Calendar,
     CreditCard,
     BarChart3,
+    ShieldCheck,
+    KeyRound,
     PanelLeftClose,
     PanelLeftOpen,
 } from 'lucide-react';
@@ -20,6 +22,7 @@ import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { index as tablesIndex } from '@/routes/manager/tables';
+import { useCan } from '@/hooks/use-can';
 
 import {
     Sidebar,
@@ -35,6 +38,8 @@ import {
 
 import { dashboard, home } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
+import { index as rolesIndex } from '@/routes/admin/roles';
+import { index as permissionsIndex } from '@/routes/admin/permissions';
 import { index as customersIndex } from '@/routes/manager/customers';
 import { index as staffIndex } from '@/routes/admin/staff';
 import { index as categoriesIndex } from '@/routes/manager/categories';
@@ -47,43 +52,42 @@ import { index as bookingsIndex } from '@/routes/manager/bookings';
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { auth } = usePage<{
-        auth: {
-            user: {
-                role?: {
-                    slug: string;
-                } | null;
-            } | null;
-        };
-    }>().props;
-
     const { state, toggleSidebar } = useSidebar();
-
-    const role = auth.user?.role?.slug;
-
-    const isAdmin = role === 'super_admin';
-    const isManager = role === 'manager';
-    const isKitchenStaff = role === 'kitchen_staff';
+    const can = useCan();
 
     const mainNavItems: NavItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutGrid,
-        },
+        ...(can('view dashboard')
+            ? [
+                  {
+                      title: 'Dashboard',
+                      href: dashboard(),
+                      icon: LayoutGrid,
+                  },
+              ]
+            : []),
 
-        ...(isAdmin || isManager
+        ...(can('view menu categories')
             ? [
                   {
                       title: 'Menu Categories',
                       href: categoriesIndex(),
                       icon: ListOrdered,
                   },
+              ]
+            : []),
+
+        ...(can('view menu items')
+            ? [
                   {
                       title: 'Menu Items',
                       href: itemsIndex(),
                       icon: UtensilsCrossed,
                   },
+              ]
+            : []),
+
+        ...(can('view tables')
+            ? [
                   {
                       title: 'Tables',
                       href: tablesIndex(),
@@ -92,29 +96,48 @@ export function AppSidebar() {
               ]
             : []),
 
-        {
-            title: 'Menu',
-            href: menuIndex(),
-            icon: Eye,
-        },
+        ...(can('view menu')
+            ? [
+                  {
+                      title: 'Menu',
+                      href: menuIndex(),
+                      icon: Eye,
+                  },
+              ]
+            : []),
 
-        ...(isAdmin || isManager
+        ...(can('view staff')
             ? [
                   {
                       title: 'Staff',
                       href: staffIndex(),
                       icon: UserCog,
                   },
+              ]
+            : []),
+
+        ...(can('view orders')
+            ? [
                   {
                       title: 'Orders',
                       href: ordersIndex(),
                       icon: ListOrdered,
                   },
+              ]
+            : []),
+
+        ...(can('view bookings')
+            ? [
                   {
                       title: 'Bookings',
                       href: bookingsIndex(),
                       icon: Calendar,
                   },
+              ]
+            : []),
+
+        ...(can('view reports')
+            ? [
                   {
                       title: 'Reports',
                       href: '/manager/reports',
@@ -123,7 +146,7 @@ export function AppSidebar() {
               ]
             : []),
 
-        ...(isAdmin || isManager || isKitchenStaff
+        ...(can('view kitchen')
             ? [
                   {
                       title: 'Kitchen',
@@ -134,24 +157,64 @@ export function AppSidebar() {
             : []),
     ];
 
-    const adminNavItems: NavItem[] = isAdmin
-        ? [
-              {
-                  title: 'Customers',
-                  href: customersIndex(),
-                  icon: Users,
-              },
-              {
-                  title: 'Users',
-                  href: usersIndex(),
-                  icon: Users,
-              },
-          {
-              title: 'Payment',
-              href: '/admin/payments',
-              icon: CreditCard,
-          },          ]
-        : [];
+    const hasAdminAccess =
+        can('view customers') ||
+        can('view users') ||
+        can('view payments') ||
+        can('view roles') ||
+        can('view permissions');
+
+    const adminNavItems: NavItem[] = [
+        ...(can('view customers')
+            ? [
+                  {
+                      title: 'Customers',
+                      href: customersIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
+
+        ...(can('view users')
+            ? [
+                  {
+                      title: 'Users',
+                      href: usersIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
+
+        ...(can('view payments')
+            ? [
+                  {
+                      title: 'Payment',
+                      href: '/admin/payments',
+                      icon: CreditCard,
+                  },
+              ]
+            : []),
+
+        ...(can('view roles')
+            ? [
+                  {
+                      title: 'Roles',
+                      href: rolesIndex(),
+                      icon: ShieldCheck,
+                  },
+              ]
+            : []),
+
+        ...(can('view permissions')
+            ? [
+                  {
+                      title: 'Permissions',
+                      href: permissionsIndex(),
+                      icon: KeyRound,
+                  },
+              ]
+            : []),
+    ];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -170,16 +233,13 @@ export function AppSidebar() {
 
             <SidebarContent>
                 {/* General Navigation */}
-                <NavMain
-                    items={mainNavItems}
-                    label="Platform"
-                />
+                {mainNavItems.length > 0 && (
+                    <NavMain items={mainNavItems} label="Platform" />
+                )}
 
                 {/* Admin Navigation */}
-                {isAdmin && (
-                    <NavMain
-                        items={adminNavItems}
-                    />
+                {hasAdminAccess && adminNavItems.length > 0 && (
+                    <NavMain items={adminNavItems} />
                 )}
             </SidebarContent>
 
@@ -202,4 +262,3 @@ export function AppSidebar() {
         </Sidebar>
     );
 }
-

@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -39,16 +40,24 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    protected static function booted(): void
+    {
+        static::saved(function (User $user) {
+            $user->syncSpatieRoles();
+        });
+    }
 
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }
 
-    public function hasRole(string $slug): bool
+    public function syncSpatieRoles(): void
     {
-        return $this->role?->slug === $slug;
+        $role = $this->role;
+        $this->syncRoles($role?->name ? [$role->name] : []);
     }
 
     public function tableAssignments(): HasMany

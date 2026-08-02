@@ -3,18 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Support\Carbon;
-use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\Models\Permission as SpatiePermission;
 
 /**
  * @property int $id
  * @property string $name
- * @property string $slug
  * @property string $guard_name
- * @property string|null $description
+ * @property string|null $group
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Role extends SpatieRole
+class Permission extends SpatiePermission
 {
-    protected $fillable = ['name', 'slug', 'guard_name', 'description'];
+    protected $fillable = ['name', 'guard_name', 'group'];
 }

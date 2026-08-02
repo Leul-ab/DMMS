@@ -1,4 +1,4 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     Plus,
     Pencil,
@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import Heading from '@/components/heading';
+import { useCan } from '@/hooks/use-can';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -232,15 +233,7 @@ const [assignLoading, setAssignLoading] =
 const [tablesLoading, setTablesLoading] =
     useState(false);
 
-const { auth } = usePage<{
-    auth: {
-        user: {
-            role?: {
-                slug: string;
-            } | null;
-        } | null;
-    };
-}>().props;
+const can = useCan();
 
 // Search debounce
 useEffect(() => {
@@ -966,21 +959,23 @@ const renderTable = (
                                             found.
                                         </p>
 
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={
-                                                openAddModal
-                                            }
-                                        >
-                                            <Plus className="mr-1 h-3 w-3" />
+                                        {can('create staff') && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={
+                                                    openAddModal
+                                                }
+                                            >
+                                                <Plus className="mr-1 h-3 w-3" />
 
-                                            Add{' '}
-                                            {activeTab ===
-                                            'waiter'
-                                                ? 'Waiter'
-                                                : 'Kitchen Staff'}
-                                        </Button>
+                                                Add{' '}
+                                                {activeTab ===
+                                                'waiter'
+                                                    ? 'Waiter'
+                                                    : 'Kitchen Staff'}
+                                            </Button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -1087,96 +1082,105 @@ const renderTable = (
                                             <div className="flex items-center justify-end gap-1">
 
                                                 {/* SMALL BORDERLESS STATUS TOGGLE */}
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleToggleStatus(
-                                                            staff,
-                                                        )
-                                                    }
-                                                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-0 ${
-                                                        staff.is_active
-                                                            ? 'bg-green-500'
-                                                            : 'bg-gray-300 dark:bg-gray-600'
-                                                    }`}
-                                                    title={
-                                                        staff.is_active
-                                                            ? 'Deactivate staff'
-                                                            : 'Activate staff'
-                                                    }
-                                                    aria-label={
-                                                        staff.is_active
-                                                            ? `Deactivate ${staff.name}`
-                                                            : `Activate ${staff.name}`
-                                                    }
-                                                >
-                                                    <span
-                                                        className={`pointer-events-none inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                                                {can('status staff') && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleToggleStatus(
+                                                                staff,
+                                                            )
+                                                        }
+                                                        className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-0 ${
                                                             staff.is_active
-                                                                ? 'translate-x-4'
-                                                                : 'translate-x-0.5'
+                                                                ? 'bg-green-500'
+                                                                : 'bg-gray-300 dark:bg-gray-600'
                                                         }`}
-                                                    />
-                                                </button>
+                                                        title={
+                                                            staff.is_active
+                                                                ? 'Deactivate staff'
+                                                                : 'Activate staff'
+                                                        }
+                                                        aria-label={
+                                                            staff.is_active
+                                                                ? `Deactivate ${staff.name}`
+                                                                : `Activate ${staff.name}`
+                                                        }
+                                                    >
+                                                        <span
+                                                            className={`pointer-events-none inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                                                                staff.is_active
+                                                                    ? 'translate-x-4'
+                                                                    : 'translate-x-0.5'
+                                                            }`}
+                                                        />
+                                                    </button>
+                                                )}
 
                                                 {/* VIEW */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        openViewModal(
-                                                            staff,
-                                                        )
-                                                    }
-                                                    title="View"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-
-                                                {/* EDIT */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        openEditModal(
-                                                            staff,
-                                                        )
-                                                    }
-                                                    title="Edit"
-                                                >
-                                                    <Pencil className="h-4 w-4" />
-                                                </Button>
-
-                                                {/* DELETE */}
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        openDeleteModal(
-                                                            staff,
-                                                        )
-                                                    }
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-
-                                                {/* ASSIGN TABLE - WAITER ONLY */}
-                                                {activeTab ===
-                                                    'waiter' && (
+                                                {can('view staff') && (
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() =>
-                                                            openAssignModal(
+                                                            openViewModal(
                                                                 staff,
                                                             )
                                                         }
-                                                        title="Assign to Table"
+                                                        title="View"
                                                     >
-                                                        <Table2 className="h-4 w-4 text-blue-500" />
+                                                        <Eye className="h-4 w-4" />
                                                     </Button>
                                                 )}
+
+                                                {/* EDIT */}
+                                                {can('update staff') && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openEditModal(
+                                                                staff,
+                                                            )
+                                                        }
+                                                        title="Edit"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
+                                                {/* DELETE */}
+                                                {can('delete staff') && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                staff,
+                                                            )
+                                                        }
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                )}
+
+                                                {/* ASSIGN TABLE - WAITER ONLY */}
+                                                {activeTab ===
+                                                    'waiter' &&
+                                                    can('update staff') && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                openAssignModal(
+                                                                    staff,
+                                                                )
+                                                            }
+                                                            title="Assign to Table"
+                                                        >
+                                                            <Table2 className="h-4 w-4 text-blue-500" />
+                                                        </Button>
+                                                    )}
                                             </div>
                                         </td>
                                     </tr>
@@ -1204,19 +1208,21 @@ return (
                     icon={UserCog}
                 />
 
-                <Button
-                    onClick={
-                        openAddModal
-                    }
-                >
-                    <Plus className="mr-2 h-4 w-4" />
+                {can('create staff') && (
+                    <Button
+                        onClick={
+                            openAddModal
+                        }
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
 
-                    Add{' '}
-                    {activeTab ===
-                    'waiter'
-                        ? 'Waiter'
-                        : 'Kitchen Staff'}
-                </Button>
+                        Add{' '}
+                        {activeTab ===
+                        'waiter'
+                            ? 'Waiter'
+                            : 'Kitchen Staff'}
+                    </Button>
+                )}
             </div>
 
             {/* TABS */}

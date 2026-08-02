@@ -11,6 +11,7 @@ import {
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,8 @@ items,
 categories,
 filters,
 }: Props) {
+const can = useCan();
+
 // -----------------------------------------
 // Search
 // -----------------------------------------
@@ -508,12 +511,14 @@ return (
                     icon={Utensils}
                 />
 
-                <Button
-                    onClick={openAddModal}
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Menu Item
-                </Button>
+                {can('create menu items') && (
+                    <Button
+                        onClick={openAddModal}
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Menu Item
+                    </Button>
+                )}
             </div>
 
             {/* Items Card */}
@@ -763,65 +768,73 @@ return (
                                                     <div className="flex items-center justify-end gap-2">
 
                                                         {/* Toggle */}
-                                                        <StatusToggle
-                                                            checked={
-                                                                item.is_available
-                                                            }
-                                                            onCheckedChange={() =>
-                                                                handleToggleAvailability(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            onLabel="Mark unavailable"
-                                                            offLabel="Mark available"
-                                                            ariaLabel={
-                                                                item.is_available
-                                                                    ? 'Mark item unavailable'
-                                                                    : 'Mark item available'
-                                                            }
-                                                        />
+                                                        {can('status menu items') && (
+                                                            <StatusToggle
+                                                                checked={
+                                                                    item.is_available
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    handleToggleAvailability(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                onLabel="Mark unavailable"
+                                                                offLabel="Mark available"
+                                                                ariaLabel={
+                                                                    item.is_available
+                                                                        ? 'Mark item unavailable'
+                                                                        : 'Mark item available'
+                                                                }
+                                                            />
+                                                        )}
 
                                                         {/* View */}
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openViewModal(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            title="View menu item"
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
+                                                        {can('view menu items') && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openViewModal(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                title="View menu item"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
 
                                                         {/* Edit */}
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openEditModal(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            title="Edit menu item"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
+                                                        {can('update menu items') && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openEditModal(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                title="Edit menu item"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
 
                                                         {/* Delete */}
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    item,
-                                                                )
-                                                            }
-                                                            title="Delete menu item"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        {can('delete menu items') && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openDeleteModal(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                title="Delete menu item"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

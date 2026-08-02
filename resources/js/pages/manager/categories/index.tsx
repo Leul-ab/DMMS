@@ -12,6 +12,7 @@ import {
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,8 @@ export default function CategoriesIndex({
     categories,
     filters,
 }: Props) {
+    const can = useCan();
+
     // -----------------------------------------
     // Search
     // -----------------------------------------
@@ -353,10 +356,12 @@ export default function CategoriesIndex({
                         icon={Tags}
                     />
 
-                    <Button onClick={openAddModal}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Category
-                    </Button>
+                    {can('create menu categories') && (
+                        <Button onClick={openAddModal}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Category
+                        </Button>
+                    )}
                 </div>
 
                 {/* =========================================
@@ -475,65 +480,73 @@ export default function CategoriesIndex({
                                                         <div className="flex items-center justify-end gap-2">
 
                                                             {/* Reusable Status Toggle */}
-                                                            <StatusToggle
-                                                                checked={
-                                                                    category.is_active
-                                                                }
-                                                                onCheckedChange={() =>
-                                                                    handleToggleStatus(
-                                                                        category,
-                                                                    )
-                                                                }
-                                                                onLabel="Active"
-                                                                offLabel="Inactive"
-                                                                ariaLabel={
-                                                                    category.is_active
-                                                                        ? 'Deactivate category'
-                                                                        : 'Activate category'
-                                                                }
-                                                            />
+                                                            {can('status menu categories') && (
+                                                                <StatusToggle
+                                                                    checked={
+                                                                        category.is_active
+                                                                    }
+                                                                    onCheckedChange={() =>
+                                                                        handleToggleStatus(
+                                                                            category,
+                                                                        )
+                                                                    }
+                                                                    onLabel="Active"
+                                                                    offLabel="Inactive"
+                                                                    ariaLabel={
+                                                                        category.is_active
+                                                                            ? 'Deactivate category'
+                                                                            : 'Activate category'
+                                                                    }
+                                                                />
+                                                            )}
 
                                                             {/* Show */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openViewModal(
-                                                                        category,
-                                                                    )
-                                                                }
-                                                                title="View category"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('view menu categories') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openViewModal(
+                                                                            category,
+                                                                        )
+                                                                    }
+                                                                    title="View category"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Edit */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditModal(
-                                                                        category,
-                                                                    )
-                                                                }
-                                                                title="Edit category"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('update menu categories') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            category,
+                                                                        )
+                                                                    }
+                                                                    title="Edit category"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Delete */}
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteModal(
-                                                                        category,
-                                                                    )
-                                                                }
-                                                                title="Delete category"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('delete menu categories') && (
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            category,
+                                                                        )
+                                                                    }
+                                                                    title="Delete category"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                         </div>
                                                     </td>

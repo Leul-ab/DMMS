@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
+import { useCan } from '@/hooks/use-can';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -166,6 +167,7 @@ type StatCard = {
 };
 
 export default function PaymentsIndex({ orders, stats, tables, filters }: Props) {
+    const can = useCan();
     const [search, setSearch] = useState(filters.search || '');
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || '');
     const [orderStatus, setOrderStatus] = useState(filters.order_status || '');
@@ -567,15 +569,17 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                                 </td>
                                                 <td className="p-3">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" onClick={() => openView(order)} title="View">
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {order.payment_status !== 'paid' && order.payment_status !== 'cancelled' && (
+                                                        {can('show payments') && (
+                                                            <Button variant="ghost" size="icon" onClick={() => openView(order)} title="View">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('status payments') && order.payment_status !== 'paid' && order.payment_status !== 'cancelled' && (
                                                             <Button variant="ghost" size="icon" onClick={() => openStatusChange(order, 'paid')} title="Mark as Paid" className="text-green-600">
                                                                 <CheckCircle2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {order.payment?.payment_method && (
+                                                        {can('view payments') && order.payment?.payment_method && (
                                                             <Button variant="ghost" size="icon" onClick={() => handlePrint(order)} title="Print Receipt" className="text-blue-600">
                                                                 <Printer className="h-4 w-4" />
                                                             </Button>
@@ -731,7 +735,7 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
 
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsViewOpen(false)}>Close</Button>
-                        {selectedOrder && selectedOrder.payment?.payment_method && (
+                        {can('view payments') && selectedOrder && selectedOrder.payment?.payment_method && (
                             <Button variant="outline" onClick={() => handlePrint(selectedOrder)}>
                                 <Printer className="mr-2 h-4 w-4" /> Print Receipt
                             </Button>
