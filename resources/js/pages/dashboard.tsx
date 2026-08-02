@@ -1,12 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
 import {
     ArrowRight,
-    CalendarDays,
+    BellRing,
     CheckCircle2,
+    ChefHat,
     ClipboardList,
     Clock,
     DollarSign,
-    MenuSquare,
     Plus,
     Star,
     Table2,
@@ -14,18 +14,16 @@ import {
     Users,
     Utensils,
     UserCheck,
+    Wallet,
     XCircle,
+    PieChart as PieChartIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import StatCard from '@/components/dashboard/stat-card';
-import Heading from '@/components/heading';
-
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { FinanceAreaChart } from '@/components/dashboard/finance-area-chart';
+import { DonutChart } from '@/components/dashboard/donut-chart';
+import { Reveal } from '@/components/dashboard/reveal';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -99,12 +97,85 @@ type RecentBooking = {
     }>;
 };
 
+type RevenueTrendPoint = {
+    date: string;
+    label: string;
+    revenue: number;
+    orders: number;
+};
+
+type SalesByCategoryItem = {
+    category: string;
+    sales: number;
+};
+
+type PaymentStatusItem = {
+    payment_status: string;
+    count: number;
+    total: number;
+};
+
 type Props = {
     stats: DashboardStats;
     recentOrders: RecentOrder[];
     orderStatusOverview: OrderStatusOverview[];
     popularMenuItems: PopularMenuItem[];
     recentBookings: RecentBooking[];
+    revenueTrend: RevenueTrendPoint[];
+    salesByCategory: SalesByCategoryItem[];
+    paymentStatusOverview: PaymentStatusItem[];
+};
+
+const CATEGORY_COLORS = [
+    '#f97316',
+    '#fb923c',
+    '#fbbf24',
+    '#a3e635',
+    '#22c55e',
+    '#38bdf8',
+    '#818cf8',
+    '#e879f9',
+    '#f472b6',
+];
+
+const PAYMENT_COLORS: Record<string, string> = {
+    paid: '#10b981',
+    pending: '#f59e0b',
+    unpaid: '#ef4444',
+};
+
+const ORDER_STATUS_STYLES: Record<
+    string,
+    { icon: LucideIcon; color: string; bg: string }
+> = {
+    completed: {
+        icon: CheckCircle2,
+        color: 'text-green-600',
+        bg: 'bg-green-50',
+    },
+    pending: { icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    cancelled: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
+    received: {
+        icon: TrendingUp,
+        color: 'text-blue-600',
+        bg: 'bg-blue-50',
+    },
+    confirmed: {
+        icon: CheckCircle2,
+        color: 'text-cyan-600',
+        bg: 'bg-cyan-50',
+    },
+    preparing: {
+        icon: ChefHat,
+        color: 'text-orange-600',
+        bg: 'bg-orange-50',
+    },
+    ready: { icon: BellRing, color: 'text-amber-600', bg: 'bg-amber-50' },
+    served: {
+        icon: Utensils,
+        color: 'text-purple-600',
+        bg: 'bg-purple-50',
+    },
 };
 
 export default function Dashboard({
@@ -113,6 +184,9 @@ export default function Dashboard({
     orderStatusOverview,
     popularMenuItems,
     recentBookings,
+    revenueTrend,
+    salesByCategory,
+    paymentStatusOverview,
 }: Props) {
     /*
     |--------------------------------------------------------------------------
@@ -120,575 +194,552 @@ export default function Dashboard({
     |--------------------------------------------------------------------------
     */
 
-    const formatCurrency = (
-        amount: number | string,
-    ) => {
-        return `ETB ${Number(amount).toLocaleString(
-            'en-US',
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            },
-        )}`;
+    const formatCurrency = (amount: number | string) => {
+        return `ETB ${Number(amount).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`;
     };
 
-    const formatDateTime = (
-        date: string,
-    ) => {
+    const formatDateTime = (date: string) => {
         if (!date) {
             return '—';
         }
 
-        return new Date(date).toLocaleString(
-            'en-US',
-            {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-            },
-        );
+        return new Date(date).toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+        });
     };
 
     const getStatusVariant = (
-        status: string,
+        status: string
     ): 'default' | 'secondary' | 'destructive' | 'outline' => {
         switch (status) {
             case 'completed':
                 return 'default';
-
             case 'cancelled':
                 return 'destructive';
-
             case 'received':
+            case 'preparing':
+            case 'ready':
+            case 'served':
+            case 'confirmed':
                 return 'secondary';
-
             case 'pending':
                 return 'outline';
-
             default:
                 return 'outline';
         }
     };
 
     const getPaymentVariant = (
-        status: string,
+        status: string
     ): 'default' | 'secondary' | 'destructive' | 'outline' => {
         switch (status) {
             case 'paid':
                 return 'default';
-
             case 'pending':
                 return 'secondary';
-
             case 'unpaid':
                 return 'outline';
-
             default:
                 return 'outline';
         }
     };
 
     const getBookingStatusVariant = (
-        status: string,
+        status: string
     ): 'default' | 'secondary' | 'destructive' | 'outline' => {
         switch (status) {
             case 'confirmed':
                 return 'default';
-
             case 'cancelled':
                 return 'destructive';
-
             case 'pending':
                 return 'secondary';
-
             default:
                 return 'outline';
         }
     };
 
+    /*
+    |--------------------------------------------------------------------------
+    | Chart Derived Data
+    |--------------------------------------------------------------------------
+    */
+
+    const categoryDonutData = salesByCategory.map((item) => ({
+        name: item.category,
+        value: Number(item.sales),
+    }));
+
+    const totalCategorySales = categoryDonutData.reduce(
+        (sum, item) => sum + item.value,
+        0
+    );
+
+    const paymentDonutData = paymentStatusOverview.map((item) => ({
+        name: item.payment_status,
+        value: Number(item.count),
+    }));
+
+    const totalPayments = paymentDonutData.reduce(
+        (sum, item) => sum + item.value,
+        0
+    );
+
+    const paymentDonutColors = paymentStatusOverview.map(
+        (item) => PAYMENT_COLORS[item.payment_status] ?? '#a8a29e'
+    );
+
     return (
         <>
             <Head title="Dashboard" />
 
-            <div className="min-h-screen bg-stone-50">
-                <div className="flex h-full flex-1 flex-col gap-8 overflow-x-auto p-5 lg:p-8">
+            <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-orange-50 via-amber-50/30 to-white text-stone-800 selection:bg-orange-200 selection:text-orange-900">
+                {/* ================= DECORATIVE BACKGROUND ================= */}
+                <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 animate-pulse rounded-full bg-orange-200 opacity-30 blur-3xl mix-blend-multiply" />
+                <div
+                    className="pointer-events-none absolute top-1/3 -left-40 h-96 w-96 animate-pulse rounded-full bg-amber-200 opacity-30 blur-3xl mix-blend-multiply"
+                    style={{ animationDelay: '1s' }}
+                />
+                <div className="pointer-events-none absolute bottom-0 right-1/4 h-72 w-72 animate-pulse rounded-full bg-orange-100 opacity-40 blur-3xl mix-blend-multiply" />
 
+                <div className="relative flex flex-col gap-8 p-5 lg:p-8">
                     {/* ================================================= */}
                     {/* HEADER */}
                     {/* ================================================= */}
 
-                    <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                        <Heading
-                            title="Dashboard"
-                            description="Overview of your restaurant management system"
-                        />
+                    <Reveal>
+                        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-semibold text-orange-700">
+                                    <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
+                                    Restaurant Management
+                                </div>
 
-                        <div className="flex flex-wrap gap-3">
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="rounded-full border-gray-200 bg-white font-bold shadow-sm hover:border-orange-300 hover:text-orange-500"
-                            >
-                                <Link href="/manager/orders">
-                                    <ClipboardList className="mr-2 h-4 w-4" />
-                                    View Orders
-                                </Link>
-                            </Button>
+                                <h1 className="mt-4 text-3xl font-black tracking-tight text-stone-900 sm:text-4xl">
+                                    Dashboard
+                                </h1>
 
-                            <Button
-                                asChild
-                                className="rounded-full bg-gray-900 font-bold text-white hover:bg-orange-500"
-                            >
-                                <Link href="/manager/items/create">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Menu Item
-                                </Link>
-                            </Button>
+                                <p className="mt-1 text-amber-600/90">
+                                    Overview of your restaurant's performance
+                                    and finances.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-3">
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="rounded-full border-orange-200 bg-white font-bold text-amber-700 shadow-sm hover:border-orange-400 hover:text-orange-700"
+                                >
+                                    <Link href="/manager/orders">
+                                        <ClipboardList className="mr-2 h-4 w-4" />
+                                        View Orders
+                                    </Link>
+                                </Button>
+
+                                <Button
+                                    asChild
+                                    className="rounded-full bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/25 transition-all hover:shadow-xl hover:shadow-orange-500/40"
+                                >
+                                    <Link href="/manager/items/create">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Menu Item
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-
+                    </Reveal>
 
                     {/* ================================================= */}
-                    {/* MAIN STATISTICS */}
+                    {/* TOP STATISTICS */}
                     {/* ================================================= */}
 
-                   {/* ================= TOP STATISTICS ================= */}
+                    <Reveal>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <StatCard
+                                title="Total Orders"
+                                value={stats.totalOrders}
+                                icon={ClipboardList}
+                                iconClassName="text-blue-600"
+                                iconBgClassName="bg-blue-50"
+                                href="/manager/orders"
+                            />
 
-<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <StatCard
+                                title="Pending Orders"
+                                value={stats.pendingOrders}
+                                icon={Clock}
+                                iconClassName="text-yellow-600"
+                                iconBgClassName="bg-yellow-50"
+                                href="/manager/orders"
+                            />
 
-    <StatCard
-        title="Total Orders"
-        value={stats.totalOrders}
-        icon={ClipboardList}
-        iconClassName="text-blue-600"
-        href="/manager/orders"
-    />
+                            <StatCard
+                                title="Completed Orders"
+                                value={stats.completedOrders}
+                                icon={CheckCircle2}
+                                iconClassName="text-green-600"
+                                iconBgClassName="bg-green-50"
+                                href="/manager/orders"
+                            />
 
-    <StatCard
-        title="Pending Orders"
-        value={stats.pendingOrders}
-        icon={Clock}
-        iconClassName="text-yellow-600"
-        href="/manager/orders"
-    />
-
-    <StatCard
-        title="Completed Orders"
-        value={stats.completedOrders}
-        icon={CheckCircle2}
-        iconClassName="text-green-600"
-        href="/manager/orders"
-    />
-
-    <StatCard
-        title="Total Revenue"
-        value={formatCurrency(stats.totalRevenue)}
-        icon={DollarSign}
-        iconClassName="text-blue-600"
-        href="/manager/orders"
-    />
-
-</div>
+                            <StatCard
+                                featured
+                                title="Total Revenue"
+                                value={formatCurrency(stats.totalRevenue)}
+                                icon={Wallet}
+                                href="/manager/orders"
+                            />
+                        </div>
+                    </Reveal>
 
                     {/* ================================================= */}
                     {/* SECOND STATISTICS */}
                     {/* ================================================= */}
-{/* ================= SECOND STATISTICS ================= */}
 
-<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Reveal delay={100}>
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            <StatCard
+                                title="Total Customers"
+                                value={stats.totalCustomers}
+                                icon={Users}
+                                iconClassName="text-purple-600"
+                                iconBgClassName="bg-purple-50"
+                                href="/manager/customers"
+                            />
 
-    <StatCard
-        title="Total Customers"
-        value={stats.totalCustomers}
-        icon={Users}
-        iconClassName="text-purple-600"
-        href="/manager/customers"
-    />
+                            <StatCard
+                                title="Available Tables"
+                                value={stats.availableTables}
+                                icon={Table2}
+                                iconClassName="text-green-600"
+                                iconBgClassName="bg-green-50"
+                                href="/manager/tables"
+                            />
 
-    <StatCard
-        title="Available Tables"
-        value={stats.availableTables}
-        icon={Table2}
-        iconClassName="text-green-600"
-        href="/manager/tables"
-    />
-
-    <StatCard
-        title="Occupied Tables"
-        value={stats.occupiedTables}
-        icon={Utensils}
-        iconClassName="text-red-600"
-        href="/manager/tables"
-    />
-
-</div>
+                            <StatCard
+                                title="Occupied Tables"
+                                value={stats.occupiedTables}
+                                icon={Utensils}
+                                iconClassName="text-red-600"
+                                iconBgClassName="bg-red-50"
+                                href="/manager/tables"
+                            />
+                        </div>
+                    </Reveal>
 
                     {/* ================================================= */}
-                    {/* RECENT ORDERS + ORDER STATUS */}
+                    {/* FINANCE CHARTS */}
                     {/* ================================================= */}
 
                     <div className="grid gap-6 lg:grid-cols-3">
+                        {/* Revenue Trend */}
 
-                        {/* Recent Orders */}
+                        <Reveal className="lg:col-span-2">
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Revenue Trend
+                                        </h2>
 
-                        <Card className="overflow-hidden rounded-2xl border-gray-100 bg-white shadow-sm lg:col-span-2">
+                                        <p className="text-sm text-amber-600">
+                                            Daily revenue for the last 14 days
+                                        </p>
+                                    </div>
 
-                            <CardHeader className="border-b border-gray-100">
-                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">
+                                            <TrendingUp className="h-3.5 w-3.5" />
+                                            {formatCurrency(
+                                                revenueTrend.reduce(
+                                                    (sum, point) =>
+                                                        sum + point.revenue,
+                                                    0
+                                                )
+                                            )}
+                                        </span>
 
-                                    <CardTitle className="flex items-center gap-2 font-black">
-                                        <ClipboardList className="h-5 w-5 text-orange-500" />
-
-                                        Recent Orders
-                                    </CardTitle>
-
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-bold hover:text-orange-500"
-                                    >
-                                        <Link href="/manager/orders">
-                                            View All
-
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-
+                                        <div className="rounded-xl bg-orange-50 p-2.5">
+                                            <Wallet className="h-5 w-5 text-orange-600" />
+                                        </div>
+                                    </div>
                                 </div>
-                            </CardHeader>
 
-                            <CardContent className="p-0">
+                                <FinanceAreaChart data={revenueTrend} />
+                            </div>
+                        </Reveal>
 
-                                {recentOrders.length === 0 ? (
+                        {/* Sales by Category Donut */}
 
-                                    <div className="py-16 text-center text-sm text-gray-500">
-                                        No orders found.
+                        <Reveal delay={100}>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Sales by Category
+                                        </h2>
+
+                                        <p className="text-sm text-amber-600">
+                                            Completed order sales
+                                        </p>
                                     </div>
 
+                                    <div className="rounded-xl bg-orange-50 p-2.5">
+                                        <PieChartIcon className="h-5 w-5 text-orange-600" />
+                                    </div>
+                                </div>
+
+                                {categoryDonutData.length > 0 ? (
+                                    <DonutChart
+                                        data={categoryDonutData}
+                                        colors={CATEGORY_COLORS}
+                                        centerLabel="Total Sales"
+                                        centerValue={formatCurrency(
+                                            totalCategorySales
+                                        )}
+                                    />
                                 ) : (
+                                    <div className="flex h-72 items-center justify-center text-sm text-amber-600">
+                                        No sales data available.
+                                    </div>
+                                )}
+                            </div>
+                        </Reveal>
+                    </div>
 
-                                    <div className="overflow-x-auto">
+                    {/* ================================================= */}
+                    {/* PAYMENT + ORDER STATUS + POPULAR ITEMS */}
+                    {/* ================================================= */}
 
-                                        <table className="w-full">
+                    <div className="grid gap-6 lg:grid-cols-3">
+                        {/* Payment Status Donut */}
 
-                                            <thead>
-                                                <tr className="border-b bg-stone-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
+                        <Reveal>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Payment Status
+                                        </h2>
 
-                                                    <th className="px-5 py-4">
-                                                        Order
-                                                    </th>
-
-                                                    <th className="px-5 py-4">
-                                                        Customer
-                                                    </th>
-
-                                                    <th className="px-5 py-4">
-                                                        Table
-                                                    </th>
-
-                                                    <th className="px-5 py-4">
-                                                        Status
-                                                    </th>
-
-                                                    <th className="px-5 py-4">
-                                                        Payment
-                                                    </th>
-
-                                                    <th className="px-5 py-4 text-right">
-                                                        Total
-                                                    </th>
-
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-
-                                                {recentOrders.map(
-                                                    (order) => (
-
-                                                        <tr
-                                                            key={order.id}
-                                                            className="border-b border-gray-100 transition hover:bg-orange-50/30 last:border-0"
-                                                        >
-
-                                                            <td className="px-5 py-4 text-sm font-bold">
-                                                                {order.order_number}
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-sm">
-                                                                {order.customer_name ||
-                                                                    'Walk-in Customer'}
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-sm text-gray-500">
-                                                                {order.table?.table_number
-                                                                    ? `Table ${order.table.table_number}`
-                                                                    : '—'}
-                                                            </td>
-
-                                                            <td className="px-5 py-4">
-                                                                <Badge
-                                                                    variant={getStatusVariant(
-                                                                        order.status,
-                                                                    )}
-                                                                    className="capitalize"
-                                                                >
-                                                                    {order.status}
-                                                                </Badge>
-                                                            </td>
-
-                                                            <td className="px-5 py-4">
-                                                                <Badge
-                                                                    variant={getPaymentVariant(
-                                                                        order.payment_status,
-                                                                    )}
-                                                                    className="capitalize"
-                                                                >
-                                                                    {order.payment_status}
-                                                                </Badge>
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-right text-sm font-black">
-                                                                {formatCurrency(
-                                                                    order.total_amount,
-                                                                )}
-                                                            </td>
-
-                                                        </tr>
-
-                                                    ),
-                                                )}
-
-                                            </tbody>
-
-                                        </table>
-
+                                        <p className="text-sm text-amber-600">
+                                            Orders by payment status
+                                        </p>
                                     </div>
 
+                                    <div className="rounded-xl bg-orange-50 p-2.5">
+                                        <DollarSign className="h-5 w-5 text-orange-600" />
+                                    </div>
+                                </div>
+
+                                {paymentDonutData.length > 0 ? (
+                                    <DonutChart
+                                        data={paymentDonutData}
+                                        colors={paymentDonutColors}
+                                        centerLabel="Total Orders"
+                                        centerValue={String(totalPayments)}
+                                        formatValue={(value) =>
+                                            `${value} order${
+                                                value === 1 ? '' : 's'
+                                            }`
+                                        }
+                                    />
+                                ) : (
+                                    <div className="flex h-72 items-center justify-center text-sm text-amber-600">
+                                        No payment data available.
+                                    </div>
                                 )}
-
-                            </CardContent>
-
-                        </Card>
-
+                            </div>
+                        </Reveal>
 
                         {/* Order Status */}
 
-                        <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
+                        <Reveal delay={100}>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Order Status
+                                        </h2>
 
-                            <CardHeader>
-                                <CardTitle className="font-black">
-                                    Order Status
-                                </CardTitle>
-                            </CardHeader>
+                                        <p className="text-sm text-amber-600">
+                                            Live breakdown by status
+                                        </p>
+                                    </div>
 
-                            <CardContent>
+                                    <div className="rounded-xl bg-orange-50 p-2.5">
+                                        <ClipboardList className="h-5 w-5 text-orange-600" />
+                                    </div>
+                                </div>
 
                                 {orderStatusOverview.length === 0 ? (
-
-                                    <div className="py-10 text-center text-sm text-gray-500">
+                                    <div className="py-10 text-center text-sm text-amber-600">
                                         No order data available.
                                     </div>
-
                                 ) : (
-
                                     <div className="space-y-3">
+                                        {orderStatusOverview.map((item) => {
+                                            const style =
+                                                ORDER_STATUS_STYLES[
+                                                    item.status
+                                                ] ?? {
+                                                    icon: ClipboardList,
+                                                    color: 'text-amber-600',
+                                                    bg: 'bg-amber-50',
+                                                };
 
-                                        {orderStatusOverview.map(
-                                            (item) => (
+                                            const Icon = style.icon;
 
+                                            return (
                                                 <div
                                                     key={item.status}
-                                                    className="flex items-center justify-between rounded-xl border border-gray-100 p-4 transition hover:border-orange-200 hover:bg-orange-50/30"
+                                                    className="flex items-center justify-between rounded-xl border border-orange-100/80 p-4 transition hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
                                                 >
-
                                                     <div className="flex items-center gap-3">
+                                                        <div
+                                                            className={`flex h-10 w-10 items-center justify-center rounded-xl ${style.bg}`}
+                                                        >
+                                                            <Icon
+                                                                className={`h-5 w-5 ${style.color}`}
+                                                            />
+                                                        </div>
 
-                                                        {item.status ===
-                                                            'completed' && (
-                                                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                                                        )}
-
-                                                        {item.status ===
-                                                            'pending' && (
-                                                            <Clock className="h-5 w-5 text-yellow-600" />
-                                                        )}
-
-                                                        {item.status ===
-                                                            'cancelled' && (
-                                                            <XCircle className="h-5 w-5 text-red-600" />
-                                                        )}
-
-                                                        {item.status ===
-                                                            'received' && (
-                                                            <TrendingUp className="h-5 w-5 text-blue-600" />
-                                                        )}
-
-                                                        <span className="text-sm font-bold capitalize">
+                                                        <span className="text-sm font-bold capitalize text-stone-700">
                                                             {item.status}
                                                         </span>
-
                                                     </div>
 
-                                                    <Badge variant="secondary">
+                                                    <Badge
+                                                        className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                        variant="secondary"
+                                                    >
                                                         {item.count}
                                                     </Badge>
-
                                                 </div>
-
-                                            ),
-                                        )}
-
+                                            );
+                                        })}
                                     </div>
-
                                 )}
-
-                            </CardContent>
-
-                        </Card>
-
-                    </div>
-
-
-                    {/* ================================================= */}
-                    {/* POPULAR MENU + TABLES */}
-                    {/* ================================================= */}
-
-                    <div className="grid gap-6 lg:grid-cols-2">
+                            </div>
+                        </Reveal>
 
                         {/* Popular Menu Items */}
 
-                        <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
+                        <Reveal delay={200}>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Popular Menu Items
+                                        </h2>
 
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
+                                        <p className="text-sm text-amber-600">
+                                            Top sellers right now
+                                        </p>
+                                    </div>
 
-                                    <CardTitle className="flex items-center gap-2 font-black">
-                                        <Star className="h-5 w-5 text-orange-500" />
-
-                                        Popular Menu Items
-                                    </CardTitle>
-
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="sm"
-                                    >
-                                        <Link href="/manager/items">
-                                            View Menu
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-
+                                    <div className="rounded-xl bg-orange-50 p-2.5">
+                                        <Star className="h-5 w-5 text-orange-600" />
+                                    </div>
                                 </div>
-                            </CardHeader>
-
-                            <CardContent>
 
                                 {popularMenuItems.length === 0 ? (
-
-                                    <div className="py-10 text-center text-sm text-gray-500">
+                                    <div className="py-10 text-center text-sm text-amber-600">
                                         No menu item data available.
                                     </div>
-
                                 ) : (
-
                                     <div className="space-y-3">
-
-                                        {popularMenuItems.map(
-                                            (item, index) => (
-
-                                                <div
-                                                    key={item.id}
-                                                    className="flex items-center justify-between rounded-xl border border-gray-100 p-4 transition hover:border-orange-200 hover:bg-orange-50/30"
-                                                >
-
-                                                    <div className="flex items-center gap-4">
-
-                                                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-50 text-sm font-black text-orange-500">
-                                                            {index + 1}
-                                                        </div>
-
-                                                        <span className="text-sm font-bold">
-                                                            {item.name}
-                                                        </span>
-
+                                        {popularMenuItems.map((item, index) => (
+                                            <div
+                                                key={item.id}
+                                                className="group flex items-center justify-between rounded-xl border border-orange-100/80 p-4 transition hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
+                                            >
+                                                <div className="flex items-center gap-4">
+                                                    <div
+                                                        className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
+                                                            index === 0
+                                                                ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-500/30'
+                                                                : 'bg-orange-50 text-orange-600'
+                                                        }`}
+                                                    >
+                                                        {index + 1}
                                                     </div>
 
-                                                    <Badge variant="secondary">
-                                                        {item.total_quantity}{' '}
-                                                        sold
-                                                    </Badge>
-
+                                                    <span className="text-sm font-bold text-stone-700">
+                                                        {item.name}
+                                                    </span>
                                                 </div>
 
-                                            ),
-                                        )}
-
+                                                <Badge
+                                                    className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                    variant="secondary"
+                                                >
+                                                    {item.total_quantity} sold
+                                                </Badge>
+                                            </div>
+                                        ))}
                                     </div>
-
                                 )}
+                            </div>
+                        </Reveal>
+                    </div>
 
-                            </CardContent>
+                    {/* ================================================= */}
+                    {/* TABLES + CUSTOMER/MENU OVERVIEW */}
+                    {/* ================================================= */}
 
-                        </Card>
-
-
+                    <div className="grid gap-6 lg:grid-cols-2">
                         {/* Restaurant Tables */}
 
-                        <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
+                        <Reveal>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Restaurant Tables
+                                        </h2>
 
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
+                                        <p className="text-sm text-amber-600">
+                                            Current table availability
+                                        </p>
+                                    </div>
 
-                                    <CardTitle className="flex items-center gap-2 font-black">
-                                        <Table2 className="h-5 w-5 text-orange-500" />
-
-                                        Restaurant Tables
-                                    </CardTitle>
-
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="sm"
-                                    >
+                                    <Button asChild variant="ghost" size="sm">
                                         <Link href="/manager/tables">
                                             Manage
                                             <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
-
                                 </div>
-                            </CardHeader>
-
-                            <CardContent>
 
                                 <div className="grid grid-cols-2 gap-4">
-
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-gray-100 p-5 text-center transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                                        className="rounded-2xl border border-orange-100/80 p-5 text-center transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
+                                        <p className="text-sm font-semibold text-amber-600">
                                             Total
                                         </p>
-
-                                        <p className="mt-2 text-3xl font-black">
+                                        <p className="mt-2 text-3xl font-black text-stone-800">
                                             {stats.totalTables}
                                         </p>
                                     </Link>
 
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-md"
+                                        className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-green-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
+                                        <p className="text-sm font-semibold text-amber-600">
                                             Available
                                         </p>
-
                                         <p className="mt-2 text-3xl font-black text-green-600">
                                             {stats.availableTables}
                                         </p>
@@ -696,12 +747,11 @@ export default function Dashboard({
 
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-red-100 bg-red-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-md"
+                                        className="rounded-2xl border border-red-100 bg-red-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-red-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
+                                        <p className="text-sm font-semibold text-amber-600">
                                             Occupied
                                         </p>
-
                                         <p className="mt-2 text-3xl font-black text-red-600">
                                             {stats.occupiedTables}
                                         </p>
@@ -709,338 +759,355 @@ export default function Dashboard({
 
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-yellow-100 bg-yellow-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-md"
+                                        className="rounded-2xl border border-yellow-100 bg-yellow-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
-                                            Payment
+                                        <p className="text-sm font-semibold text-amber-600">
+                                            Awaiting Payment
                                         </p>
-
                                         <p className="mt-2 text-3xl font-black text-yellow-600">
                                             {stats.awaitingPaymentTables}
                                         </p>
                                     </Link>
-
                                 </div>
+                            </div>
+                        </Reveal>
 
-                            </CardContent>
+                        {/* Customer + Menu Overview */}
 
-                        </Card>
+                        <Reveal delay={100}>
+                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                                <div className="mb-6 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-black text-stone-800">
+                                            Customers &amp; Menu
+                                        </h2>
 
-                    </div>
+                                        <p className="text-sm text-amber-600">
+                                            Quick overview of your data
+                                        </p>
+                                    </div>
 
-
-                    {/* ================================================= */}
-                    {/* CUSTOMER + MENU OVERVIEW */}
-                    {/* ================================================= */}
-
-                    <div className="grid gap-6 lg:grid-cols-2">
-
-                        {/* Customer Overview */}
-
-                        <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
-
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-
-                                    <CardTitle className="flex items-center gap-2 font-black">
-                                        <Users className="h-5 w-5 text-orange-500" />
-
-                                        Customer Overview
-                                    </CardTitle>
-
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="sm"
-                                    >
+                                    <Button asChild variant="ghost" size="sm">
                                         <Link href="/manager/customers">
                                             View Customers
                                             <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>
-
                                 </div>
-                            </CardHeader>
-
-                            <CardContent>
 
                                 <div className="grid grid-cols-2 gap-4">
-
                                     <Link
                                         href="/manager/customers"
-                                        className="rounded-2xl border border-gray-100 p-5 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
                                     >
                                         <div className="flex items-center gap-3">
-
-                                            <Users className="h-6 w-6 text-purple-600" />
-
+                                            <div className="rounded-xl bg-purple-50 p-2.5">
+                                                <Users className="h-5 w-5 text-purple-600" />
+                                            </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-500">
+                                                <p className="text-sm font-semibold text-amber-600">
                                                     Total Customers
                                                 </p>
-
-                                                <p className="mt-1 text-2xl font-black">
+                                                <p className="mt-1 text-2xl font-black text-stone-800">
                                                     {stats.totalCustomers}
                                                 </p>
                                             </div>
-
                                         </div>
                                     </Link>
 
                                     <Link
                                         href="/manager/customers"
-                                        className="rounded-2xl border border-green-100 bg-green-50/30 p-5 transition hover:-translate-y-1 hover:shadow-md"
+                                        className="rounded-2xl border border-green-100 bg-green-50/30 p-5 transition hover:-translate-y-1 hover:shadow-lg hover:shadow-green-200/30"
                                     >
                                         <div className="flex items-center gap-3">
-
-                                            <UserCheck className="h-6 w-6 text-green-600" />
-
+                                            <div className="rounded-xl bg-green-50 p-2.5">
+                                                <UserCheck className="h-5 w-5 text-green-600" />
+                                            </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-gray-500">
+                                                <p className="text-sm font-semibold text-amber-600">
                                                     Members
                                                 </p>
-
-                                                <p className="mt-1 text-2xl font-black">
+                                                <p className="mt-1 text-2xl font-black text-green-600">
                                                     {stats.memberCustomers}
                                                 </p>
                                             </div>
-
                                         </div>
                                     </Link>
 
-                                </div>
-
-                            </CardContent>
-
-                        </Card>
-
-
-                        {/* Menu Overview */}
-
-                        <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
-
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-
-                                    <CardTitle className="flex items-center gap-2 font-black">
-                                        <MenuSquare className="h-5 w-5 text-orange-500" />
-
-                                        Menu Overview
-                                    </CardTitle>
-
-                                    <Button
-                                        asChild
-                                        variant="ghost"
-                                        size="sm"
-                                    >
-                                        <Link href="/manager/items">
-                                            Manage Menu
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
-
-                                </div>
-                            </CardHeader>
-
-                            <CardContent>
-
-                                <div className="grid grid-cols-2 gap-4">
-
                                     <Link
                                         href="/manager/items"
-                                        className="rounded-2xl border border-gray-100 p-5 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
-                                            Total Items
+                                        <p className="text-sm font-semibold text-amber-600">
+                                            Menu Items
                                         </p>
-
-                                        <p className="mt-1 text-3xl font-black">
+                                        <p className="mt-1 text-3xl font-black text-stone-800">
                                             {stats.totalMenuItems}
                                         </p>
-
                                         <p className="mt-2 text-xs font-bold text-green-600">
-                                            {stats.availableMenuItems}{' '}
-                                            available
+                                            {stats.availableMenuItems} available
                                         </p>
                                     </Link>
 
                                     <Link
                                         href="/manager/categories"
-                                        className="rounded-2xl border border-gray-100 p-5 transition hover:-translate-y-1 hover:border-orange-200 hover:shadow-md"
+                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-gray-500">
+                                        <p className="text-sm font-semibold text-amber-600">
                                             Categories
                                         </p>
-
-                                        <p className="mt-1 text-3xl font-black">
+                                        <p className="mt-1 text-3xl font-black text-stone-800">
                                             {stats.totalCategories}
                                         </p>
-
-                                        <p className="mt-2 text-xs font-semibold text-gray-500">
-                                            {stats.activeCategories}{' '}
-                                            active
+                                        <p className="mt-2 text-xs font-semibold text-stone-500">
+                                            {stats.activeCategories} active
                                         </p>
                                     </Link>
-
                                 </div>
-
-                            </CardContent>
-
-                        </Card>
-
+                            </div>
+                        </Reveal>
                     </div>
 
+                    {/* ================================================= */}
+                    {/* RECENT ORDERS */}
+                    {/* ================================================= */}
+
+                    <Reveal>
+                        <div className="overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100/80 p-6">
+                                <div>
+                                    <h2 className="text-lg font-black text-stone-800">
+                                        Recent Orders
+                                    </h2>
+
+                                    <p className="text-sm text-amber-600">
+                                        Latest orders placed in your restaurant
+                                    </p>
+                                </div>
+
+                                <Button asChild variant="ghost" size="sm">
+                                    <Link href="/manager/orders">
+                                        View All
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </div>
+
+                            {recentOrders.length === 0 ? (
+                                <div className="py-16 text-center text-sm text-amber-600">
+                                    No orders found.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b border-orange-100/80 bg-orange-50/40 text-left text-xs font-bold uppercase tracking-wider text-amber-600">
+                                                <th className="px-6 py-4">
+                                                    Order
+                                                </th>
+                                                <th className="px-6 py-4">
+                                                    Customer
+                                                </th>
+                                                <th className="px-6 py-4">
+                                                    Table
+                                                </th>
+                                                <th className="px-6 py-4">
+                                                    Status
+                                                </th>
+                                                <th className="px-6 py-4">
+                                                    Payment
+                                                </th>
+                                                <th className="px-6 py-4 text-right">
+                                                    Total
+                                                </th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {recentOrders.map((order) => (
+                                                <tr
+                                                    key={order.id}
+                                                    className="border-b border-orange-100/50 transition last:border-0 hover:bg-orange-50/40"
+                                                >
+                                                    <td className="px-6 py-4 text-sm font-bold text-stone-800">
+                                                        {order.order_number}
+                                                    </td>
+
+                                                    <td className="px-6 py-4 text-sm text-stone-600">
+                                                        {order.customer_name ||
+                                                            'Walk-in Customer'}
+                                                    </td>
+
+                                                    <td className="px-6 py-4 text-sm text-amber-600">
+                                                        {order.table
+                                                            ?.table_number
+                                                            ? `Table ${order.table.table_number}`
+                                                            : '—'}
+                                                    </td>
+
+                                                    <td className="px-6 py-4">
+                                                        <Badge
+                                                            variant={getStatusVariant(
+                                                                order.status
+                                                            )}
+                                                            className="rounded-full capitalize"
+                                                        >
+                                                            {order.status}
+                                                        </Badge>
+                                                    </td>
+
+                                                    <td className="px-6 py-4">
+                                                        <Badge
+                                                            variant={getPaymentVariant(
+                                                                order.payment_status
+                                                            )}
+                                                            className="rounded-full capitalize"
+                                                        >
+                                                            {order.payment_status}
+                                                        </Badge>
+                                                    </td>
+
+                                                    <td className="px-6 py-4 text-right text-sm font-black text-stone-800">
+                                                        {formatCurrency(
+                                                            order.total_amount
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </Reveal>
 
                     {/* ================================================= */}
                     {/* RECENT BOOKINGS */}
                     {/* ================================================= */}
 
-                    <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
+                    <Reveal delay={100}>
+                        <div className="overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-100/80 p-6">
+                                <div>
+                                    <h2 className="text-lg font-black text-stone-800">
+                                        Recent Table Bookings
+                                    </h2>
 
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
+                                    <p className="text-sm text-amber-600">
+                                        Latest reservation activity
+                                    </p>
+                                </div>
 
-                                <CardTitle className="flex items-center gap-2 font-black">
-                                    <CalendarDays className="h-5 w-5 text-orange-500" />
-
-                                    Recent Table Bookings
-                                </CardTitle>
-
-                                <Button
-                                    asChild
-                                    variant="ghost"
-                                    size="sm"
-                                >
+                                <Button asChild variant="ghost" size="sm">
                                     <Link href="/manager/bookings">
                                         View All
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>
-
                             </div>
-                        </CardHeader>
-
-                        <CardContent className="p-0">
 
                             {recentBookings.length === 0 ? (
-
-                                <div className="py-16 text-center text-sm text-gray-500">
+                                <div className="py-16 text-center text-sm text-amber-600">
                                     No recent bookings found.
                                 </div>
-
                             ) : (
-
                                 <div className="overflow-x-auto">
-
                                     <table className="w-full">
-
                                         <thead>
-                                            <tr className="border-b bg-stone-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500">
-
-                                                <th className="px-5 py-4">
+                                            <tr className="border-b border-orange-100/80 bg-orange-50/40 text-left text-xs font-bold uppercase tracking-wider text-amber-600">
+                                                <th className="px-6 py-4">
                                                     Customer
                                                 </th>
-
-                                                <th className="px-5 py-4">
+                                                <th className="px-6 py-4">
                                                     Table
                                                 </th>
-
-                                                <th className="px-5 py-4">
+                                                <th className="px-6 py-4">
                                                     Guests
                                                 </th>
-
-                                                <th className="px-5 py-4">
+                                                <th className="px-6 py-4">
                                                     Status
                                                 </th>
-
-                                                <th className="px-5 py-4">
+                                                <th className="px-6 py-4">
                                                     Created
                                                 </th>
-
                                             </tr>
                                         </thead>
 
                                         <tbody>
+                                            {recentBookings.map((booking) => (
+                                                <tr
+                                                    key={booking.id}
+                                                    className="border-b border-orange-100/50 transition last:border-0 hover:bg-orange-50/40"
+                                                >
+                                                    <td className="px-6 py-4 text-sm font-bold text-stone-800">
+                                                        {booking.customer_name ||
+                                                            'Customer'}
+                                                    </td>
 
-                                            {recentBookings.map(
-                                                (booking) => (
+                                                    <td className="px-6 py-4 text-sm text-amber-600">
+                                                        {booking.tables &&
+                                                        booking.tables.length >
+                                                            0
+                                                            ? booking.tables
+                                                                  .map(
+                                                                      (table) =>
+                                                                          `Table ${table.table_number}`
+                                                                  )
+                                                                  .join(', ')
+                                                            : '—'}
+                                                    </td>
 
-                                                    <tr
-                                                        key={booking.id}
-                                                        className="border-b border-gray-100 transition hover:bg-orange-50/30 last:border-0"
-                                                    >
+                                                    <td className="px-6 py-4 text-sm text-stone-600">
+                                                        {booking.number_of_guests ||
+                                                            '—'}
+                                                    </td>
 
-                                                        <td className="px-5 py-4 text-sm font-bold">
-                                                            {booking.customer_name ||
-                                                                'Customer'}
-                                                        </td>
-
-                                                        <td className="px-5 py-4 text-sm">
-                                                            {booking.tables && booking.tables.length > 0
-                                                                ? booking.tables.map((table) => `Table ${table.table_number}`).join(', ')
-                                                                : '—'}
-                                                        </td>
-
-                                                        <td className="px-5 py-4 text-sm">
-                                                            {booking.number_of_guests ||
-                                                                '—'}
-                                                        </td>
-
-                                                        <td className="px-5 py-4">
-                                                            <Badge
-                                                                variant={getBookingStatusVariant(
-                                                                    booking.status,
-                                                                )}
-                                                                className="capitalize"
-                                                            >
-                                                                {booking.status}
-                                                            </Badge>
-                                                        </td>
-
-                                                        <td className="px-5 py-4 text-sm text-gray-500">
-                                                            {formatDateTime(
-                                                                booking.created_at,
+                                                    <td className="px-6 py-4">
+                                                        <Badge
+                                                            variant={getBookingStatusVariant(
+                                                                booking.status
                                                             )}
-                                                        </td>
+                                                            className="rounded-full capitalize"
+                                                        >
+                                                            {booking.status}
+                                                        </Badge>
+                                                    </td>
 
-                                                    </tr>
-
-                                                ),
-                                            )}
-
+                                                    <td className="px-6 py-4 text-sm text-amber-600">
+                                                        {formatDateTime(
+                                                            booking.created_at
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
-
                                     </table>
-
                                 </div>
-
                             )}
-
-                        </CardContent>
-
-                    </Card>
-
+                        </div>
+                    </Reveal>
 
                     {/* ================================================= */}
                     {/* QUICK ACTIONS */}
                     {/* ================================================= */}
 
-                    <Card className="rounded-2xl border-gray-100 bg-white shadow-sm">
+                    <Reveal delay={100}>
+                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="mb-6">
+                                <h2 className="text-lg font-black text-stone-800">
+                                    Quick Actions
+                                </h2>
 
-                        <CardHeader>
-                            <CardTitle className="font-black">
-                                Quick Actions
-                            </CardTitle>
-                        </CardHeader>
-
-                        <CardContent>
+                                <p className="text-sm text-amber-600">
+                                    Shortcuts to common tasks
+                                </p>
+                            </div>
 
                             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="h-12 rounded-xl font-bold hover:border-orange-300 hover:text-orange-500"
+                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
                                 >
                                     <Link href="/manager/items/create">
                                         <Plus className="mr-2 h-4 w-4" />
@@ -1051,7 +1118,7 @@ export default function Dashboard({
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="h-12 rounded-xl font-bold hover:border-orange-300 hover:text-orange-500"
+                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
                                 >
                                     <Link href="/manager/categories/create">
                                         <Plus className="mr-2 h-4 w-4" />
@@ -1062,7 +1129,7 @@ export default function Dashboard({
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="h-12 rounded-xl font-bold hover:border-orange-300 hover:text-orange-500"
+                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
                                 >
                                     <Link href="/manager/orders">
                                         <ClipboardList className="mr-2 h-4 w-4" />
@@ -1073,20 +1140,16 @@ export default function Dashboard({
                                 <Button
                                     asChild
                                     variant="outline"
-                                    className="h-12 rounded-xl font-bold hover:border-orange-300 hover:text-orange-500"
+                                    className="h-12 rounded-xl border-orange-200 bg-white font-bold text-amber-700 hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700"
                                 >
                                     <Link href="/admin/users/create">
                                         <Users className="mr-2 h-4 w-4" />
                                         Add User
                                     </Link>
                                 </Button>
-
                             </div>
-
-                        </CardContent>
-
-                    </Card>
-
+                        </div>
+                    </Reveal>
                 </div>
             </div>
         </>

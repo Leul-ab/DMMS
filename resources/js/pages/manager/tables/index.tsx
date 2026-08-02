@@ -6,6 +6,7 @@ import {
     Plus,
     Printer,
     QrCode,
+    RefreshCw,
     Search,
     Trash2,
 } from 'lucide-react';
@@ -48,6 +49,7 @@ import {
     update as tablesUpdate,
     destroy as tablesDestroy,
     toggleStatus,
+    regenerateQr,
 } from '@/routes/manager/tables';
 
 type TableStatus =
@@ -268,6 +270,33 @@ export default function TablesIndex({ tables }: Props) {
             {},
             {
                 preserveScroll: true,
+            },
+        );
+    };
+
+    // -----------------------------------------
+    // Regenerate QR Code
+    // -----------------------------------------
+
+    const handleRegenerateQr = (
+        table: RestaurantTable,
+    ) => {
+        if (
+            !window.confirm(
+                `Regenerate the QR code for Table ${table.table_number}? The existing QR code will be replaced.`,
+            )
+        ) {
+            return;
+        }
+
+        router.post(
+            regenerateQr.url(
+                table.id,
+            ),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
             },
         );
     };
@@ -629,6 +658,20 @@ export default function TablesIndex({ tables }: Props) {
                                                                 title="Edit table"
                                                             >
                                                                 <Pencil className="h-4 w-4" />
+                                                            </Button>
+
+                                                            {/* Regenerate QR */}
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    handleRegenerateQr(
+                                                                        table,
+                                                                    )
+                                                                }
+                                                                title="Regenerate QR code (points to customer menu)"
+                                                            >
+                                                                <RefreshCw className="h-4 w-4" />
                                                             </Button>
 
                                                             {/* Delete */}

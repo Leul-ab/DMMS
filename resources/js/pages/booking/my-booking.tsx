@@ -322,7 +322,7 @@ export default function MyBooking({ onClose }: Props) {
                                 <Button
                                     onClick={handleVerifyCode}
                                     disabled={isVerifying}
-                                    className="flex-1 rounded-xl bg-orange-500 py-3.5 font-bold text-white hover:bg-orange-600"
+                                    className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 py-3.5 font-bold text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 >
                                     {isVerifying ? (
                                         <span className="flex items-center justify-center gap-2">

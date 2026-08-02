@@ -166,6 +166,11 @@ Route::patch(
             [RestaurantTableController::class, 'toggleStatus']
         )->name('tables.toggle-status');
 
+        Route::post(
+            'tables/{table}/regenerate-qr',
+            [RestaurantTableController::class, 'regenerateQr']
+        )->name('tables.regenerate-qr');
+
 
         // =========================
         // Customers CRUD

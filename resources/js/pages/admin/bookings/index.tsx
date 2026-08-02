@@ -547,7 +547,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
-                        <Button onClick={handleCompleteBooking} disabled={completeLoading} className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={handleCompleteBooking} disabled={completeLoading}>
                             {completeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Mark Completed
                         </Button>

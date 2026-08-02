@@ -27,6 +27,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
 
 import { dashboard } from '@/routes';
@@ -159,6 +160,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                <SidebarSeparator />
             </SidebarHeader>
 
             <SidebarContent>

@@ -497,7 +497,7 @@ export default function KitchenDashboard({
                         {column === 'new' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => acceptOrderAndOpenDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -508,7 +508,7 @@ export default function KitchenDashboard({
                         {column === 'preparing' && order.preparation_status === 'waiting' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => openPrepDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -531,7 +531,7 @@ export default function KitchenDashboard({
                                     </Button>
                                     <Button
                                         size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                         onClick={() => markReady(order)}
                                         disabled={isProcessing}
                                     >
@@ -544,7 +544,7 @@ export default function KitchenDashboard({
                         {column === 'ready' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-gray-800 hover:bg-gray-900 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => completeOrder(order)}
                                 disabled={isProcessing}
                             >
@@ -847,7 +847,7 @@ export default function KitchenDashboard({
                             <Button
                                 onClick={startPreparation}
                                 disabled={isProcessing || !prepTime}
-                                className="bg-orange-500 hover:bg-orange-600 min-w-[140px]"
+                                className="min-w-[140px]"
                             >
                                 {isProcessing ? (
                                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Starting...</>
@@ -951,7 +951,7 @@ export default function KitchenDashboard({
                         <Button
                             onClick={submitAddTime}
                             disabled={isProcessing || !addTimeValue || addTimeValue <= 0}
-                            className="bg-orange-500 hover:bg-orange-600 min-w-[140px]"
+                            className="min-w-[140px]"
                         >
                             {isProcessing ? (
                                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...</>

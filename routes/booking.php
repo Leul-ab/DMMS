@@ -6,6 +6,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/booking', [BookingController::class, 'index'])
     ->name('booking.index');
 
+Route::get('/customer-booking', [BookingController::class, 'customerBooking'])
+    ->name('booking.customer');
+
 Route::post('/booking/verify-customer', [BookingController::class, 'verifyCustomer'])
     ->name('booking.verify-customer');
 
