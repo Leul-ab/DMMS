@@ -61,8 +61,16 @@ COPY . .
 # wayfinder plugin calls `php artisan wayfinder:generate` during
 # Vite build. Laravel needs a minimal .env to bootstrap.
 # We create a temporary one with a fake key (build-only, deleted after).
+# We also pre-create storage dirs that .dockerignore excludes, otherwise
+# Laravel's Compiler throws "Please provide a valid cache path."
 ##################################################
-RUN printf 'APP_KEY=base64:dGhpc2lzYWZha2VrZXlmb3Jkb2NrZXJidWlsZG9ubHk=\n' > .env \
+RUN mkdir -p \
+        storage/framework/cache/data \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/logs \
+        bootstrap/cache \
+    && printf 'APP_KEY=base64:dGhpc2lzYWZha2VrZXlmb3Jkb2NrZXJidWlsZG9ubHk=\n' > .env \
     && printf 'APP_ENV=production\n' >> .env \
     && printf 'APP_DEBUG=false\n' >> .env \
     && printf 'DB_CONNECTION=sqlite\n' >> .env \
