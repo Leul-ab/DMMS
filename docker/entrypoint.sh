@@ -11,8 +11,11 @@ sed "s|__PORT__|${PORT}|g" /var/www/html/docker/nginx.conf > /etc/nginx/http.d/d
 # Clear any stale cached config so real env vars take effect
 php artisan optimize:clear 2>/dev/null || true
 
-# Generate app key if not provided via env
-if [ -z "${APP_KEY}" ]; then
+# Generate a valid app key if missing or malformed. Render's "sync: false"
+# APP_KEY is a plain secret (not base64:...), which Laravel rejects.
+if ! php -r 'exit((getenv("APP_KEY") && str_starts_with(getenv("APP_KEY"), "base64:")) ? 0 : 1);'; then
+    echo "APP_KEY missing/invalid — generating a valid key."
+    unset APP_KEY
     php artisan key:generate --force
 fi
 
