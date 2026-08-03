@@ -18,7 +18,7 @@ services:
         value: DMMS
 
       - key: APP_URL
-        value: https://dmms.onrender.com
+        value: https://dmms-syoa.onrender.com
 
       - key: APP_KEY
         sync: false
@@ -38,7 +38,7 @@ services:
         value: pgsql
 
       - key: DB_HOST
-        value: ep-floral-bar-ax34q5d5-pooler.c-4.us-east-2.aws.neon.tech
+        value: ep-holy-tooth-axqj6wsh-pooler.c-4.us-east-2.aws.neon.tech
 
       - key: DB_PORT
         value: "5432"
