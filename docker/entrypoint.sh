@@ -36,6 +36,11 @@ until php artisan migrate --force; do
     sleep 5
 done
 
+# Seed (idempotent: roles, permissions, admin user). Non-fatal so a
+# transient DB failure can't stop the container while nginx is live.
+php artisan db:seed --force --no-interaction \
+    || echo "Seeding failed — will retry on next deploy."
+
 echo "==> Startup complete. App is live."
 
 # Keep the container alive by waiting on supervisord
