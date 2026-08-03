@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -15,6 +16,7 @@ class MenuCategory extends Model
         'image',
         'sort_order',
         'is_active',
+        'branch_id',
     ];
 
     protected function casts(): array
@@ -22,6 +24,7 @@ class MenuCategory extends Model
         return [
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'branch_id' => 'integer',
         ];
     }
 
@@ -40,6 +43,17 @@ class MenuCategory extends Model
         });
     }
 
+    /**
+     * The branch this category belongs to.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * Menu items in this category.
+     */
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class, 'category_id');

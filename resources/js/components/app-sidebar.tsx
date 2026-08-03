@@ -1,5 +1,5 @@
 
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
     Users,
@@ -12,6 +12,9 @@ import {
     Calendar,
     CreditCard,
     BarChart3,
+    GitBranch,
+    Building2,
+    Check,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -29,6 +32,15 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
 import { dashboard } from '@/routes';
 import { index as usersIndex } from '@/routes/admin/users';
 import { index as customersIndex } from '@/routes/manager/customers';
@@ -42,22 +54,75 @@ import { index as bookingsIndex } from '@/routes/manager/bookings';
 
 import type { NavItem } from '@/types';
 
-export function AppSidebar() {
-    const { auth } = usePage<{
-        auth: {
-            user: {
-                role?: {
-                    slug: string;
-                } | null;
+type Branch = {
+    id: number;
+    name: string;
+    address?: string | null;
+    phone?: string | null;
+    is_active: boolean;
+};
+
+type PageProps = {
+    auth: {
+        user: {
+            id: number;
+            name: string;
+            role?: {
+                slug: string;
             } | null;
-        };
-    }>().props;
+            branch?: Branch | null;
+        } | null;
+    };
+
+    branches: Branch[];
+
+    currentBranch: Branch | null;
+};
+
+export function AppSidebar() {
+    const {
+        auth,
+        branches = [],
+        currentBranch,
+    } = usePage<PageProps>().props;
 
     const role = auth.user?.role?.slug;
 
     const isAdmin = role === 'super_admin';
     const isManager = role === 'manager';
     const isKitchenStaff = role === 'kitchen_staff';
+
+    /**
+     * Switch to another branch.
+     */
+    const switchBranch = (branchId: number) => {
+        router.post(
+            '/manager/branches/switch',
+            {
+                branch_id: branchId,
+            },
+            {
+                preserveScroll: false,
+                preserveState: false,
+                onSuccess: () => {
+                    const { pathname } = window.location;
+
+                    if (pathname === '/menu') {
+                        router.visit('/menu', {
+                            replace: true,
+                            preserveState: false,
+                        });
+
+                        return;
+                    }
+
+                    router.reload({
+                        preserveState: false,
+                    });
+                },
+            },
+        );
+    };
 
     const mainNavItems: NavItem[] = [
         {
@@ -82,6 +147,12 @@ export function AppSidebar() {
                       title: 'Tables',
                       href: tablesIndex(),
                       icon: Table2,
+                  },
+                  {
+                      title: 'Branches',
+                      href: '/manager/branches',
+                      icon: Building2,
+                      activePrefix: '/manager/branches',
                   },
               ]
             : []),
@@ -140,11 +211,12 @@ export function AppSidebar() {
                   href: usersIndex(),
                   icon: Users,
               },
-          {
-              title: 'Payment',
-              href: '/admin/payments',
-              icon: CreditCard,
-          },          ]
+              {
+                  title: 'Payment',
+                  href: '/admin/payments',
+                  icon: CreditCard,
+              },
+          ]
         : [];
 
     return (
@@ -152,12 +224,89 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                        >
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                            >
                                 <AppLogo />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+
+                    {/* Branch Switcher */}
+                    {(isAdmin || isManager) &&
+                        branches.length > 0 && (
+                            <SidebarMenuItem>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <SidebarMenuButton
+                                            tooltip="Switch Branch"
+                                            className="h-auto min-h-12"
+                                        >
+                                            <GitBranch className="size-5 shrink-0" />
+
+                                            <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                                                <span className="text-xs text-muted-foreground">
+                                                    Current Branch
+                                                </span>
+
+                                                <span className="w-full truncate font-medium">
+                                                    {currentBranch?.name ??
+                                                        'Select Branch'}
+                                                </span>
+                                            </div>
+                                        </SidebarMenuButton>
+                                    </DropdownMenuTrigger>
+
+                                    <DropdownMenuContent
+                                        align="start"
+                                        side="right"
+                                        className="w-64"
+                                    >
+                                        <DropdownMenuLabel>
+                                            Select Branch
+                                        </DropdownMenuLabel>
+
+                                        <DropdownMenuSeparator />
+
+                                        {branches.map((branch) => (
+                                            <DropdownMenuItem
+                                                key={branch.id}
+                                                onClick={() =>
+                                                    switchBranch(
+                                                        branch.id,
+                                                    )
+                                                }
+                                                className="cursor-pointer"
+                                            >
+                                                <GitBranch className="mr-2 size-4" />
+
+                                                <div className="flex min-w-0 flex-1 flex-col">
+                                                    <span className="truncate">
+                                                        {branch.name}
+                                                    </span>
+
+                                                    {branch.address && (
+                                                        <span className="truncate text-xs text-muted-foreground">
+                                                            {branch.address}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {currentBranch?.id ===
+                                                    branch.id && (
+                                                    <Check className="ml-2 size-4" />
+                                                )}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </SidebarMenuItem>
+                        )}
                 </SidebarMenu>
             </SidebarHeader>
 

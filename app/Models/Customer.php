@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class Customer extends Model
 {
     protected $fillable = [
+        'branch_id',
         'customer_code',
         'name',
         'phone',
@@ -18,8 +20,17 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
+            'branch_id' => 'integer',
             'is_member' => 'boolean',
         ];
+    }
+
+    /**
+     * The branch this customer belongs to.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     /**

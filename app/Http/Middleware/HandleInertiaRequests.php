@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,28 +38,188 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Current Branch
+        |--------------------------------------------------------------------------
+        |
+        | The selected branch is stored in the session.
+        | If no branch has been selected yet, we use the user's branch.
+        |
+        */
+
+        $currentBranchId = $request->session()->get('current_branch_id');
+
+        $currentBranch = null;
+
+        if ($currentBranchId) {
+            $currentBranch = Branch::where('id', $currentBranchId)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fallback to User's Branch
+        |--------------------------------------------------------------------------
+        */
+
+        if (! $currentBranch && $user?->branch_id) {
+            $currentBranch = Branch::where('id', $user->branch_id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($currentBranch) {
+                $request->session()->put(
+                    'current_branch_id',
+                    $currentBranch->id
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Available Branches
+        |--------------------------------------------------------------------------
+        |
+        | Only super admins and managers can switch branches.
+        |
+        */
+
+        $branches = [];
+
+        if (
+            $user &&
+            ($user->hasRole('super_admin') || $user->hasRole('manager'))
+        ) {
+            $branches = Branch::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'address',
+                    'phone',
+                    'is_active',
+                ]);
+        }
+
         return [
             ...parent::share($request),
+
             'name' => config('app.name'),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Authentication
+            |--------------------------------------------------------------------------
+            */
+
             'auth' => [
-                'user' => $request->user() ? $request->user()->load('role') : null,
+                'user' => $user
+                    ? $user->load([
+                        'role',
+                        'branch',
+                    ])
+                    : null,
             ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'booking_success' => session('booking_success', false),
-            'booking_data' => session('booking_data'),
-            'customer_code' => session('customer_code', ''),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Branch Context
+            |--------------------------------------------------------------------------
+            */
+
+            'branches' => $branches,
+
+            'currentBranch' => $currentBranch,
+
+            /*
+            |--------------------------------------------------------------------------
+            | Sidebar
+            |--------------------------------------------------------------------------
+            */
+
+            'sidebarOpen' =>
+                ! $request->hasCookie('sidebar_state') ||
+                $request->cookie('sidebar_state') === 'true',
+
+            /*
+            |--------------------------------------------------------------------------
+            | Booking Data
+            |--------------------------------------------------------------------------
+            */
+
+            'booking_success' => session(
+                'booking_success',
+                false
+            ),
+
+            'booking_data' => session(
+                'booking_data'
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Customer Data
+            |--------------------------------------------------------------------------
+            */
+
+            'customer_code' => session(
+                'customer_code',
+                ''
+            ),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Customer Order Count
+            |--------------------------------------------------------------------------
+            */
+
             'order_count' => function () use ($request) {
-                if ($request->session()->has('customer_code')) {
-                    $customerCode = $request->session()->get('customer_code');
-                    $customer = \App\Models\Customer::where('customer_code', $customerCode)->first();
+
+                if (
+                    $request->session()->has(
+                        'customer_code'
+                    )
+                ) {
+
+                    $customerCode =
+                        $request->session()->get(
+                            'customer_code'
+                        );
+
+                    $customer = Customer::where(
+                        'customer_code',
+                        $customerCode
+                    )->first();
+
                     if ($customer) {
-                        return \App\Models\Order::where('customer_id', $customer->id)
-                            ->whereIn('status', ['pending', 'received', 'confirmed', 'preparing', 'ready', 'served'])
+
+                        return Order::where(
+                            'customer_id',
+                            $customer->id
+                        )
+                            ->whereIn(
+                                'status',
+                                [
+                                    'pending',
+                                    'received',
+                                    'confirmed',
+                                    'preparing',
+                                    'ready',
+                                    'served',
+                                ]
+                            )
                             ->count();
                     }
                 }
+
                 return 0;
             },
         ];
     }
 }
+

@@ -22,6 +22,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $email
  * @property string|null $phone
  * @property int|null $role_id
+ * @property int|null $branch_id
  * @property bool $is_active
  * @property Carbon|null $email_verified_at
  * @property string $password
@@ -32,10 +33,24 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Role|null $role
+ * @property-read Branch|null $branch
  * @property-read WaiterTableAssignment|null $latestTableAssignment
  */
-#[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'is_active'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Fillable([
+    'name',
+    'email',
+    'phone',
+    'password',
+    'role_id',
+    'branch_id',
+    'is_active',
+])]
+#[Hidden([
+    'password',
+    'two_factor_secret',
+    'two_factor_recovery_codes',
+    'remember_token',
+])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
@@ -44,6 +59,11 @@ class User extends Authenticatable implements PasskeyUser
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function hasRole(string $slug): bool
@@ -58,12 +78,18 @@ class User extends Authenticatable implements PasskeyUser
 
     public function latestTableAssignment(): HasOne
     {
-        return $this->hasOne(WaiterTableAssignment::class, 'waiter_id')->latestOfMany();
+        return $this->hasOne(
+            WaiterTableAssignment::class,
+            'waiter_id'
+        )->latestOfMany();
     }
 
     public function activeTableAssignments(): HasMany
     {
-        return $this->hasMany(WaiterTableAssignment::class, 'waiter_id')
+        return $this->hasMany(
+            WaiterTableAssignment::class,
+            'waiter_id'
+        )
             ->whereIn('status', ['assigned', 'serving'])
             ->with('table');
     }

@@ -14,18 +14,83 @@ use Inertia\Inertia;
 class BookingController extends Controller
 {
     /**
+     * Resolve current branch context.
+     */
+    private function currentBranchId(Request $request): ?int
+    {
+        $user = $request->user();
+
+        if (
+            $user &&
+            ($user->hasRole('super_admin') || $user->hasRole('manager'))
+        ) {
+            $branchId = $request->session()->get('current_branch_id')
+                ?? $user->branch_id;
+
+            return $branchId ? (int) $branchId : null;
+        }
+
+        $branchId = $request->session()->get('current_branch_id')
+            ?? $user?->branch_id;
+
+        if ($branchId) {
+            return (int) $branchId;
+        }
+
+        if (session()->has('scanned_table_id')) {
+            $scannedTable = RestaurantTable::find(session('scanned_table_id'));
+
+            return $scannedTable?->branch_id
+                ? (int) $scannedTable->branch_id
+                : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * Ensure booking belongs to current branch.
+     */
+    private function assertBookingInBranch(
+        Request $request,
+        TableBooking $booking
+    ): void {
+        $branchId = $this->currentBranchId($request);
+
+        abort_unless(
+            $branchId && (int) $booking->branch_id === (int) $branchId,
+            404
+        );
+    }
+
+    /**
      * Show the booking page with available tables.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $availableTables = RestaurantTable::where('status', 'available')
+        $branchId = $this->currentBranchId($request);
+
+        $availableTables = RestaurantTable::query()
+            ->where('status', 'available')
+            ->when($branchId, function ($query) use ($branchId) {
+                $query->where('branch_id', $branchId);
+            }, function ($query) {
+                $query->whereRaw('1 = 0');
+            })
             ->orderBy('table_number')
-            ->get(['id', 'table_number', 'status']);
+            ->get(['id', 'table_number', 'status', 'branch_id']);
 
         // Get the scanned table from session if available
         $scannedTable = null;
         if (session()->has('scanned_table_id')) {
             $scannedTable = RestaurantTable::find(session('scanned_table_id'));
+            if (
+                $scannedTable &&
+                $branchId &&
+                (int) $scannedTable->branch_id !== (int) $branchId
+            ) {
+                $scannedTable = null;
+            }
         }
 
         return inertia('booking/index', [
@@ -39,13 +104,28 @@ class BookingController extends Controller
      */
     public function verifyCustomer(Request $request): JsonResponse
     {
+        $branchId = $this->currentBranchId($request);
+
+        if (! $branchId) {
+            return response()->json([
+                'found' => false,
+                'message' => 'Please select a branch first.',
+            ]);
+        }
+
         $validated = $request->validate([
             'customer_code' => ['required', 'string', 'max:20'],
         ]);
 
         $code = trim($validated['customer_code']);
 
-        $customer = Customer::where('customer_code', $code)->first();
+        $customer = Customer::query()
+            ->where('customer_code', $code)
+            ->when(
+                $branchId,
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
+            ->first();
 
         if (!$customer) {
             return response()->json([
@@ -71,14 +151,46 @@ class BookingController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        $branchId = $this->currentBranchId($request);
+
+        if (! $branchId) {
+            return back()->withErrors([
+                'tables' => 'Please select a branch before creating a booking.',
+            ]);
+        }
+
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
             'table_ids' => ['required', 'array', 'min:1'],
             'table_ids.*' => ['exists:restaurant_tables,id'],
         ]);
 
+        $customer = Customer::query()
+            ->where('id', $validated['customer_id'])
+            ->where('branch_id', $branchId)
+            ->first();
+
+        if (! $customer) {
+            return back()->withErrors([
+                'customer' => 'Customer does not belong to the current branch.',
+            ]);
+        }
+
+        $branchTableCount = RestaurantTable::query()
+            ->whereIn('id', $validated['table_ids'])
+            ->where('branch_id', $branchId)
+            ->count();
+
+        if ($branchTableCount !== count($validated['table_ids'])) {
+            return back()->withErrors([
+                'tables' => 'One or more selected tables do not belong to the current branch.',
+            ]);
+        }
+
         // Check if any of the selected tables are already booked
-        $bookedTables = TableBooking::whereIn('status', ['active'])
+        $bookedTables = TableBooking::query()
+            ->where('branch_id', $branchId)
+            ->whereIn('status', ['active'])
             ->whereHas('tables', function ($query) use ($validated) {
                 $query->whereIn('restaurant_tables.id', $validated['table_ids']);
             })
@@ -90,6 +202,7 @@ class BookingController extends Controller
 
         // Check if any tables are already assigned to waiters or occupied
         $unavailableTables = RestaurantTable::whereIn('id', $validated['table_ids'])
+            ->where('branch_id', $branchId)
             ->whereIn('status', ['occupied', 'awaiting_payment'])
             ->exists();
 
@@ -102,6 +215,7 @@ class BookingController extends Controller
 
         $booking = TableBooking::create([
             'customer_id' => $validated['customer_id'],
+            'branch_id' => $branchId,
             'status' => 'active',
             'booked_at' => Carbon::now(),
             'expires_at' => $expiresAt,
@@ -111,7 +225,9 @@ class BookingController extends Controller
         $booking->tables()->attach($validated['table_ids']);
 
         // Update table statuses to 'booked'
-        RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'booked']);
+        RestaurantTable::whereIn('id', $validated['table_ids'])
+            ->where('branch_id', $branchId)
+            ->update(['status' => 'booked']);
 
         // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
@@ -140,6 +256,8 @@ class BookingController extends Controller
      */
     public function show(TableBooking $booking)
     {
+        $this->assertBookingInBranch(request(), $booking);
+
         return redirect()->route('menu.index');
     }
 
@@ -148,6 +266,8 @@ class BookingController extends Controller
      */
     public function cancel(TableBooking $booking): RedirectResponse
     {
+        $this->assertBookingInBranch(request(), $booking);
+
         if ($booking->status !== 'active') {
             return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
         }
@@ -171,6 +291,14 @@ class BookingController extends Controller
      */
     public function getActiveBooking(): JsonResponse
     {
+        $branchId = $this->currentBranchId(request());
+
+        if (! $branchId) {
+            session()->forget('active_booking_id');
+
+            return response()->json(['booking' => null]);
+        }
+
         $bookingId = session('active_booking_id');
 
         if (!$bookingId) {
@@ -179,6 +307,10 @@ class BookingController extends Controller
 
         $booking = TableBooking::with(['customer', 'tables'])
             ->where('id', $bookingId)
+            ->when(
+                $branchId,
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
             ->first();
 
         if (!$booking) {
@@ -233,7 +365,18 @@ class BookingController extends Controller
      */
     public function getAllBookings(): JsonResponse
     {
+        $branchId = $this->currentBranchId(request());
+
+        if (! $branchId) {
+            return response()->json([
+                'bookings' => [],
+                'total' => 0,
+                'active_count' => 0,
+            ]);
+        }
+
         $bookings = TableBooking::with(['customer', 'tables'])
+            ->where('branch_id', $branchId)
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($booking) {
@@ -278,13 +421,28 @@ class BookingController extends Controller
      */
     public function lookupByCustomerCode(Request $request): JsonResponse
     {
+        $branchId = $this->currentBranchId($request);
+
+        if (! $branchId) {
+            return response()->json([
+                'found' => false,
+                'message' => 'Please select a branch first.',
+            ]);
+        }
+
         $validated = $request->validate([
             'customer_code' => ['required', 'string', 'max:20'],
         ]);
 
         $code = trim($validated['customer_code']);
 
-        $customer = Customer::where('customer_code', $code)->first();
+        $customer = Customer::query()
+            ->where('customer_code', $code)
+            ->when(
+                $branchId,
+                fn ($query) => $query->where('branch_id', $branchId)
+            )
+            ->first();
 
         if (!$customer) {
             return response()->json([
@@ -295,6 +453,7 @@ class BookingController extends Controller
 
         $booking = TableBooking::with(['customer', 'tables'])
             ->where('customer_id', $customer->id)
+            ->where('branch_id', $branchId)
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -339,6 +498,8 @@ class BookingController extends Controller
      */
     public function getBookingDetails(TableBooking $booking): JsonResponse
     {
+        $this->assertBookingInBranch(request(), $booking);
+
         $booking->load(['customer', 'tables']);
 
         $isExpired = false;

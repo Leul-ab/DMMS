@@ -11,74 +11,176 @@ use Inertia\Inertia;
 
 class MenuController extends Controller
 {
+    /**
+     * Resolve which branch's menu should be displayed.
+     *
+     * Managers/admins use the session branch (branch switcher).
+     * Customers use the scanned table's branch when available.
+     */
+    private function resolveBranchId(Request $request, ?RestaurantTable $table): ?int
+    {
+        $user = $request->user();
+
+        if (
+            $user &&
+            ($user->hasRole('super_admin') || $user->hasRole('manager'))
+        ) {
+            $branchId = $request->session()->get('current_branch_id')
+                ?? $user->branch_id;
+
+            return $branchId ? (int) $branchId : null;
+        }
+
+        if ($table?->branch_id) {
+            return (int) $table->branch_id;
+        }
+
+        $branchId = $request->session()->get('current_branch_id')
+            ?? $user?->branch_id;
+
+        return $branchId ? (int) $branchId : null;
+    }
+
+    /**
+     * Find a restaurant table, optionally scoped to a branch.
+     */
+    private function findTable(
+        ?string $tableNumber,
+        ?int $branchId
+    ): ?RestaurantTable {
+        if ($tableNumber) {
+            $query = RestaurantTable::where(
+                'table_number',
+                $tableNumber
+            );
+
+            if ($branchId) {
+                $query->where('branch_id', $branchId);
+            }
+
+            return $query->first();
+        }
+
+        if (! session()->has('scanned_table_id')) {
+            return null;
+        }
+
+        $table = RestaurantTable::find(
+            session('scanned_table_id')
+        );
+
+        if (
+            $table &&
+            $branchId &&
+            (int) $table->branch_id !== $branchId
+        ) {
+            return null;
+        }
+
+        return $table;
+    }
+
     public function index(Request $request)
     {
-        // Get the table number from the URL query parameter
         $tableNumber = $request->query('table');
 
-        // If a table number is provided in the URL, store it in the session
+        // Resolve branch early so table lookups can be branch-scoped.
+        $branchId = $this->resolveBranchId($request, null);
+
         if ($tableNumber) {
-            $table = RestaurantTable::where('table_number', $tableNumber)->first();
+            $table = $this->findTable($tableNumber, $branchId);
 
             if ($table) {
-                // Store the table ID in session so it persists across requests
-                session(['scanned_table_id' => $table->id]);
-                session(['scanned_table_number' => $table->table_number]);
+                session([
+                    'scanned_table_id' => $table->id,
+                    'scanned_table_number' => $table->table_number,
+                ]);
             }
         }
 
-        // Try to get table from session if not in URL
-        if (!$tableNumber && session()->has('scanned_table_id')) {
-            $table = RestaurantTable::find(session('scanned_table_id'));
+        if (! $tableNumber && session()->has('scanned_table_id')) {
+            $table = $this->findTable(null, $branchId);
+
             if ($table) {
-                $tableNumber = $table->table_number;
+                $tableNumber = (string) $table->table_number;
             }
         }
 
-        // Find the restaurant table
         $table = null;
-        if ($tableNumber) {
-            $table = RestaurantTable::where('table_number', $tableNumber)->first();
 
-            // If table was found but session doesn't have it, store it
-            if ($table && !session()->has('scanned_table_id')) {
-                session(['scanned_table_id' => $table->id]);
-                session(['scanned_table_number' => $table->table_number]);
+        if ($tableNumber) {
+            $table = $this->findTable($tableNumber, $branchId);
+
+            if ($table && ! session()->has('scanned_table_id')) {
+                session([
+                    'scanned_table_id' => $table->id,
+                    'scanned_table_number' => $table->table_number,
+                ]);
             }
+        } elseif (session()->has('scanned_table_id')) {
+            $table = $this->findTable(null, $branchId);
         }
 
-        // Validate the table exists and is available
+        // Re-resolve branch now that we may have a table (for customers).
+        $branchId = $this->resolveBranchId($request, $table);
+
         $tableError = null;
-        if ($tableNumber && !$table) {
+
+        if ($tableNumber && ! $table) {
             $tableError = 'The table you are looking for does not exist or is no longer available.';
         } elseif ($table && $table->status === 'awaiting_payment') {
             $tableError = 'This table is currently processing payment. Please wait or check with the staff.';
         }
 
-        // Get active categories
-        $categories = MenuCategory::active()
-            ->ordered()
-            ->get();
+        $categories = collect();
 
-        // Get selected category
+        if ($branchId) {
+            $categories = MenuCategory::query()
+                ->where('branch_id', $branchId)
+                ->active()
+                ->ordered()
+                ->get();
+        }
+
         $selectedCategory = $request->query('category');
 
-        // Get menu items
+        // Drop category filter if it does not belong to the current branch.
+        if ($selectedCategory && $branchId) {
+            $categoryIsValid = $categories->contains(
+                'id',
+                (int) $selectedCategory
+            );
+
+            if (! $categoryIsValid) {
+                $selectedCategory = null;
+            }
+        }
+
         $menuItemsQuery = MenuItem::with('category');
 
-        // Filter by category if selected
+        if ($branchId) {
+            $menuItemsQuery->where('branch_id', $branchId);
+        } else {
+            $menuItemsQuery->whereRaw('1 = 0');
+        }
+
         if ($selectedCategory) {
-            $menuItemsQuery->where('category_id', $selectedCategory);
+            $menuItemsQuery->where(
+                'category_id',
+                $selectedCategory
+            );
         }
 
         $menuItems = $menuItemsQuery
             ->orderBy('name')
             ->get();
 
-        // Get available tables for manual selection (only if no table is scanned)
         $availableTables = [];
-        if (!$table) {
-            $availableTables = RestaurantTable::where('status', 'available')
+
+        if (! $table && $branchId) {
+            $availableTables = RestaurantTable::query()
+                ->where('branch_id', $branchId)
+                ->where('status', 'available')
                 ->orderBy('table_number')
                 ->get();
         }
@@ -105,15 +207,18 @@ class MenuController extends Controller
         $tableId = session('scanned_table_id');
         $tableNumber = $request->query('table') ?? session('scanned_table_number');
 
-        if (!$tableNumber && !$tableId) {
+        if (! $tableNumber && ! $tableId) {
             return redirect()
                 ->route('menu.index')
                 ->with('error', 'No table was selected.');
         }
 
-        // If we have table number but not ID, find the table
-        if ($tableNumber && !$tableId) {
-            $table = RestaurantTable::where('table_number', $tableNumber)->first();
+        if ($tableNumber && ! $tableId) {
+            $table = RestaurantTable::where(
+                'table_number',
+                $tableNumber
+            )->first();
+
             if ($table) {
                 $tableId = $table->id;
             }
@@ -121,7 +226,7 @@ class MenuController extends Controller
 
         $table = $tableId ? RestaurantTable::find($tableId) : null;
 
-        if (!$table) {
+        if (! $table) {
             return redirect()
                 ->route('menu.index')
                 ->with('error', 'The selected table was not found.');

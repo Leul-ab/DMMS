@@ -13,10 +13,18 @@ use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    /**
+     * Create a new customer order.
+     *
+     * The branch is automatically determined
+     * from the selected restaurant table.
+     */
     public function store(Request $request)
     {
-        // Use the table_id from the request, or fall back to the session-scanned table
-        $tableId = $request->input('table_id') ?? session('scanned_table_id');
+        // Use table_id from request or the table saved
+        // when the customer scanned the QR code.
+        $tableId = $request->input('table_id')
+            ?? session('scanned_table_id');
 
         $validated = $request->validate([
             'table_id' => [
@@ -54,18 +62,56 @@ class OrderController extends Controller
             ],
         ]);
 
-        // If no table_id in request, use the session-scanned table
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Table
+        |--------------------------------------------------------------------------
+        */
+
         if (!$tableId) {
             return back()->withErrors([
                 'table' => 'No table selected. Please scan the QR code on your table.',
             ])->withInput();
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Get Table
+        |--------------------------------------------------------------------------
+        */
+
         $table = RestaurantTable::findOrFail($tableId);
 
-        // Check if table already has an active order
+        /*
+        |--------------------------------------------------------------------------
+        | Get Branch From Table
+        |--------------------------------------------------------------------------
+        */
+
+        $branchId = $table->branch_id;
+
+        if (!$branchId) {
+            return back()->withErrors([
+                'table' => 'This table is not assigned to a branch.',
+            ])->withInput();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Check Active Order
+        |--------------------------------------------------------------------------
+        */
+
         $activeOrderExists = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'confirmed', 'preparing', 'ready', 'served'])
+            ->where('branch_id', $branchId)
+            ->whereIn('status', [
+                'pending',
+                'received',
+                'confirmed',
+                'preparing',
+                'ready',
+                'served',
+            ])
             ->exists();
 
         if ($activeOrderExists) {
@@ -74,21 +120,69 @@ class OrderController extends Controller
             ])->withInput();
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Menu Items Belong To Same Branch
+        |--------------------------------------------------------------------------
+        */
+
+        $menuItemIds = collect($validated['items'])
+            ->pluck('id')
+            ->unique()
+            ->values();
+
+        $validMenuItemCount = MenuItem::whereIn(
+            'id',
+            $menuItemIds
+        )
+            ->where('branch_id', $branchId)
+            ->count();
+
+        if ($validMenuItemCount !== $menuItemIds->count()) {
+            return back()->withErrors([
+                'items' => 'One or more selected menu items do not belong to this branch.',
+            ])->withInput();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create Order
+        |--------------------------------------------------------------------------
+        */
+
         $order = DB::transaction(function () use (
             $validated,
-            $table
+            $table,
+            $branchId
         ) {
             $totalAmount = 0;
             $estimatedMinutes = 0;
 
-            // Find customer by customer_code if provided
+            /*
+            |--------------------------------------------------------------------------
+            | Find Customer
+            |--------------------------------------------------------------------------
+            */
+
             $customerId = null;
+
             if (!empty($validated['customer_code'])) {
-                $customer = Customer::where('customer_code', $validated['customer_code'])->first();
+                $customer = Customer::where(
+                    'customer_code',
+                    $validated['customer_code']
+                )->first();
+
                 $customerId = $customer?->id;
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Create Order
+            |--------------------------------------------------------------------------
+            */
+
             $order = Order::create([
+                'branch_id' => $branchId,
                 'table_id' => $table->id,
                 'customer_id' => $customerId,
                 'order_number' => 'ORD-' . strtoupper(
@@ -96,23 +190,41 @@ class OrderController extends Controller
                 ),
                 'status' => 'pending',
                 'total_amount' => 0,
-                'special_instructions' => !empty($validated['special_instructions'])
-                    ? trim($validated['special_instructions'])
-                    : null,
+                'special_instructions' =>
+                    !empty($validated['special_instructions'])
+                        ? trim($validated['special_instructions'])
+                        : null,
             ]);
 
-            foreach ($validated['items'] as $item) {
-                $menuItem = MenuItem::findOrFail(
-                    $item['id']
-                );
+            /*
+            |--------------------------------------------------------------------------
+            | Create Order Items
+            |--------------------------------------------------------------------------
+            */
 
-                $quantity = $item['quantity'];
+            foreach ($validated['items'] as $item) {
+                $menuItem = MenuItem::where(
+                    'id',
+                    $item['id']
+                )
+                    ->where(
+                        'branch_id',
+                        $branchId
+                    )
+                    ->firstOrFail();
+
+                $quantity = (int) $item['quantity'];
 
                 $itemTotal =
-                    (float) $menuItem->price *
-                    $quantity;
+                    (float) $menuItem->price * $quantity;
 
                 $totalAmount += $itemTotal;
+
+                /*
+                |--------------------------------------------------------------------------
+                | Calculate Preparation Time
+                |--------------------------------------------------------------------------
+                */
 
                 if ($menuItem->preparation_time) {
                     $estimatedMinutes = max(
@@ -120,6 +232,12 @@ class OrderController extends Controller
                         $menuItem->preparation_time
                     );
                 }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Create Order Item
+                |--------------------------------------------------------------------------
+                */
 
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -130,13 +248,24 @@ class OrderController extends Controller
                 ]);
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Update Order Total
+            |--------------------------------------------------------------------------
+            */
+
             $order->update([
                 'total_amount' => $totalAmount,
                 'estimated_minutes' =>
                     $estimatedMinutes ?: null,
             ]);
 
-            // Set table status to occupied
+            /*
+            |--------------------------------------------------------------------------
+            | Occupy Table
+            |--------------------------------------------------------------------------
+            */
+
             $table->update([
                 'status' => 'occupied',
                 'current_order_id' => $order->id,
@@ -145,84 +274,207 @@ class OrderController extends Controller
             return $order;
         });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect To Menu
+        |--------------------------------------------------------------------------
+        */
+
         return redirect()
-          ->route('menu.index', [
-        'table' => $table->table_number,
-         ])
-        ->with('success', 'Order placed successfully!')
-        ->with('order_number', $order->order_number);
+            ->route('menu.index', [
+                'table' => $table->table_number,
+            ])
+            ->with('success', 'Order placed successfully!')
+            ->with('order_number', $order->order_number);
     }
 
     /**
-     * Get the active order count for a customer (by customer_code or session).
+     * Get active order count.
      */
     public function getOrderCount(Request $request)
     {
         $validated = $request->validate([
-            'table_id' => ['nullable', 'exists:restaurant_tables,id'],
-            'customer_code' => ['nullable', 'string', 'exists:customers,customer_code'],
+            'table_id' => [
+                'nullable',
+                'exists:restaurant_tables,id',
+            ],
+
+            'customer_code' => [
+                'nullable',
+                'string',
+                'exists:customers,customer_code',
+            ],
         ]);
 
         $query = Order::whereIn('status', [
-            'pending', 'received', 'confirmed', 'preparing', 'ready', 'served'
+            'pending',
+            'received',
+            'confirmed',
+            'preparing',
+            'ready',
+            'served',
         ]);
 
-        // If customer code provided, count orders for that customer
         if (!empty($validated['customer_code'])) {
-            $customer = Customer::where('customer_code', $validated['customer_code'])->first();
-            if ($customer) {
-                $query->where('customer_id', $customer->id);
-            } else {
-                return response()->json(['count' => 0]);
+            $customer = Customer::where(
+                'customer_code',
+                $validated['customer_code']
+            )->first();
+
+            if (!$customer) {
+                return response()->json([
+                    'count' => 0,
+                ]);
             }
+
+            $query->where(
+                'customer_id',
+                $customer->id
+            );
         } elseif (!empty($validated['table_id'])) {
-            // Fallback to table-based counting
-            $query->where('table_id', $validated['table_id']);
+            $table = RestaurantTable::find(
+                $validated['table_id']
+            );
+
+            if (!$table) {
+                return response()->json([
+                    'count' => 0,
+                ]);
+            }
+
+            $query
+                ->where('table_id', $table->id)
+                ->where('branch_id', $table->branch_id);
         } else {
-            return response()->json(['count' => 0]);
+            return response()->json([
+                'count' => 0,
+            ]);
         }
 
-        $count = $query->count();
-
-        return response()->json(['count' => $count]);
+        return response()->json([
+            'count' => $query->count(),
+        ]);
     }
 
     /**
      * Add items to an existing order.
      */
-    public function addItems(Request $request, Order $order)
-    {
-        // Only allow adding to pending/confirmed orders
-        if (!in_array($order->status, ['pending', 'received', 'confirmed'])) {
+    public function addItems(
+        Request $request,
+        Order $order
+    ) {
+        $branchId = $order->branch_id;
+
+        if (!in_array($order->status, [
+            'pending',
+            'received',
+            'confirmed',
+        ])) {
             return response()->json([
-                'error' => 'Cannot add items to an order that is already being prepared or completed.',
+                'error' =>
+                    'Cannot add items to an order that is already being prepared or completed.',
             ], 422);
         }
 
         $validated = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.id' => ['required', 'exists:menu_items,id'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+
+            'items.*.id' => [
+                'required',
+                'exists:menu_items,id',
+            ],
+
+            'items.*.quantity' => [
+                'required',
+                'integer',
+                'min:1',
+            ],
         ]);
 
-        DB::transaction(function () use ($validated, $order) {
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Items Belong To Same Branch
+        |--------------------------------------------------------------------------
+        */
+
+        $menuItemIds = collect($validated['items'])
+            ->pluck('id')
+            ->unique()
+            ->values();
+
+        $validMenuItemCount = MenuItem::whereIn(
+            'id',
+            $menuItemIds
+        )
+            ->where('branch_id', $branchId)
+            ->count();
+
+        if ($validMenuItemCount !== $menuItemIds->count()) {
+            return response()->json([
+                'error' =>
+                    'One or more menu items do not belong to this order branch.',
+            ], 422);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add Items
+        |--------------------------------------------------------------------------
+        */
+
+        DB::transaction(function () use (
+            $validated,
+            $order,
+            $branchId
+        ) {
             $additionalTotal = 0;
 
             foreach ($validated['items'] as $item) {
-                $menuItem = MenuItem::findOrFail($item['id']);
-                $quantity = $item['quantity'];
-                $itemTotal = (float) $menuItem->price * $quantity;
+                $menuItem = MenuItem::where(
+                    'id',
+                    $item['id']
+                )
+                    ->where(
+                        'branch_id',
+                        $branchId
+                    )
+                    ->firstOrFail();
+
+                $quantity = (int) $item['quantity'];
+
+                $itemTotal =
+                    (float) $menuItem->price * $quantity;
+
                 $additionalTotal += $itemTotal;
 
-                // Check if the same menu item already exists in the order, and if so, increment quantity
-                $existingItem = OrderItem::where('order_id', $order->id)
-                    ->where('menu_item_id', $menuItem->id)
-                    ->where('status', 'pending')
+                $existingItem = OrderItem::where(
+                    'order_id',
+                    $order->id
+                )
+                    ->where(
+                        'menu_item_id',
+                        $menuItem->id
+                    )
+                    ->where(
+                        'status',
+                        'pending'
+                    )
                     ->first();
 
                 if ($existingItem) {
-                    $existingItem->increment('quantity', $quantity);
-                    $existingItem->increment('price', $itemTotal);
+                    $existingItem->increment(
+                        'quantity',
+                        $quantity
+                    );
+
+                    $existingItem->increment(
+                        'price',
+                        $itemTotal
+                    );
                 } else {
                     OrderItem::create([
                         'order_id' => $order->id,
@@ -234,37 +486,66 @@ class OrderController extends Controller
                 }
             }
 
-            $order->increment('total_amount', $additionalTotal);
+            $order->increment(
+                'total_amount',
+                $additionalTotal
+            );
         });
 
-        // If request expects JSON (from API), return JSON
-        if ($request->expectsJson() || $request->wantsJson()) {
+        if (
+            $request->expectsJson() ||
+            $request->wantsJson()
+        ) {
             return response()->json([
                 'success' => true,
                 'order_id' => $order->id,
-                'redirect' => route('menu.my-order', ['table' => $order->table->table_number]),
+                'redirect' => route(
+                    'menu.my-order',
+                    [
+                        'table' =>
+                            $order->table->table_number,
+                    ]
+                ),
             ]);
         }
 
-        // Otherwise redirect back to menu with the table and order context
-        return redirect()->route('menu.index', [
-            'table' => $order->table->table_number,
-            'order_id' => $order->id,
-        ])->with('success', 'Items added to your order successfully!');
+        return redirect()
+            ->route(
+                'menu.index',
+                [
+                    'table' =>
+                        $order->table->table_number,
+                    'order_id' =>
+                        $order->id,
+                ]
+            )
+            ->with(
+                'success',
+                'Items added to your order successfully!'
+            );
     }
 
     /**
-     * Release a table when an order is completed or cancelled.
+     * Release table.
      */
-    public function releaseTable(Order $order)
-    {
-        if (!in_array($order->status, ['completed', 'cancelled'])) {
+    public function releaseTable(
+        Order $order
+    ) {
+        if (!in_array(
+            $order->status,
+            [
+                'completed',
+                'cancelled',
+            ]
+        )) {
             return back()->withErrors([
-                'order' => 'Table can only be released for completed or cancelled orders.',
+                'order' =>
+                    'Table can only be released for completed or cancelled orders.',
             ]);
         }
 
         $table = $order->table;
+
         if ($table) {
             $table->update([
                 'status' => 'available',
@@ -272,25 +553,40 @@ class OrderController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Table has been released successfully.');
+        return back()->with(
+            'success',
+            'Table has been released successfully.'
+        );
     }
 
     /**
-     * Cancel an order and release the table.
+     * Cancel order and release table.
      */
-    public function cancel(Order $order)
-    {
-        if (in_array($order->status, ['completed', 'cancelled'])) {
+    public function cancel(
+        Order $order
+    ) {
+        if (in_array(
+            $order->status,
+            [
+                'completed',
+                'cancelled',
+            ]
+        )) {
             return back()->withErrors([
-                'order' => 'This order cannot be cancelled.',
+                'order' =>
+                    'This order cannot be cancelled.',
             ]);
         }
 
-        DB::transaction(function () use ($order) {
-            $order->update(['status' => 'cancelled']);
+        DB::transaction(function () use (
+            $order
+        ) {
+            $order->update([
+                'status' => 'cancelled',
+            ]);
 
-            // Release the table
             $table = $order->table;
+
             if ($table) {
                 $table->update([
                     'status' => 'available',
@@ -299,7 +595,12 @@ class OrderController extends Controller
             }
         });
 
-        return redirect()->route('menu.index')
-            ->with('success', 'Order cancelled successfully.');
+        return redirect()
+            ->route('menu.index')
+            ->with(
+                'success',
+                'Order cancelled successfully.'
+            );
     }
 }
+

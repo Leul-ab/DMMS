@@ -5,17 +5,48 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CustomerController extends Controller
 {
     /**
-     * Display all customers.
+     * Get the currently selected branch ID.
      */
-    public function index(): Response
+    private function currentBranchId(Request $request): int
     {
-        $customers = Customer::latest()->get();
+        $branchId = $request->session()->get('current_branch_id');
+
+        if (! $branchId) {
+            abort(400, 'No branch selected.');
+        }
+
+        return (int) $branchId;
+    }
+
+    /**
+     * Ensure the customer belongs to the current branch.
+     */
+    private function assertSameBranch(Request $request, Customer $customer): void
+    {
+        abort_unless(
+            (int) $customer->branch_id === $this->currentBranchId($request),
+            404
+        );
+    }
+
+    /**
+     * Display customers for the current branch only.
+     */
+    public function index(Request $request): Response
+    {
+        $branchId = $this->currentBranchId($request);
+
+        $customers = Customer::query()
+            ->where('branch_id', $branchId)
+            ->latest()
+            ->get();
 
         return Inertia::render('manager/customers/index', [
             'customers' => $customers,
@@ -25,16 +56,20 @@ class CustomerController extends Controller
     /**
      * Show the create customer form.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
+        $this->currentBranchId($request);
+
         return Inertia::render('manager/customers/create');
     }
 
     /**
-     * Store a new customer.
+     * Store a new customer in the current branch.
      */
     public function store(Request $request)
     {
+        $branchId = $this->currentBranchId($request);
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -45,28 +80,23 @@ class CustomerController extends Controller
                 'required',
                 'string',
                 'max:255',
-                'unique:customers,phone',
+                Rule::unique('customers', 'phone')
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)),
             ],
             'email' => [
                 'nullable',
                 'email',
                 'max:255',
-                'unique:customers,email',
+                Rule::unique('customers', 'email')
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)),
             ],
             'is_member' => [
                 'boolean',
             ],
         ]);
 
-        // Generate the next customer code automatically
-        $lastCustomer = Customer::latest('id')->first();
-
-        $nextNumber = $lastCustomer
-            ? $lastCustomer->id + 1
-            : 1;
-
-        $validated['customer_code'] =
-            'CUS-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $validated['branch_id'] = $branchId;
+        $validated['customer_code'] = Customer::generateUniqueCode();
 
         Customer::create($validated);
 
@@ -76,10 +106,25 @@ class CustomerController extends Controller
     }
 
     /**
-     * Update an existing customer.
+     * Show the edit customer form.
+     */
+    public function edit(Request $request, Customer $customer): Response
+    {
+        $this->assertSameBranch($request, $customer);
+
+        return Inertia::render('manager/customers/edit', [
+            'customer' => $customer,
+        ]);
+    }
+
+    /**
+     * Update an existing customer in the current branch.
      */
     public function update(Request $request, Customer $customer)
     {
+        $branchId = $this->currentBranchId($request);
+        $this->assertSameBranch($request, $customer);
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -90,20 +135,26 @@ class CustomerController extends Controller
                 'required',
                 'string',
                 'max:255',
-                'unique:customers,phone,' . $customer->id,
+                Rule::unique('customers', 'phone')
+                    ->ignore($customer->id)
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)),
             ],
             'email' => [
                 'nullable',
                 'email',
                 'max:255',
-                'unique:customers,email,' . $customer->id,
+                Rule::unique('customers', 'email')
+                    ->ignore($customer->id)
+                    ->where(fn ($query) => $query->where('branch_id', $branchId)),
             ],
             'is_member' => [
                 'boolean',
             ],
         ]);
 
-        // Customer code is NOT changed during editing
+        // Keep customer in the current branch. Customer code is not changed.
+        $validated['branch_id'] = $branchId;
+
         $customer->update($validated);
 
         return redirect()
@@ -112,10 +163,12 @@ class CustomerController extends Controller
     }
 
     /**
-     * Delete a customer.
+     * Delete a customer belonging to the current branch.
      */
-    public function destroy(Customer $customer)
+    public function destroy(Request $request, Customer $customer)
     {
+        $this->assertSameBranch($request, $customer);
+
         $customer->delete();
 
         return redirect()
@@ -124,12 +177,14 @@ class CustomerController extends Controller
     }
 
     /**
-     * Toggle the membership status of a customer.
+     * Toggle the membership status of a customer in the current branch.
      */
-    public function toggleMembership(Customer $customer)
+    public function toggleMembership(Request $request, Customer $customer)
     {
+        $this->assertSameBranch($request, $customer);
+
         $customer->update([
-            'is_member' => !$customer->is_member,
+            'is_member' => ! $customer->is_member,
         ]);
 
         return back()->with('success', 'Membership status updated successfully.');

@@ -1,12 +1,14 @@
-
 <?php
 
+use App\Http\Controllers\Manager\BranchContextController;
+use App\Http\Controllers\Manager\BranchController;
+use App\Http\Controllers\Manager\BookingManagementController;
+use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\MenuCategoryController;
 use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
-use App\Http\Controllers\Manager\CustomerController;
-use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\ReportController;
+use App\Http\Controllers\Manager\RestaurantTableController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:super_admin,manager'])
@@ -15,8 +17,59 @@ Route::middleware(['auth', 'role:super_admin,manager'])
     ->group(function () {
 
         // =========================
+        // Branch Management
+        // =========================
+
+        Route::get(
+            'branches',
+            [BranchController::class, 'index']
+        )->name('branches.index');
+
+        Route::get(
+            'branches/create',
+            [BranchController::class, 'create']
+        )->name('branches.create');
+
+        Route::post(
+            'branches',
+            [BranchController::class, 'store']
+        )->name('branches.store');
+
+        // =========================
+        // Branch Context
+        // =========================
+        // Switch the currently selected branch
+
+        Route::post(
+            'branches/switch',
+            [BranchContextController::class, 'switch']
+        )->name('branches.switch');
+
+        Route::get(
+            'branches/{branch}',
+            [BranchController::class, 'show']
+        )->name('branches.show');
+
+        Route::get(
+            'branches/{branch}/edit',
+            [BranchController::class, 'edit']
+        )->name('branches.edit');
+
+        Route::put(
+            'branches/{branch}',
+            [BranchController::class, 'update']
+        )->name('branches.update');
+
+        Route::delete(
+            'branches/{branch}',
+            [BranchController::class, 'destroy']
+        )->name('branches.destroy');
+
+
+        // =========================
         // Menu Categories
         // =========================
+
         Route::get(
             'categories',
             [MenuCategoryController::class, 'index']
@@ -56,6 +109,7 @@ Route::middleware(['auth', 'role:super_admin,manager'])
         // =========================
         // Menu Items
         // =========================
+
         Route::get(
             'items',
             [MenuItemController::class, 'index']
@@ -103,34 +157,34 @@ Route::middleware(['auth', 'role:super_admin,manager'])
 
 
         // =========================
-// Customer Orders
-// Manager can VIEW, EDIT,
-// DELETE and VERIFY PAYMENTS
-// =========================
+        // Customer Orders
+        // =========================
 
-Route::get(
-    'orders',
-    [OrderController::class, 'index']
-)->name('orders.index');
+        Route::get(
+            'orders',
+            [OrderController::class, 'index']
+        )->name('orders.index');
 
-Route::put(
-    'orders/{order}',
-    [OrderController::class, 'update']
-)->name('orders.update');
+        Route::put(
+            'orders/{order}',
+            [OrderController::class, 'update']
+        )->name('orders.update');
 
-Route::delete(
-    'orders/{order}',
-    [OrderController::class, 'destroy']
-)->name('orders.destroy');
+        Route::delete(
+            'orders/{order}',
+            [OrderController::class, 'destroy']
+        )->name('orders.destroy');
 
-Route::patch(
-    'orders/{order}/verify-payment',
-    [OrderController::class, 'verifyPayment']
-)->name('orders.verify-payment');
+        Route::patch(
+            'orders/{order}/verify-payment',
+            [OrderController::class, 'verifyPayment']
+        )->name('orders.verify-payment');
+
 
         // =========================
         // Restaurant Tables
         // =========================
+
         Route::get(
             'tables',
             [RestaurantTableController::class, 'index']
@@ -170,6 +224,7 @@ Route::patch(
         // =========================
         // Customers CRUD
         // =========================
+
         Route::get(
             'customers',
             [CustomerController::class, 'index']
@@ -205,47 +260,39 @@ Route::patch(
             [CustomerController::class, 'toggleMembership']
         )->name('customers.toggle-membership');
 
-                    // =========================
-            // Reports
-            // =========================
-            Route::get(
-                'reports',
-                [ReportController::class, 'index']
-            )->name('reports.index');
+
+        // =========================
+        // Reports
+        // =========================
+
+        Route::get(
+            'reports',
+            [ReportController::class, 'index']
+        )->name('reports.index');
+
+
         // =========================
         // Booking Management
         // =========================
+
         Route::get(
             'bookings',
-            [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'index'
-            ]
+            [BookingManagementController::class, 'index']
         )->name('bookings.index');
 
         Route::post(
             'bookings/{booking}/cancel',
-            [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'cancel'
-            ]
+            [BookingManagementController::class, 'cancel']
         )->name('bookings.cancel');
 
         Route::post(
             'bookings/{booking}/complete',
-            [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'complete'
-            ]
+            [BookingManagementController::class, 'complete']
         )->name('bookings.complete');
 
         Route::delete(
             'bookings/{booking}',
-            [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'destroy'
-            ]
+            [BookingManagementController::class, 'destroy']
         )->name('bookings.destroy');
 
     });
-
