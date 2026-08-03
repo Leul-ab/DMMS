@@ -22,7 +22,6 @@ import {
     Trash2,
     Plus,
     Minus,
-    CreditCard,
     Clock,
     Utensils,
     User,
@@ -320,21 +319,6 @@ export default function OrdersIndex({
         );
     };
 
-    /*
-     * Verify payment.
-     */
-    const verifyPayment = (
-        orderId: number
-    ) => {
-        router.patch(
-            `/manager/orders/${orderId}/verify-payment`,
-            {},
-            {
-                preserveScroll: true,
-            }
-        );
-    };
-
     return (
         <>
             <Head title="Customer Orders" />
@@ -342,7 +326,7 @@ export default function OrdersIndex({
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
                 <Heading
                     title="Customer Orders"
-                    description="Manage customer orders, edit order details, and verify payments."
+                    description="Manage customer orders and edit order details."
                     icon={ClipboardList}
                 />
 
@@ -570,46 +554,6 @@ export default function OrdersIndex({
                                             ETB
                                         </span>
                                     </div>
-
-                                    {/* Payment Verification */}
-                                    {order.payment_status ===
-                                        'pending' && (
-                                        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-                                            <p className="text-sm font-semibold text-orange-900">
-                                                Payment Submitted
-                                            </p>
-
-                                            <p className="mt-1 text-xs text-orange-800">
-                                                The customer says they
-                                                have paid. Verify the
-                                                payment.
-                                            </p>
-
-                                            {can('status orders') && (
-                                                <Button
-                                                    className="mt-3 w-full"
-                                                    onClick={() =>
-                                                        verifyPayment(
-                                                            order.id
-                                                        )
-                                                    }
-                                                >
-                                                    <CreditCard className="mr-2 size-4" />
-
-                                                    Verify Payment
-                                                </Button>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    {order.payment_status ===
-                                        'paid' && (
-                                        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
-                                            <p className="text-sm font-semibold text-green-800">
-                                                ✓ Payment Verified
-                                            </p>
-                                        </div>
-                                    )}
 
                                     {/* Edit and Delete */}
                                     <div className="flex gap-2 border-t pt-4">

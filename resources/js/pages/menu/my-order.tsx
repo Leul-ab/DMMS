@@ -6,6 +6,17 @@ type RestaurantTable = {
     status: string;
 };
 
+type OrderItem = {
+    id: number;
+    quantity: number;
+    price: string;
+    status: string;
+    menu_item: {
+        id: number;
+        name: string;
+    };
+};
+
 type Order = {
     id: number;
     order_number: string;
@@ -25,22 +36,12 @@ type Order = {
     table: RestaurantTable;
 };
 
-type OrderItem = {
-    id: number;
-    quantity: number;
-    price: string;
-    status: string;
-    menu_item: {
-        id: number;
-        name: string;
-    };
-};
-
 type Props = {
     table: RestaurantTable;
     order: Order | null;
+    orders: Order[];
 };
 
-export default function MyOrderIndex({ table, order }: Props) {
-    return <MyOrderView table={table} order={order} menuPath="/menu" />;
+export default function MyOrderIndex({ table, order, orders }: Props) {
+    return <MyOrderView table={table} order={order} orders={orders} menuPath="/menu" />;
 }

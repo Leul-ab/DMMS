@@ -99,6 +99,10 @@ class MenuController extends Controller
                 ->get();
         }
 
+        // Capture the order_id from the URL so the menu page can attach
+        // new items to an existing pending order (or create a new order).
+        $orderId = $request->query('order_id');
+
         return Inertia::render($view, [
             'categories' => $categories,
             'menuItems' => $menuItems,
@@ -108,6 +112,9 @@ class MenuController extends Controller
             'table' => $table,
             'tableError' => $tableError,
             'availableTables' => $availableTables,
+            'order_id' => $orderId
+                ? (int) $orderId
+                : null,
 
             'flash' => [
                 'success' => session('success'),
@@ -155,7 +162,13 @@ class MenuController extends Controller
                 ->with('error', 'The selected table was not found.');
         }
 
-        $order = Order::with(['orderItems.menuItem'])
+        // Fetch all recent orders for the table (excluding cancelled),
+        // newest first, so the customer can see their order history.
+        $orders = Order::with([
+            'orderItems.menuItem',
+            'payment.verifier',
+            'receipt',
+        ])
             ->where('table_id', $table->id)
             ->whereIn('status', [
                 'pending',
@@ -166,12 +179,17 @@ class MenuController extends Controller
                 'served',
                 'completed',
             ])
-            ->latest()
-            ->first();
+            ->orderByDesc('created_at')
+            ->limit(10)
+            ->get();
+
+        // The "current" order is the most recent one.
+        $order = $orders->first();
 
         return Inertia::render($view, [
             'table' => $table,
             'order' => $order,
+            'orders' => $orders,
         ]);
     }
 }

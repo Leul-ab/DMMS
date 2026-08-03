@@ -49,6 +49,11 @@ class RoleSeeder extends Seeder
             'view kitchen',
             'update kitchen',
             'view menu',
+            'view payment verification',
+            'verify payments',
+            'reject payments',
+            'view payments',
+            'status payments',
         ],
         'kitchen_staff' => [
             'view kitchen',
