@@ -16,6 +16,7 @@ RUN apk add --no-cache \
     oniguruma-dev \
     libpq \
     postgresql-dev \
+    sqlite-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
         gd \
@@ -23,6 +24,7 @@ RUN apk add --no-cache \
         zip \
         pdo_mysql \
         pdo_pgsql \
+        pdo_sqlite \
         opcache
 
 WORKDIR /var/www/html
@@ -57,18 +59,18 @@ COPY . .
 ##################################################
 # Build frontend assets
 # wayfinder plugin calls `php artisan wayfinder:generate` during
-# Vite build. Laravel needs a minimal .env to bootstrap, so we
-# create a temporary one just for the build step.
+# Vite build. Laravel needs a minimal .env to bootstrap.
+# We create a temporary one with a fake key (build-only, deleted after).
 ##################################################
-RUN echo "APP_KEY=base64:$(openssl rand -base64 32)" > .env.build \
-    && echo "APP_ENV=production" >> .env.build \
-    && echo "DB_CONNECTION=sqlite" >> .env.build \
-    && echo "DB_DATABASE=/tmp/build.sqlite" >> .env.build \
+RUN printf 'APP_KEY=base64:dGhpc2lzYWZha2VrZXlmb3Jkb2NrZXJidWlsZG9ubHk=\n' > .env \
+    && printf 'APP_ENV=production\n' >> .env \
+    && printf 'APP_DEBUG=false\n' >> .env \
+    && printf 'DB_CONNECTION=sqlite\n' >> .env \
+    && printf 'DB_DATABASE=/tmp/build.sqlite\n' >> .env \
     && touch /tmp/build.sqlite \
-    && cp .env.build .env \
     && php artisan wayfinder:generate --with-form \
     && npm run build \
-    && rm -f .env .env.build \
+    && rm -f .env \
     && rm -rf node_modules \
     && npm cache clean --force
 
