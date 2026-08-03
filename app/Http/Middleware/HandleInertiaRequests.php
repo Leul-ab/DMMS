@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Customer;
+use App\Models\Order;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -41,7 +44,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? $request->user()->load('role') : null,
             ],
-            'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->values()->all() : [],
+            'permissions' => $request->user()
+                ? ($request->user()->role?->slug === 'super_admin'
+                    ? Permission::pluck('name')->all()
+                    : $request->user()->getAllPermissions()->pluck('name')->values()->all())
+                : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'booking_success' => session('booking_success', false),
             'booking_data' => session('booking_data'),
@@ -49,13 +56,14 @@ class HandleInertiaRequests extends Middleware
             'order_count' => function () use ($request) {
                 if ($request->session()->has('customer_code')) {
                     $customerCode = $request->session()->get('customer_code');
-                    $customer = \App\Models\Customer::where('customer_code', $customerCode)->first();
+                    $customer = Customer::where('customer_code', $customerCode)->first();
                     if ($customer) {
-                        return \App\Models\Order::where('customer_id', $customer->id)
+                        return Order::where('customer_id', $customer->id)
                             ->whereIn('status', ['pending', 'received', 'confirmed', 'preparing', 'ready', 'served'])
                             ->count();
                     }
                 }
+
                 return 0;
             },
         ];

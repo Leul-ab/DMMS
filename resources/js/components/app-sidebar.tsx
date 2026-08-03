@@ -1,4 +1,3 @@
-
 import { Link } from '@inertiajs/react';
 import {
     LayoutGrid,
@@ -20,9 +19,6 @@ import {
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { index as tablesIndex } from '@/routes/manager/tables';
-import { useCan } from '@/hooks/use-can';
-
 import {
     Sidebar,
     SidebarContent,
@@ -34,18 +30,20 @@ import {
     SidebarSeparator,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { useCan } from '@/hooks/use-can';
 
 import { dashboard, home } from '@/routes';
-import { index as usersIndex } from '@/routes/admin/users';
 import { index as rolesIndex } from '@/routes/admin/roles';
-import { index as customersIndex } from '@/routes/manager/customers';
 import { index as staffIndex } from '@/routes/admin/staff';
+import { index as usersIndex } from '@/routes/admin/users';
+import { index as bookingsIndex } from '@/routes/manager/bookings';
 import { index as categoriesIndex } from '@/routes/manager/categories';
+import { index as customersIndex } from '@/routes/manager/customers';
 import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
 
+import { index as tablesIndex } from '@/routes/manager/tables';
 import { index as menuIndex } from '@/routes/menu';
-import { index as bookingsIndex } from '@/routes/manager/bookings';
 
 import type { NavItem } from '@/types';
 
@@ -104,16 +102,6 @@ export function AppSidebar() {
               ]
             : []),
 
-        ...(can('view staff')
-            ? [
-                  {
-                      title: 'Staff',
-                      href: staffIndex(),
-                      icon: UserCog,
-                  },
-              ]
-            : []),
-
         ...(can('view orders')
             ? [
                   {
@@ -123,17 +111,7 @@ export function AppSidebar() {
                   },
               ]
             : []),
-
-        ...(can('view payments')
-            ? [
-                  {
-                      title: 'Payment Verification',
-                      href: '/manager/payment-verification',
-                      icon: ShieldCheck,
-                  },
-              ]
-            : []),
-
+        
         ...(can('view bookings')
             ? [
                   {
@@ -143,23 +121,34 @@ export function AppSidebar() {
                   },
               ]
             : []),
-
-        ...(can('view reports')
-            ? [
-                  {
-                      title: 'Reports',
-                      href: '/manager/reports',
-                      icon: BarChart3,
-                  },
-              ]
-            : []),
-
+        
         ...(can('view kitchen')
             ? [
                   {
                       title: 'Kitchen',
                       href: '/kitchen/dashboard',
                       icon: ChefHat,
+                  },
+              ]
+            : []),
+            
+
+        ...(can('view payment verification')
+            ? [
+                  {
+                      title: 'Payment Verification',
+                      href: '/manager/payment-verification',
+                      icon: ShieldCheck,
+                  },
+              ]
+            : []),
+
+        ...(can('view payments')
+            ? [
+                  {
+                      title: 'Payment',
+                      href: '/admin/payments',
+                      icon: CreditCard,
                   },
               ]
             : []),
@@ -181,6 +170,27 @@ export function AppSidebar() {
                   },
               ]
             : []),
+        
+        ...(can('view reports')
+            ? [
+                  {
+                      title: 'Reports',
+                      href: '/manager/reports',
+                      icon: BarChart3,
+                  },
+              ]
+            : []),
+
+        ...(can('view roles')
+            ? [
+                  {
+                      title: 'Roles',
+                      href: rolesIndex(),
+                      icon: ShieldCheck,
+                  },
+              ]
+            : []),
+
 
         ...(can('view users')
             ? [
@@ -192,22 +202,12 @@ export function AppSidebar() {
               ]
             : []),
 
-        ...(can('view payments')
+            ...(can('view staff')
             ? [
                   {
-                      title: 'Payment',
-                      href: '/admin/payments',
-                      icon: CreditCard,
-                  },
-              ]
-            : []),
-
-        ...(can('view roles')
-            ? [
-                  {
-                      title: 'Roles',
-                      href: rolesIndex(),
-                      icon: ShieldCheck,
+                      title: 'Staff',
+                      href: staffIndex(),
+                      icon: UserCog,
                   },
               ]
             : []),
@@ -247,10 +247,21 @@ export function AppSidebar() {
                             size="sm"
                             onClick={toggleSidebar}
                             className="text-sidebar-foreground/80 hover:bg-orange-100/80 hover:text-orange-700"
-                            tooltip={{ children: state === 'collapsed' ? 'Expand sidebar' : 'Collapse sidebar' }}
+                            tooltip={{
+                                children:
+                                    state === 'collapsed'
+                                        ? 'Expand sidebar'
+                                        : 'Collapse sidebar',
+                            }}
                         >
-                            {state === 'collapsed' ? <PanelLeftOpen /> : <PanelLeftClose />}
-                            <span>{state === 'collapsed' ? 'Expand' : 'Collapse'}</span>
+                            {state === 'collapsed' ? (
+                                <PanelLeftOpen />
+                            ) : (
+                                <PanelLeftClose />
+                            )}
+                            <span>
+                                {state === 'collapsed' ? 'Expand' : 'Collapse'}
+                            </span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

@@ -130,17 +130,17 @@ Route::middleware(['auth'])
         Route::get(
             'payment-verification',
             [PaymentVerificationController::class, 'index']
-        )->name('payment-verification.index')->middleware('permission:view payments');
+        )->name('payment-verification.index')->middleware('permission:view payment verification');
 
         Route::patch(
             'payment-verification/{order}/verify',
             [PaymentVerificationController::class, 'verify']
-        )->name('payment-verification.verify')->middleware('permission:status payments');
+        )->name('payment-verification.verify')->middleware('permission:verify payments');
 
         Route::patch(
             'payment-verification/{order}/reject',
             [PaymentVerificationController::class, 'reject']
-        )->name('payment-verification.reject')->middleware('permission:status payments');
+        )->name('payment-verification.reject')->middleware('permission:reject payments');
 
         // =========================
         // Restaurant Tables

@@ -1,6 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
     Search,
     ShieldCheck,
@@ -17,16 +15,13 @@ import {
     Ban,
     Receipt,
 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { ReceiptModal } from '@/components/receipt-modal';
-import {
-    Card,
-    CardContent,
-} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -35,6 +30,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -42,6 +38,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCan } from '@/hooks/use-can';
 
 type Payment = {
     id: number;
@@ -156,8 +153,12 @@ export default function PaymentVerificationIndex({
     const can = useCan();
 
     const [search, setSearch] = useState(filters.search || '');
-    const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || 'pending');
-    const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || '');
+    const [paymentStatus, setPaymentStatus] = useState(
+        filters.payment_status || 'pending',
+    );
+    const [paymentMethod, setPaymentMethod] = useState(
+        filters.payment_method || '',
+    );
 
     const [verifyingOrder, setVerifyingOrder] = useState<Order | null>(null);
     const [transactionNumber, setTransactionNumber] = useState('');
@@ -165,21 +166,38 @@ export default function PaymentVerificationIndex({
     const [processing, setProcessing] = useState(false);
 
     const [rejectingOrder, setRejectingOrder] = useState<Order | null>(null);
-    const [viewingReceiptOrder, setViewingReceiptOrder] = useState<Order | null>(null);
+    const [viewingReceiptOrder, setViewingReceiptOrder] =
+        useState<Order | null>(null);
 
     const applyFilters = () => {
         const params: Record<string, string> = {};
-        if (search) params.search = search;
-        if (paymentStatus) params.payment_status = paymentStatus;
-        if (paymentMethod) params.payment_method = paymentMethod;
-        router.get('/manager/payment-verification', params, { preserveState: true });
+
+        if (search) {
+            params.search = search;
+        }
+
+        if (paymentStatus) {
+            params.payment_status = paymentStatus;
+        }
+
+        if (paymentMethod) {
+            params.payment_method = paymentMethod;
+        }
+
+        router.get('/manager/payment-verification', params, {
+            preserveState: true,
+        });
     };
 
     const clearFilters = () => {
         setSearch('');
         setPaymentStatus('pending');
         setPaymentMethod('');
-        router.get('/manager/payment-verification', {}, { preserveState: true });
+        router.get(
+            '/manager/payment-verification',
+            {},
+            { preserveState: true },
+        );
     };
 
     const openVerifyModal = (order: Order) => {
@@ -189,10 +207,15 @@ export default function PaymentVerificationIndex({
     };
 
     const submitVerification = () => {
-        if (!verifyingOrder) return;
+        if (!verifyingOrder) {
+            return;
+        }
 
         if (!transactionNumber.trim()) {
-            setTransactionError('Transaction number is required before verifying the payment.');
+            setTransactionError(
+                'Transaction number is required before verifying the payment.',
+            );
+
             return;
         }
 
@@ -214,9 +237,10 @@ export default function PaymentVerificationIndex({
                     } else {
                         toast.error('Failed to verify payment.');
                     }
+
                     setProcessing(false);
                 },
-            }
+            },
         );
     };
 
@@ -236,7 +260,7 @@ export default function PaymentVerificationIndex({
                     toast.error('Failed to reject payment.');
                     setProcessing(false);
                 },
-            }
+            },
         );
     };
 
@@ -259,8 +283,12 @@ export default function PaymentVerificationIndex({
                                 <AlertCircle className="size-6" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-yellow-700">Pending Verification</p>
-                                <p className="text-2xl font-black text-yellow-900">{stats.pending}</p>
+                                <p className="text-sm font-medium text-yellow-700">
+                                    Pending Verification
+                                </p>
+                                <p className="text-2xl font-black text-yellow-900">
+                                    {stats.pending}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -271,8 +299,12 @@ export default function PaymentVerificationIndex({
                                 <CheckCircle2 className="size-6" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-green-700">Verified</p>
-                                <p className="text-2xl font-black text-green-900">{stats.verified}</p>
+                                <p className="text-sm font-medium text-green-700">
+                                    Verified
+                                </p>
+                                <p className="text-2xl font-black text-green-900">
+                                    {stats.verified}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -283,8 +315,12 @@ export default function PaymentVerificationIndex({
                                 <XCircle className="size-6" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-red-700">Rejected</p>
-                                <p className="text-2xl font-black text-red-900">{stats.rejected}</p>
+                                <p className="text-sm font-medium text-red-700">
+                                    Rejected
+                                </p>
+                                <p className="text-2xl font-black text-red-900">
+                                    {stats.rejected}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -300,33 +336,55 @@ export default function PaymentVerificationIndex({
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') applyFilters();
+                                        if (e.key === 'Enter') {
+                                            applyFilters();
+                                        }
                                     }}
                                     className="w-full"
                                 />
                             </div>
 
-                            <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                            <Select
+                                value={paymentStatus}
+                                onValueChange={setPaymentStatus}
+                            >
                                 <SelectTrigger className="w-[190px]">
                                     <SelectValue placeholder="Payment Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="pending">Pending Verification</SelectItem>
-                                    <SelectItem value="paid">Verified</SelectItem>
-                                    <SelectItem value="cancelled">Rejected</SelectItem>
+                                    <SelectItem value="all">
+                                        All Statuses
+                                    </SelectItem>
+                                    <SelectItem value="pending">
+                                        Pending Verification
+                                    </SelectItem>
+                                    <SelectItem value="paid">
+                                        Verified
+                                    </SelectItem>
+                                    <SelectItem value="cancelled">
+                                        Rejected
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                            <Select
+                                value={paymentMethod}
+                                onValueChange={setPaymentMethod}
+                            >
                                 <SelectTrigger className="w-[170px]">
                                     <SelectValue placeholder="Payment Method" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Methods</SelectItem>
-                                    {Object.entries(paymentMethodLabels).map(([k, v]) => (
-                                        <SelectItem key={k} value={k}>{v}</SelectItem>
-                                    ))}
+                                    <SelectItem value="all">
+                                        All Methods
+                                    </SelectItem>
+                                    {Object.entries(paymentMethodLabels).map(
+                                        ([k, v]) => (
+                                            <SelectItem key={k} value={k}>
+                                                {v}
+                                            </SelectItem>
+                                        ),
+                                    )}
                                 </SelectContent>
                             </Select>
 
@@ -349,92 +407,168 @@ export default function PaymentVerificationIndex({
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-gray-50 text-left">
-                                        <th className="p-3 font-semibold">Order ID</th>
-                                        <th className="p-3 font-semibold">Customer</th>
-                                        <th className="p-3 font-semibold">Table</th>
-                                        <th className="p-3 font-semibold">Payment Method</th>
-                                        <th className="p-3 font-semibold">Amount</th>
-                                        <th className="p-3 font-semibold">Status</th>
-                                        <th className="p-3 font-semibold">Date</th>
-                                        <th className="p-3 text-right font-semibold">Actions</th>
+                                        <th className="p-3 font-semibold">
+                                            Order ID
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Customer
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Table
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Payment Method
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Amount
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Status
+                                        </th>
+                                        <th className="p-3 font-semibold">
+                                            Date
+                                        </th>
+                                        <th className="p-3 text-right font-semibold">
+                                            Actions
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {orders.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="p-12 text-center text-gray-500">
+                                            <td
+                                                colSpan={8}
+                                                className="p-12 text-center text-gray-500"
+                                            >
                                                 No payments found.
                                             </td>
                                         </tr>
                                     ) : (
                                         orders.data.map((order) => (
-                                            <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
+                                            <tr
+                                                key={order.id}
+                                                className="border-b last:border-0 hover:bg-gray-50"
+                                            >
                                                 <td className="p-3 font-mono text-xs font-bold">
                                                     {order.order_number}
                                                 </td>
                                                 <td className="p-3">
-                                                    <p className="font-medium">{order.customer?.name || order.customer_name || 'Walk-in'}</p>
+                                                    <p className="font-medium">
+                                                        {order.customer?.name ||
+                                                            order.customer_name ||
+                                                            'Walk-in'}
+                                                    </p>
                                                     {order.customer_phone && (
                                                         <p className="flex items-center gap-1 text-xs text-gray-500">
                                                             <Phone className="size-3" />
-                                                            {order.customer_phone}
+                                                            {
+                                                                order.customer_phone
+                                                            }
                                                         </p>
                                                     )}
                                                 </td>
                                                 <td className="p-3">
-                                                    {order.table ? `Table ${order.table.table_number}` : '—'}
+                                                    {order.table
+                                                        ? `Table ${order.table.table_number}`
+                                                        : '—'}
                                                 </td>
                                                 <td className="p-3">
-                                                    {order.payment?.payment_method ? (
+                                                    {order.payment
+                                                        ?.payment_method ? (
                                                         <span className="flex items-center gap-1.5 capitalize">
-                                                            {paymentMethodIcons[order.payment.payment_method] || <CreditCard className="size-4" />}
-                                                            {paymentMethodLabels[order.payment.payment_method] || order.payment.payment_method}
+                                                            {paymentMethodIcons[
+                                                                order.payment
+                                                                    .payment_method
+                                                            ] || (
+                                                                <CreditCard className="size-4" />
+                                                            )}
+                                                            {paymentMethodLabels[
+                                                                order.payment
+                                                                    .payment_method
+                                                            ] ||
+                                                                order.payment
+                                                                    .payment_method}
                                                         </span>
                                                     ) : (
                                                         '—'
                                                     )}
                                                 </td>
                                                 <td className="p-3 font-bold">
-                                                    {Number(order.payment?.amount || order.total_amount).toFixed(2)} ETB
+                                                    {Number(
+                                                        order.payment?.amount ||
+                                                            order.total_amount,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
                                                 </td>
                                                 <td className="p-3">
-                                                    <Badge className={`border ${paymentStatusColors[order.payment_status] || ''}`}>
-                                                        {paymentStatusLabels[order.payment_status] || order.payment_status}
+                                                    <Badge
+                                                        className={`border ${paymentStatusColors[order.payment_status] || ''}`}
+                                                    >
+                                                        {paymentStatusLabels[
+                                                            order.payment_status
+                                                        ] ||
+                                                            order.payment_status}
                                                     </Badge>
                                                 </td>
                                                 <td className="p-3 text-xs text-gray-500">
                                                     {order.payment?.verified_at
-                                                        ? new Date(order.payment.verified_at).toLocaleString()
-                                                        : new Date(order.created_at).toLocaleDateString()}
+                                                        ? new Date(
+                                                              order.payment
+                                                                  .verified_at,
+                                                          ).toLocaleString()
+                                                        : new Date(
+                                                              order.created_at,
+                                                          ).toLocaleDateString()}
                                                 </td>
                                                 <td className="p-3">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {order.payment_status === 'pending' && can('verify payments') && (
-                                                            <>
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => openVerifyModal(order)}
-                                                                    className="bg-green-600 hover:bg-green-700"
-                                                                >
-                                                                    <CheckCircle2 className="mr-1 size-4" />
-                                                                    Verify Payment
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="text-red-600 hover:text-red-700"
-                                                                    onClick={() => setRejectingOrder(order)}
-                                                                >
-                                                                    <Ban className="mr-1 size-4" />
-                                                                    Reject
-                                                                </Button>
-                                                            </>
-                                                        )}
-                                                        {order.payment_status === 'paid' && (
+                                                        {order.payment_status ===
+                                                            'pending' &&
+                                                            can(
+                                                                'verify payments',
+                                                            ) && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            openVerifyModal(
+                                                                                order,
+                                                                            )
+                                                                        }
+                                                                        className="bg-green-600 hover:bg-green-700"
+                                                                    >
+                                                                        <CheckCircle2 className="mr-1 size-4" />
+                                                                        Verify
+                                                                        Payment
+                                                                    </Button>
+                                                                    {can(
+                                                                        'reject payments',
+                                                                    ) && (
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="text-red-600 hover:text-red-700"
+                                                                            onClick={() =>
+                                                                                setRejectingOrder(
+                                                                                    order,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Ban className="mr-1 size-4" />
+                                                                            Reject
+                                                                        </Button>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        {order.payment_status ===
+                                                            'paid' && (
                                                             <div className="flex items-center gap-2">
                                                                 <span className="flex items-center gap-1 text-xs text-green-700">
                                                                     <CheckCircle2 className="size-4" />
-                                                                    {order.payment?.verifier?.name
+                                                                    {order
+                                                                        .payment
+                                                                        ?.verifier
+                                                                        ?.name
                                                                         ? `Verified by ${order.payment.verifier.name}`
                                                                         : 'Verified'}
                                                                 </span>
@@ -442,7 +576,11 @@ export default function PaymentVerificationIndex({
                                                                     <Button
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        onClick={() => setViewingReceiptOrder(order)}
+                                                                        onClick={() =>
+                                                                            setViewingReceiptOrder(
+                                                                                order,
+                                                                            )
+                                                                        }
                                                                     >
                                                                         <Receipt className="mr-1 size-4" />
                                                                         Receipt
@@ -468,21 +606,41 @@ export default function PaymentVerificationIndex({
                                     disabled={orders.current_page <= 1}
                                     onClick={() => {
                                         const prevUrl = orders.links[0]?.url;
-                                        if (prevUrl) router.get(prevUrl, {}, { preserveState: true });
+
+                                        if (prevUrl) {
+                                            router.get(
+                                                prevUrl,
+                                                {},
+                                                { preserveState: true },
+                                            );
+                                        }
                                     }}
                                 >
                                     Previous
                                 </Button>
                                 <span className="text-sm text-gray-500">
-                                    Page {orders.current_page} of {orders.last_page}
+                                    Page {orders.current_page} of{' '}
+                                    {orders.last_page}
                                 </span>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={orders.current_page >= orders.last_page}
+                                    disabled={
+                                        orders.current_page >= orders.last_page
+                                    }
                                     onClick={() => {
-                                        const nextUrl = orders.links[orders.links.length - 1]?.url;
-                                        if (nextUrl) router.get(nextUrl, {}, { preserveState: true });
+                                        const nextUrl =
+                                            orders.links[
+                                                orders.links.length - 1
+                                            ]?.url;
+
+                                        if (nextUrl) {
+                                            router.get(
+                                                nextUrl,
+                                                {},
+                                                { preserveState: true },
+                                            );
+                                        }
                                     }}
                                 >
                                     Next
@@ -513,7 +671,8 @@ export default function PaymentVerificationIndex({
                             Verify Payment
                         </DialogTitle>
                         <DialogDescription>
-                            Enter the transaction number to verify payment for order {verifyingOrder?.order_number}.
+                            Enter the transaction number to verify payment for
+                            order {verifyingOrder?.order_number}.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -522,25 +681,52 @@ export default function PaymentVerificationIndex({
                             <div className="rounded-lg bg-gray-50 p-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Customer</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.customer?.name || verifyingOrder.customer_name || 'Walk-in'}</p>
+                                        <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                            Customer
+                                        </p>
+                                        <p className="mt-1 font-bold">
+                                            {verifyingOrder.customer?.name ||
+                                                verifyingOrder.customer_name ||
+                                                'Walk-in'}
+                                        </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Table</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.table ? `Table ${verifyingOrder.table.table_number}` : '—'}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Method</p>
-                                        <p className="mt-1 flex items-center gap-1 font-bold capitalize">
-                                            {verifyingOrder.payment?.payment_method
-                                                ? (paymentMethodLabels[verifyingOrder.payment.payment_method] || verifyingOrder.payment.payment_method)
+                                        <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                            Table
+                                        </p>
+                                        <p className="mt-1 font-bold">
+                                            {verifyingOrder.table
+                                                ? `Table ${verifyingOrder.table.table_number}`
                                                 : '—'}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</p>
+                                        <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                            Method
+                                        </p>
+                                        <p className="mt-1 flex items-center gap-1 font-bold capitalize">
+                                            {verifyingOrder.payment
+                                                ?.payment_method
+                                                ? paymentMethodLabels[
+                                                      verifyingOrder.payment
+                                                          .payment_method
+                                                  ] ||
+                                                  verifyingOrder.payment
+                                                      .payment_method
+                                                : '—'}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                            Amount
+                                        </p>
                                         <p className="mt-1 font-bold text-green-700">
-                                            {Number(verifyingOrder.payment?.amount || verifyingOrder.total_amount).toFixed(2)} ETB
+                                            {Number(
+                                                verifyingOrder.payment
+                                                    ?.amount ||
+                                                    verifyingOrder.total_amount,
+                                            ).toFixed(2)}{' '}
+                                            ETB
                                         </p>
                                     </div>
                                 </div>
@@ -548,19 +734,27 @@ export default function PaymentVerificationIndex({
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    Transaction Number <span className="text-red-500">*</span>
+                                    Transaction Number{' '}
+                                    <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <Hash className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+                                    <Hash className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-400" />
                                     <Input
                                         autoFocus
                                         value={transactionNumber}
                                         onChange={(e) => {
-                                            setTransactionNumber(e.target.value);
-                                            if (transactionError) setTransactionError('');
+                                            setTransactionNumber(
+                                                e.target.value,
+                                            );
+
+                                            if (transactionError) {
+                                                setTransactionError('');
+                                            }
                                         }}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter') submitVerification();
+                                            if (e.key === 'Enter') {
+                                                submitVerification();
+                                            }
                                         }}
                                         placeholder="e.g. TXNX8F9A2B"
                                         className="pl-9"
@@ -612,7 +806,9 @@ export default function PaymentVerificationIndex({
             <ReceiptModal
                 open={!!viewingReceiptOrder}
                 onOpenChange={(open) => {
-                    if (!open) setViewingReceiptOrder(null);
+                    if (!open) {
+                        setViewingReceiptOrder(null);
+                    }
                 }}
                 order={viewingReceiptOrder}
             />
@@ -624,7 +820,9 @@ export default function PaymentVerificationIndex({
             <Dialog
                 open={!!rejectingOrder}
                 onOpenChange={(open) => {
-                    if (!open) setRejectingOrder(null);
+                    if (!open) {
+                        setRejectingOrder(null);
+                    }
                 }}
             >
                 <DialogContent>
@@ -633,7 +831,8 @@ export default function PaymentVerificationIndex({
                             Reject Payment?
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to reject the payment for order{' '}
+                            Are you sure you want to reject the payment for
+                            order{' '}
                             <strong>{rejectingOrder?.order_number}</strong>?
                             This will mark the payment as rejected.
                         </DialogDescription>
@@ -649,7 +848,9 @@ export default function PaymentVerificationIndex({
                         </Button>
                         <Button
                             variant="destructive"
-                            onClick={() => rejectingOrder && rejectPayment(rejectingOrder)}
+                            onClick={() =>
+                                rejectingOrder && rejectPayment(rejectingOrder)
+                            }
                             disabled={processing}
                         >
                             {processing ? (
