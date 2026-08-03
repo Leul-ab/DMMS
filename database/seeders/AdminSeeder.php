@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -13,7 +14,7 @@ class AdminSeeder extends Seeder
     {
         $role = Role::where('slug', 'super_admin')->first();
 
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin User',
@@ -23,5 +24,10 @@ class AdminSeeder extends Seeder
                 'role_id' => $role?->id,
             ]
         );
+
+        if ($role) {
+            $admin->syncRoles([$role->name]);
+            $admin->syncPermissions(Permission::pluck('name'));
+        }
     }
 }
