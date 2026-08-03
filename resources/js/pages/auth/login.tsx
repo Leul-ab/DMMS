@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import {
 ArrowRight,
 Check,
@@ -52,7 +52,7 @@ return (
 <> <Head title="Log in" />
 
 ```
-        {/* 
+        {/*
             IMPORTANT:
             The fixed inset-0 and w-screen ensure this page is not
             squished inside a narrow parent layout.
@@ -157,9 +157,15 @@ return (
                     <div className="w-full max-w-lg">
                         {/* Header */}
                         <div className="mb-8">
-                            <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
+                            <button
+                                type="button"
+                                onClick={() => router.visit('/')}
+                                aria-label="Back to Home"
+                                title="Back to Home"
+                                className="mb-6 flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl bg-orange-100 text-orange-600 transition-all duration-200 hover:scale-105 hover:bg-orange-200 hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 focus:ring-offset-[#faf7f2] active:scale-95"
+                            >
                                 <ChefHat className="h-7 w-7" />
-                            </div>
+                            </button>
 
                             <h2 className="text-3xl font-bold tracking-tight text-[#211b17] sm:text-4xl">
                                 Welcome back!
