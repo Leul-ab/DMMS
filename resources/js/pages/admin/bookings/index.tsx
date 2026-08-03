@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Search, X, Eye, XCircle, CheckCircle2, Trash2, Loader2, Calendar, Clock, Table2, User, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
+import { useCan } from '@/hooks/use-can';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -57,6 +58,7 @@ type Props = {
 };
 
 export default function BookingManagementIndex({ bookings, filters, stats }: Props) {
+    const can = useCan();
     const [search, setSearch] = useState(filters.search || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || 'all');
     const [timeRemainingMap, setTimeRemainingMap] = useState<Record<number, string>>({});
@@ -275,7 +277,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
             <Head title="Booking Management" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex items-center justify-between">
-                    <Heading title="Booking Management" description="Manage all customer table bookings" />
+                    <Heading title="Booking Management" description="Manage all customer table bookings" icon={Calendar} />
                 </div>
 
                 {/* Stats Cards */}
@@ -402,20 +404,22 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex items-center justify-end gap-1">
-                                                        <Button variant="ghost" size="icon" onClick={() => openViewModal(booking)} title="View Details">
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                        {canCancel && (
+                                                        {can('view bookings') && (
+                                                            <Button variant="ghost" size="icon" onClick={() => openViewModal(booking)} title="View Details">
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                        {can('status bookings') && canCancel && (
                                                             <Button variant="ghost" size="icon" onClick={() => openCancelModal(booking)} title="Cancel Booking" className="text-red-500 hover:text-red-700">
                                                                 <XCircle className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {canComplete && (
+                                                        {can('status bookings') && canComplete && (
                                                             <Button variant="ghost" size="icon" onClick={() => openCompleteModal(booking)} title="Mark Completed" className="text-green-500 hover:text-green-700">
                                                                 <CheckCircle2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
-                                                        {canDelete && (
+                                                        {can('delete bookings') && canDelete && (
                                                             <Button variant="ghost" size="icon" onClick={() => openDeleteModal(booking)} title="Delete Booking" className="text-red-500 hover:text-red-700">
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -547,7 +551,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
                         <Button variant="outline" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
-                        <Button onClick={handleCompleteBooking} disabled={completeLoading} className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={handleCompleteBooking} disabled={completeLoading}>
                             {completeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Mark Completed
                         </Button>

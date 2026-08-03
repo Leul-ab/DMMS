@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useCan } from '@/hooks/use-can';
 import {
     Dialog,
     DialogContent,
@@ -111,6 +112,7 @@ export default function KitchenDashboard({
     completedOrders,
     stats,
 }: Props) {
+    const can = useCan();
     const [search, setSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [prepDialog, setPrepDialog] = useState<Order | null>(null);
@@ -494,10 +496,10 @@ export default function KitchenDashboard({
 
                     {/* Action Buttons */}
                     <div className="pt-1">
-                        {column === 'new' && (
+                        {can('update kitchen') && column === 'new' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => acceptOrderAndOpenDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -505,10 +507,10 @@ export default function KitchenDashboard({
                                 Accept Order
                             </Button>
                         )}
-                        {column === 'preparing' && order.preparation_status === 'waiting' && (
+                        {can('update kitchen') && column === 'preparing' && order.preparation_status === 'waiting' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => openPrepDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -516,7 +518,7 @@ export default function KitchenDashboard({
                                 Set Timer & Start
                             </Button>
                         )}
-                        {column === 'preparing' && order.preparation_status === 'preparing' && (
+                        {can('update kitchen') && column === 'preparing' && order.preparation_status === 'preparing' && (
                             <div className="space-y-2">
                                 <div className="grid grid-cols-2 gap-2">
                                     <Button
@@ -531,7 +533,7 @@ export default function KitchenDashboard({
                                     </Button>
                                     <Button
                                         size="sm"
-                                        className="bg-green-600 hover:bg-green-700 text-white"
+                                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                         onClick={() => markReady(order)}
                                         disabled={isProcessing}
                                     >
@@ -541,10 +543,10 @@ export default function KitchenDashboard({
                                 </div>
                             </div>
                         )}
-                        {column === 'ready' && (
+                        {can('update kitchen') && column === 'ready' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-gray-800 hover:bg-gray-900 text-white"
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                 onClick={() => completeOrder(order)}
                                 disabled={isProcessing}
                             >
@@ -847,7 +849,7 @@ export default function KitchenDashboard({
                             <Button
                                 onClick={startPreparation}
                                 disabled={isProcessing || !prepTime}
-                                className="bg-orange-500 hover:bg-orange-600 min-w-[140px]"
+                                className="min-w-[140px]"
                             >
                                 {isProcessing ? (
                                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Starting...</>
@@ -951,7 +953,7 @@ export default function KitchenDashboard({
                         <Button
                             onClick={submitAddTime}
                             disabled={isProcessing || !addTimeValue || addTimeValue <= 0}
-                            className="bg-orange-500 hover:bg-orange-600 min-w-[140px]"
+                            className="min-w-[140px]"
                         >
                             {isProcessing ? (
                                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Adding...</>

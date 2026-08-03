@@ -16,7 +16,9 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         // Use the table_id from the request, or fall back to the session-scanned table
-        $tableId = $request->input('table_id') ?? session('scanned_table_id');
+        $tableId = $request->input('table_id')
+            ?? session('scanned_table_id')
+            ?? session('customer_menu_table_id');
 
         $validated = $request->validate([
             'table_id' => [
@@ -51,6 +53,12 @@ class OrderController extends Controller
                 'nullable',
                 'string',
                 'max:500',
+            ],
+
+            'source' => [
+                'nullable',
+                'string',
+                'in:menu,customer-menu',
             ],
         ]);
 
@@ -145,8 +153,14 @@ class OrderController extends Controller
             return $order;
         });
 
+        // Redirect back to the page the order was placed from so a customer-menu
+        // order never pollutes the /menu page (which always allows table selection).
+        $redirectRoute = $request->input('source') === 'customer-menu'
+            ? 'menu.customer'
+            : 'menu.index';
+
         return redirect()
-          ->route('menu.index', [
+          ->route($redirectRoute, [
         'table' => $table->table_number,
          ])
         ->with('success', 'Order placed successfully!')

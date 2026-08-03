@@ -11,7 +11,8 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
-        ->name('dashboard');
+        ->name('dashboard')
+        ->middleware('permission:view dashboard');
 });
 
 require __DIR__.'/settings.php';

@@ -2,6 +2,7 @@
 .gitignore
 .gitattributes
 .env
+.env.build
 .env.backup
 .env.production
 node_modules

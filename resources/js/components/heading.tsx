@@ -1,11 +1,15 @@
+import type { LucideIcon } from 'lucide-react';
+
 export default function Heading({
     title,
     description,
     variant = 'default',
+    icon: Icon,
 }: {
     title: string;
     description?: string;
     variant?: 'default' | 'small';
+    icon?: LucideIcon;
 }) {
     return (
         <header className={variant === 'small' ? '' : 'mb-8 space-y-0.5'}>
@@ -13,13 +17,16 @@ export default function Heading({
                 className={
                     variant === 'small'
                         ? 'mb-0.5 text-base font-medium'
-                        : 'text-xl font-semibold tracking-tight'
+                        : 'flex items-center gap-2 text-2xl font-bold tracking-tight'
                 }
             >
+                {Icon && <Icon className="h-7 w-7 shrink-0 text-orange-500" />}
                 {title}
             </h2>
             {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="text-base font-medium text-muted-foreground">
+                    {description}
+                </p>
             )}
         </header>
     );

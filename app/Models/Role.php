@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+use Spatie\Permission\Models\Role as SpatieRole;
 
-class Role extends Model
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string $guard_name
+ * @property string|null $description
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
+class Role extends SpatieRole
 {
-    protected $fillable = ['name', 'slug', 'description'];
-
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
+    protected $fillable = ['name', 'slug', 'guard_name', 'description'];
 }

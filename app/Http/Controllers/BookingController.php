@@ -16,7 +16,23 @@ class BookingController extends Controller
     /**
      * Show the booking page with available tables.
      */
-    public function index()
+    public function index(Request $request)
+    {
+        return $this->renderBooking($request, 'booking/index');
+    }
+
+    /**
+     * Show the customer booking page with available tables.
+     */
+    public function customerBooking(Request $request)
+    {
+        return $this->renderBooking($request, 'customer-booking/index');
+    }
+
+    /**
+     * Render the booking page with available tables.
+     */
+    protected function renderBooking(Request $request, string $view)
     {
         $availableTables = RestaurantTable::where('status', 'available')
             ->orderBy('table_number')
@@ -26,9 +42,11 @@ class BookingController extends Controller
         $scannedTable = null;
         if (session()->has('scanned_table_id')) {
             $scannedTable = RestaurantTable::find(session('scanned_table_id'));
+        } elseif (session()->has('customer_menu_table_id')) {
+            $scannedTable = RestaurantTable::find(session('customer_menu_table_id'));
         }
 
-        return inertia('booking/index', [
+        return inertia($view, [
             'availableTables' => $availableTables,
             'scannedTable' => $scannedTable,
         ]);
@@ -75,6 +93,7 @@ class BookingController extends Controller
             'customer_id' => ['required', 'exists:customers,id'],
             'table_ids' => ['required', 'array', 'min:1'],
             'table_ids.*' => ['exists:restaurant_tables,id'],
+            'source' => ['nullable', 'string', 'in:booking,customer-booking'],
         ]);
 
         // Check if any of the selected tables are already booked
@@ -120,7 +139,9 @@ class BookingController extends Controller
         $customer = $booking->customer;
         $tablesList = $booking->tables->pluck('table_number')->toArray();
 
-        return redirect()->route('menu.index')->with([
+        return redirect()
+            ->route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index')
+            ->with([
             'booking_success' => true,
             'booking_data' => [
                 'id' => $booking->id,

@@ -9,9 +9,12 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+        'Outfit', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+
+    --font-display:
+        'Playfair Display', 'Outfit', ui-serif, Georgia, serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -87,14 +90,14 @@
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar: oklch(0.985 0.02 70);
+    --sidebar-foreground: oklch(0.27 0.05 45);
+    --sidebar-primary: oklch(0.62 0.19 45);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.87 0 0);
+    --sidebar-accent: oklch(0.93 0.06 65);
+    --sidebar-accent-foreground: oklch(0.5 0.16 40);
+    --sidebar-border: oklch(0.9 0.05 70);
+    --sidebar-ring: oklch(0.7 0.16 45);
 }
 
 .dark {
@@ -122,14 +125,14 @@
     --chart-3: oklch(0.769 0.188 70.08);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.985 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
+    --sidebar: oklch(0.22 0.04 45);
+    --sidebar-foreground: oklch(0.95 0.03 80);
+    --sidebar-primary: oklch(0.72 0.17 45);
+    --sidebar-primary-foreground: oklch(0.2 0.03 45);
+    --sidebar-accent: oklch(0.3 0.05 45);
+    --sidebar-accent-foreground: oklch(0.95 0.03 80);
+    --sidebar-border: oklch(0.3 0.05 45);
+    --sidebar-ring: oklch(0.55 0.14 45);
 }
 
 @layer base {
@@ -139,6 +142,13 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+
+    h1,
+    h2,
+    h3 {
+        font-family: var(--font-display);
+        letter-spacing: -0.02em;
     }
 }
 
@@ -154,3 +164,61 @@
 .animate-float {
     animation: float 3s ease-in-out infinite;
 }
+
+/* ====================== Orange Glassmorphism Sidebar ====================== */
+
+/* Warm orange-tinted page backdrop behind the floating glass panels */
+[data-slot='sidebar-wrapper'] {
+    background:
+        radial-gradient(1200px 800px at 0% 0%, rgba(251, 146, 60, 0.16), transparent 60%),
+        radial-gradient(1000px 700px at 100% 100%, rgba(234, 88, 12, 0.12), transparent 55%),
+        linear-gradient(180deg, #fff7ed 0%, #fef3c7 100%);
+}
+
+/* Frosted glass sidebar panel */
+[data-sidebar='sidebar'] {
+    background: linear-gradient(
+        180deg,
+        rgba(255, 247, 237, 0.4),
+        rgba(255, 237, 213, 0.3)
+    );
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(254, 215, 170, 0.45);
+    box-shadow:
+        0 10px 40px -12px rgba(194, 65, 12, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.dark [data-sidebar='sidebar'] {
+    background: linear-gradient(
+        180deg,
+        rgba(69, 26, 3, 0.5),
+        rgba(124, 45, 18, 0.38)
+    );
+    border: 1px solid rgba(251, 146, 60, 0.18);
+    box-shadow:
+        0 10px 40px -12px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Glassy main content card floating over the warm backdrop */
+[data-slot='sidebar-inset'] {
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+    border: 1px solid rgba(254, 215, 170, 0.45);
+    box-shadow: 0 8px 30px -12px rgba(194, 65, 12, 0.2);
+}
+
+.dark [data-slot='sidebar-inset'] {
+    background: rgba(28, 25, 23, 0.72);
+    border: 1px solid rgba(251, 146, 60, 0.14);
+}
+
+/* Soft orange hover glow on nav buttons inside the sidebar */
+[data-sidebar='sidebar'] [data-sidebar='menu-button']:hover,
+[data-sidebar='sidebar'] [data-sidebar='menu-button'][data-active='true'] {
+    box-shadow: 0 4px 14px -6px rgba(234, 88, 12, 0.45);
+}
+

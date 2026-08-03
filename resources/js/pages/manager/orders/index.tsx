@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
+import { useCan } from '@/hooks/use-can';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +28,7 @@ import {
     User,
     Phone,
     FileText,
+    ClipboardList,
 } from 'lucide-react';
 
 type MenuItem = {
@@ -113,6 +115,8 @@ export default function OrdersIndex({
     tables,
     menuItems,
 }: Props) {
+    const can = useCan();
+
     const [editingOrder, setEditingOrder] =
         useState<Order | null>(null);
 
@@ -339,6 +343,7 @@ export default function OrdersIndex({
                 <Heading
                     title="Customer Orders"
                     description="Manage customer orders, edit order details, and verify payments."
+                    icon={ClipboardList}
                 />
 
                 {orders.length === 0 ? (
@@ -580,18 +585,20 @@ export default function OrdersIndex({
                                                 payment.
                                             </p>
 
-                                            <Button
-                                                className="mt-3 w-full"
-                                                onClick={() =>
-                                                    verifyPayment(
-                                                        order.id
-                                                    )
-                                                }
-                                            >
-                                                <CreditCard className="mr-2 size-4" />
+                                            {can('status orders') && (
+                                                <Button
+                                                    className="mt-3 w-full"
+                                                    onClick={() =>
+                                                        verifyPayment(
+                                                            order.id
+                                                        )
+                                                    }
+                                                >
+                                                    <CreditCard className="mr-2 size-4" />
 
-                                                Verify Payment
-                                            </Button>
+                                                    Verify Payment
+                                                </Button>
+                                            )}
                                         </div>
                                     )}
 
@@ -606,33 +613,37 @@ export default function OrdersIndex({
 
                                     {/* Edit and Delete */}
                                     <div className="flex gap-2 border-t pt-4">
-                                        <Button
-                                            variant="outline"
-                                            className="flex-1"
-                                            onClick={() =>
-                                                openEditModal(
-                                                    order
-                                                )
-                                            }
-                                        >
-                                            <Pencil className="mr-2 size-4" />
+                                        {can('update orders') && (
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1"
+                                                onClick={() =>
+                                                    openEditModal(
+                                                        order
+                                                    )
+                                                }
+                                            >
+                                                <Pencil className="mr-2 size-4" />
 
-                                            Edit
-                                        </Button>
+                                                Edit
+                                            </Button>
+                                        )}
 
-                                        <Button
-                                            variant="destructive"
-                                            className="flex-1"
-                                            onClick={() =>
-                                                setDeletingOrder(
-                                                    order
-                                                )
-                                            }
-                                        >
-                                            <Trash2 className="mr-2 size-4" />
+                                        {can('delete orders') && (
+                                            <Button
+                                                variant="destructive"
+                                                className="flex-1"
+                                                onClick={() =>
+                                                    setDeletingOrder(
+                                                        order
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="mr-2 size-4" />
 
-                                            Delete
-                                        </Button>
+                                                Delete
+                                            </Button>
+                                        )}
                                     </div>
                                 </CardContent>
                             </Card>

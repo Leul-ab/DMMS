@@ -13,6 +13,21 @@ class MenuController extends Controller
 {
     public function index(Request $request)
     {
+        return $this->renderMenu($request, 'menu/index');
+    }
+
+    public function customerMenu(Request $request)
+    {
+        return $this->renderMenu($request, 'customer-menu/index');
+    }
+
+    protected function renderMenu(Request $request, string $view)
+    {
+        // The customer-menu page keeps its scanned table in dedicated session keys so it
+        // never leaks into the /menu page, which always allows manual table selection.
+        $isCustomerMenu = $view === 'customer-menu/index';
+        $sessionKey = $isCustomerMenu ? 'customer_menu_table' : 'scanned_table';
+
         // Get the table number from the URL query parameter
         $tableNumber = $request->query('table');
 
@@ -21,15 +36,14 @@ class MenuController extends Controller
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
 
             if ($table) {
-                // Store the table ID in session so it persists across requests
-                session(['scanned_table_id' => $table->id]);
-                session(['scanned_table_number' => $table->table_number]);
+                session([$sessionKey . '_id' => $table->id]);
+                session([$sessionKey . '_number' => $table->table_number]);
             }
         }
 
         // Try to get table from session if not in URL
-        if (!$tableNumber && session()->has('scanned_table_id')) {
-            $table = RestaurantTable::find(session('scanned_table_id'));
+        if (!$tableNumber && session()->has($sessionKey . '_id')) {
+            $table = RestaurantTable::find(session($sessionKey . '_id'));
             if ($table) {
                 $tableNumber = $table->table_number;
             }
@@ -41,9 +55,9 @@ class MenuController extends Controller
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
 
             // If table was found but session doesn't have it, store it
-            if ($table && !session()->has('scanned_table_id')) {
-                session(['scanned_table_id' => $table->id]);
-                session(['scanned_table_number' => $table->table_number]);
+            if ($table && !session()->has($sessionKey . '_id')) {
+                session([$sessionKey . '_id' => $table->id]);
+                session([$sessionKey . '_number' => $table->table_number]);
             }
         }
 
@@ -75,15 +89,17 @@ class MenuController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Get available tables for manual selection (only if no table is scanned)
+        // Get available tables for manual selection.
+        // The /menu page always offers free table selection via the dropdown.
+        // The customer-menu page never lists tables - it only uses the scanned table.
         $availableTables = [];
-        if (!$table) {
+        if (!$isCustomerMenu) {
             $availableTables = RestaurantTable::where('status', 'available')
                 ->orderBy('table_number')
                 ->get();
         }
 
-        return Inertia::render('menu/index', [
+        return Inertia::render($view, [
             'categories' => $categories,
             'menuItems' => $menuItems,
             'selectedCategory' => $selectedCategory
@@ -102,8 +118,20 @@ class MenuController extends Controller
 
     public function myOrder(Request $request)
     {
-        $tableId = session('scanned_table_id');
-        $tableNumber = $request->query('table') ?? session('scanned_table_number');
+        return $this->renderMyOrder($request, 'menu/my-order');
+    }
+
+    public function customerMyOrder(Request $request)
+    {
+        return $this->renderMyOrder($request, 'customer-my-order/index');
+    }
+
+    protected function renderMyOrder(Request $request, string $view)
+    {
+        $tableId = session('scanned_table_id') ?? session('customer_menu_table_id');
+        $tableNumber = $request->query('table')
+            ?? session('scanned_table_number')
+            ?? session('customer_menu_table_number');
 
         if (!$tableNumber && !$tableId) {
             return redirect()
@@ -141,7 +169,7 @@ class MenuController extends Controller
             ->latest()
             ->first();
 
-        return Inertia::render('menu/my-order', [
+        return Inertia::render($view, [
             'table' => $table,
             'order' => $order,
         ]);

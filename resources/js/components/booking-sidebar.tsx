@@ -220,7 +220,7 @@ export default function BookingSidebar() {
                     <div className="mt-auto pt-6 space-y-3">
                         <Link
                             href={`/booking/${booking.id}`}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 py-3.5 font-bold text-white transition hover:bg-orange-500"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                         >
                             View Full Details
                             <ChevronRight className="h-4 w-4" />

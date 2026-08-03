@@ -7,10 +7,12 @@ import {
     Plus,
     Search,
     Trash2,
+    Users,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,6 +81,8 @@ export default function UsersIndex({
     roles,
     filters,
 }: Props) {
+    const can = useCan();
+
     // -----------------------------------------
     // Search and filters
     // -----------------------------------------
@@ -335,12 +339,15 @@ export default function UsersIndex({
                     <Heading
                         title="Users"
                         description="Manage system users and their roles."
+                        icon={Users}
                     />
 
-                    <Button onClick={openAddModal}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add User
-                    </Button>
+                    {can('create users') && (
+                        <Button onClick={openAddModal}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add User
+                        </Button>
+                    )}
                 </div>
 
                 {/* =========================================
@@ -511,64 +518,72 @@ export default function UsersIndex({
 
                                                             {/* Shared Status Toggle */}
 
-                                                            <StatusToggle
-                                                                checked={
-                                                                    user.is_active
-                                                                }
-                                                                onCheckedChange={() =>
-                                                                    handleToggleStatus(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                                onLabel="Active"
-                                                                offLabel="Inactive"
-                                                                ariaLabel={`Toggle status for ${user.name}`}
-                                                            />
+                                                            {can('status users') && (
+                                                                <StatusToggle
+                                                                    checked={
+                                                                        user.is_active
+                                                                    }
+                                                                    onCheckedChange={() =>
+                                                                        handleToggleStatus(
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    onLabel="Active"
+                                                                    offLabel="Inactive"
+                                                                    ariaLabel={`Toggle status for ${user.name}`}
+                                                                />
+                                                            )}
 
                                                             {/* View */}
 
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openViewModal(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                                title="View user"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('view users') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openViewModal(
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    title="View user"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Edit */}
 
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditModal(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                                title="Edit user"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('update users') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    title="Edit user"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Delete */}
 
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteModal(
-                                                                        user,
-                                                                    )
-                                                                }
-                                                                title="Delete user"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('delete users') && (
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            user,
+                                                                        )
+                                                                    }
+                                                                    title="Delete user"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                         </div>
                                                     </td>

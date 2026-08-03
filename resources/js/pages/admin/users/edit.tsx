@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { User } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -35,7 +36,7 @@ export default function UserEdit({ user, roles }: Props) {
         <>
             <Head title={`Edit User - ${user.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title="Edit User" description={`Update ${user.name}'s information`} />
+                <Heading title="Edit User" description={`Update ${user.name}'s information`} icon={User} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

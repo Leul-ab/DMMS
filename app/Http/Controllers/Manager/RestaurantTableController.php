@@ -65,33 +65,7 @@ class RestaurantTableController extends Controller
             $qrPath = $validated['qr_code'];
         } else {
             try {
-                // Generate QR code pointing directly to the menu with the table pre-assigned.
-                // Customers who scan this will go straight to the menu, bypassing table selection.
-                $menuUrl = route('menu.index', ['table' => $validated['table_number']]);
-
-                // Validate that the generated URL is not empty and the route exists
-                if (empty($menuUrl) || !filter_var($menuUrl, FILTER_VALIDATE_URL)) {
-                    throw new \RuntimeException('Generated menu URL is invalid: ' . ($menuUrl ?: 'empty'));
-                }
-
-                // Ensure the qrcodes storage directory exists
-                $qrcodeDir = 'qrcodes';
-                if (!Storage::disk('public')->exists($qrcodeDir)) {
-                    Storage::disk('public')->makeDirectory($qrcodeDir);
-                }
-
-                $qrCode = new QrCode($menuUrl);
-                $writer = new SvgWriter();
-                $result = $writer->write($qrCode);
-
-                $fileName = $qrcodeDir . '/table_' . $validated['table_number'] . '_' . uniqid('qr_', true) . '.svg';
-                $saved = Storage::disk('public')->put($fileName, $result->getString());
-
-                if ($saved === false) {
-                    throw new \RuntimeException('Failed to save QR code image to storage.');
-                }
-
-                $qrPath = $fileName;
+                $qrPath = $this->generateQrCode((int) $validated['table_number']);
             } catch (\Exception $e) {
                 Log::error('QR code generation failed for table #' . $validated['table_number'], [
                     'error' => $e->getMessage(),
@@ -99,7 +73,7 @@ class RestaurantTableController extends Controller
                     'line' => $e->getLine(),
                     'trace' => $e->getTraceAsString(),
                     'table_number' => $validated['table_number'],
-                    'menu_url' => $menuUrl ?? 'not generated',
+                    'menu_url' => route('menu.customer', ['table' => $validated['table_number']]),
                 ]);
 
                 return back()->withErrors([
@@ -142,6 +116,81 @@ class RestaurantTableController extends Controller
     public function edit(RestaurantTable $table)
     {
         return redirect()->route('manager.tables.index');
+    }
+
+    /**
+     * Generate a QR code image that points to the customer menu
+     * with the given table number pre-assigned.
+     *
+     * @throws \RuntimeException
+     */
+    protected function generateQrCode(int $tableNumber): string
+    {
+        // Generate QR code pointing directly to the customer menu with the table pre-assigned.
+        // Customers who scan this will go straight to the menu, bypassing table selection.
+        $menuUrl = route('menu.customer', ['table' => $tableNumber]);
+
+        // Validate that the generated URL is not empty and the route exists
+        if (empty($menuUrl) || !filter_var($menuUrl, FILTER_VALIDATE_URL)) {
+            throw new \RuntimeException('Generated menu URL is invalid: ' . ($menuUrl ?: 'empty'));
+        }
+
+        // Ensure the qrcodes storage directory exists
+        $qrcodeDir = 'qrcodes';
+        if (!Storage::disk('public')->exists($qrcodeDir)) {
+            Storage::disk('public')->makeDirectory($qrcodeDir);
+        }
+
+        $qrCode = new QrCode($menuUrl);
+        $writer = new SvgWriter();
+        $result = $writer->write($qrCode);
+
+        $fileName = $qrcodeDir . '/table_' . $tableNumber . '_' . uniqid('qr_', true) . '.svg';
+        $saved = Storage::disk('public')->put($fileName, $result->getString());
+
+        if ($saved === false) {
+            throw new \RuntimeException('Failed to save QR code image to storage.');
+        }
+
+        return $fileName;
+    }
+
+    /**
+     * Regenerate the QR code for a table so it points to the customer menu.
+     */
+    public function regenerateQr(Request $request, RestaurantTable $table)
+    {
+        try {
+            // Delete the existing QR code image if it is stored on disk
+            if ($table->qr_code && Storage::disk('public')->exists($table->qr_code)) {
+                Storage::disk('public')->delete($table->qr_code);
+            }
+
+            $qrPath = $this->generateQrCode($table->table_number);
+
+            $table->update([
+                'qr_code' => $qrPath,
+            ]);
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' => 'QR code regenerated successfully for Table ' . $table->table_number . '.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('QR code regeneration failed for table #' . $table->table_number, [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'table_number' => $table->table_number,
+            ]);
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'Failed to regenerate QR code for this table.',
+            ]);
+        }
+
+        return back();
     }
 
     /**

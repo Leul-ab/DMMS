@@ -6,12 +6,15 @@ import {
     Plus,
     Printer,
     QrCode,
+    RefreshCw,
     Search,
+    Table2,
     Trash2,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { useCan } from '@/hooks/use-can';
 import { QrPreviewModal } from '@/components/qr-preview-modal';
 
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +51,7 @@ import {
     update as tablesUpdate,
     destroy as tablesDestroy,
     toggleStatus,
+    regenerateQr,
 } from '@/routes/manager/tables';
 
 type TableStatus =
@@ -76,6 +80,7 @@ const statusLabels: Record<TableStatus, string> = {
 };
 
 export default function TablesIndex({ tables }: Props) {
+    const can = useCan();
     const [search, setSearch] = useState('');
 
     const [statusFilter, setStatusFilter] = useState<
@@ -273,6 +278,33 @@ export default function TablesIndex({ tables }: Props) {
     };
 
     // -----------------------------------------
+    // Regenerate QR Code
+    // -----------------------------------------
+
+    const handleRegenerateQr = (
+        table: RestaurantTable,
+    ) => {
+        if (
+            !window.confirm(
+                `Regenerate the QR code for Table ${table.table_number}? The existing QR code will be replaced.`,
+            )
+        ) {
+            return;
+        }
+
+        router.post(
+            regenerateQr.url(
+                table.id,
+            ),
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+            },
+        );
+    };
+
+    // -----------------------------------------
     // Delete Table
     // -----------------------------------------
 
@@ -382,16 +414,19 @@ export default function TablesIndex({ tables }: Props) {
                     <Heading
                         title="Table Management"
                         description="Manage your restaurant tables and QR codes."
+                        icon={Table2}
                     />
 
-                    <Button
-                        onClick={
-                            openAddModal
-                        }
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Table
-                    </Button>
+                    {can('create tables') && (
+                        <Button
+                            onClick={
+                                openAddModal
+                            }
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Table
+                        </Button>
+                    )}
                 </div>
 
                 {/* Tables Card */}
@@ -579,71 +614,95 @@ export default function TablesIndex({ tables }: Props) {
                                                         <div className="flex items-center justify-end gap-2">
 
                                                             {/* Status Toggle */}
-                                                            <StatusToggle
-                                                                checked={
-                                                                    table.status ===
-                                                                    'available'
-                                                                }
-                                                                onCheckedChange={() =>
-                                                                    handleToggleStatus(
-                                                                        table,
-                                                                    )
-                                                                }
-                                                                onLabel="Mark occupied"
-                                                                offLabel="Mark available"
-                                                                ariaLabel={
-                                                                    table.status ===
-                                                                    'available'
-                                                                        ? 'Mark table occupied'
-                                                                        : 'Mark table available'
-                                                                }
-                                                                disabled={
-                                                                    table.status ===
-                                                                    'awaiting_payment'
-                                                                }
-                                                            />
+                                                            {can('status tables') && (
+                                                                <StatusToggle
+                                                                    checked={
+                                                                        table.status ===
+                                                                        'available'
+                                                                    }
+                                                                    onCheckedChange={() =>
+                                                                        handleToggleStatus(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    onLabel="Mark occupied"
+                                                                    offLabel="Mark available"
+                                                                    ariaLabel={
+                                                                        table.status ===
+                                                                        'available'
+                                                                            ? 'Mark table occupied'
+                                                                            : 'Mark table available'
+                                                                    }
+                                                                    disabled={
+                                                                        table.status ===
+                                                                        'awaiting_payment'
+                                                                    }
+                                                                />
+                                                            )}
 
                                                             {/* View */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openViewModal(
-                                                                        table,
-                                                                    )
-                                                                }
-                                                                title="View table"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('view tables') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openViewModal(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    title="View table"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Edit */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditModal(
-                                                                        table,
-                                                                    )
-                                                                }
-                                                                title="Edit table"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('update tables') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    title="Edit table"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+
+                                                            {/* Regenerate QR */}
+                                                            {can('update tables') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        handleRegenerateQr(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    title="Regenerate QR code (points to customer menu)"
+                                                                >
+                                                                    <RefreshCw className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Delete */}
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteModal(
-                                                                        table,
-                                                                    )
-                                                                }
-                                                                title="Delete table"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('delete tables') && (
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            table,
+                                                                        )
+                                                                    }
+                                                                    title="Delete table"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>

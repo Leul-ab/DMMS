@@ -282,7 +282,7 @@ export default function LandingPage() {
                                 <button
                                     type="submit"
                                     disabled={isRegistering}
-                                    className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white hover:bg-orange-600 disabled:opacity-60"
+                                    className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 disabled:opacity-60"
                                 >
                                     {isRegistering ? 'Registering...' : 'Become a Member'}
                                 </button>
@@ -350,7 +350,7 @@ export default function LandingPage() {
 
                             <Link
                                 href={menuRoutes.index()}
-                                className="flex-1 rounded-xl bg-orange-500 px-5 py-3.5 font-bold text-white transition hover:bg-orange-600 inline-flex items-center justify-center"
+                                className="flex-1 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 inline-flex items-center justify-center"
                             >
                                 Continue to Menu
                             </Link>

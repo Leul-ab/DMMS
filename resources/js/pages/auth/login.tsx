@@ -286,7 +286,7 @@ return (
                                     {/* Login Button */}
                                     <Button
                                         type="submit"
-                                        className="group h-13 w-full rounded-xl bg-orange-500 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-300 hover:bg-orange-600 hover:shadow-xl hover:shadow-orange-500/30"
+                                        className="group h-13 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/30"
                                         tabIndex={4}
                                         disabled={processing}
                                         data-test="login-button"

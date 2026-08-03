@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user() ? $request->user()->load('role') : null,
             ],
+            'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->values()->all() : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'booking_success' => session('booking_success', false),
             'booking_data' => session('booking_data'),

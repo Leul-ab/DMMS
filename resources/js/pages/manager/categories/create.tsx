@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Tags } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ export default function CategoryCreate() {
         <>
             <Head title="Create Category" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title="Create Category" description="Add a new menu category" />
+                <Heading title="Create Category" description="Add a new menu category" icon={Tags} />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">

@@ -7,10 +7,12 @@ import {
     Plus,
     Search,
     Trash2,
+    Users,
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
+import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,6 +55,8 @@ type Props = {
 export default function CustomersIndex({
     customers,
 }: Props) {
+    const can = useCan();
+
     // =========================================
     // SEARCH
     // =========================================
@@ -290,14 +294,17 @@ export default function CustomersIndex({
                     <Heading
                         title="Customer Management"
                         description="Manage registered customers and members."
+                        icon={Users}
                     />
 
-                    <Button
-                        onClick={openAddModal}
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Customer
-                    </Button>
+                    {can('create customers') && (
+                        <Button
+                            onClick={openAddModal}
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Customer
+                        </Button>
+                    )}
                 </div>
 
                 {/* =========================================
@@ -461,65 +468,73 @@ export default function CustomersIndex({
                                                         <div className="flex items-center justify-end gap-2">
 
                                                             {/* Toggle */}
-                                                            <StatusToggle
-                                                                checked={
-                                                                    customer.is_member
-                                                                }
-                                                                onCheckedChange={() =>
-                                                                    handleToggleMembership(
-                                                                        customer,
-                                                                    )
-                                                                }
-                                                                onLabel="Change to Not a Member"
-                                                                offLabel="Change to Member"
-                                                                ariaLabel={
-                                                                    customer.is_member
-                                                                        ? 'Change customer to not a member'
-                                                                        : 'Change customer to member'
-                                                                }
-                                                            />
+                                                            {can('status customers') && (
+                                                                <StatusToggle
+                                                                    checked={
+                                                                        customer.is_member
+                                                                    }
+                                                                    onCheckedChange={() =>
+                                                                        handleToggleMembership(
+                                                                            customer,
+                                                                        )
+                                                                    }
+                                                                    onLabel="Change to Not a Member"
+                                                                    offLabel="Change to Member"
+                                                                    ariaLabel={
+                                                                        customer.is_member
+                                                                            ? 'Change customer to not a member'
+                                                                            : 'Change customer to member'
+                                                                    }
+                                                                />
+                                                            )}
 
                                                             {/* View */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openViewModal(
-                                                                        customer,
-                                                                    )
-                                                                }
-                                                                title="View Customer"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('view customers') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openViewModal(
+                                                                            customer,
+                                                                        )
+                                                                    }
+                                                                    title="View Customer"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Edit */}
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditModal(
-                                                                        customer,
-                                                                    )
-                                                                }
-                                                                title="Edit Customer"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('update customers') && (
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            customer,
+                                                                        )
+                                                                    }
+                                                                    title="Edit Customer"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                             {/* Delete */}
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteModal(
-                                                                        customer,
-                                                                    )
-                                                                }
-                                                                title="Delete Customer"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            {can('delete customers') && (
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            customer,
+                                                                        )
+                                                                    }
+                                                                    title="Delete Customer"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>

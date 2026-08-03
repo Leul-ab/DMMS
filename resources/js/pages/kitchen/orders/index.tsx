@@ -1,6 +1,7 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { CheckCircle, Clock, ChefHat } from 'lucide-react';
+import { useCan } from '@/hooks/use-can';
 
 type MenuItem = {
     id: number;
@@ -31,6 +32,7 @@ type Props = {
 };
 
 export default function KitchenOrders({ orders }: Props) {
+    const can = useCan();
     const [updatingOrder, setUpdatingOrder] = useState<number | null>(null);
 
     const updateStatus = (orderId: number, status: string) => {
@@ -136,7 +138,7 @@ export default function KitchenOrders({ orders }: Props) {
                                 </div>
 
                                 <div className="mt-5 flex gap-2">
-                                    {order.status === 'pending' && (
+                                    {can('update kitchen') && order.status === 'pending' && (
                                         <button
                                             onClick={() =>
                                                 updateStatus(
@@ -153,7 +155,7 @@ export default function KitchenOrders({ orders }: Props) {
                                         </button>
                                     )}
 
-                                    {order.status === 'confirmed' && (
+                                    {can('update kitchen') && order.status === 'confirmed' && (
                                         <button
                                             onClick={() =>
                                                 updateStatus(
@@ -170,7 +172,7 @@ export default function KitchenOrders({ orders }: Props) {
                                         </button>
                                     )}
 
-                                    {order.status === 'preparing' && (
+                                    {can('update kitchen') && order.status === 'preparing' && (
                                         <button
                                             onClick={() =>
                                                 updateStatus(
