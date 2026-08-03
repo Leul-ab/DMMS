@@ -56,8 +56,19 @@ COPY . .
 
 ##################################################
 # Build frontend assets
+# wayfinder plugin calls `php artisan wayfinder:generate` during
+# Vite build. Laravel needs a minimal .env to bootstrap, so we
+# create a temporary one just for the build step.
 ##################################################
-RUN npm run build \
+RUN echo "APP_KEY=base64:$(openssl rand -base64 32)" > .env.build \
+    && echo "APP_ENV=production" >> .env.build \
+    && echo "DB_CONNECTION=sqlite" >> .env.build \
+    && echo "DB_DATABASE=/tmp/build.sqlite" >> .env.build \
+    && touch /tmp/build.sqlite \
+    && cp .env.build .env \
+    && php artisan wayfinder:generate --with-form \
+    && npm run build \
+    && rm -f .env .env.build \
     && rm -rf node_modules \
     && npm cache clean --force
 
