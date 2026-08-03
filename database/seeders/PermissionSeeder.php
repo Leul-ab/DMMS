@@ -84,6 +84,11 @@ class PermissionSeeder extends Seeder
             ['update payments', 'update'],
             ['status payments', 'status'],
         ],
+        'Payment Verification' => [
+            ['view payment verification', 'view'],
+            ['verify payments', 'verify'],
+            ['reject payments', 'reject'],
+        ],
         'Roles' => [
             ['view roles', 'view'],
             ['create roles', 'create'],

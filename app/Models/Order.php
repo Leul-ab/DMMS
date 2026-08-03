@@ -66,4 +66,9 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class);
     }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(Receipt::class);
+    }
 }

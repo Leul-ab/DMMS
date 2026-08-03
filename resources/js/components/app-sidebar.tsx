@@ -124,6 +124,16 @@ export function AppSidebar() {
               ]
             : []),
 
+        ...(can('view payments')
+            ? [
+                  {
+                      title: 'Payment Verification',
+                      href: '/manager/payment-verification',
+                      icon: ShieldCheck,
+                  },
+              ]
+            : []),
+
         ...(can('view bookings')
             ? [
                   {

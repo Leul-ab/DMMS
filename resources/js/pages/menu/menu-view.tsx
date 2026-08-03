@@ -102,6 +102,7 @@ type Props = {
     booking_data?: BookingData | null;
     customer_code?: string;
     tableError?: string | null;
+    order_id?: number | null;
 };
 
 const formatCountdown = (seconds: number): string => {
@@ -132,6 +133,7 @@ export function MenuView({
     booking_data = null,
     customer_code = '',
     tableError: propTableError = null,
+    order_id = null,
 }: Props & { basePath?: string; allowTableSelection?: boolean }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [showMemberForm, setShowMemberForm] = useState(false);
@@ -287,6 +289,7 @@ export function MenuView({
                 items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
                 special_instructions: specialInstructions.trim() || null,
                 source: basePath.replace(/^\//, ''),
+                order_id: order_id || undefined,
             },
             {
                 onSuccess: () => {
