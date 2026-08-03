@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: .
     autoDeploy: true
-    healthCheckPath: /
+    healthCheckPath: /up
 
     envVars:
       - key: APP_ENV
@@ -51,6 +51,9 @@ services:
 
       - key: DB_PASSWORD
         sync: false
+
+      - key: DB_SSLMODE
+        value: require
 
       # Laravel
       - key: SESSION_DRIVER
