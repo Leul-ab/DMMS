@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -12,18 +12,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Update the status enum to include 'preparing' and 'ready' for the kitchen dashboard.
-        DB::statement("
-            ALTER TABLE orders
-            MODIFY status ENUM(
-                'pending',
-                'received',
-                'preparing',
-                'ready',
-                'completed',
-                'cancelled'
-            ) NOT NULL DEFAULT 'pending'
-        ");
+        // Convert old statuses to the new workflow.
+        DB::table('orders')
+            ->whereIn('status', ['confirmed', 'preparing', 'ready', 'served'])
+            ->update([
+                'status' => 'pending',
+            ]);
+
+        // Change the column to a string.
+        Schema::table('orders', function (Blueprint $table) {
+            $table->string('status')->default('pending')->change();
+        });
     }
 
     /**
@@ -31,22 +30,14 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Convert new statuses back to the previous workflow.
-        DB::statement("
-            UPDATE orders
-            SET status = 'pending'
-            WHERE status IN ('preparing', 'ready')
-        ");
+        DB::table('orders')
+            ->whereIn('status', ['received', 'completed', 'cancelled'])
+            ->update([
+                'status' => 'pending',
+            ]);
 
-        // Restore the previous status enum.
-        DB::statement("
-            ALTER TABLE orders
-            MODIFY status ENUM(
-                'pending',
-                'received',
-                'completed',
-                'cancelled'
-            ) NOT NULL DEFAULT 'pending'
-        ");
+        Schema::table('orders', function (Blueprint $table) {
+            $table->string('status')->default('pending')->change();
+        });
     }
 };
