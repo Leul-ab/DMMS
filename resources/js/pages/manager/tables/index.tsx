@@ -51,7 +51,6 @@ import {
     update as tablesUpdate,
     destroy as tablesDestroy,
     toggleStatus,
-    regenerateQr,
 } from '@/routes/manager/tables';
 
 type TableStatus =
@@ -293,9 +292,7 @@ export default function TablesIndex({ tables }: Props) {
         }
 
         router.post(
-            regenerateQr.url(
-                table.id,
-            ),
+            `/manager/tables/${table.id}/regenerate-qr`,
             {},
             {
                 preserveScroll: true,

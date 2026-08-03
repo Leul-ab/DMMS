@@ -85,11 +85,11 @@ type PaymentStatusItem = {
 
 type Props = {
     stats: DashboardStats;
-    orderStatusOverview: OrderStatusOverview[];
-    popularMenuItems: PopularMenuItem[];
-    revenueTrend: RevenueTrendPoint[];
-    salesByCategory: SalesByCategoryItem[];
-    paymentStatusOverview: PaymentStatusItem[];
+    orderStatusOverview?: OrderStatusOverview[];
+    popularMenuItems?: PopularMenuItem[];
+    revenueTrend?: RevenueTrendPoint[];
+    salesByCategory?: SalesByCategoryItem[];
+    paymentStatusOverview?: PaymentStatusItem[];
 };
 
 const CATEGORY_COLORS = [
@@ -146,11 +146,11 @@ const ORDER_STATUS_STYLES: Record<
 
 export default function Dashboard({
     stats,
-    orderStatusOverview,
-    popularMenuItems,
-    revenueTrend,
-    salesByCategory,
-    paymentStatusOverview,
+    orderStatusOverview = [],
+    popularMenuItems = [],
+    revenueTrend = [],
+    salesByCategory = [],
+    paymentStatusOverview = [],
 }: Props) {
     /*
     |--------------------------------------------------------------------------

@@ -8,9 +8,7 @@ use Illuminate\Database\Seeder;
 class PermissionSeeder extends Seeder
 {
     /**
-     * Permission names grouped by the sidebar/page they belong to.
-     * Each entry is [permission name, action]. Actions are created for
-     * every sidebar/page so roles can be composed button-by-button.
+     * Permission names grouped by module.
      */
     private array $permissions = [
         'Dashboard' => [
@@ -29,6 +27,9 @@ class PermissionSeeder extends Seeder
             ['update menu items', 'update'],
             ['delete menu items', 'delete'],
             ['status menu items', 'status'],
+        ],
+        'Menu' => [
+            ['view menu', 'view'],
         ],
         'Tables' => [
             ['view tables', 'view'],
@@ -50,15 +51,21 @@ class PermissionSeeder extends Seeder
             ['update orders', 'update'],
             ['delete orders', 'delete'],
             ['status orders', 'status'],
+            ['cancel orders', 'cancel'],
+            ['verify payment', 'verify'],
         ],
         'Bookings' => [
             ['view bookings', 'view'],
+            ['create bookings', 'create'],
             ['update bookings', 'update'],
             ['delete bookings', 'delete'],
             ['status bookings', 'status'],
+            ['cancel bookings', 'cancel'],
+            ['complete bookings', 'complete'],
         ],
         'Reports' => [
             ['view reports', 'view'],
+            ['export reports', 'export'],
         ],
         'Kitchen' => [
             ['view kitchen', 'view'],
@@ -70,6 +77,7 @@ class PermissionSeeder extends Seeder
             ['update staff', 'update'],
             ['delete staff', 'delete'],
             ['status staff', 'status'],
+            ['assign staff', 'assign'],
         ],
         'Users' => [
             ['view users', 'view'],
@@ -77,18 +85,21 @@ class PermissionSeeder extends Seeder
             ['update users', 'update'],
             ['delete users', 'delete'],
             ['status users', 'status'],
+            ['assign users', 'assign'],
         ],
         'Payments' => [
             ['view payments', 'view'],
             ['show payments', 'show'],
             ['update payments', 'update'],
             ['status payments', 'status'],
+            ['verify payments', 'verify'],
         ],
         'Roles' => [
             ['view roles', 'view'],
             ['create roles', 'create'],
             ['update roles', 'update'],
             ['delete roles', 'delete'],
+            ['assign permissions', 'assign'],
         ],
         'Permissions' => [
             ['view permissions', 'view'],
@@ -96,8 +107,13 @@ class PermissionSeeder extends Seeder
             ['update permissions', 'update'],
             ['delete permissions', 'delete'],
         ],
-        'Menu' => [
-            ['view menu', 'view'],
+        'Branches' => [
+            ['view branches', 'view'],
+            ['create branches', 'create'],
+            ['update branches', 'update'],
+            ['delete branches', 'delete'],
+            ['assign branches', 'assign'],
+            ['switch branches', 'switch'],
         ],
     ];
 

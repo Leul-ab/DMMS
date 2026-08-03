@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Customer;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,27 +37,107 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        $branches = collect();
+
+        if ($user) {
+            $branches = $user->accessibleBranches()->values();
+        }
+
+        $currentBranchId = $request->session()->get('current_branch_id');
+        $currentBranch = null;
+
+        if ($currentBranchId) {
+            $currentBranch = $branches->firstWhere(
+                'id',
+                (int) $currentBranchId
+            );
+
+            if (! $currentBranch) {
+                $request->session()->forget('current_branch_id');
+                $currentBranchId = null;
+            }
+        }
+
+        if (! $currentBranch && $branches->isNotEmpty()) {
+            // Prefer the user's primary branch when it is accessible.
+            $currentBranch = $user?->branch_id
+                ? $branches->firstWhere('id', (int) $user->branch_id)
+                : null;
+
+            $currentBranch ??= $branches->first();
+
+            $request->session()->put(
+                'current_branch_id',
+                $currentBranch->id
+            );
+        }
+
         return [
             ...parent::share($request),
+
             'name' => config('app.name'),
+
             'auth' => [
-                'user' => $request->user() ? $request->user()->load('role') : null,
+                'user' => $user
+                    ? $user->load([
+                        'role',
+                        'branch',
+                        'assignedBranches',
+                    ])
+                    : null,
             ],
-            'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->values()->all() : [],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+
+            'permissions' => $user
+                ? $user->getAllPermissions()->pluck('name')->values()->all()
+                : [],
+
+            'branches' => $branches->map(fn ($branch) => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'is_active' => $branch->is_active,
+            ])->values(),
+
+            'currentBranch' => $currentBranch
+                ? [
+                    'id' => $currentBranch->id,
+                    'name' => $currentBranch->name,
+                    'address' => $currentBranch->address,
+                    'phone' => $currentBranch->phone,
+                    'is_active' => $currentBranch->is_active,
+                ]
+                : null,
+
+            'sidebarOpen' =>
+                ! $request->hasCookie('sidebar_state') ||
+                $request->cookie('sidebar_state') === 'true',
+
             'booking_success' => session('booking_success', false),
             'booking_data' => session('booking_data'),
             'customer_code' => session('customer_code', ''),
+
             'order_count' => function () use ($request) {
                 if ($request->session()->has('customer_code')) {
                     $customerCode = $request->session()->get('customer_code');
-                    $customer = \App\Models\Customer::where('customer_code', $customerCode)->first();
+                    $customer = Customer::where('customer_code', $customerCode)->first();
+
                     if ($customer) {
-                        return \App\Models\Order::where('customer_id', $customer->id)
-                            ->whereIn('status', ['pending', 'received', 'confirmed', 'preparing', 'ready', 'served'])
+                        return Order::where('customer_id', $customer->id)
+                            ->whereIn('status', [
+                                'pending',
+                                'received',
+                                'confirmed',
+                                'preparing',
+                                'ready',
+                                'served',
+                            ])
                             ->count();
                     }
                 }
+
                 return 0;
             },
         ];

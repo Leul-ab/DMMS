@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 
 class PaymentController extends Controller
 {
     /**
-     * Customer submits that they have paid.
+     * Customer submits a payment.
      */
-    public function submit(Order $order)
+    public function submit(Order $order): RedirectResponse
     {
-        // Only completed orders can be paid for.
+        // Payment can only be submitted for completed orders.
         if ($order->status !== 'completed') {
             return back()->with(
                 'error',
@@ -20,14 +20,18 @@ class PaymentController extends Controller
             );
         }
 
-        // Prevent submitting payment more than once.
-        if ($order->payment_status !== 'unpaid') {
+        // Prevent duplicate payment submission.
+        if (
+            $order->payment_status !== null &&
+            $order->payment_status !== 'unpaid'
+        ) {
             return back()->with(
                 'error',
-                'Payment has already been submitted.'
+                'Payment has already been submitted or processed.'
             );
         }
 
+        // Change order payment status to pending.
         $order->update([
             'payment_status' => 'pending',
             'payment_submitted_at' => now(),

@@ -10,7 +10,6 @@ class RoleSeeder extends Seeder
 {
     /**
      * Permissions granted to each role (by role slug).
-     * Roles are composed from the seeded button/sidebar permissions.
      */
     private array $rolePermissions = [
         'super_admin' => '*',
@@ -26,6 +25,7 @@ class RoleSeeder extends Seeder
             'update menu items',
             'delete menu items',
             'status menu items',
+            'view menu',
             'view tables',
             'create tables',
             'update tables',
@@ -41,25 +41,47 @@ class RoleSeeder extends Seeder
             'update orders',
             'delete orders',
             'status orders',
+            'cancel orders',
+            'verify payment',
             'view bookings',
+            'create bookings',
             'update bookings',
             'delete bookings',
             'status bookings',
+            'cancel bookings',
+            'complete bookings',
             'view reports',
+            'export reports',
             'view kitchen',
             'update kitchen',
-            'view menu',
+            'view staff',
+            'create staff',
+            'update staff',
+            'delete staff',
+            'status staff',
+            'assign staff',
+            'view payments',
+            'show payments',
+            'update payments',
+            'status payments',
+            'verify payments',
+            'switch branches',
         ],
         'kitchen_staff' => [
             'view kitchen',
             'update kitchen',
             'view menu',
+            'view orders',
         ],
         'waiter' => [
             'view menu',
             'view orders',
+            'show orders',
+            'view tables',
         ],
-        'customer' => [],
+        'customer' => [
+            'view menu',
+        ],
     ];
 
     public function run(): void
@@ -74,13 +96,18 @@ class RoleSeeder extends Seeder
 
         $allPermissions = Permission::pluck('name');
 
-        foreach ($roles as $role) {
+        foreach ($roles as $roleData) {
             $role = Role::updateOrCreate(
-                ['slug' => $role['slug']],
-                ['name' => $role['name'], 'guard_name' => 'web', 'description' => $role['description']],
+                ['slug' => $roleData['slug']],
+                [
+                    'name' => $roleData['name'],
+                    'guard_name' => 'web',
+                    'description' => $roleData['description'],
+                ],
             );
 
             $permissions = $this->rolePermissions[$role->slug] ?? [];
+
             if ($permissions === '*') {
                 $permissions = $allPermissions->all();
             }

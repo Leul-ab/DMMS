@@ -7,19 +7,23 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { useRefreshOnNavigate } from '@/hooks/use-refresh-on-navigate';
+import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items = [], label }: { items: NavItem[]; label?: string }) {
-    const { isCurrentUrl } = useCurrentUrl();
-    useRefreshOnNavigate();
+    const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
         <SidebarGroup className="px-2 py-0">
             {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
             <SidebarMenu>
                 {items.map((item) => {
-                    const isActive = isCurrentUrl(item.href);
+                    const href = toUrl(item.href);
+                    const isActive =
+                        item.isActive ??
+                        (item.activePrefix
+                            ? isCurrentOrParentUrl(item.activePrefix)
+                            : isCurrentOrParentUrl(href));
 
                     return (
                         <SidebarMenuItem key={item.title}>
@@ -33,7 +37,7 @@ export function NavMain({ items = [], label }: { items: NavItem[]; label?: strin
                                         : 'text-sidebar-foreground/80 transition-all hover:bg-white/35 hover:text-orange-700 hover:backdrop-blur-lg hover:ring-1 hover:ring-white/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]'
                                 }
                             >
-                                <Link href={item.href} prefetch className="relative">
+                                <Link href={href} prefetch className="relative">
                                     {isActive && (
                                         <span
                                             aria-hidden="true"
