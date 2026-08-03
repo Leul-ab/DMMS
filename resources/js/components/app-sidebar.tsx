@@ -12,7 +12,6 @@ import {
     Calendar,
     CreditCard,
     BarChart3,
-    GitBranch,
     Building2,
     Check,
 } from 'lucide-react';
@@ -96,6 +95,10 @@ export function AppSidebar() {
      * Switch to another branch.
      */
     const switchBranch = (branchId: number) => {
+        if (currentBranch?.id === branchId) {
+            return;
+        }
+
         router.post(
             '/manager/branches/switch',
             {
@@ -107,8 +110,13 @@ export function AppSidebar() {
                 onSuccess: () => {
                     const { pathname } = window.location;
 
-                    if (pathname === '/menu') {
-                        router.visit('/menu', {
+                    if (
+                        pathname === '/menu' ||
+                        pathname === '/dashboard' ||
+                        pathname === '/booking' ||
+                        pathname.startsWith('/manager/bookings')
+                    ) {
+                        router.visit(pathname, {
                             replace: true,
                             preserveState: false,
                         });
@@ -148,12 +156,16 @@ export function AppSidebar() {
                       href: tablesIndex(),
                       icon: Table2,
                   },
-                  {
-                      title: 'Branches',
-                      href: '/manager/branches',
-                      icon: Building2,
-                      activePrefix: '/manager/branches',
-                  },
+                  ...(isAdmin
+                      ? [
+                            {
+                                title: 'Branches',
+                                href: '/manager/branches',
+                                icon: Building2,
+                                activePrefix: '/manager/branches',
+                            },
+                        ]
+                      : []),
               ]
             : []),
 
@@ -237,74 +249,92 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
 
-                    {/* Branch Switcher */}
+                    {/* Branch indicator / switcher */}
                     {(isAdmin || isManager) &&
-                        branches.length > 0 && (
+                        currentBranch && (
                             <SidebarMenuItem>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <SidebarMenuButton
-                                            tooltip="Switch Branch"
-                                            className="h-auto min-h-12"
-                                        >
-                                            <GitBranch className="size-5 shrink-0" />
-
-                                            <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-                                                <span className="text-xs text-muted-foreground">
-                                                    Current Branch
-                                                </span>
-
-                                                <span className="w-full truncate font-medium">
-                                                    {currentBranch?.name ??
-                                                        'Select Branch'}
-                                                </span>
-                                            </div>
-                                        </SidebarMenuButton>
-                                    </DropdownMenuTrigger>
-
-                                    <DropdownMenuContent
-                                        align="start"
-                                        side="right"
-                                        className="w-64"
-                                    >
-                                        <DropdownMenuLabel>
-                                            Select Branch
-                                        </DropdownMenuLabel>
-
-                                        <DropdownMenuSeparator />
-
-                                        {branches.map((branch) => (
-                                            <DropdownMenuItem
-                                                key={branch.id}
-                                                onClick={() =>
-                                                    switchBranch(
-                                                        branch.id,
-                                                    )
-                                                }
-                                                className="cursor-pointer"
+                                {branches.length > 1 ? (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <SidebarMenuButton
+                                                tooltip="Switch Branch"
+                                                className="h-auto min-h-12"
                                             >
-                                                <GitBranch className="mr-2 size-4" />
+                                                <Building2 className="size-5 shrink-0" />
 
-                                                <div className="flex min-w-0 flex-1 flex-col">
-                                                    <span className="truncate">
-                                                        {branch.name}
+                                                <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                                                    <span className="text-xs text-muted-foreground">
+                                                        Current Branch
                                                     </span>
 
-                                                    {branch.address && (
-                                                        <span className="truncate text-xs text-muted-foreground">
-                                                            {branch.address}
-                                                        </span>
-                                                    )}
+                                                    <span className="w-full truncate font-medium">
+                                                        {currentBranch.name}
+                                                    </span>
                                                 </div>
+                                            </SidebarMenuButton>
+                                        </DropdownMenuTrigger>
 
-                                                {currentBranch?.id ===
-                                                    branch.id && (
-                                                    <Check className="ml-2 size-4" />
-                                                )}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                        <DropdownMenuContent
+                                            align="start"
+                                            side="right"
+                                            className="w-64"
+                                        >
+                                            <DropdownMenuLabel>
+                                                Switch Branch
+                                            </DropdownMenuLabel>
+
+                                            <DropdownMenuSeparator />
+
+                                            {branches.map((branch) => (
+                                                <DropdownMenuItem
+                                                    key={branch.id}
+                                                    onClick={() =>
+                                                        switchBranch(
+                                                            branch.id,
+                                                        )
+                                                    }
+                                                    className="cursor-pointer"
+                                                >
+                                                    <Building2 className="mr-2 size-4" />
+
+                                                    <div className="flex min-w-0 flex-1 flex-col">
+                                                        <span className="truncate">
+                                                            {branch.name}
+                                                        </span>
+
+                                                        {branch.address && (
+                                                            <span className="truncate text-xs text-muted-foreground">
+                                                                {branch.address}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {currentBranch.id ===
+                                                        branch.id && (
+                                                        <Check className="ml-2 size-4" />
+                                                    )}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                ) : (
+                                    <SidebarMenuButton
+                                        tooltip={currentBranch.name}
+                                        className="h-auto min-h-12 pointer-events-none"
+                                    >
+                                        <Building2 className="size-5 shrink-0" />
+
+                                        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                                            <span className="text-xs text-muted-foreground">
+                                                Current Branch
+                                            </span>
+
+                                            <span className="w-full truncate font-medium">
+                                                {currentBranch.name}
+                                            </span>
+                                        </div>
+                                    </SidebarMenuButton>
+                                )}
                             </SidebarMenuItem>
                         )}
                 </SidebarMenu>

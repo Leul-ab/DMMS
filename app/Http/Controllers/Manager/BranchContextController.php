@@ -11,7 +11,7 @@ class BranchContextController extends Controller
     /**
      * Switch the current branch.
      */
-    public function switch (Request $request): RedirectResponse
+    public function switch(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'branch_id' => ['required', 'integer', 'exists:branches,id'],
@@ -19,7 +19,6 @@ class BranchContextController extends Controller
 
         $user = $request->user();
 
-        // Only super admins and managers can switch branches.
         if (
             ! $user ||
             (! $user->hasRole('super_admin') && ! $user->hasRole('manager'))
@@ -32,13 +31,19 @@ class BranchContextController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Store the selected branch in the session.
+        // Managers may only switch to assigned branches.
+        if (
+            ! $user->hasRole('super_admin') &&
+            ! $user->canAccessBranch($branch->id)
+        ) {
+            abort(403, 'You are not assigned to this branch.');
+        }
+
         $request->session()->put(
             'current_branch_id',
             $branch->id
         );
 
-        // Clear table context so the menu reflects the switched branch.
         $request->session()->forget([
             'scanned_table_id',
             'scanned_table_number',
@@ -51,4 +56,3 @@ class BranchContextController extends Controller
         );
     }
 }
-

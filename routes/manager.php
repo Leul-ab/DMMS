@@ -11,15 +11,11 @@ use App\Http\Controllers\Manager\ReportController;
 use App\Http\Controllers\Manager\RestaurantTableController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:super_admin,manager'])
+Route::middleware(['auth', 'role:super_admin'])
     ->prefix('manager')
     ->name('manager.')
     ->group(function () {
-
-        // =========================
-        // Branch Management
-        // =========================
-
+        // Admin-only branch CRUD
         Route::get(
             'branches',
             [BranchController::class, 'index']
@@ -34,16 +30,6 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             'branches',
             [BranchController::class, 'store']
         )->name('branches.store');
-
-        // =========================
-        // Branch Context
-        // =========================
-        // Switch the currently selected branch
-
-        Route::post(
-            'branches/switch',
-            [BranchContextController::class, 'switch']
-        )->name('branches.switch');
 
         Route::get(
             'branches/{branch}',
@@ -64,6 +50,22 @@ Route::middleware(['auth', 'role:super_admin,manager'])
             'branches/{branch}',
             [BranchController::class, 'destroy']
         )->name('branches.destroy');
+    });
+
+Route::middleware(['auth', 'role:super_admin,manager'])
+    ->prefix('manager')
+    ->name('manager.')
+    ->group(function () {
+
+        // =========================
+        // Branch Context
+        // =========================
+        // Switch the currently selected branch
+
+        Route::post(
+            'branches/switch',
+            [BranchContextController::class, 'switch']
+        )->name('branches.switch');
 
 
         // =========================

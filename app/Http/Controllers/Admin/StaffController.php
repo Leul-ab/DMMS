@@ -192,7 +192,7 @@ class StaffController extends Controller
 
         $role = Role::findOrFail($validated['role_id']);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['first_name']
                 . ' '
                 . $validated['last_name'],
@@ -220,6 +220,8 @@ class StaffController extends Controller
 
             'email_verified_at' => now(),
         ]);
+
+        $user->syncAssignedBranches([(int) $branchId]);
 
         $roleLabel = $role->slug === 'waiter'
             ? 'Waiter'

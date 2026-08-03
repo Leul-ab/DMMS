@@ -10,12 +10,27 @@ use Inertia\Inertia;
 class BranchController extends Controller
 {
     /**
+     * Ensure only super admins manage branches.
+     */
+    private function assertAdmin(Request $request): void
+    {
+        abort_unless(
+            $request->user()?->hasRole('super_admin'),
+            403,
+            'Only administrators can manage branches.'
+        );
+    }
+
+    /**
      * Display a listing of branches.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $this->assertAdmin($request);
+
         $branches = Branch::query()
             ->withCount('users')
+            ->withCount('assignedUsers')
             ->withCount('restaurantTables')
             ->withCount('menuItems')
             ->withCount('orders')
@@ -32,6 +47,8 @@ class BranchController extends Controller
      */
     public function store(Request $request)
     {
+        $this->assertAdmin($request);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -52,10 +69,13 @@ class BranchController extends Controller
     /**
      * Display the specified branch.
      */
-    public function show(Branch $branch)
+    public function show(Request $request, Branch $branch)
     {
+        $this->assertAdmin($request);
+
         $branch->loadCount([
             'users',
+            'assignedUsers',
             'restaurantTables',
             'menuItems',
             'orders',
@@ -69,6 +89,8 @@ class BranchController extends Controller
      */
     public function update(Request $request, Branch $branch)
     {
+        $this->assertAdmin($request);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -86,8 +108,10 @@ class BranchController extends Controller
     /**
      * Remove the specified branch.
      */
-    public function destroy(Branch $branch)
+    public function destroy(Request $request, Branch $branch)
     {
+        $this->assertAdmin($request);
+
         $branch->delete();
 
         return redirect()

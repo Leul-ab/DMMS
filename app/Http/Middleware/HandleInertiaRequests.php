@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -42,68 +41,49 @@ class HandleInertiaRequests extends Middleware
 
         /*
         |--------------------------------------------------------------------------
-        | Current Branch
+        | Available Branches (assignment-aware)
         |--------------------------------------------------------------------------
         |
-        | The selected branch is stored in the session.
-        | If no branch has been selected yet, we use the user's branch.
+        | Super admins see all active branches.
+        | Managers/staff see only branches assigned by an admin.
         |
+        */
+
+        $branches = collect();
+
+        if ($user) {
+            $branches = $user->accessibleBranches()->values();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Current Branch
+        |--------------------------------------------------------------------------
         */
 
         $currentBranchId = $request->session()->get('current_branch_id');
-
         $currentBranch = null;
 
         if ($currentBranchId) {
-            $currentBranch = Branch::where('id', $currentBranchId)
-                ->where('is_active', true)
-                ->first();
-        }
+            $currentBranch = $branches->firstWhere(
+                'id',
+                (int) $currentBranchId
+            );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Fallback to User's Branch
-        |--------------------------------------------------------------------------
-        */
-
-        if (! $currentBranch && $user?->branch_id) {
-            $currentBranch = Branch::where('id', $user->branch_id)
-                ->where('is_active', true)
-                ->first();
-
-            if ($currentBranch) {
-                $request->session()->put(
-                    'current_branch_id',
-                    $currentBranch->id
-                );
+            // Session points at a branch the user cannot access.
+            if (! $currentBranch) {
+                $request->session()->forget('current_branch_id');
+                $currentBranchId = null;
             }
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Available Branches
-        |--------------------------------------------------------------------------
-        |
-        | Only super admins and managers can switch branches.
-        |
-        */
+        if (! $currentBranch && $branches->isNotEmpty()) {
+            $currentBranch = $branches->first();
 
-        $branches = [];
-
-        if (
-            $user &&
-            ($user->hasRole('super_admin') || $user->hasRole('manager'))
-        ) {
-            $branches = Branch::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get([
-                    'id',
-                    'name',
-                    'address',
-                    'phone',
-                    'is_active',
-                ]);
+            $request->session()->put(
+                'current_branch_id',
+                $currentBranch->id
+            );
         }
 
         return [
@@ -111,46 +91,37 @@ class HandleInertiaRequests extends Middleware
 
             'name' => config('app.name'),
 
-            /*
-            |--------------------------------------------------------------------------
-            | Authentication
-            |--------------------------------------------------------------------------
-            */
-
             'auth' => [
                 'user' => $user
                     ? $user->load([
                         'role',
                         'branch',
+                        'assignedBranches',
                     ])
                     : null,
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Branch Context
-            |--------------------------------------------------------------------------
-            */
+            'branches' => $branches->map(fn ($branch) => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'is_active' => $branch->is_active,
+            ])->values(),
 
-            'branches' => $branches,
-
-            'currentBranch' => $currentBranch,
-
-            /*
-            |--------------------------------------------------------------------------
-            | Sidebar
-            |--------------------------------------------------------------------------
-            */
+            'currentBranch' => $currentBranch
+                ? [
+                    'id' => $currentBranch->id,
+                    'name' => $currentBranch->name,
+                    'address' => $currentBranch->address,
+                    'phone' => $currentBranch->phone,
+                    'is_active' => $currentBranch->is_active,
+                ]
+                : null,
 
             'sidebarOpen' =>
                 ! $request->hasCookie('sidebar_state') ||
                 $request->cookie('sidebar_state') === 'true',
-
-            /*
-            |--------------------------------------------------------------------------
-            | Booking Data
-            |--------------------------------------------------------------------------
-            */
 
             'booking_success' => session(
                 'booking_success',
@@ -161,31 +132,17 @@ class HandleInertiaRequests extends Middleware
                 'booking_data'
             ),
 
-            /*
-            |--------------------------------------------------------------------------
-            | Customer Data
-            |--------------------------------------------------------------------------
-            */
-
             'customer_code' => session(
                 'customer_code',
                 ''
             ),
 
-            /*
-            |--------------------------------------------------------------------------
-            | Customer Order Count
-            |--------------------------------------------------------------------------
-            */
-
             'order_count' => function () use ($request) {
-
                 if (
                     $request->session()->has(
                         'customer_code'
                     )
                 ) {
-
                     $customerCode =
                         $request->session()->get(
                             'customer_code'
@@ -197,7 +154,6 @@ class HandleInertiaRequests extends Middleware
                     )->first();
 
                     if ($customer) {
-
                         return Order::where(
                             'customer_id',
                             $customer->id
@@ -222,4 +178,3 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 }
-

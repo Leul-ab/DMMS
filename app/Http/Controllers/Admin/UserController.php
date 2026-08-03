@@ -32,6 +32,7 @@ class UserController extends Controller
 
     /**
      * Branch-scoped users, plus global super admins.
+     * Users assigned to the current branch via pivot are included.
      */
     private function assertUserAccessible(Request $request, User $user): void
     {
@@ -39,10 +40,52 @@ class UserController extends Controller
             return;
         }
 
+        $branchId = $this->currentBranchId($request);
+
         abort_unless(
-            (int) $user->branch_id === $this->currentBranchId($request),
+            $user->canAccessBranch($branchId) ||
+            (int) $user->branch_id === $branchId ||
+            $user->assignedBranches()->where('branches.id', $branchId)->exists(),
             404
         );
+    }
+
+    /**
+     * Normalize branch assignment payload.
+     *
+     * @return array<int>
+     */
+    private function resolveBranchIds(
+        Request $request,
+        ?Role $role,
+        int $fallbackBranchId
+    ): array {
+        $branchIds = collect($request->input('branch_ids', []))
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($request->filled('branch_id')) {
+            $branchIds->push((int) $request->input('branch_id'));
+        }
+
+        $branchIds = $branchIds->unique()->values();
+
+        if ($role?->slug === 'super_admin') {
+            return $branchIds->all();
+        }
+
+        if ($branchIds->isEmpty()) {
+            $branchIds->push($fallbackBranchId);
+        }
+
+        // Non-manager staff are limited to a single branch.
+        if ($role?->slug !== 'manager') {
+            return [$branchIds->first()];
+        }
+
+        return $branchIds->all();
     }
 
     /**
@@ -52,9 +95,12 @@ class UserController extends Controller
     {
         $branchId = $this->currentBranchId($request);
 
-        $users = User::with(['role', 'branch'])
+        $users = User::with(['role', 'branch', 'assignedBranches'])
             ->where(function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId)
+                    ->orWhereHas('assignedBranches', function ($branchQuery) use ($branchId) {
+                        $branchQuery->where('branches.id', $branchId);
+                    })
                     ->orWhereHas('role', function ($roleQuery) {
                         $roleQuery->where('slug', 'super_admin');
                     });
@@ -69,7 +115,12 @@ class UserController extends Controller
                 $query->where('role_id', $role);
             })
             ->when($request->branch, function ($query, $branch) {
-                $query->where('branch_id', $branch);
+                $query->where(function ($q) use ($branch) {
+                    $q->where('branch_id', $branch)
+                        ->orWhereHas('assignedBranches', function ($branchQuery) use ($branch) {
+                            $branchQuery->where('branches.id', $branch);
+                        });
+                });
             })
             ->latest()
             ->paginate(10)
@@ -101,7 +152,7 @@ class UserController extends Controller
     }
 
     /**
-     * Store a new user in the current branch.
+     * Store a new user with branch assignment.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -145,31 +196,44 @@ class UserController extends Controller
                 'exists:branches,id',
             ],
 
+            'branch_ids' => [
+                'nullable',
+                'array',
+            ],
+
+            'branch_ids.*' => [
+                'integer',
+                'exists:branches,id',
+            ],
+
             'is_active' => [
                 'boolean',
             ],
         ]);
 
         $role = Role::find($validated['role_id']);
+        $assignedBranchIds = $this->resolveBranchIds(
+            $request,
+            $role,
+            $branchId
+        );
 
-        // Super admins may remain global; everyone else is assigned to the current branch.
-        if ($role?->slug === 'super_admin') {
-            $validated['branch_id'] = $validated['branch_id'] ?? $branchId;
-        } else {
-            $validated['branch_id'] = $branchId;
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'password' => Hash::make(
+                $validated['password'] ?? '12345678'
+            ),
+            'role_id' => $validated['role_id'],
+            'branch_id' => $assignedBranchIds[0] ?? null,
+            'is_active' => $request->boolean('is_active'),
+            'email_verified_at' => now(),
+        ]);
+
+        if ($role?->slug !== 'super_admin') {
+            $user->syncAssignedBranches($assignedBranchIds);
         }
-
-        $validated['password'] = Hash::make(
-            $validated['password'] ?? '12345678'
-        );
-
-        $validated['is_active'] = $request->boolean(
-            'is_active'
-        );
-
-        $validated['email_verified_at'] = now();
-
-        User::create($validated);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -190,6 +254,7 @@ class UserController extends Controller
             'user' => $user->load([
                 'role',
                 'branch',
+                'assignedBranches',
             ]),
             'roles' => Role::all(),
             'branches' => Branch::orderBy('name')->get(),
@@ -197,7 +262,7 @@ class UserController extends Controller
     }
 
     /**
-     * Update an existing user.
+     * Update an existing user and branch assignments.
      */
     public function update(
         Request $request,
@@ -244,33 +309,52 @@ class UserController extends Controller
                 'exists:branches,id',
             ],
 
+            'branch_ids' => [
+                'nullable',
+                'array',
+            ],
+
+            'branch_ids.*' => [
+                'integer',
+                'exists:branches,id',
+            ],
+
             'is_active' => [
                 'boolean',
             ],
         ]);
 
         $role = Role::find($validated['role_id']);
+        $assignedBranchIds = $this->resolveBranchIds(
+            $request,
+            $role,
+            $branchId
+        );
 
-        // Prevent moving branch-scoped users to another branch via form tampering.
-        if ($role?->slug === 'super_admin') {
-            $validated['branch_id'] = $validated['branch_id'] ?? $user->branch_id;
-        } else {
-            $validated['branch_id'] = $branchId;
-        }
+        $payload = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
+            'role_id' => $validated['role_id'],
+            'is_active' => $request->boolean('is_active'),
+        ];
 
-        if (empty($validated['password'])) {
-            unset($validated['password']);
-        } else {
-            $validated['password'] = Hash::make(
+        if (! empty($validated['password'])) {
+            $payload['password'] = Hash::make(
                 $validated['password']
             );
         }
 
-        $validated['is_active'] = $request->boolean(
-            'is_active'
-        );
-
-        $user->update($validated);
+        if ($role?->slug === 'super_admin') {
+            $payload['branch_id'] = $validated['branch_id']
+                ?? $user->branch_id;
+            $user->update($payload);
+            $user->assignedBranches()->detach();
+        } else {
+            $payload['branch_id'] = $assignedBranchIds[0] ?? null;
+            $user->update($payload);
+            $user->syncAssignedBranches($assignedBranchIds);
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -298,6 +382,7 @@ class UserController extends Controller
             return back();
         }
 
+        $user->assignedBranches()->detach();
         $user->delete();
 
         Inertia::flash('toast', [
