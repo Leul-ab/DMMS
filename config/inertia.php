@@ -16,7 +16,9 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
+        // No SSR server runs in the production container (no Node build),
+        // so leave SSR off to avoid per-request errors to 127.0.0.1:13714.
+        'enabled' => false,
         'url' => 'http://127.0.0.1:13714',
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 

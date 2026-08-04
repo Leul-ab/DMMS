@@ -33,16 +33,27 @@ SUPERVISOR_PID=$!
 # Give nginx a moment to start before running artisan
 sleep 3
 
-# Run migrations (retries until DB is reachable)
+# Run migrations (bounded retries so a DB hiccup can't hang boot).
+# The web stack is already serving health checks above, so a failure
+# here just logs and lets the container come up anyway.
+MIGRATE_TRIES=12
+MIGRATE_TRY=0
 until php artisan migrate --force; do
-    echo "DB not ready yet — retrying in 5s..."
+    MIGRATE_TRY=$((MIGRATE_TRY + 1))
+    if [ "$MIGRATE_TRY" -ge "$MIGRATE_TRIES" ]; then
+        echo "Migrations failed after $MIGRATE_TRIES attempts — continuing anyway."
+        break
+    fi
+    echo "DB not ready yet — retrying in 5s... ($MIGRATE_TRY/$MIGRATE_TRIES)"
     sleep 5
 done
 
-# Seed (idempotent: roles, permissions, admin user). Non-fatal so a
-# transient DB failure can't stop the container while nginx is live.
-php artisan db:seed --force --no-interaction \
-    || echo "Seeding failed — will retry on next deploy."
+# Seed ONLY when explicitly requested (SEED_ON_START=true). Running the
+# full seeder on every boot makes cold starts ~30s slower on Render.
+if [ "${SEED_ON_START:-false}" = "true" ]; then
+    php artisan db:seed --force --no-interaction \
+        || echo "Seeding failed — check the DB connection."
+fi
 
 echo "==> Startup complete. App is live."
 
