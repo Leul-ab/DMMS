@@ -18,12 +18,22 @@ class RoleController extends Controller
     {
         $roles = Role::with('permissions')
             ->orderBy('id')
-            ->get()
+            ->get();
+
+        $userCounts = User::query()
+            ->whereIn('role_id', $roles->pluck('id'))
+            ->selectRaw('role_id, COUNT(*) as total')
+            ->groupBy('role_id')
+            ->pluck('total', 'role_id');
+
+        $roles = $roles
             ->map(fn (Role $role) => [
                 'id' => $role->id,
                 'name' => $role->name,
                 'slug' => $role->slug,
                 'description' => $role->description,
+                'created_at' => $role->created_at?->format('M j, Y'),
+                'users_count' => (int) ($userCounts[$role->id] ?? 0),
                 'permissions_count' => $role->permissions->count(),
                 'permissions' => $role->permissions->pluck('name')->all(),
             ])

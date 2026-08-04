@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { User } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -58,7 +58,7 @@ export default function UserEdit({ user, roles, branches }: Props) {
                 <Heading
                     title="Edit User"
                     description={`Update ${user.name}'s information`}
-                    icon={User}
+                    icon={UserIcon}
                 />
 
                 <Card className="max-w-2xl">

@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
         'manager' => [
             'view branches',
             'show branches',
+            'switch branches',
             'view dashboard',
             'view menu categories',
             'create menu categories',

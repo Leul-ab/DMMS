@@ -23,6 +23,7 @@ class PermissionSeeder extends Seeder
             ['update branches', 'update'],
             ['delete branches', 'delete'],
             ['status branches', 'status'],
+            ['switch branches', 'switch'],
         ],
         'Menu Categories' => [
             ['view menu categories', 'view'],

@@ -1,26 +1,27 @@
-
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
 import {
+    CheckSquare,
+    ChevronDown,
+    ChevronUp,
+    Clock,
+    Eye,
+    KeyRound,
+    LoaderCircle,
     Pencil,
     Plus,
     Search,
     ShieldCheck,
     Trash2,
+    Users,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -34,6 +35,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { Input } from '@/components/ui/input';
+import { useCan } from '@/hooks/use-can';
 
 import {
     index as rolesIndex,
@@ -41,6 +43,10 @@ import {
     update as rolesUpdate,
     destroy as rolesDestroy,
 } from '@/routes/admin/roles';
+
+// -----------------------------------------
+// Types
+// -----------------------------------------
 
 type Permission = {
     id: number;
@@ -58,6 +64,8 @@ type RoleData = {
     name: string;
     slug: string;
     description: string | null;
+    created_at: string | null;
+    users_count: number;
     permissions_count: number;
     permissions: string[];
 };
@@ -67,10 +75,393 @@ type Props = {
     permissionGroups: PermissionGroup[];
 };
 
-export default function RolesIndex({
-    roles,
+// -----------------------------------------
+// Permission picker
+// -----------------------------------------
+
+function PermissionPicker({
     permissionGroups,
-}: Props) {
+    selectedPermissions,
+    onTogglePermission,
+    onToggleGroup,
+    onToggleSelectAll,
+}: {
+    permissionGroups: PermissionGroup[];
+    selectedPermissions: string[];
+    onTogglePermission: (name: string) => void;
+    onToggleGroup: (group: PermissionGroup) => void;
+    onToggleSelectAll: () => void;
+}) {
+    const [search, setSearch] = useState('');
+    const [collapsedGroups, setCollapsedGroups] = useState<
+        Record<string, boolean>
+    >({});
+
+    const term = search.trim().toLowerCase();
+    const isSearching = term.length > 0;
+
+    const filteredGroups = permissionGroups
+        .map((group) => ({
+            ...group,
+            permissions: group.permissions.filter((permission) =>
+                permission.name.toLowerCase().includes(term),
+            ),
+        }))
+        .filter((group) => group.permissions.length > 0);
+
+    const allPermissionNames = permissionGroups.flatMap((group) =>
+        group.permissions.map((permission) => permission.name),
+    );
+
+    const allSelected =
+        allPermissionNames.length > 0 &&
+        allPermissionNames.every((name) => selectedPermissions.includes(name));
+
+    const toggleCollapsed = (groupName: string) => {
+        setCollapsedGroups((prev) => ({
+            ...prev,
+            [groupName]: !prev[groupName],
+        }));
+    };
+
+    const isExpanded = (groupName: string) =>
+        isSearching ? true : !collapsedGroups[groupName];
+
+    return (
+        <div>
+            {/* Header */}
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative flex-1">
+                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                        placeholder="Search permissions..."
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        className="pl-9"
+                    />
+                </div>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={onToggleSelectAll}
+                >
+                    <CheckSquare className="h-4 w-4" />
+                    {allSelected ? 'Clear All' : 'Select All'}
+                </Button>
+            </div>
+
+            {/* Selected counter */}
+            <p className="mb-3 text-xs text-muted-foreground">
+                {selectedPermissions.length} of {allPermissionNames.length}{' '}
+                permissions selected
+            </p>
+
+            {/* Groups */}
+            <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+                {filteredGroups.map((group) => {
+                    const groupNames = group.permissions.map(
+                        (permission) => permission.name,
+                    );
+
+                    const isGroupFullySelected = groupNames.every((name) =>
+                        selectedPermissions.includes(name),
+                    );
+
+                    const hasGroupSelection = groupNames.some((name) =>
+                        selectedPermissions.includes(name),
+                    );
+
+                    const expanded = isExpanded(group.group);
+
+                    return (
+                        <div key={group.group} className="rounded-lg border">
+                            <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={
+                                            isGroupFullySelected
+                                                ? true
+                                                : hasGroupSelection
+                                                  ? 'indeterminate'
+                                                  : false
+                                        }
+                                        onCheckedChange={() =>
+                                            onToggleGroup(group)
+                                        }
+                                    />
+
+                                    <span className="text-sm font-semibold">
+                                        {group.group}
+                                    </span>
+
+                                    <span className="text-xs text-muted-foreground">
+                                        {
+                                            groupNames.filter((name) =>
+                                                selectedPermissions.includes(
+                                                    name,
+                                                ),
+                                            ).length
+                                        }
+                                        /{groupNames.length}
+                                    </span>
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => toggleCollapsed(group.group)}
+                                    title={
+                                        expanded
+                                            ? 'Collapse group'
+                                            : 'Expand group'
+                                    }
+                                >
+                                    {expanded ? (
+                                        <ChevronUp className="h-4 w-4" />
+                                    ) : (
+                                        <ChevronDown className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </div>
+
+                            {expanded && (
+                                <div className="grid gap-2 border-t p-3 sm:grid-cols-2">
+                                    {group.permissions.map((permission) => (
+                                        <label
+                                            key={permission.id}
+                                            className="flex cursor-pointer items-start gap-2 rounded-md p-1 hover:bg-muted/50"
+                                        >
+                                            <Checkbox
+                                                checked={selectedPermissions.includes(
+                                                    permission.name,
+                                                )}
+                                                onCheckedChange={() =>
+                                                    onTogglePermission(
+                                                        permission.name,
+                                                    )
+                                                }
+                                                className="mt-0.5"
+                                            />
+
+                                            <span className="text-sm">
+                                                {permission.name}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+
+                {filteredGroups.length === 0 && (
+                    <div className="rounded-lg border border-dashed py-10 text-center text-sm text-muted-foreground">
+                        No permissions match your search.
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// -----------------------------------------
+// Create / Edit dialog
+// -----------------------------------------
+
+function RoleFormDialog({
+    open,
+    onOpenChange,
+    mode,
+    role,
+    permissionGroups,
+    onSave,
+    submitting,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    mode: 'create' | 'edit';
+    role: RoleData | null;
+    permissionGroups: PermissionGroup[];
+    onSave: (payload: {
+        name: string;
+        description: string | null;
+        permissions: string[];
+    }) => void;
+    submitting: boolean;
+}) {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
+        [],
+    );
+
+    const isEdit = mode === 'edit';
+
+    const reset = () => {
+        setName(role?.name ?? '');
+        setDescription(role?.description ?? '');
+        setSelectedPermissions(role?.permissions ?? []);
+    };
+
+    const handleOpenChange = (next: boolean) => {
+        onOpenChange(next);
+
+        if (next) {
+            reset();
+        }
+    };
+
+    const togglePermission = (permissionName: string) => {
+        setSelectedPermissions((prev) =>
+            prev.includes(permissionName)
+                ? prev.filter((item) => item !== permissionName)
+                : [...prev, permissionName],
+        );
+    };
+
+    const toggleGroup = (group: PermissionGroup) => {
+        const groupNames = group.permissions.map(
+            (permission) => permission.name,
+        );
+
+        setSelectedPermissions((prev) => {
+            const allSelected = groupNames.every((item) => prev.includes(item));
+
+            if (allSelected) {
+                return prev.filter((item) => !groupNames.includes(item));
+            }
+
+            return [...new Set([...prev, ...groupNames])];
+        });
+    };
+
+    const toggleSelectAll = () => {
+        setSelectedPermissions((prev) => {
+            const allPermissionNames = permissionGroups.flatMap((group) =>
+                group.permissions.map((permission) => permission.name),
+            );
+
+            const allSelected = allPermissionNames.every((item) =>
+                prev.includes(item),
+            );
+
+            return allSelected
+                ? []
+                : [...new Set([...prev, ...allPermissionNames])];
+        });
+    };
+
+    const handleSave = () => {
+        if (!name.trim()) {
+            return;
+        }
+
+        onSave({
+            name: name.trim(),
+            description: description || null,
+            permissions: selectedPermissions,
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>
+                        {isEdit ? 'Edit Role' : 'Add Role'}
+                    </DialogTitle>
+
+                    <DialogDescription>
+                        {isEdit
+                            ? 'Update the role details and its permissions.'
+                            : 'Create a new role and assign permissions to it.'}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-5 py-4">
+                    {/* Name */}
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Role Name
+                        </label>
+
+                        <Input
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder="e.g. Cashier"
+                        />
+
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            {isEdit
+                                ? `Slug: ${role?.slug}`
+                                : 'The slug is generated automatically from the name.'}
+                        </p>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Description
+                        </label>
+
+                        <Input
+                            value={description}
+                            onChange={(event) =>
+                                setDescription(event.target.value)
+                            }
+                            placeholder="e.g. Handles cash transactions"
+                        />
+                    </div>
+
+                    {/* Permissions */}
+                    <div>
+                        <label className="mb-2 block text-sm font-medium">
+                            Permissions
+                        </label>
+
+                        <PermissionPicker
+                            permissionGroups={permissionGroups}
+                            selectedPermissions={selectedPermissions}
+                            onTogglePermission={togglePermission}
+                            onToggleGroup={toggleGroup}
+                            onToggleSelectAll={toggleSelectAll}
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        disabled={submitting}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        onClick={handleSave}
+                        disabled={submitting || !name.trim()}
+                    >
+                        {submitting && (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                        {isEdit ? 'Update Role' : 'Create Role'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// -----------------------------------------
+// Page
+// -----------------------------------------
+
+export default function RolesIndex({ roles, permissionGroups }: Props) {
     const can = useCan();
 
     // -----------------------------------------
@@ -83,121 +474,57 @@ export default function RolesIndex({
     // Modal states
     // -----------------------------------------
 
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+    const [isShowOpen, setIsShowOpen] = useState(false);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     // -----------------------------------------
     // Selected role
     // -----------------------------------------
 
-    const [selectedRole, setSelectedRole] =
-        useState<RoleData | null>(null);
+    const [selectedRole, setSelectedRole] = useState<RoleData | null>(null);
 
     // -----------------------------------------
-    // Form fields
+    // Submitting
     // -----------------------------------------
 
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [selectedPermissions, setSelectedPermissions] =
-        useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // -----------------------------------------
-    // Search
+    // Filtered roles
     // -----------------------------------------
 
     const filteredRoles = roles.filter((role) => {
-        const term = search.toLowerCase();
+        const term = search.trim().toLowerCase();
 
         return (
             role.name.toLowerCase().includes(term) ||
             role.slug.toLowerCase().includes(term) ||
-            (role.description ?? '')
-                .toLowerCase()
-                .includes(term)
+            (role.description ?? '').toLowerCase().includes(term)
         );
     });
 
     // -----------------------------------------
-    // Permission helpers
+    // Modal helpers
     // -----------------------------------------
 
-    const togglePermission = (permissionName: string) => {
-        setSelectedPermissions((prev) =>
-            prev.includes(permissionName)
-                ? prev.filter((name) => name !== permissionName)
-                : [...prev, permissionName],
-        );
-    };
-
-    const toggleGroup = (group: PermissionGroup) => {
-        const groupNames = group.permissions.map(
-            (permission) => permission.name,
-        );
-
-        const allSelected = groupNames.every((name) =>
-            selectedPermissions.includes(name),
-        );
-
-        setSelectedPermissions((prev) => {
-            if (allSelected) {
-                return prev.filter(
-                    (name) => !groupNames.includes(name),
-                );
-            }
-
-            return [...new Set([...prev, ...groupNames])];
-        });
-    };
-
-    const isGroupFullySelected = (group: PermissionGroup) =>
-        group.permissions.every((permission) =>
-            selectedPermissions.includes(permission.name),
-        );
-
-    const hasGroupSelection = (group: PermissionGroup) =>
-        group.permissions.some((permission) =>
-            selectedPermissions.includes(permission.name),
-        );
-
-    // -----------------------------------------
-    // Reset form
-    // -----------------------------------------
-
-    const resetForm = () => {
-        setName('');
-        setDescription('');
-        setSelectedPermissions([]);
-    };
-
-    // -----------------------------------------
-    // Open Add Modal
-    // -----------------------------------------
-
-    const openAddModal = () => {
-        resetForm();
+    const openCreateModal = () => {
         setSelectedRole(null);
-        setIsAddOpen(true);
+        setFormMode('create');
+        setIsFormOpen(true);
     };
-
-    // -----------------------------------------
-    // Open Edit Modal
-    // -----------------------------------------
 
     const openEditModal = (role: RoleData) => {
         setSelectedRole(role);
-
-        setName(role.name);
-        setDescription(role.description ?? '');
-        setSelectedPermissions(role.permissions);
-
-        setIsEditOpen(true);
+        setFormMode('edit');
+        setIsFormOpen(true);
     };
 
-    // -----------------------------------------
-    // Open Delete Modal
-    // -----------------------------------------
+    const openShowModal = (role: RoleData) => {
+        setSelectedRole(role);
+        setIsShowOpen(true);
+    };
 
     const openDeleteModal = (role: RoleData) => {
         setSelectedRole(role);
@@ -205,59 +532,42 @@ export default function RolesIndex({
     };
 
     // -----------------------------------------
-    // Add Role
+    // Submit handlers
     // -----------------------------------------
 
-    const handleAdd = () => {
-        if (!name.trim()) {
+    const handleCreate = (payload: {
+        name: string;
+        description: string | null;
+        permissions: string[];
+    }) => {
+        router.post(rolesStore.url(), payload, {
+            onSuccess: () => {
+                setIsFormOpen(false);
+                setSelectedRole(null);
+            },
+            onStart: () => setIsSubmitting(true),
+            onFinish: () => setIsSubmitting(false),
+        });
+    };
+
+    const handleUpdate = (payload: {
+        name: string;
+        description: string | null;
+        permissions: string[];
+    }) => {
+        if (!selectedRole) {
             return;
         }
 
-        router.post(
-            rolesStore.url(),
-            {
-                name: name.trim(),
-                description: description || null,
-                permissions: selectedPermissions,
+        router.put(rolesUpdate.url(selectedRole.id), payload, {
+            onSuccess: () => {
+                setIsFormOpen(false);
+                setSelectedRole(null);
             },
-            {
-                onSuccess: () => {
-                    setIsAddOpen(false);
-                    resetForm();
-                },
-            },
-        );
+            onStart: () => setIsSubmitting(true),
+            onFinish: () => setIsSubmitting(false),
+        });
     };
-
-    // -----------------------------------------
-    // Update Role
-    // -----------------------------------------
-
-    const handleUpdate = () => {
-        if (!selectedRole || !name.trim()) {
-            return;
-        }
-
-        router.put(
-            rolesUpdate.url(selectedRole.id),
-            {
-                name: name.trim(),
-                description: description || null,
-                permissions: selectedPermissions,
-            },
-            {
-                onSuccess: () => {
-                    setIsEditOpen(false);
-                    setSelectedRole(null);
-                    resetForm();
-                },
-            },
-        );
-    };
-
-    // -----------------------------------------
-    // Delete Role
-    // -----------------------------------------
 
     const handleDelete = () => {
         if (!selectedRole) {
@@ -269,7 +579,21 @@ export default function RolesIndex({
                 setIsDeleteOpen(false);
                 setSelectedRole(null);
             },
+            onStart: () => setIsSubmitting(true),
+            onFinish: () => setIsSubmitting(false),
         });
+    };
+
+    const handleFormSave = (payload: {
+        name: string;
+        description: string | null;
+        permissions: string[];
+    }) => {
+        if (formMode === 'edit') {
+            handleUpdate(payload);
+        } else {
+            handleCreate(payload);
+        }
     };
 
     return (
@@ -277,7 +601,6 @@ export default function RolesIndex({
             <Head title="Roles" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
-
                 {/* =========================================
                     PAGE HEADER
                 ========================================= */}
@@ -289,469 +612,254 @@ export default function RolesIndex({
                         icon={ShieldCheck}
                     />
 
-                    {can('create roles') && (
-                        <Button onClick={openAddModal}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Role
-                        </Button>
-                    )}
-                </div>
-
-                {/* =========================================
-                    ROLES CARD
-                ========================================= */}
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            System Roles
-                        </CardTitle>
-
-                        <div className="relative max-w-sm pt-4">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="relative">
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
                             <Input
                                 placeholder="Search roles..."
                                 value={search}
                                 onChange={(event) =>
-                                    setSearch(
-                                        event.target.value,
-                                    )
+                                    setSearch(event.target.value)
                                 }
                                 className="pl-9"
                             />
                         </div>
-                    </CardHeader>
 
-                    <CardContent>
-                        {filteredRoles.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <p className="text-lg font-medium">
-                                    No roles found
-                                </p>
-
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Try changing your search or add a new role.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b text-left">
-                                            <th className="p-3">
-                                                Role
-                                            </th>
-
-                                            <th className="p-3">
-                                                Slug
-                                            </th>
-
-                                            <th className="p-3">
-                                                Description
-                                            </th>
-
-                                            <th className="p-3">
-                                                Permissions
-                                            </th>
-
-                                            <th className="p-3 text-right">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredRoles.map(
-                                            (role) => (
-                                                <tr
-                                                    key={role.id}
-                                                    className="border-b last:border-0 hover:bg-muted/50"
-                                                >
-                                                    {/* Role */}
-                                                    <td className="p-3 font-medium">
-                                                        {role.name}
-                                                    </td>
-
-                                                    {/* Slug */}
-                                                    <td className="p-3">
-                                                        <Badge variant="secondary">
-                                                            {role.slug}
-                                                        </Badge>
-                                                    </td>
-
-                                                    {/* Description */}
-                                                    <td className="max-w-xs p-3 text-muted-foreground">
-                                                        {role.description ||
-                                                            '—'}
-                                                    </td>
-
-                                                    {/* Permissions */}
-                                                    <td className="p-3">
-                                                        <div className="flex max-w-md flex-wrap items-center gap-1.5">
-                                                            {role.permissions.slice(0, 4).map(
-                                                                (
-                                                                    permission,
-                                                                ) => (
-                                                                    <Badge
-                                                                        key={permission}
-                                                                        variant="outline"
-                                                                        className="text-xs"
-                                                                    >
-                                                                        {permission}
-                                                                    </Badge>
-                                                                ),
-                                                            )}
-
-                                                            {role.permissions_count >
-                                                                4 && (
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    +
-                                                                    {role.permissions_count -
-                                                                        4}{' '}
-                                                                    more
-                                                                </span>
-                                                            )}
-
-                                                            {role.permissions_count ===
-                                                                0 && (
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    No permissions
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Actions */}
-                                                    <td className="p-3">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            {can('update roles') &&
-                                                                role.slug !==
-                                                                    'super_admin' && (
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        size="icon"
-                                                                        onClick={() =>
-                                                                            openEditModal(
-                                                                                role,
-                                                                            )
-                                                                        }
-                                                                        title="Edit role"
-                                                                    >
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-
-                                                            {can('delete roles') &&
-                                                                role.slug !==
-                                                                    'super_admin' && (
-                                                                    <Button
-                                                                        variant="destructive"
-                                                                        size="icon"
-                                                                        onClick={() =>
-                                                                            openDeleteModal(
-                                                                                role,
-                                                                            )
-                                                                        }
-                                                                        title="Delete role"
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ),
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                        {can('create roles') && (
+                            <Button onClick={openCreateModal}>
+                                <Plus className="h-4 w-4" />
+                                Add Role
+                            </Button>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
+
+                {/* =========================================
+                    ROLES GRID
+                ========================================= */}
+
+                {filteredRoles.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                        <ShieldCheck className="h-10 w-10 text-muted-foreground" />
+
+                        <p className="mt-3 text-lg font-medium">
+                            No roles found
+                        </p>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Try changing your search or add a new role.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {filteredRoles.map((role) => (
+                            <Card
+                                key={role.id}
+                                className="gap-0 py-5 transition-shadow hover:shadow-md"
+                            >
+                                <CardContent className="flex flex-col">
+                                    {/* Header */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100">
+                                                <ShieldCheck className="h-5 w-5 text-orange-600" />
+                                            </div>
+
+                                            <div>
+                                                <h3 className="text-lg font-semibold">
+                                                    {role.name}
+                                                </h3>
+
+                                                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <Clock className="h-3.5 w-3.5" />
+                                                    Created{' '}
+                                                    {role.created_at ?? '—'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-1">
+                                            {can('update roles') &&
+                                                role.slug !== 'super_admin' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openEditModal(role)
+                                                        }
+                                                        title="Edit role"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+
+                                            {can('delete roles') &&
+                                                role.slug !== 'super_admin' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive"
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                role,
+                                                            )
+                                                        }
+                                                        title="Delete role"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                        </div>
+                                    </div>
+
+                                    {/* Description */}
+                                    <p className="mt-4 min-h-10 text-sm text-muted-foreground">
+                                        {role.description ||
+                                            'No description provided.'}
+                                    </p>
+
+                                    {/* Stats */}
+                                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                                        <Badge
+                                            variant="secondary"
+                                            className="gap-1"
+                                        >
+                                            <Users className="h-3.5 w-3.5" />
+                                            {role.users_count}{' '}
+                                            {role.users_count === 1
+                                                ? 'user'
+                                                : 'users'}
+                                        </Badge>
+
+                                        <Badge
+                                            variant="outline"
+                                            className="gap-1"
+                                        >
+                                            <KeyRound className="h-3.5 w-3.5" />
+                                            {role.permissions_count}{' '}
+                                            {role.permissions_count === 1
+                                                ? 'permission'
+                                                : 'permissions'}
+                                        </Badge>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div className="mt-4 flex items-center gap-2 border-t pt-4">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openShowModal(role)}
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                            View Details
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* =========================================
-                ADD ROLE MODAL
+                CREATE / EDIT ROLE MODAL
             ========================================= */}
 
-            <Dialog
-                open={isAddOpen}
-                onOpenChange={setIsAddOpen}
-            >
-                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>
-                            Add Role
-                        </DialogTitle>
-
-                        <DialogDescription>
-                            Create a new role and assign permissions to it.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-5 py-4">
-
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Role Name
-                            </label>
-
-                            <Input
-                                value={name}
-                                onChange={(event) =>
-                                    setName(
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="e.g. Cashier"
-                            />
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                The slug is generated automatically from the name.
-                            </p>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <Input
-                                value={description}
-                                onChange={(event) =>
-                                    setDescription(
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="e.g. Handles cash transactions"
-                            />
-                        </div>
-
-                        {/* Permissions */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Permissions
-                            </label>
-
-                            <div className="space-y-4">
-                                {permissionGroups.map(
-                                    (group) => (
-                                        <div
-                                            key={group.group}
-                                            className="rounded-lg border p-4"
-                                        >
-                                            <div className="mb-3 flex items-center justify-between">
-                                                <span className="text-sm font-semibold">
-                                                    {group.group}
-                                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        toggleGroup(group)
-                                                    }
-                                                    className="text-xs font-medium text-orange-600 hover:underline"
-                                                >
-                                                    {isGroupFullySelected(group)
-                                                        ? 'Deselect all'
-                                                        : hasGroupSelection(group)
-                                                          ? 'Select all'
-                                                          : 'Select all'}
-                                                </button>
-                                            </div>
-
-                                            <div className="grid gap-2 sm:grid-cols-2">
-                                                {group.permissions.map(
-                                                    (permission) => (
-                                                        <label
-                                                            key={permission.id}
-                                                            className="flex cursor-pointer items-start gap-2 rounded-md p-1 hover:bg-muted/50"
-                                                        >
-                                                            <Checkbox
-                                                                checked={selectedPermissions.includes(
-                                                                    permission.name,
-                                                                )}
-                                                                onCheckedChange={() =>
-                                                                    togglePermission(
-                                                                        permission.name,
-                                                                    )
-                                                                }
-                                                                className="mt-0.5"
-                                                            />
-
-                                                            <span className="text-sm">
-                                                                {
-                                                                    permission.name
-                                                                }
-                                                            </span>
-                                                        </label>
-                                                    ),
-                                                )}
-                                            </div>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() =>
-                                setIsAddOpen(false)
-                            }
-                        >
-                            Cancel
-                        </Button>
-
-                        <Button onClick={handleAdd}>
-                            Add Role
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <RoleFormDialog
+                open={isFormOpen}
+                onOpenChange={setIsFormOpen}
+                mode={formMode}
+                role={selectedRole}
+                permissionGroups={permissionGroups}
+                onSave={handleFormSave}
+                submitting={isSubmitting}
+            />
 
             {/* =========================================
-                EDIT ROLE MODAL
+                SHOW ROLE MODAL
             ========================================= */}
 
-            <Dialog
-                open={isEditOpen}
-                onOpenChange={setIsEditOpen}
-            >
+            <Dialog open={isShowOpen} onOpenChange={setIsShowOpen}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>
-                            Edit Role
-                        </DialogTitle>
+                        <DialogTitle>{selectedRole?.name}</DialogTitle>
 
                         <DialogDescription>
-                            Update the role details and its permissions.
+                            {selectedRole?.description ||
+                                'No description provided.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-5 py-4">
+                        {/* Meta */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="secondary" className="gap-1">
+                                <Users className="h-3.5 w-3.5" />
+                                {selectedRole?.users_count ?? 0}{' '}
+                                {(selectedRole?.users_count ?? 0) === 1
+                                    ? 'user'
+                                    : 'users'}
+                            </Badge>
 
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Role Name
-                            </label>
-
-                            <Input
-                                value={name}
-                                onChange={(event) =>
-                                    setName(
-                                        event.target.value,
-                                    )
-                                }
-                            />
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                Slug: {selectedRole?.slug}
-                            </p>
+                            <Badge variant="outline" className="gap-1">
+                                <KeyRound className="h-3.5 w-3.5" />
+                                {selectedRole?.permissions_count ?? 0}{' '}
+                                {(selectedRole?.permissions_count ?? 0) === 1
+                                    ? 'permission'
+                                    : 'permissions'}
+                            </Badge>
                         </div>
 
-                        {/* Description */}
+                        {/* Assigned permissions */}
                         <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
+                            <h4 className="mb-3 text-sm font-medium">
+                                Assigned permissions
+                            </h4>
 
-                            <Input
-                                value={description}
-                                onChange={(event) =>
-                                    setDescription(
-                                        event.target.value,
-                                    )
+                            {permissionGroups.map((group) => {
+                                const assigned = group.permissions.filter(
+                                    (permission) =>
+                                        selectedRole?.permissions.includes(
+                                            permission.name,
+                                        ),
+                                );
+
+                                if (assigned.length === 0) {
+                                    return null;
                                 }
-                            />
-                        </div>
 
-                        {/* Permissions */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Permissions
-                            </label>
-
-                            <div className="space-y-4">
-                                {permissionGroups.map(
-                                    (group) => (
-                                        <div
-                                            key={group.group}
-                                            className="rounded-lg border p-4"
-                                        >
-                                            <div className="mb-3 flex items-center justify-between">
-                                                <span className="text-sm font-semibold">
-                                                    {group.group}
-                                                </span>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        toggleGroup(group)
-                                                    }
-                                                    className="text-xs font-medium text-orange-600 hover:underline"
-                                                >
-                                                    {isGroupFullySelected(group)
-                                                        ? 'Deselect all'
-                                                        : 'Select all'}
-                                                </button>
-                                            </div>
-
-                                            <div className="grid gap-2 sm:grid-cols-2">
-                                                {group.permissions.map(
-                                                    (permission) => (
-                                                        <label
-                                                            key={permission.id}
-                                                            className="flex cursor-pointer items-start gap-2 rounded-md p-1 hover:bg-muted/50"
-                                                        >
-                                                            <Checkbox
-                                                                checked={selectedPermissions.includes(
-                                                                    permission.name,
-                                                                )}
-                                                                onCheckedChange={() =>
-                                                                    togglePermission(
-                                                                        permission.name,
-                                                                    )
-                                                                }
-                                                                className="mt-0.5"
-                                                            />
-
-                                                            <span className="text-sm">
-                                                                {
-                                                                    permission.name
-                                                                }
-                                                            </span>
-                                                        </label>
-                                                    ),
-                                                )}
-                                            </div>
+                                return (
+                                    <div
+                                        key={group.group}
+                                        className="mb-3 rounded-lg border p-3"
+                                    >
+                                        <div className="mb-2 text-sm font-semibold">
+                                            {group.group}
                                         </div>
-                                    ),
-                                )}
-                            </div>
+
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {assigned.map((permission) => (
+                                                <Badge
+                                                    key={permission.id}
+                                                    variant="outline"
+                                                    className="text-xs"
+                                                >
+                                                    {permission.name}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {selectedRole?.permissions_count === 0 && (
+                                <p className="text-sm text-muted-foreground">
+                                    No permissions assigned to this role.
+                                </p>
+                            )}
                         </div>
                     </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() =>
-                                setIsEditOpen(false)
-                            }
-                        >
-                            Cancel
-                        </Button>
-
-                        <Button onClick={handleUpdate}>
-                            Update Role
-                        </Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
@@ -759,31 +867,23 @@ export default function RolesIndex({
                 DELETE ROLE MODAL
             ========================================= */}
 
-            <Dialog
-                open={isDeleteOpen}
-                onOpenChange={setIsDeleteOpen}
-            >
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>
-                            Delete Role?
-                        </DialogTitle>
+                        <DialogTitle>Delete Role?</DialogTitle>
 
                         <DialogDescription>
                             Are you sure you want to delete the role{' '}
-                            <strong>
-                                {selectedRole?.name}
-                            </strong>
-                            ? This action cannot be undone.
+                            <strong>{selectedRole?.name}</strong>? This action
+                            cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                setIsDeleteOpen(false)
-                            }
+                            onClick={() => setIsDeleteOpen(false)}
+                            disabled={isSubmitting}
                         >
                             Cancel
                         </Button>
@@ -791,7 +891,11 @@ export default function RolesIndex({
                         <Button
                             variant="destructive"
                             onClick={handleDelete}
+                            disabled={isSubmitting}
                         >
+                            {isSubmitting && (
+                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                            )}
                             Delete Role
                         </Button>
                     </DialogFooter>
