@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -23,6 +24,12 @@ class MenuController extends Controller
 
     protected function renderMenu(Request $request, string $view)
     {
+        // QR codes include the branch id so guests land on the correct branch.
+        $requestedBranchId = $request->query('branch');
+        if ($requestedBranchId && Branch::whereKey((int) $requestedBranchId)->exists()) {
+            Branch::setCurrent((int) $requestedBranchId);
+        }
+
         // The customer-menu page keeps its scanned table in dedicated session keys so it
         // never leaks into the /menu page, which always allows manual table selection.
         $isCustomerMenu = $view === 'customer-menu/index';
@@ -38,6 +45,7 @@ class MenuController extends Controller
             if ($table) {
                 session([$sessionKey . '_id' => $table->id]);
                 session([$sessionKey . '_number' => $table->table_number]);
+                Branch::setCurrent($table->branch_id);
             }
         }
 
@@ -46,6 +54,7 @@ class MenuController extends Controller
             $table = RestaurantTable::find(session($sessionKey . '_id'));
             if ($table) {
                 $tableNumber = $table->table_number;
+                Branch::setCurrent($table->branch_id);
             }
         }
 
@@ -58,6 +67,7 @@ class MenuController extends Controller
             if ($table && !session()->has($sessionKey . '_id')) {
                 session([$sessionKey . '_id' => $table->id]);
                 session([$sessionKey . '_number' => $table->table_number]);
+                Branch::setCurrent($table->branch_id);
             }
         }
 
@@ -135,6 +145,11 @@ class MenuController extends Controller
 
     protected function renderMyOrder(Request $request, string $view)
     {
+        $requestedBranchId = $request->query('branch');
+        if ($requestedBranchId && Branch::whereKey((int) $requestedBranchId)->exists()) {
+            Branch::setCurrent((int) $requestedBranchId);
+        }
+
         $tableId = session('scanned_table_id') ?? session('customer_menu_table_id');
         $tableNumber = $request->query('table')
             ?? session('scanned_table_number')
@@ -151,6 +166,7 @@ class MenuController extends Controller
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
             if ($table) {
                 $tableId = $table->id;
+                Branch::setCurrent($table->branch_id);
             }
         }
 
@@ -161,6 +177,8 @@ class MenuController extends Controller
                 ->route('menu.index')
                 ->with('error', 'The selected table was not found.');
         }
+
+        Branch::setCurrent($table->branch_id);
 
         // Fetch all recent orders for the table (excluding cancelled),
         // newest first, so the customer can see their order history.

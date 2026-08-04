@@ -16,6 +16,14 @@ class PermissionSeeder extends Seeder
         'Dashboard' => [
             ['view dashboard', 'view'],
         ],
+        'Branches' => [
+            ['view branches', 'view'],
+            ['create branches', 'create'],
+            ['show branches', 'show'],
+            ['update branches', 'update'],
+            ['delete branches', 'delete'],
+            ['status branches', 'status'],
+        ],
         'Menu Categories' => [
             ['view menu categories', 'view'],
             ['create menu categories', 'create'],

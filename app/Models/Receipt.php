@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Receipt extends Model
 {
+    use BelongsToBranch;
+
     protected $fillable = [
+        'branch_id',
         'order_id',
         'receipt_number',
         'transaction_number',

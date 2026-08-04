@@ -2,14 +2,18 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class MenuSeeder extends Seeder
 {
     public function run(): void
     {
+        $branch = Branch::where('slug', 'main-branch')->first();
+
         $categories = [
             ['name' => 'Breakfast', 'description' => 'Start your day right', 'sort_order' => 1, 'is_active' => true],
             ['name' => 'Lunch', 'description' => 'Midday meals', 'sort_order' => 2, 'is_active' => true],
@@ -21,7 +25,10 @@ class MenuSeeder extends Seeder
         ];
 
         foreach ($categories as $data) {
-            MenuCategory::firstOrCreate(['slug' => \Illuminate\Support\Str::slug($data['name'])], $data);
+            MenuCategory::firstOrCreate(
+                ['slug' => Str::slug($data['name'])],
+                [...$data, 'branch_id' => $branch?->id]
+            );
         }
 
         $items = [
@@ -64,11 +71,12 @@ class MenuSeeder extends Seeder
         ];
 
         foreach ($items as $data) {
-            $category = MenuCategory::where('slug', \Illuminate\Support\Str::slug($data['category']))->first();
+            $category = MenuCategory::where('slug', Str::slug($data['category']))->first();
             if ($category) {
                 MenuItem::firstOrCreate(
-                    ['slug' => \Illuminate\Support\Str::slug($data['name'])],
+                    ['slug' => Str::slug($data['name'])],
                     [
+                        'branch_id' => $branch?->id,
                         'category_id' => $category->id,
                         'name' => $data['name'],
                         'description' => $data['description'],

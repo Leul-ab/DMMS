@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 class MenuItem extends Model
 {
+    use BelongsToBranch;
+
     protected $fillable = [
+        'branch_id',
         'category_id',
         'name',
         'slug',

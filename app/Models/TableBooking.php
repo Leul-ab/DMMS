@@ -1,13 +1,17 @@
 <?php
 namespace App\Models;
 
+use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class TableBooking extends Model
 {
+    use BelongsToBranch;
+
     protected $fillable = [
+        'branch_id',
         'customer_id',
         'status',
         'booked_at',

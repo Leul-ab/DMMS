@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\RestaurantTable;
 use App\Models\Role;
 use App\Models\User;
@@ -25,6 +26,9 @@ class StaffController extends Controller
         // Waiter staff
         $waiters = User::with(['role', 'latestTableAssignment.table', 'activeTableAssignments.table'])
             ->where('role_id', $waiterRole?->id)
+            ->when(Branch::current(), function ($query, Branch $branch) {
+                $query->where('branch_id', $branch->id);
+            })
             ->when($request->search_waiter, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -42,6 +46,9 @@ class StaffController extends Controller
         // Kitchen staff
         $kitchenStaff = User::with('role')
             ->where('role_id', $kitchenRole?->id)
+            ->when(Branch::current(), function ($query, Branch $branch) {
+                $query->where('branch_id', $branch->id);
+            })
             ->when($request->search_kitchen, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -86,6 +93,7 @@ class StaffController extends Controller
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->boolean('is_active');
         $validated['email_verified_at'] = now();
+        $validated['branch_id'] = Branch::current()?->id;
 
         unset($validated['first_name'], $validated['last_name']);
 

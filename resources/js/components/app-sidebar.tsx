@@ -1,4 +1,3 @@
-
 import { Link } from '@inertiajs/react';
 import {
     LayoutGrid,
@@ -15,14 +14,13 @@ import {
     ShieldCheck,
     PanelLeftClose,
     PanelLeftOpen,
+    Store,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
+import BranchSwitcher from '@/components/branch-switcher';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { index as tablesIndex } from '@/routes/manager/tables';
-import { useCan } from '@/hooks/use-can';
-
 import {
     Sidebar,
     SidebarContent,
@@ -34,18 +32,21 @@ import {
     SidebarSeparator,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { useCan } from '@/hooks/use-can';
 
 import { dashboard, home } from '@/routes';
-import { index as usersIndex } from '@/routes/admin/users';
+import { index as branchesIndex } from '@/routes/admin/branches';
 import { index as rolesIndex } from '@/routes/admin/roles';
-import { index as customersIndex } from '@/routes/manager/customers';
 import { index as staffIndex } from '@/routes/admin/staff';
+import { index as usersIndex } from '@/routes/admin/users';
+import { index as bookingsIndex } from '@/routes/manager/bookings';
 import { index as categoriesIndex } from '@/routes/manager/categories';
+import { index as customersIndex } from '@/routes/manager/customers';
 import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
 
+import { index as tablesIndex } from '@/routes/manager/tables';
 import { index as menuIndex } from '@/routes/menu';
-import { index as bookingsIndex } from '@/routes/manager/bookings';
 
 import type { NavItem } from '@/types';
 
@@ -60,6 +61,16 @@ export function AppSidebar() {
                       title: 'Dashboard',
                       href: dashboard(),
                       icon: LayoutGrid,
+                  },
+              ]
+            : []),
+
+        ...(can('view branches')
+            ? [
+                  {
+                      title: 'Branches',
+                      href: branchesIndex(),
+                      icon: Store,
                   },
               ]
             : []),
@@ -124,7 +135,6 @@ export function AppSidebar() {
               ]
             : []),
 
-
         ...(can('view bookings')
             ? [
                   {
@@ -134,7 +144,7 @@ export function AppSidebar() {
                   },
               ]
             : []),
-        
+
         ...(can('view payments')
             ? [
                   {
@@ -163,7 +173,6 @@ export function AppSidebar() {
         can('view roles');
 
     const adminNavItems: NavItem[] = [
-        
         ...(can('view customers')
             ? [
                   {
@@ -173,7 +182,6 @@ export function AppSidebar() {
                   },
               ]
             : []),
-
 
         ...(can('view staff')
             ? [
@@ -185,7 +193,6 @@ export function AppSidebar() {
               ]
             : []),
 
-
         ...(can('view roles')
             ? [
                   {
@@ -196,7 +203,7 @@ export function AppSidebar() {
               ]
             : []),
 
-         ...(can('view users')
+        ...(can('view users')
             ? [
                   {
                       title: 'Users',
@@ -230,6 +237,13 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <SidebarSeparator />
+
+                {can('view branches') && (
+                    <>
+                        <BranchSwitcher />
+                        <SidebarSeparator />
+                    </>
+                )}
             </SidebarHeader>
 
             <SidebarContent>
@@ -251,10 +265,21 @@ export function AppSidebar() {
                             size="sm"
                             onClick={toggleSidebar}
                             className="text-sidebar-foreground/80 hover:bg-orange-100/80 hover:text-orange-700"
-                            tooltip={{ children: state === 'collapsed' ? 'Expand sidebar' : 'Collapse sidebar' }}
+                            tooltip={{
+                                children:
+                                    state === 'collapsed'
+                                        ? 'Expand sidebar'
+                                        : 'Collapse sidebar',
+                            }}
                         >
-                            {state === 'collapsed' ? <PanelLeftOpen /> : <PanelLeftClose />}
-                            <span>{state === 'collapsed' ? 'Expand' : 'Collapse'}</span>
+                            {state === 'collapsed' ? (
+                                <PanelLeftOpen />
+                            ) : (
+                                <PanelLeftClose />
+                            )}
+                            <span>
+                                {state === 'collapsed' ? 'Expand' : 'Collapse'}
+                            </span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

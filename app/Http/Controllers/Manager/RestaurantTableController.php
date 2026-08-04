@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\RestaurantTable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantTableController extends Controller
@@ -50,7 +52,8 @@ class RestaurantTableController extends Controller
                 'integer',
                 'min:1',
                 'max:65535',
-                'unique:restaurant_tables,table_number',
+                Rule::unique('restaurant_tables', 'table_number')
+                    ->where(fn ($query) => $query->where('branch_id', Branch::current()?->id)),
             ],
             'qr_code' => [
                 'nullable',
@@ -65,7 +68,7 @@ class RestaurantTableController extends Controller
             $qrPath = $validated['qr_code'];
         } else {
             try {
-                $qrPath = $this->generateQrCode((int) $validated['table_number']);
+                $qrPath = $this->generateQrCode((int) $validated['table_number'], Branch::current()?->id);
             } catch (\Exception $e) {
                 Log::error('QR code generation failed for table #' . $validated['table_number'], [
                     'error' => $e->getMessage(),
@@ -124,11 +127,14 @@ class RestaurantTableController extends Controller
      *
      * @throws \RuntimeException
      */
-    protected function generateQrCode(int $tableNumber): string
+    protected function generateQrCode(int $tableNumber, ?int $branchId = null): string
     {
         // Generate QR code pointing directly to the customer menu with the table pre-assigned.
         // Customers who scan this will go straight to the menu, bypassing table selection.
-        $menuUrl = route('menu.customer', ['table' => $tableNumber]);
+        $menuUrl = route('menu.customer', [
+            'table' => $tableNumber,
+            'branch' => $branchId,
+        ]);
 
         // Validate that the generated URL is not empty and the route exists
         if (empty($menuUrl) || !filter_var($menuUrl, FILTER_VALIDATE_URL)) {
@@ -166,7 +172,7 @@ class RestaurantTableController extends Controller
                 Storage::disk('public')->delete($table->qr_code);
             }
 
-            $qrPath = $this->generateQrCode($table->table_number);
+            $qrPath = $this->generateQrCode($table->table_number, $table->branch_id);
 
             $table->update([
                 'qr_code' => $qrPath,
@@ -206,7 +212,9 @@ class RestaurantTableController extends Controller
                 'integer',
                 'min:1',
                 'max:65535',
-                'unique:restaurant_tables,table_number,' . $table->id,
+                Rule::unique('restaurant_tables', 'table_number')
+                    ->where(fn ($query) => $query->where('branch_id', Branch::current()?->id))
+                    ->ignore($table->id),
             ],
             'qr_code' => [
                 'nullable',

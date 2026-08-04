@@ -15,6 +15,8 @@ class RoleSeeder extends Seeder
     private array $rolePermissions = [
         'super_admin' => '*',
         'manager' => [
+            'view branches',
+            'show branches',
             'view dashboard',
             'view menu categories',
             'create menu categories',

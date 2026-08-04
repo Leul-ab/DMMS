@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
@@ -17,6 +18,8 @@ class DashboardController extends Controller
 {
     public function index(): Response
     {
+        $branchId = Branch::current()?->id;
+
         /*
         |--------------------------------------------------------------------------
         | Order Statistics
@@ -217,6 +220,7 @@ class DashboardController extends Controller
                 )
             )
             ->where('orders.status', 'completed')
+            ->when($branchId, fn ($query) => $query->where('orders.branch_id', $branchId))
             ->groupBy('category')
             ->orderByDesc('sales')
             ->get();
@@ -258,6 +262,7 @@ class DashboardController extends Controller
                     'SUM(order_items.quantity) as total_quantity'
                 )
             )
+            ->when($branchId, fn ($query) => $query->where('order_items.branch_id', $branchId))
             ->groupBy(
                 'menu_items.id',
                 'menu_items.name'

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
@@ -34,6 +35,11 @@ class BookingController extends Controller
      */
     protected function renderBooking(Request $request, string $view)
     {
+        $requestedBranchId = $request->query('branch');
+        if ($requestedBranchId && Branch::whereKey((int) $requestedBranchId)->exists()) {
+            Branch::setCurrent((int) $requestedBranchId);
+        }
+
         $availableTables = RestaurantTable::where('status', 'available')
             ->orderBy('table_number')
             ->get(['id', 'table_number', 'status']);
@@ -44,6 +50,10 @@ class BookingController extends Controller
             $scannedTable = RestaurantTable::find(session('scanned_table_id'));
         } elseif (session()->has('customer_menu_table_id')) {
             $scannedTable = RestaurantTable::find(session('customer_menu_table_id'));
+        }
+
+        if ($scannedTable) {
+            Branch::setCurrent($scannedTable->branch_id);
         }
 
         return inertia($view, [

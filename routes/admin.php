@@ -1,11 +1,22 @@
 <?php
 
+use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // Branch Management
+    Route::get('branches', [BranchController::class, 'index'])->name('branches.index')->middleware('permission:view branches');
+    Route::get('branches/{branch}', [BranchController::class, 'show'])->name('branches.show')->middleware('permission:show branches');
+    Route::post('branches', [BranchController::class, 'store'])->name('branches.store')->middleware('permission:create branches');
+    Route::put('branches/{branch}', [BranchController::class, 'update'])->name('branches.update')->middleware('permission:update branches');
+    Route::delete('branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy')->middleware('permission:delete branches');
+    Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status')->middleware('permission:status branches');
+    Route::post('branches/{branch}/switch', [BranchController::class, 'switch'])->name('branches.switch')->middleware('permission:view branches');
+
+    // User Management
     Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:view users');
     Route::get('users/create', [UserController::class, 'create'])->name('users.create')->middleware('permission:create users');
     Route::post('users', [UserController::class, 'store'])->name('users.store')->middleware('permission:create users');

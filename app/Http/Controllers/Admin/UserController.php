@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,9 @@ class UserController extends Controller
     public function index(Request $request): Response
     {
         $users = User::with('role')
+            ->when(Branch::current(), function ($query, Branch $branch) {
+                $query->where('branch_id', $branch->id);
+            })
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%");
@@ -32,6 +36,8 @@ class UserController extends Controller
         return Inertia::render('admin/users/index', [
             'users' => $users,
             'roles' => Role::all(),
+            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'currentBranchId' => Branch::current()?->id,
             'filters' => $request->only(['search', 'role']),
         ]);
     }
@@ -40,6 +46,8 @@ class UserController extends Controller
     {
         return Inertia::render('admin/users/create', [
             'roles' => Role::all(),
+            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'currentBranchId' => Branch::current()?->id,
         ]);
     }
 
@@ -51,6 +59,7 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
+            'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
         ]);
 
@@ -70,6 +79,7 @@ class UserController extends Controller
         return Inertia::render('admin/users/edit', [
             'user' => $user->load('role'),
             'roles' => Role::all(),
+            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -81,6 +91,7 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
+            'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
         ]);
 

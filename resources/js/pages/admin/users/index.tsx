@@ -1,28 +1,14 @@
-
 import { Head, router } from '@inertiajs/react';
+import { Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
-import {
-    Eye,
-    Pencil,
-    Plus,
-    Search,
-    Trash2,
-    Users,
-} from 'lucide-react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
-import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 import {
     Dialog,
@@ -42,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCan } from '@/hooks/use-can';
 
 import {
     index as usersIndex,
@@ -57,6 +44,11 @@ type Role = {
     name: string;
 };
 
+type Branch = {
+    id: number;
+    name: string;
+};
+
 type User = {
     id: number;
     name: string;
@@ -64,12 +56,15 @@ type User = {
     phone: string | null;
     is_active: boolean;
     role_id: number;
+    branch_id: number | null;
     role: Role | null;
 };
 
 type Props = {
     users: PaginatedData<User>;
     roles: Role[];
+    branches: Branch[];
+    currentBranchId: number | null;
     filters: {
         search?: string;
         role?: string;
@@ -79,6 +74,8 @@ type Props = {
 export default function UsersIndex({
     users,
     roles,
+    branches,
+    currentBranchId,
     filters,
 }: Props) {
     const can = useCan();
@@ -87,9 +84,7 @@ export default function UsersIndex({
     // Search and filters
     // -----------------------------------------
 
-    const [search, setSearch] = useState(
-        filters.search || '',
-    );
+    const [search, setSearch] = useState(filters.search || '');
 
     // -----------------------------------------
     // Modal states
@@ -104,8 +99,7 @@ export default function UsersIndex({
     // Selected user
     // -----------------------------------------
 
-    const [selectedUser, setSelectedUser] =
-        useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     // -----------------------------------------
     // Form fields
@@ -115,9 +109,15 @@ export default function UsersIndex({
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [roleId, setRoleId] = useState('');
+    const [branchId, setBranchId] = useState(
+        currentBranchId
+            ? String(currentBranchId)
+            : branches.length > 0
+              ? String(branches[0].id)
+              : '',
+    );
     const [password, setPassword] = useState('');
-    const [passwordConfirmation, setPasswordConfirmation] =
-        useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [isActive, setIsActive] = useState(true);
 
     // -----------------------------------------
@@ -149,10 +149,7 @@ export default function UsersIndex({
             usersIndex.url(),
             {
                 search,
-                role:
-                    value === 'all'
-                        ? undefined
-                        : value,
+                role: value === 'all' ? undefined : value,
             },
             {
                 preserveState: true,
@@ -170,6 +167,13 @@ export default function UsersIndex({
         setEmail('');
         setPhone('');
         setRoleId('');
+        setBranchId(
+            currentBranchId
+                ? String(currentBranchId)
+                : branches.length > 0
+                  ? String(branches[0].id)
+                  : '',
+        );
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(true);
@@ -205,6 +209,7 @@ export default function UsersIndex({
         setEmail(user.email);
         setPhone(user.phone || '');
         setRoleId(String(user.role_id));
+        setBranchId(user.branch_id ? String(user.branch_id) : '');
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(user.is_active);
@@ -226,11 +231,7 @@ export default function UsersIndex({
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (
-            !name.trim() ||
-            !email.trim() ||
-            !roleId
-        ) {
+        if (!name.trim() || !email.trim() || !roleId) {
             return;
         }
 
@@ -241,9 +242,9 @@ export default function UsersIndex({
                 email,
                 phone: phone || null,
                 role_id: Number(roleId),
+                branch_id: Number(branchId),
                 password: password || null,
-                password_confirmation:
-                    passwordConfirmation || null,
+                password_confirmation: passwordConfirmation || null,
                 is_active: isActive,
             },
             {
@@ -260,12 +261,7 @@ export default function UsersIndex({
     // -----------------------------------------
 
     const handleUpdate = () => {
-        if (
-            !selectedUser ||
-            !name.trim() ||
-            !email.trim() ||
-            !roleId
-        ) {
+        if (!selectedUser || !name.trim() || !email.trim() || !roleId) {
             return;
         }
 
@@ -276,9 +272,9 @@ export default function UsersIndex({
                 email,
                 phone: phone || null,
                 role_id: Number(roleId),
+                branch_id: Number(branchId),
                 password: password || null,
-                password_confirmation:
-                    passwordConfirmation || null,
+                password_confirmation: passwordConfirmation || null,
                 is_active: isActive,
             },
             {
@@ -314,15 +310,12 @@ export default function UsersIndex({
             return;
         }
 
-        router.delete(
-            usersDestroy.url(selectedUser.id),
-            {
-                onSuccess: () => {
-                    setIsDeleteOpen(false);
-                    setSelectedUser(null);
-                },
+        router.delete(usersDestroy.url(selectedUser.id), {
+            onSuccess: () => {
+                setIsDeleteOpen(false);
+                setSelectedUser(null);
             },
-        );
+        });
     };
 
     return (
@@ -330,7 +323,6 @@ export default function UsersIndex({
             <Head title="Users" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
-
                 {/* =========================================
                     PAGE HEADER
                 ========================================= */}
@@ -356,24 +348,19 @@ export default function UsersIndex({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>
-                            System Users
-                        </CardTitle>
+                        <CardTitle>System Users</CardTitle>
 
                         <div className="flex flex-wrap gap-3 pt-4">
-
                             {/* Search */}
 
                             <div className="relative max-w-sm flex-1">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
                                 <Input
                                     placeholder="Search users..."
                                     value={search}
                                     onChange={(event) =>
-                                        handleSearch(
-                                            event.target.value,
-                                        )
+                                        handleSearch(event.target.value)
                                     }
                                     className="pl-9"
                                 />
@@ -382,12 +369,8 @@ export default function UsersIndex({
                             {/* Role Filter */}
 
                             <Select
-                                value={
-                                    filters.role || 'all'
-                                }
-                                onValueChange={
-                                    handleRoleFilter
-                                }
+                                value={filters.role || 'all'}
+                                onValueChange={handleRoleFilter}
                             >
                                 <SelectTrigger className="w-[180px]">
                                     <SelectValue placeholder="All Roles" />
@@ -401,9 +384,7 @@ export default function UsersIndex({
                                     {roles.map((role) => (
                                         <SelectItem
                                             key={role.id}
-                                            value={String(
-                                                role.id,
-                                            )}
+                                            value={String(role.id)}
                                         >
                                             {role.name}
                                         </SelectItem>
@@ -427,170 +408,155 @@ export default function UsersIndex({
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
-
                                     <thead>
                                         <tr className="border-b text-left">
+                                            <th className="p-3">Name</th>
 
-                                            <th className="p-3">
-                                                Name
-                                            </th>
+                                            <th className="p-3">Email</th>
 
-                                            <th className="p-3">
-                                                Email
-                                            </th>
+                                            <th className="p-3">Phone</th>
 
-                                            <th className="p-3">
-                                                Phone
-                                            </th>
+                                            <th className="p-3">Role</th>
 
-                                            <th className="p-3">
-                                                Role
-                                            </th>
-
-                                            <th className="p-3">
-                                                Status
-                                            </th>
+                                            <th className="p-3">Status</th>
 
                                             <th className="p-3 text-right">
                                                 Actions
                                             </th>
-
                                         </tr>
                                     </thead>
 
                                     <tbody>
-                                        {users.data.map(
-                                            (user) => (
-                                                <tr
-                                                    key={user.id}
-                                                    className="border-b last:border-0 hover:bg-muted/50"
-                                                >
+                                        {users.data.map((user) => (
+                                            <tr
+                                                key={user.id}
+                                                className="border-b last:border-0 hover:bg-muted/50"
+                                            >
+                                                {/* Name */}
 
-                                                    {/* Name */}
+                                                <td className="p-3 font-medium">
+                                                    {user.name}
+                                                </td>
 
-                                                    <td className="p-3 font-medium">
-                                                        {user.name}
-                                                    </td>
+                                                {/* Email */}
 
-                                                    {/* Email */}
+                                                <td className="p-3 text-muted-foreground">
+                                                    {user.email}
+                                                </td>
 
-                                                    <td className="p-3 text-muted-foreground">
-                                                        {user.email}
-                                                    </td>
+                                                {/* Phone */}
 
-                                                    {/* Phone */}
+                                                <td className="p-3 text-muted-foreground">
+                                                    {user.phone || '—'}
+                                                </td>
 
-                                                    <td className="p-3 text-muted-foreground">
-                                                        {user.phone ||
-                                                            '—'}
-                                                    </td>
+                                                {/* Role */}
 
-                                                    {/* Role */}
+                                                <td className="p-3">
+                                                    <Badge variant="secondary">
+                                                        {user.role?.name ||
+                                                            'No Role'}
+                                                    </Badge>
+                                                </td>
 
-                                                    <td className="p-3">
-                                                        <Badge variant="secondary">
-                                                            {user.role
-                                                                ?.name ||
-                                                                'No Role'}
-                                                        </Badge>
-                                                    </td>
+                                                {/* Status */}
 
-                                                    {/* Status */}
+                                                <td className="p-3">
+                                                    <Badge
+                                                        variant={
+                                                            user.is_active
+                                                                ? 'default'
+                                                                : 'destructive'
+                                                        }
+                                                    >
+                                                        {user.is_active
+                                                            ? 'Active'
+                                                            : 'Inactive'}
+                                                    </Badge>
+                                                </td>
 
-                                                    <td className="p-3">
-                                                        <Badge
-                                                            variant={
-                                                                user.is_active
-                                                                    ? 'default'
-                                                                    : 'destructive'
-                                                            }
-                                                        >
-                                                            {user.is_active
-                                                                ? 'Active'
-                                                                : 'Inactive'}
-                                                        </Badge>
-                                                    </td>
+                                                {/* Actions */}
 
-                                                    {/* Actions */}
+                                                <td className="p-3">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {/* Shared Status Toggle */}
 
-                                                    <td className="p-3">
-                                                        <div className="flex items-center justify-end gap-2">
+                                                        {can(
+                                                            'status users',
+                                                        ) && (
+                                                            <StatusToggle
+                                                                checked={
+                                                                    user.is_active
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    handleToggleStatus(
+                                                                        user,
+                                                                    )
+                                                                }
+                                                                onLabel="Active"
+                                                                offLabel="Inactive"
+                                                                ariaLabel={`Toggle status for ${user.name}`}
+                                                            />
+                                                        )}
 
-                                                            {/* Shared Status Toggle */}
+                                                        {/* View */}
 
-                                                            {can('status users') && (
-                                                                <StatusToggle
-                                                                    checked={
-                                                                        user.is_active
-                                                                    }
-                                                                    onCheckedChange={() =>
-                                                                        handleToggleStatus(
-                                                                            user,
-                                                                        )
-                                                                    }
-                                                                    onLabel="Active"
-                                                                    offLabel="Inactive"
-                                                                    ariaLabel={`Toggle status for ${user.name}`}
-                                                                />
-                                                            )}
+                                                        {can('view users') && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openViewModal(
+                                                                        user,
+                                                                    )
+                                                                }
+                                                                title="View user"
+                                                            >
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
 
-                                                            {/* View */}
+                                                        {/* Edit */}
 
-                                                            {can('view users') && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openViewModal(
-                                                                            user,
-                                                                        )
-                                                                    }
-                                                                    title="View user"
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
+                                                        {can(
+                                                            'update users',
+                                                        ) && (
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openEditModal(
+                                                                        user,
+                                                                    )
+                                                                }
+                                                                title="Edit user"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
 
-                                                            {/* Edit */}
+                                                        {/* Delete */}
 
-                                                            {can('update users') && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openEditModal(
-                                                                            user,
-                                                                        )
-                                                                    }
-                                                                    title="Edit user"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-
-                                                            {/* Delete */}
-
-                                                            {can('delete users') && (
-                                                                <Button
-                                                                    variant="destructive"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openDeleteModal(
-                                                                            user,
-                                                                        )
-                                                                    }
-                                                                    title="Delete user"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-
-                                                        </div>
-                                                    </td>
-
-                                                </tr>
-                                            ),
-                                        )}
+                                                        {can(
+                                                            'delete users',
+                                                        ) && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="icon"
+                                                                onClick={() =>
+                                                                    openDeleteModal(
+                                                                        user,
+                                                                    )
+                                                                }
+                                                                title="Delete user"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>
@@ -602,43 +568,33 @@ export default function UsersIndex({
 
                         {users.last_page > 1 && (
                             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-
-                                {users.links.map(
-                                    (link, index) => (
-                                        <Button
-                                            key={index}
-                                            variant={
-                                                link.active
-                                                    ? 'default'
-                                                    : 'outline'
+                                {users.links.map((link, index) => (
+                                    <Button
+                                        key={index}
+                                        variant={
+                                            link.active ? 'default' : 'outline'
+                                        }
+                                        size="sm"
+                                        disabled={!link.url}
+                                        onClick={() => {
+                                            if (link.url) {
+                                                router.get(
+                                                    link.url,
+                                                    {},
+                                                    {
+                                                        preserveState: true,
+                                                    },
+                                                );
                                             }
-                                            size="sm"
-                                            disabled={
-                                                !link.url
-                                            }
-                                            onClick={() => {
-                                                if (
-                                                    link.url
-                                                ) {
-                                                    router.get(
-                                                        link.url,
-                                                        {},
-                                                        {
-                                                            preserveState: true,
-                                                        },
-                                                    );
-                                                }
+                                        }}
+                                    >
+                                        <span
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
                                             }}
-                                        >
-                                            <span
-                                                dangerouslySetInnerHTML={{
-                                                    __html: link.label,
-                                                }}
-                                            />
-                                        </Button>
-                                    ),
-                                )}
-
+                                        />
+                                    </Button>
+                                ))}
                             </div>
                         )}
                     </CardContent>
@@ -649,16 +605,10 @@ export default function UsersIndex({
                 ADD USER MODAL
             ========================================= */}
 
-            <Dialog
-                open={isAddOpen}
-                onOpenChange={setIsAddOpen}
-            >
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
-
                     <DialogHeader>
-                        <DialogTitle>
-                            Add User
-                        </DialogTitle>
+                        <DialogTitle>Add User</DialogTitle>
 
                         <DialogDescription>
                             Create a new system user.
@@ -666,7 +616,6 @@ export default function UsersIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-
                         {/* Name */}
 
                         <div>
@@ -677,9 +626,7 @@ export default function UsersIndex({
                             <Input
                                 value={name}
                                 onChange={(event) =>
-                                    setName(
-                                        event.target.value,
-                                    )
+                                    setName(event.target.value)
                                 }
                                 placeholder="Enter full name"
                             />
@@ -696,9 +643,7 @@ export default function UsersIndex({
                                 type="email"
                                 value={email}
                                 onChange={(event) =>
-                                    setEmail(
-                                        event.target.value,
-                                    )
+                                    setEmail(event.target.value)
                                 }
                                 placeholder="Enter email address"
                             />
@@ -714,9 +659,7 @@ export default function UsersIndex({
                             <Input
                                 value={phone}
                                 onChange={(event) =>
-                                    setPhone(
-                                        event.target.value,
-                                    )
+                                    setPhone(event.target.value)
                                 }
                                 placeholder="Enter phone number"
                             />
@@ -729,29 +672,48 @@ export default function UsersIndex({
                                 Role
                             </label>
 
-                            <Select
-                                value={roleId}
-                                onValueChange={setRoleId}
-                            >
+                            <Select value={roleId} onValueChange={setRoleId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map(
-                                        (role) => (
-                                            <SelectItem
-                                                key={
-                                                    role.id
-                                                }
-                                                value={String(
-                                                    role.id,
-                                                )}
-                                            >
-                                                {role.name}
-                                            </SelectItem>
-                                        ),
-                                    )}
+                                    {roles.map((role) => (
+                                        <SelectItem
+                                            key={role.id}
+                                            value={String(role.id)}
+                                        >
+                                            {role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Branch */}
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Branch
+                            </label>
+
+                            <Select
+                                value={branchId}
+                                onValueChange={setBranchId}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a branch" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    {branches.map((branch) => (
+                                        <SelectItem
+                                            key={branch.id}
+                                            value={String(branch.id)}
+                                        >
+                                            {branch.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -767,15 +729,14 @@ export default function UsersIndex({
                                 type="password"
                                 value={password}
                                 onChange={(event) =>
-                                    setPassword(
-                                        event.target.value,
-                                    )
+                                    setPassword(event.target.value)
                                 }
                                 placeholder="Leave empty for default password"
                             />
 
                             <p className="mt-1 text-xs text-muted-foreground">
-                                If left empty, the default password will be used.
+                                If left empty, the default password will be
+                                used.
                             </p>
                         </div>
 
@@ -788,13 +749,9 @@ export default function UsersIndex({
 
                             <Input
                                 type="password"
-                                value={
-                                    passwordConfirmation
-                                }
+                                value={passwordConfirmation}
                                 onChange={(event) =>
-                                    setPasswordConfirmation(
-                                        event.target.value,
-                                    )
+                                    setPasswordConfirmation(event.target.value)
                                 }
                                 placeholder="Confirm password"
                             />
@@ -807,9 +764,7 @@ export default function UsersIndex({
                                 type="checkbox"
                                 checked={isActive}
                                 onChange={(event) =>
-                                    setIsActive(
-                                        event.target.checked,
-                                    )
+                                    setIsActive(event.target.checked)
                                 }
                                 className="h-4 w-4"
                             />
@@ -818,24 +773,18 @@ export default function UsersIndex({
                                 Active User
                             </label>
                         </div>
-
                     </div>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                setIsAddOpen(false)
-                            }
+                            onClick={() => setIsAddOpen(false)}
                         >
                             Cancel
                         </Button>
 
-                        <Button onClick={handleAdd}>
-                            Add User
-                        </Button>
+                        <Button onClick={handleAdd}>Add User</Button>
                     </DialogFooter>
-
                 </DialogContent>
             </Dialog>
 
@@ -843,16 +792,10 @@ export default function UsersIndex({
                 VIEW USER MODAL
             ========================================= */}
 
-            <Dialog
-                open={isViewOpen}
-                onOpenChange={setIsViewOpen}
-            >
+            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
                 <DialogContent className="sm:max-w-[500px]">
-
                     <DialogHeader>
-                        <DialogTitle>
-                            User Details
-                        </DialogTitle>
+                        <DialogTitle>User Details</DialogTitle>
 
                         <DialogDescription>
                             View user account information.
@@ -861,18 +804,14 @@ export default function UsersIndex({
 
                     {selectedUser && (
                         <div className="space-y-5 py-4">
-
                             <div className="grid gap-4 sm:grid-cols-2">
-
                                 <div>
                                     <p className="text-sm text-muted-foreground">
                                         Name
                                     </p>
 
                                     <p className="font-medium">
-                                        {
-                                            selectedUser.name
-                                        }
+                                        {selectedUser.name}
                                     </p>
                                 </div>
 
@@ -882,11 +821,7 @@ export default function UsersIndex({
                                     </p>
 
                                     <Badge variant="secondary">
-                                        {
-                                            selectedUser.role
-                                                ?.name ||
-                                                'No Role'
-                                        }
+                                        {selectedUser.role?.name || 'No Role'}
                                     </Badge>
                                 </div>
 
@@ -896,9 +831,7 @@ export default function UsersIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {
-                                            selectedUser.email
-                                        }
+                                        {selectedUser.email}
                                     </p>
                                 </div>
 
@@ -908,10 +841,7 @@ export default function UsersIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {
-                                            selectedUser.phone ||
-                                                'Not provided'
-                                        }
+                                        {selectedUser.phone || 'Not provided'}
                                     </p>
                                 </div>
 
@@ -932,22 +862,15 @@ export default function UsersIndex({
                                             : 'Inactive'}
                                     </Badge>
                                 </div>
-
                             </div>
-
                         </div>
                     )}
 
                     <DialogFooter>
-                        <Button
-                            onClick={() =>
-                                setIsViewOpen(false)
-                            }
-                        >
+                        <Button onClick={() => setIsViewOpen(false)}>
                             Close
                         </Button>
                     </DialogFooter>
-
                 </DialogContent>
             </Dialog>
 
@@ -955,16 +878,10 @@ export default function UsersIndex({
                 EDIT USER MODAL
             ========================================= */}
 
-            <Dialog
-                open={isEditOpen}
-                onOpenChange={setIsEditOpen}
-            >
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[500px]">
-
                     <DialogHeader>
-                        <DialogTitle>
-                            Edit User
-                        </DialogTitle>
+                        <DialogTitle>Edit User</DialogTitle>
 
                         <DialogDescription>
                             Update the user's account information.
@@ -972,7 +889,6 @@ export default function UsersIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-
                         {/* Name */}
 
                         <div>
@@ -983,9 +899,7 @@ export default function UsersIndex({
                             <Input
                                 value={name}
                                 onChange={(event) =>
-                                    setName(
-                                        event.target.value,
-                                    )
+                                    setName(event.target.value)
                                 }
                             />
                         </div>
@@ -1001,9 +915,7 @@ export default function UsersIndex({
                                 type="email"
                                 value={email}
                                 onChange={(event) =>
-                                    setEmail(
-                                        event.target.value,
-                                    )
+                                    setEmail(event.target.value)
                                 }
                             />
                         </div>
@@ -1018,9 +930,7 @@ export default function UsersIndex({
                             <Input
                                 value={phone}
                                 onChange={(event) =>
-                                    setPhone(
-                                        event.target.value,
-                                    )
+                                    setPhone(event.target.value)
                                 }
                             />
                         </div>
@@ -1032,29 +942,48 @@ export default function UsersIndex({
                                 Role
                             </label>
 
-                            <Select
-                                value={roleId}
-                                onValueChange={setRoleId}
-                            >
+                            <Select value={roleId} onValueChange={setRoleId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map(
-                                        (role) => (
-                                            <SelectItem
-                                                key={
-                                                    role.id
-                                                }
-                                                value={String(
-                                                    role.id,
-                                                )}
-                                            >
-                                                {role.name}
-                                            </SelectItem>
-                                        ),
-                                    )}
+                                    {roles.map((role) => (
+                                        <SelectItem
+                                            key={role.id}
+                                            value={String(role.id)}
+                                        >
+                                            {role.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Branch */}
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Branch
+                            </label>
+
+                            <Select
+                                value={branchId}
+                                onValueChange={setBranchId}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a branch" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    {branches.map((branch) => (
+                                        <SelectItem
+                                            key={branch.id}
+                                            value={String(branch.id)}
+                                        >
+                                            {branch.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -1070,9 +999,7 @@ export default function UsersIndex({
                                 type="password"
                                 value={password}
                                 onChange={(event) =>
-                                    setPassword(
-                                        event.target.value,
-                                    )
+                                    setPassword(event.target.value)
                                 }
                                 placeholder="Leave empty to keep current password"
                             />
@@ -1087,13 +1014,9 @@ export default function UsersIndex({
 
                             <Input
                                 type="password"
-                                value={
-                                    passwordConfirmation
-                                }
+                                value={passwordConfirmation}
                                 onChange={(event) =>
-                                    setPasswordConfirmation(
-                                        event.target.value,
-                                    )
+                                    setPasswordConfirmation(event.target.value)
                                 }
                                 placeholder="Confirm new password"
                             />
@@ -1106,9 +1029,7 @@ export default function UsersIndex({
                                 type="checkbox"
                                 checked={isActive}
                                 onChange={(event) =>
-                                    setIsActive(
-                                        event.target.checked,
-                                    )
+                                    setIsActive(event.target.checked)
                                 }
                                 className="h-4 w-4"
                             />
@@ -1117,24 +1038,18 @@ export default function UsersIndex({
                                 Active User
                             </label>
                         </div>
-
                     </div>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                setIsEditOpen(false)
-                            }
+                            onClick={() => setIsEditOpen(false)}
                         >
                             Cancel
                         </Button>
 
-                        <Button onClick={handleUpdate}>
-                            Update User
-                        </Button>
+                        <Button onClick={handleUpdate}>Update User</Button>
                     </DialogFooter>
-
                 </DialogContent>
             </Dialog>
 
@@ -1142,46 +1057,30 @@ export default function UsersIndex({
                 DELETE USER MODAL
             ========================================= */}
 
-            <Dialog
-                open={isDeleteOpen}
-                onOpenChange={setIsDeleteOpen}
-            >
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <DialogContent>
-
                     <DialogHeader>
-                        <DialogTitle>
-                            Delete User?
-                        </DialogTitle>
+                        <DialogTitle>Delete User?</DialogTitle>
 
                         <DialogDescription>
                             Are you sure you want to delete{' '}
-                            <strong>
-                                {selectedUser?.name}
-                            </strong>
-                            ? This action cannot be undone.
+                            <strong>{selectedUser?.name}</strong>? This action
+                            cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter>
-
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                setIsDeleteOpen(false)
-                            }
+                            onClick={() => setIsDeleteOpen(false)}
                         >
                             Cancel
                         </Button>
 
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                        >
+                        <Button variant="destructive" onClick={handleDelete}>
                             Delete User
                         </Button>
-
                     </DialogFooter>
-
                 </DialogContent>
             </Dialog>
         </>
@@ -1196,4 +1095,3 @@ UsersIndex.layout = {
         },
     ],
 };
-
