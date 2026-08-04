@@ -33,32 +33,20 @@ services:
       - key: LOG_LEVEL
         value: info
 
-      # Database (Neon PostgreSQL)
+      # Database (Render PostgreSQL — internal connection string is
+      # injected automatically from the linked database below)
       - key: DB_CONNECTION
         value: pgsql
 
-      - key: DB_HOST
-        value: ep-holy-tooth-axqj6wsh-pooler.c-4.us-east-2.aws.neon.tech
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dmms-db
+          property: connectionString
 
-      - key: DB_PORT
-        value: "5432"
-
-      - key: DB_DATABASE
-        value: neondb
-
-      - key: DB_USERNAME
-        value: neondb_owner
-
-      - key: DB_PASSWORD
-        sync: false
-
-      # Only run database seeds on boot when set to true (default off —
-      # seeds are a one-time step to keep cold starts fast)
+      # Seeds a fresh/empty database automatically on first boot (see
+      # docker/entrypoint.sh). Keep false — seeds are a one-time step.
       - key: SEED_ON_START
         value: "false"
-
-      - key: DB_SSLMODE
-        value: require
 
       # Laravel
       - key: SESSION_DRIVER
@@ -78,3 +66,7 @@ services:
 
       - key: VITE_APP_NAME
         value: DMMS
+
+databases:
+  - name: dmms-db
+    plan: free

@@ -48,9 +48,11 @@ until php artisan migrate --force; do
     sleep 5
 done
 
-# Seed ONLY when explicitly requested (SEED_ON_START=true). Running the
-# full seeder on every boot makes cold starts ~30s slower on Render.
-if [ "${SEED_ON_START:-false}" = "true" ]; then
+# Seed when the database is empty (fresh Render Postgres on first boot) or
+# when SEED_ON_START=true forces it. Once data exists this is skipped, so
+# cold starts stay fast.
+if [ "${SEED_ON_START:-false}" = "true" ] || ! php artisan tinker --execute='exit(\App\Models\User::query()->exists() ? 0 : 1);' 2>/dev/null; then
+    echo "Seeding database (fresh database or forced)..."
     php artisan db:seed --force --no-interaction \
         || echo "Seeding failed — check the DB connection."
 fi
