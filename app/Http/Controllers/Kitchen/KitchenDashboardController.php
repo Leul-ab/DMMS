@@ -132,21 +132,16 @@ class KitchenDashboardController extends Controller
             return back()->with('error', 'Order cannot be marked as ready.');
         }
 
-        // When the chef marks the order as ready early, stop the timer
-        // by setting preparation_time to the elapsed time so the customer's
-        // progress bar instantly reaches 100%.
-        $elapsedMinutes = 0;
-        if ($order->preparation_started_at) {
-            $elapsedSeconds = max(0, now()->getTimestamp() - $order->preparation_started_at->getTimestamp());
-            $elapsedMinutes = max(1, ceil($elapsedSeconds / 60));
-        }
-
+        // The customer's progress bar is driven by elapsed_time / total_time.
+        // When the chef marks the order ready early, the customer view detects
+        // status === 'ready' and instantly completes the progress bar (100%)
+        // while stopping the countdown. We intentionally keep preparation_time
+        // at the full estimated total so the displayed estimate and the
+        // expected-ready-time calculation remain accurate.
         $order->update([
             'status' => 'ready',
             'preparation_status' => 'ready',
             'preparation_completed_at' => now(),
-            // Set preparation_time to elapsed time so the customer progress bar completes instantly
-            'preparation_time' => $elapsedMinutes,
         ]);
 
         return back()->with('success', 'Order marked as ready to serve.');

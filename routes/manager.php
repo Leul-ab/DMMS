@@ -6,6 +6,7 @@ use App\Http\Controllers\Manager\OrderController;
 use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\ReportController;
+use App\Http\Controllers\Manager\PaymentVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])
@@ -104,7 +105,7 @@ Route::middleware(['auth'])
         // =========================
         // Customer Orders
         // Manager can VIEW, EDIT,
-        // DELETE and VERIFY PAYMENTS
+        // and DELETE orders
         // =========================
 
         Route::get(
@@ -122,10 +123,24 @@ Route::middleware(['auth'])
             [OrderController::class, 'destroy']
         )->name('orders.destroy')->middleware('permission:delete orders');
 
+        // =========================
+        // Payment Verification
+        // =========================
+
+        Route::get(
+            'payment-verification',
+            [PaymentVerificationController::class, 'index']
+        )->name('payment-verification.index')->middleware('permission:view payments');
+
         Route::patch(
-            'orders/{order}/verify-payment',
-            [OrderController::class, 'verifyPayment']
-        )->name('orders.verify-payment')->middleware('permission:status orders');
+            'payment-verification/{order}/verify',
+            [PaymentVerificationController::class, 'verify']
+        )->name('payment-verification.verify')->middleware('permission:status payments');
+
+        Route::patch(
+            'payment-verification/{order}/reject',
+            [PaymentVerificationController::class, 'reject']
+        )->name('payment-verification.reject')->middleware('permission:status payments');
 
         // =========================
         // Restaurant Tables

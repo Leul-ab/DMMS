@@ -60,6 +60,11 @@ class OrderController extends Controller
                 'string',
                 'in:menu,customer-menu',
             ],
+
+            'order_id' => [
+                'nullable',
+                'exists:orders,id',
+            ],
         ]);
 
         // If no table_id in request, use the session-scanned table
@@ -71,17 +76,50 @@ class OrderController extends Controller
 
         $table = RestaurantTable::findOrFail($tableId);
 
-        // Check if table already has an active order
-        $activeOrderExists = Order::where('table_id', $table->id)
-            ->whereIn('status', ['pending', 'confirmed', 'preparing', 'ready', 'served'])
-            ->exists();
+        // Determine the redirect route
+        $redirectRoute = $request->input('source') === 'customer-menu'
+            ? 'menu.customer'
+            : 'menu.index';
 
-        if ($activeOrderExists) {
-            return back()->withErrors([
-                'table' => 'This table already has an active order.',
-            ])->withInput();
+        // If an order_id is provided, try to add items to that specific order
+        // Only allowed if the order is still pending/confirmed (not preparing yet)
+        if (!empty($validated['order_id'])) {
+            $existingOrder = Order::find($validated['order_id']);
+
+            if ($existingOrder && in_array($existingOrder->status, ['pending', 'received', 'confirmed'])) {
+                $this->addItemsToOrder($validated, $existingOrder);
+
+                return redirect()
+                    ->route($redirectRoute, [
+                        'table' => $table->table_number,
+                    ])
+                    ->with('success', 'Items added to your order successfully!')
+                    ->with('order_number', $existingOrder->order_number);
+            }
         }
 
+        // Check if there's a pending order for this table that we should add to
+        // Only pending/confirmed orders can accept more items.
+        // If the order is preparing/ready/completed, a new order must be created.
+        $pendingOrder = Order::where('table_id', $table->id)
+            ->whereIn('status', ['pending', 'received', 'confirmed'])
+            ->latest()
+            ->first();
+
+        if ($pendingOrder) {
+            $this->addItemsToOrder($validated, $pendingOrder);
+
+            return redirect()
+                ->route($redirectRoute, [
+                    'table' => $table->table_number,
+                ])
+                ->with('success', 'Items added to your order successfully!')
+                ->with('order_number', $pendingOrder->order_number);
+        }
+
+        // No pending order exists — create a completely new order.
+        // This handles the case where the previous order is preparing, ready,
+        // or completed. The new order gets its own order number and status.
         $order = DB::transaction(function () use (
             $validated,
             $table
@@ -153,18 +191,50 @@ class OrderController extends Controller
             return $order;
         });
 
-        // Redirect back to the page the order was placed from so a customer-menu
-        // order never pollutes the /menu page (which always allows table selection).
-        $redirectRoute = $request->input('source') === 'customer-menu'
-            ? 'menu.customer'
-            : 'menu.index';
-
         return redirect()
           ->route($redirectRoute, [
         'table' => $table->table_number,
          ])
         ->with('success', 'Order placed successfully!')
         ->with('order_number', $order->order_number);
+    }
+
+    /**
+     * Add items to an existing order (shared logic between store and addItems).
+     */
+    private function addItemsToOrder(array $validated, Order $order): void
+    {
+        DB::transaction(function () use ($validated, $order) {
+            $additionalTotal = 0;
+
+            foreach ($validated['items'] as $item) {
+                $menuItem = MenuItem::findOrFail($item['id']);
+                $quantity = $item['quantity'];
+                $itemTotal = (float) $menuItem->price * $quantity;
+                $additionalTotal += $itemTotal;
+
+                // Check if the same menu item already exists in the order, and if so, increment quantity
+                $existingItem = OrderItem::where('order_id', $order->id)
+                    ->where('menu_item_id', $menuItem->id)
+                    ->where('status', 'pending')
+                    ->first();
+
+                if ($existingItem) {
+                    $existingItem->increment('quantity', $quantity);
+                    $existingItem->increment('price', $itemTotal);
+                } else {
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'menu_item_id' => $menuItem->id,
+                        'quantity' => $quantity,
+                        'price' => $menuItem->price,
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            $order->increment('total_amount', $additionalTotal);
+        });
     }
 
     /**
@@ -219,37 +289,7 @@ class OrderController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        DB::transaction(function () use ($validated, $order) {
-            $additionalTotal = 0;
-
-            foreach ($validated['items'] as $item) {
-                $menuItem = MenuItem::findOrFail($item['id']);
-                $quantity = $item['quantity'];
-                $itemTotal = (float) $menuItem->price * $quantity;
-                $additionalTotal += $itemTotal;
-
-                // Check if the same menu item already exists in the order, and if so, increment quantity
-                $existingItem = OrderItem::where('order_id', $order->id)
-                    ->where('menu_item_id', $menuItem->id)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if ($existingItem) {
-                    $existingItem->increment('quantity', $quantity);
-                    $existingItem->increment('price', $itemTotal);
-                } else {
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'menu_item_id' => $menuItem->id,
-                        'quantity' => $quantity,
-                        'price' => $menuItem->price,
-                        'status' => 'pending',
-                    ]);
-                }
-            }
-
-            $order->increment('total_amount', $additionalTotal);
-        });
+        $this->addItemsToOrder($validated, $order);
 
         // If request expects JSON (from API), return JSON
         if ($request->expectsJson() || $request->wantsJson()) {

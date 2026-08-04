@@ -5,25 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Payment extends Model
+class Receipt extends Model
 {
     protected $fillable = [
         'order_id',
-        'user_id',
-        'table_id',
+        'receipt_number',
+        'transaction_number',
         'payment_method',
-        'payment_status',
         'amount',
         'subtotal',
         'tax',
         'service_charge',
         'discount',
-        'transaction_reference',
-        'transaction_number',
-        'verified_by',
-        'verified_at',
-        'notes',
-        'paid_at',
+        'generated_at',
     ];
 
     protected function casts(): array
@@ -34,28 +28,12 @@ class Payment extends Model
             'tax' => 'decimal:2',
             'service_charge' => 'decimal:2',
             'discount' => 'decimal:2',
-            'paid_at' => 'datetime',
-            'verified_at' => 'datetime',
+            'generated_at' => 'datetime',
         ];
     }
 
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
-    }
-
-    public function cashier(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function verifier(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'verified_by');
-    }
-
-    public function table(): BelongsTo
-    {
-        return $this->belongsTo(RestaurantTable::class, 'table_id');
     }
 }

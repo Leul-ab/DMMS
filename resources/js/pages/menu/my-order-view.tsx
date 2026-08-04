@@ -1,8 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Copy, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { ReceiptModal } from '@/components/receipt-modal';
 
 type MenuItem = {
     id: number;
@@ -23,6 +31,28 @@ type RestaurantTable = {
     status: string;
 };
 
+type Receipt = {
+    id: number;
+    receipt_number: string;
+    transaction_number: string | null;
+    payment_method: string | null;
+    amount: string;
+    subtotal: string;
+    tax: string;
+    service_charge: string;
+    discount: string;
+    generated_at: string | null;
+};
+
+type Payment = {
+    id: number;
+    payment_method: string | null;
+    payment_status: string;
+    verified_at: string | null;
+    paid_at: string | null;
+    verifier: { id: number; name: string } | null;
+};
+
 type Order = {
     id: number;
     order_number: string;
@@ -30,6 +60,7 @@ type Order = {
     payment_status: 'unpaid' | 'pending' | 'paid';
     payment_submitted_at: string | null;
     total_amount: string;
+    customer_name: string | null;
     estimated_minutes: number | null;
     preparation_time: number | null;
     preparation_started_at: string | null;
@@ -40,11 +71,14 @@ type Order = {
     updated_at: string;
     order_items: OrderItem[];
     table: RestaurantTable;
+    receipt: Receipt | null;
+    payment: Payment | null;
 };
 
 type Props = {
     table: RestaurantTable;
     order: Order | null;
+    orders?: Order[];
     menuPath: string;
 };
 
@@ -88,14 +122,21 @@ function getStatusInfo(status: string, preparationStatus: string): { emoji: stri
 export default function MyOrderView({
     table,
     order,
+    orders = [],
     menuPath,
 }: Props) {
     const [showPayment, setShowPayment] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const [progressPercent, setProgressPercent] = useState<number>(0);
     const [showCompletion, setShowCompletion] = useState(false);
+    const [showReceipt, setShowReceipt] = useState(false);
     const prevPrepTimeRef = useRef<number | null>(null);
+    const prevPaymentStatusRef = useRef<string | null>(null);
+    const prevOrderStatusRef = useRef<string | null>(null);
 
     // Detect when the chef adds additional preparation time and notify the customer.
     useEffect(() => {
@@ -118,11 +159,13 @@ export default function MyOrderView({
         prevPrepTimeRef.current = currentPrepTime;
     }, [order?.preparation_time, order?.status]);
 
-    // Live countdown timer and progress calculation
+    // Live countdown timer and progress calculation.
+    // The progress bar must stop immediately when the kitchen marks the
+    // order as ready or completed, regardless of the elapsed time.
     useEffect(() => {
-        // If the chef marked the order as ready (early finish), stop the
-        // countdown immediately and complete the progress bar.
-        if (order && order.status === 'ready') {
+        // If the chef marked the order as ready or completed (early finish),
+        // stop the countdown immediately and complete the progress bar.
+        if (order && (order.status === 'ready' || order.status === 'completed')) {
             setRemainingSeconds(0);
             setProgressPercent(100);
             setShowCompletion(true);
@@ -158,20 +201,65 @@ export default function MyOrderView({
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [order?.preparation_started_at, order?.preparation_time, order?.status]);
+    }, [order?.preparation_started_at, order?.preparation_time, order?.status, order?.id]);
 
-    // Poll for order updates every 5 seconds
+    // Poll for order updates every 2 seconds for real-time sync
     useEffect(() => {
         const interval = setInterval(() => {
             router.reload({
-                only: ['order'],
+                only: ['order', 'orders'],
             });
-        }, 5000);
+        }, 2000);
 
         return () => {
             clearInterval(interval);
         };
     }, []);
+
+    // Detect when the order becomes ready and notify the customer.
+    useEffect(() => {
+        if (!order) return;
+
+        const prevStatus = prevOrderStatusRef.current;
+        const currentStatus = order.status;
+
+        // When the order transitions to "ready" (early completion or normal),
+        // notify the customer that their order is ready.
+        if (
+            prevStatus &&
+            prevStatus !== 'ready' &&
+            currentStatus === 'ready'
+        ) {
+            toast.success('Your order is ready!', {
+                duration: 5000,
+            });
+        }
+
+        prevOrderStatusRef.current = currentStatus;
+    }, [order?.status]);
+
+    // Detect when payment is verified and a receipt is generated.
+    useEffect(() => {
+        if (!order) return;
+
+        const currentStatus = order.payment_status;
+        const hasReceipt = !!order.receipt;
+
+        // When the payment transitions to "paid" and a receipt exists,
+        // notify the customer and open the receipt modal automatically.
+        if (
+            prevPaymentStatusRef.current === 'pending' &&
+            currentStatus === 'paid' &&
+            hasReceipt
+        ) {
+            toast.success('Payment verified successfully. Your receipt is ready.', {
+                duration: 5000,
+            });
+            setShowReceipt(true);
+        }
+
+        prevPaymentStatusRef.current = currentStatus;
+    }, [order?.payment_status, order?.receipt]);
 
     // Format date/time
     const formatDateTime = (dateString: string) => {
@@ -192,6 +280,13 @@ export default function MyOrderView({
             minute: '2-digit',
             hour12: true,
         });
+    };
+
+    // Format countdown as "MM:SS" (e.g., "14:32")
+    const formatCountdown = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     // Get status color
@@ -220,18 +315,77 @@ export default function MyOrderView({
     const getStatusEmoji = (status: string) => {
         switch (status) {
             case 'pending':
-                return '';
+                return '⏳';
             case 'preparing':
-                return '';
+                return '🍳';
             case 'ready':
-                return '';
+                return '✅';
             case 'completed':
-                return '';
+                return '🎉';
             case 'cancelled':
-                return '';
+                return '❌';
             default:
-                return '';
+                return '📋';
         }
+    };
+
+    // Payment method account numbers
+    const paymentAccounts: Record<string, { label: string; number: string; icon: string }> = {
+        telebirr: { label: 'Telebirr', number: '0987574556', icon: '📱' },
+        cbe_birr: { label: 'CBE Birr', number: '1000976545673', icon: '🏦' },
+    };
+
+    // Copy the selected payment account number to the clipboard,
+    // show a success message, and close the modal automatically.
+    const copyAccountNumber = async () => {
+        if (!selectedPaymentMethod) return;
+
+        const accountNumber = paymentAccounts[selectedPaymentMethod].number;
+
+        try {
+            await navigator.clipboard.writeText(accountNumber);
+            toast.success('Account number copied successfully.');
+        } catch {
+            // Fallback for browsers that don't support the clipboard API
+            const textarea = document.createElement('textarea');
+            textarea.value = accountNumber;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            toast.success('Account number copied successfully.');
+        }
+
+        // Close the modal after copying so the customer can proceed with the payment.
+        setShowPaymentModal(false);
+        setShowPayment(true);
+    };
+
+    // Submit payment with the selected method
+    const submitPayment = () => {
+        if (!order || !selectedPaymentMethod) return;
+
+        setIsSubmittingPayment(true);
+
+        router.post(
+            `/orders/${order.id}/payment`,
+            {
+                payment_method: selectedPaymentMethod,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsSubmittingPayment(false);
+                    toast.success('Payment submitted successfully. Please wait for confirmation.');
+                },
+                onError: () => {
+                    setIsSubmittingPayment(false);
+                    toast.error('Failed to submit payment. Please try again.');
+                },
+            }
+        );
     };
 
     // Cancel order
@@ -276,6 +430,33 @@ export default function MyOrderView({
     // Progress bar color
     const progressColor = getProgressColor(progressPercent);
     const progressBgColor = getProgressBgColor(progressPercent);
+
+    // ─────────────────────────────────────────────────────────────
+    // Dynamic Order Button:
+    //   - pending/confirmed  → "Add Order" (attach to current order)
+    //   - preparing/ready/served → "New Order" (create separate order)
+    //   - completed/cancelled → hide the action button
+    // ─────────────────────────────────────────────────────────────
+    const orderIsLocked = order
+        ? ['preparing', 'ready', 'served'].includes(order.status)
+        : false;
+
+    const canAddToOrder = order
+        ? ['pending', 'received', 'confirmed'].includes(order.status)
+        : false;
+
+    // Show the order action button for all active orders AND completed orders.
+    // Cancelled orders are excluded.
+    const showOrderActionButton = order && order.status !== 'cancelled';
+
+    const orderActionHref = canAddToOrder && order
+        ? `${menuPath}?table=${table.table_number}&order_id=${order.id}`
+        : `${menuPath}?table=${table.table_number}`;
+
+    const orderActionLabel = canAddToOrder ? '+ Add Order' : '+ New Order';
+
+    // Orders to show in history: all orders except the currently displayed one
+    const previousOrders = orders.filter((o) => o.id !== order?.id);
 
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
@@ -443,7 +624,7 @@ export default function MyOrderView({
                                 {/* Completion Animation */}
                                 {showCompletion && (
                                     <div className="mb-4 text-center animate-bounce">
-                                        <span className="text-4xl"></span>
+                                        <span className="text-4xl">✅</span>
                                         <p className="mt-2 text-lg font-bold text-green-600">
                                             Your order is ready!
                                         </p>
@@ -469,6 +650,18 @@ export default function MyOrderView({
                                         <p className="mt-1 text-lg font-black">
                                             {order.preparation_time || order.estimated_minutes} Minutes
                                         </p>
+
+                                        {/* Live Countdown Display */}
+                                        {isTimerRunning && remainingSeconds !== null && (
+                                            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 shadow-sm border border-orange-200">
+                                                <span className="font-mono text-lg font-black tabular-nums text-orange-600">
+                                                    {formatCountdown(remainingSeconds)}
+                                                </span>
+                                                <span className="text-xs font-semibold text-gray-500">
+                                                    remaining
+                                                </span>
+                                            </div>
+                                        )}
 
                                         {isTimerExpired && !showCompletion && (
                                             <p className="mt-1 text-sm font-bold text-green-600">
@@ -522,6 +715,23 @@ export default function MyOrderView({
                                         )}
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* ================= PREPARING LOCKED MESSAGE ================= */}
+                        {orderIsLocked && (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                                <div className="flex items-start gap-3">
+                                    <span className="text-2xl">🔒</span>
+                                    <div>
+                                        <p className="font-bold text-amber-800">
+                                            This order is being prepared
+                                        </p>
+                                        <p className="mt-1 text-sm text-amber-700">
+                                            Your current order is being prepared. You can place a new order instead.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         )}
 
@@ -621,68 +831,104 @@ export default function MyOrderView({
                                     {order.payment_status === 'unpaid' && (
                                         <>
                                             <p className="mt-2 text-gray-600">
-                                                Your order is completed. Please make your payment.
+                                                Your order is completed. Please choose a payment method to proceed.
                                             </p>
 
-                                            {!showPayment ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPayment(true)}
-                                                    className="mt-6 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
-                                                >
-                                                    Pay Now
-                                                </button>
-                                            ) : (
-                                                <div className="mt-6 rounded-2xl bg-white p-6">
-
+                                            {/* Step 1: Choose Payment Method */}
+                                            {!showPayment && (
+                                                <div className="mt-6 space-y-3">
                                                     <h3 className="text-lg font-black">
-                                                        Payment Instructions
+                                                        Choose Payment Method
                                                     </h3>
 
-                                                    <p className="mt-3 text-sm text-gray-500">
-                                                        Please send the exact amount to the payment number below.
-                                                    </p>
+                                                    <div className="grid gap-3 sm:grid-cols-2">
+                                                        {Object.entries(paymentAccounts).map(([key, account]) => (
+                                                            <button
+                                                                key={key}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setSelectedPaymentMethod(key);
+                                                                    setShowPaymentModal(true);
+                                                                }}
+                                                                className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
+                                                            >
+                                                                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+                                                                    {account.icon}
+                                                                </span>
+                                                                <div>
+                                                                    <p className="font-black text-stone-800">
+                                                                        {account.label}
+                                                                    </p>
+                                                                    <p className="text-xs text-gray-500">
+                                                                        Pay with {account.label}
+                                                                    </p>
+                                                                </div>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
 
-                                                    <div className="mt-5 rounded-xl bg-gray-100 p-5">
-                                                        <p className="text-sm font-semibold text-gray-500">
-                                                            Amount
-                                                        </p>
+                                            {/* Step 2: Complete Payment */}
+                                            {showPayment && selectedPaymentMethod && (
+                                                <div className="mt-6 rounded-2xl bg-white p-6 animate-in fade-in slide-in-from-bottom-2 fill-mode-both">
 
-                                                        <p className="mt-1 text-2xl font-black text-orange-500">
-                                                            {Number(order.total_amount).toFixed(2)} ETB
-                                                        </p>
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-lg font-black">
+                                                            Complete Payment
+                                                        </h3>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setShowPayment(false);
+                                                                setSelectedPaymentMethod(null);
+                                                            }}
+                                                            className="text-xs font-semibold text-gray-400 transition hover:text-orange-500"
+                                                        >
+                                                            ← Change Method
+                                                        </button>
+                                                    </div>
 
-                                                        <p className="mt-5 text-sm font-semibold text-gray-500">
-                                                            Payment Number
-                                                        </p>
+                                                    <div className="mt-4 flex items-center gap-3 rounded-xl bg-gray-100 p-4">
+                                                        <span className="text-2xl">
+                                                            {paymentAccounts[selectedPaymentMethod].icon}
+                                                        </span>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-500">
+                                                                Selected Payment Method
+                                                            </p>
+                                                            <p className="text-lg font-black text-stone-800">
+                                                                {paymentAccounts[selectedPaymentMethod].label}
+                                                            </p>
+                                                        </div>
+                                                    </div>
 
-                                                        <p className="mt-1 text-xl font-black">
-                                                            09XXXXXXXX
-                                                        </p>
-
-                                                        <p className="mt-5 text-sm font-semibold text-gray-500">
-                                                            Account Name
-                                                        </p>
-
-                                                        <p className="mt-1 font-bold">
-                                                            DINE Restaurant
-                                                        </p>
+                                                    <div className="mt-4 flex items-center justify-between rounded-xl bg-gray-100 p-4">
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-500">
+                                                                Amount to Pay
+                                                            </p>
+                                                            <p className="mt-1 text-2xl font-black text-orange-500">
+                                                                {Number(order.total_amount).toFixed(2)} ETB
+                                                            </p>
+                                                        </div>
+                                                        <Copy className="size-5 text-gray-400" />
                                                     </div>
 
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
-                                                            router.post(
-                                                                `/orders/${order.id}/payment`,
-                                                                {},
-                                                                {
-                                                                    preserveScroll: true,
-                                                                }
-                                                            );
-                                                        }}
-                                                        className="mt-5 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                                                        onClick={submitPayment}
+                                                        disabled={isSubmittingPayment}
+                                                        className="mt-5 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
                                                     >
-                                                        I Have Paid
+                                                        {isSubmittingPayment ? (
+                                                            <span className="flex items-center justify-center gap-2">
+                                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                                Submitting...
+                                                            </span>
+                                                        ) : (
+                                                            'Paid'
+                                                        )}
                                                     </button>
 
                                                 </div>
@@ -712,6 +958,17 @@ export default function MyOrderView({
                                             <p className="mt-1 text-sm text-green-700">
                                                 Your payment has been successfully verified.
                                             </p>
+
+                                            {order.receipt && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowReceipt(true)}
+                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-black text-white shadow-lg shadow-green-600/25 transition hover:bg-green-700 active:scale-[0.98]"
+                                                >
+                                                    <Receipt className="size-4" />
+                                                    View Receipt
+                                                </button>
+                                            )}
                                         </div>
                                     )}
 
@@ -720,20 +977,106 @@ export default function MyOrderView({
 
                         </div>
 
+                        {/* ================= ORDER HISTORY ================= */}
+                        {previousOrders.length > 0 && (
+                            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
+
+                                <div className="mb-6">
+
+                                    <h2 className="text-2xl font-black">
+                                        Order History
+                                    </h2>
+
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Your previous orders for this table
+                                    </p>
+
+                                </div>
+
+                                <div className="space-y-4">
+
+                                    {previousOrders.map((prevOrder) => (
+                                        <div
+                                            key={prevOrder.id}
+                                            className="rounded-2xl border border-gray-100 bg-stone-50 p-5"
+                                        >
+
+                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+                                                <div>
+                                                    <p className="text-sm font-semibold uppercase tracking-widest text-gray-400">
+                                                        Order Number
+                                                    </p>
+
+                                                    <p className="mt-1 text-lg font-black">
+                                                        {prevOrder.order_number}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`h-2.5 w-2.5 rounded-full ${getStatusColor(prevOrder.status)}`}></span>
+                                                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold capitalize text-gray-600">
+                                                        {prevOrder.status}
+                                                    </span>
+                                                </div>
+
+                                            </div>
+
+                                            <div className="mt-4 border-t border-gray-200 pt-4">
+
+                                                <div className="flex items-center justify-between">
+
+                                                    <div className="space-y-1">
+                                                        {prevOrder.order_items.slice(0, 3).map((item) => (
+                                                            <p key={item.id} className="text-sm text-gray-500">
+                                                                {item.quantity} × {item.menu_item.name}
+                                                            </p>
+                                                        ))}
+                                                        {prevOrder.order_items.length > 3 && (
+                                                            <p className="text-xs font-semibold text-gray-400">
+                                                                +{prevOrder.order_items.length - 3} more items
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="text-right">
+                                                        <p className="text-lg font-black text-orange-500">
+                                                            {Number(prevOrder.total_amount).toFixed(2)} ETB
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-gray-400">
+                                                            {formatDateTime(prevOrder.created_at)}
+                                                        </p>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    ))}
+
+                                </div>
+
+                            </div>
+                        )}
+
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                            {/* Add Order Button - Only show for active orders (not completed/cancelled) */}
-                            {!['completed', 'cancelled'].includes(order.status) && (
+                            {/* Dynamic Order Button:
+                                - Pending/Confirmed → "+ Add Order" (attaches to current order)
+                                - Preparing/Ready/Served → "+ New Order" (creates a separate order) */}
+                            {showOrderActionButton && (
                                 <Link
-                                    href={`${menuPath}?table=${table.table_number}&order_id=${order.id}`}
-                                    className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                                    key={orderActionLabel}
+                                    href={orderActionHref}
+                                    className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
                                 >
-                                    + Add Order
+                                    {orderActionLabel}
                                 </Link>
                             )}
 
-                            {/* Cancel Order Button - Only show for active orders */}
-                            {!['completed', 'cancelled'].includes(order.status) && (
+                            {/* Cancel Order Button - Only show for active orders that aren't locked */}
+                            {!['completed', 'cancelled'].includes(order.status) && !orderIsLocked && (
                                 <button
                                     type="button"
                                     onClick={cancelOrder}
@@ -744,18 +1087,87 @@ export default function MyOrderView({
                                 </button>
                             )}
 
-                                <Link
-                                    href={`${menuPath}?table=${table.table_number}`}
-                                    className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
-                                >
-                                    ← Back to Menu
-                                </Link>
+                            <Link
+                                href={`${menuPath}?table=${table.table_number}`}
+                                className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                            >
+                                ← Back to Menu
+                            </Link>
                         </div>
 
                     </div>
                 )}
 
             </main>
+
+            {/* ================= PAYMENT METHOD MODAL ================= */}
+            <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
+                <DialogContent className="max-w-sm gap-5 rounded-3xl p-6 sm:max-w-sm">
+                    <DialogHeader className="text-center">
+                        <DialogTitle className="text-center text-lg font-black">
+                            Pay with {selectedPaymentMethod ? paymentAccounts[selectedPaymentMethod].label : ''}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Copy the account number below and complete your payment.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedPaymentMethod && (
+                        <div className="space-y-5">
+                            {/* Payment Method Icon & Name */}
+                            <div className="flex flex-col items-center justify-center gap-2">
+                                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-3xl">
+                                    {paymentAccounts[selectedPaymentMethod].icon}
+                                </span>
+                                <p className="text-base font-black text-stone-800">
+                                    {paymentAccounts[selectedPaymentMethod].label}
+                                </p>
+                            </div>
+
+                            {/* Account Number in read-only field */}
+                            <div className="rounded-2xl border-2 border-dashed border-orange-200 bg-orange-50 p-4 text-center">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                                    Account Number
+                                </p>
+                                <p className="mt-2 select-all font-mono text-xl font-black tracking-wider text-stone-900">
+                                    {paymentAccounts[selectedPaymentMethod].number}
+                                </p>
+                            </div>
+
+                            {/* Amount */}
+                            <div className="flex items-center justify-between rounded-xl bg-gray-100 px-4 py-3">
+                                <p className="text-sm font-semibold text-gray-500">
+                                    Amount
+                                </p>
+                                <p className="text-lg font-black text-orange-500">
+                                    {Number(order?.total_amount || 0).toFixed(2)} ETB
+                                </p>
+                            </div>
+
+                            {/* Copy Account Number Button */}
+                            <button
+                                type="button"
+                                onClick={copyAccountNumber}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                            >
+                                <Copy className="size-4" />
+                                Copy Account Number
+                            </button>
+
+                            <p className="text-center text-xs text-gray-400">
+                                After copying, make your payment using the selected method.
+                            </p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            {/* ================= RECEIPT MODAL ================= */}
+            <ReceiptModal
+                open={showReceipt}
+                onOpenChange={setShowReceipt}
+                order={order}
+            />
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-12 border-t border-gray-200 bg-white">

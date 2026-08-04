@@ -140,13 +140,28 @@ export default function KitchenDashboard({
         prevNewCount.current = newOrders.length;
     }, [newOrders.length]);
 
-    // Live timer countdown for order cards
+    // Auto-poll for order updates every 2 seconds for real-time sync
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['newOrders', 'preparingOrders', 'readyOrders', 'completedOrders', 'stats'],
+            });
+        }, 2000);
+
+        return () => {
+            clearInterval(interval);
+        };
+    }, []);
+
+    // Live timer countdown for order cards.
+    // Only preparing orders count down. Ready/completed orders stop at 0.
     useEffect(() => {
         const interval = setInterval(() => {
             const updated: Record<number, number> = {};
             const now = new Date().getTime();
 
-            [...preparingOrders, ...readyOrders].forEach((order) => {
+            // Only preparing orders have a running countdown.
+            preparingOrders.forEach((order) => {
                 if (order.preparation_started_at && order.preparation_time) {
                     const startedAt = new Date(order.preparation_started_at).getTime();
                     const elapsed = Math.floor((now - startedAt) / 1000);
@@ -154,6 +169,11 @@ export default function KitchenDashboard({
                     const remaining = Math.max(0, total - elapsed);
                     updated[order.id] = remaining;
                 }
+            });
+
+            // Ready orders have their timer stopped at 0.
+            readyOrders.forEach((order) => {
+                updated[order.id] = 0;
             });
 
             setLiveTimers((prev) => {
@@ -312,7 +332,7 @@ export default function KitchenDashboard({
         setIsProcessing(true);
         router.patch(`/kitchen/orders/${order.id}/mark-ready`, {}, {
             preserveScroll: true,
-            preserveState: true,
+            preserveState: false,
             onSuccess: () => {
                 toast.success('Order marked as ready to serve!');
                 setIsProcessing(false);
@@ -360,7 +380,7 @@ export default function KitchenDashboard({
         setIsProcessing(true);
         router.patch(`/kitchen/orders/${order.id}/complete`, {}, {
             preserveScroll: true,
-            preserveState: true,
+            preserveState: false,
             onSuccess: () => {
                 toast.success('Order completed!');
                 setIsProcessing(false);
