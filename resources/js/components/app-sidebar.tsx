@@ -104,52 +104,12 @@ export function AppSidebar() {
               ]
             : []),
 
-        ...(can('view staff')
-            ? [
-                  {
-                      title: 'Staff',
-                      href: staffIndex(),
-                      icon: UserCog,
-                  },
-              ]
-            : []),
-
         ...(can('view orders')
             ? [
                   {
                       title: 'Orders',
                       href: ordersIndex(),
                       icon: ListOrdered,
-                  },
-              ]
-            : []),
-
-        ...(can('view payments')
-            ? [
-                  {
-                      title: 'Payment Verification',
-                      href: '/manager/payment-verification',
-                      icon: ShieldCheck,
-                  },
-              ]
-            : []),
-
-        ...(can('view bookings')
-            ? [
-                  {
-                      title: 'Bookings',
-                      href: bookingsIndex(),
-                      icon: Calendar,
-                  },
-              ]
-            : []),
-
-        ...(can('view reports')
-            ? [
-                  {
-                      title: 'Reports',
-                      href: '/manager/reports',
-                      icon: BarChart3,
                   },
               ]
             : []),
@@ -163,31 +123,24 @@ export function AppSidebar() {
                   },
               ]
             : []),
-    ];
 
-    const hasAdminAccess =
-        can('view customers') ||
-        can('view users') ||
-        can('view payments') ||
-        can('view roles');
 
-    const adminNavItems: NavItem[] = [
-        ...(can('view customers')
+        ...(can('view bookings')
             ? [
                   {
-                      title: 'Customers',
-                      href: customersIndex(),
-                      icon: Users,
+                      title: 'Bookings',
+                      href: bookingsIndex(),
+                      icon: Calendar,
                   },
               ]
             : []),
-
-        ...(can('view users')
+        
+        ...(can('view payments')
             ? [
                   {
-                      title: 'Users',
-                      href: usersIndex(),
-                      icon: Users,
+                      title: 'Payment Verification',
+                      href: '/manager/payment-verification',
+                      icon: ShieldCheck,
                   },
               ]
             : []),
@@ -201,6 +154,37 @@ export function AppSidebar() {
                   },
               ]
             : []),
+    ];
+
+    const hasAdminAccess =
+        can('view customers') ||
+        can('view users') ||
+        can('view payments') ||
+        can('view roles');
+
+    const adminNavItems: NavItem[] = [
+        
+        ...(can('view customers')
+            ? [
+                  {
+                      title: 'Customers',
+                      href: customersIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
+
+
+        ...(can('view staff')
+            ? [
+                  {
+                      title: 'Staff',
+                      href: staffIndex(),
+                      icon: UserCog,
+                  },
+              ]
+            : []),
+
 
         ...(can('view roles')
             ? [
@@ -208,6 +192,26 @@ export function AppSidebar() {
                       title: 'Roles',
                       href: rolesIndex(),
                       icon: ShieldCheck,
+                  },
+              ]
+            : []),
+
+         ...(can('view users')
+            ? [
+                  {
+                      title: 'Users',
+                      href: usersIndex(),
+                      icon: Users,
+                  },
+              ]
+            : []),
+
+        ...(can('view reports')
+            ? [
+                  {
+                      title: 'Reports',
+                      href: '/manager/reports',
+                      icon: BarChart3,
                   },
               ]
             : []),
