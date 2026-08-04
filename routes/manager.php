@@ -124,6 +124,8 @@ Route::middleware(['auth'])
             ->name('tables.destroy')->middleware('permission:delete tables');
         Route::patch('tables/{table}/toggle-status', [RestaurantTableController::class, 'toggleStatus'])
             ->name('tables.toggle-status')->middleware('permission:status tables');
+        Route::post('tables/{table}/regenerate-qr', [RestaurantTableController::class, 'regenerateQr'])
+            ->name('tables.regenerate-qr')->middleware('permission:update tables');
 
         // Customers
         Route::get('customers', [CustomerController::class, 'index'])

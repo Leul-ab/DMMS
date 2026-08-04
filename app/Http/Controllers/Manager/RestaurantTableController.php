@@ -440,5 +440,105 @@ class RestaurantTableController extends Controller
 
         return back();
     }
+
+    /**
+     * Regenerate the QR code for a table in the current branch.
+     */
+    public function regenerateQr(
+        Request $request,
+        RestaurantTable $table
+    ) {
+        $branchId = $this->currentBranchId($request);
+
+        abort_unless(
+            (int) $table->branch_id === $branchId,
+            404
+        );
+
+        try {
+            if (
+                $table->qr_code &&
+                Storage::disk('public')->exists($table->qr_code)
+            ) {
+                Storage::disk('public')->delete($table->qr_code);
+            }
+
+            $menuUrl = route('menu.index', [
+                'table' => $table->table_number,
+                'branch' => $branchId,
+            ]);
+
+            if (
+                empty($menuUrl) ||
+                ! filter_var($menuUrl, FILTER_VALIDATE_URL)
+            ) {
+                throw new \RuntimeException(
+                    'Generated menu URL is invalid: ' . ($menuUrl ?: 'empty')
+                );
+            }
+
+            $qrcodeDir = 'qrcodes';
+
+            if (! Storage::disk('public')->exists($qrcodeDir)) {
+                Storage::disk('public')->makeDirectory($qrcodeDir);
+            }
+
+            $qrCode = new QrCode($menuUrl);
+            $writer = new SvgWriter();
+            $result = $writer->write($qrCode);
+
+            $fileName =
+                $qrcodeDir .
+                '/branch_' .
+                $branchId .
+                '_table_' .
+                $table->table_number .
+                '_' .
+                uniqid('qr_', true) .
+                '.svg';
+
+            $saved = Storage::disk('public')->put(
+                $fileName,
+                $result->getString()
+            );
+
+            if ($saved === false) {
+                throw new \RuntimeException(
+                    'Failed to save QR code image to storage.'
+                );
+            }
+
+            $table->update([
+                'qr_code' => $fileName,
+            ]);
+
+            Inertia::flash('toast', [
+                'type' => 'success',
+                'message' =>
+                    'QR code regenerated successfully for Table ' .
+                    $table->table_number .
+                    '.',
+            ]);
+        } catch (\Exception $e) {
+            Log::error(
+                'QR code regeneration failed for table #' . $table->table_number,
+                [
+                    'error' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'table_number' => $table->table_number,
+                    'branch_id' => $branchId,
+                ]
+            );
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' =>
+                    'Failed to regenerate QR code for this table.',
+            ]);
+        }
+
+        return back();
+    }
 }
 

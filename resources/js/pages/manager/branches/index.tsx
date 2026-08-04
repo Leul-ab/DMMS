@@ -14,7 +14,6 @@ import {
     X,
 } from 'lucide-react';
 
-import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -119,10 +118,10 @@ export default function BranchesIndex({ branches }: Props) {
     };
 
     return (
-        <AppLayout>
+        <>
             <Head title="Branches" />
 
-            <div className="w-full space-y-6 p-6">
+            <div className="w-full min-w-0 space-y-6 p-6">
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -462,7 +461,16 @@ export default function BranchesIndex({ branches }: Props) {
                     </div>
                 </div>
             )}
-        </AppLayout>
+        </>
     );
 }
+
+BranchesIndex.layout = {
+    breadcrumbs: [
+        {
+            title: 'Branches',
+            href: '/manager/branches',
+        },
+    ],
+};
 

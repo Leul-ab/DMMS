@@ -8,6 +8,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -74,6 +75,9 @@ class DashboardController extends Controller
                 'orderStatusOverview' => [],
                 'popularMenuItems' => [],
                 'recentBookings' => [],
+                'revenueTrend' => [],
+                'salesByCategory' => [],
+                'paymentStatusOverview' => [],
             ]);
         }
 
@@ -254,6 +258,102 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | Revenue Trend (Last 14 Days) — current branch only
+        |--------------------------------------------------------------------------
+        */
+
+        $revenueRowsByDate = Order::query()
+            ->where('branch_id', $branchId)
+            ->where('status', 'completed')
+            ->where(
+                'created_at',
+                '>=',
+                Carbon::now()->subDays(13)->startOfDay()
+            )
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(total_amount) as revenue'),
+                DB::raw('COUNT(*) as orders')
+            )
+            ->groupBy(DB::raw('DATE(created_at)'))
+            ->get()
+            ->keyBy(fn ($row) => (string) $row->date);
+
+        $revenueTrend = collect(range(13, 0))->map(
+            function ($daysAgo) use ($revenueRowsByDate) {
+                $date = Carbon::now()->subDays($daysAgo);
+
+                $row = $revenueRowsByDate->get(
+                    $date->toDateString()
+                );
+
+                return [
+                    'date' => $date->toDateString(),
+                    'label' => $date->format('M j'),
+                    'revenue' => (float) ($row->revenue ?? 0),
+                    'orders' => (int) ($row->orders ?? 0),
+                ];
+            }
+        )->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sales By Category — current branch only
+        |--------------------------------------------------------------------------
+        */
+
+        $salesByCategory = DB::table('order_items')
+            ->join(
+                'orders',
+                'order_items.order_id',
+                '=',
+                'orders.id'
+            )
+            ->join(
+                'menu_items',
+                'order_items.menu_item_id',
+                '=',
+                'menu_items.id'
+            )
+            ->leftJoin(
+                'menu_categories',
+                'menu_items.category_id',
+                '=',
+                'menu_categories.id'
+            )
+            ->where('orders.branch_id', $branchId)
+            ->where('menu_items.branch_id', $branchId)
+            ->where('orders.status', 'completed')
+            ->select(
+                DB::raw(
+                    "COALESCE(menu_categories.name, 'Uncategorized') as category"
+                ),
+                DB::raw(
+                    'SUM(order_items.quantity * order_items.price) as sales'
+                )
+            )
+            ->groupBy('category')
+            ->orderByDesc('sales')
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Status Overview — current branch only
+        |--------------------------------------------------------------------------
+        */
+
+        $paymentStatusOverview = Order::query()
+            ->where('branch_id', $branchId)
+            ->select(
+                'payment_status',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_amount) as total')
+            )
+            ->groupBy('payment_status')
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
         | Recent Table Bookings
         |--------------------------------------------------------------------------
         */
@@ -307,6 +407,9 @@ class DashboardController extends Controller
             'orderStatusOverview' => $orderStatusOverview,
             'popularMenuItems' => $popularMenuItems,
             'recentBookings' => $recentBookings,
+            'revenueTrend' => $revenueTrend,
+            'salesByCategory' => $salesByCategory,
+            'paymentStatusOverview' => $paymentStatusOverview,
         ]);
     }
 }

@@ -61,7 +61,12 @@ class HandleInertiaRequests extends Middleware
         }
 
         if (! $currentBranch && $branches->isNotEmpty()) {
-            $currentBranch = $branches->first();
+            // Prefer the user's primary branch when it is accessible.
+            $currentBranch = $user?->branch_id
+                ? $branches->firstWhere('id', (int) $user->branch_id)
+                : null;
+
+            $currentBranch ??= $branches->first();
 
             $request->session()->put(
                 'current_branch_id',
