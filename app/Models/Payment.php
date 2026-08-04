@@ -11,6 +11,7 @@ class Payment extends Model
         'order_id',
         'user_id',
         'table_id',
+        'branch_id',
         'payment_method',
         'payment_status',
         'amount',
@@ -26,6 +27,7 @@ class Payment extends Model
     protected function casts(): array
     {
         return [
+            'branch_id' => 'integer',
             'amount' => 'decimal:2',
             'subtotal' => 'decimal:2',
             'tax' => 'decimal:2',
@@ -33,6 +35,14 @@ class Payment extends Model
             'discount' => 'decimal:2',
             'paid_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The branch this payment belongs to.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function order(): BelongsTo

@@ -10,6 +10,7 @@ class MenuItem extends Model
 {
     protected $fillable = [
         'category_id',
+        'branch_id',
         'name',
         'slug',
         'description',
@@ -27,6 +28,7 @@ class MenuItem extends Model
             'is_available' => 'boolean',
             'featured' => 'boolean',
             'preparation_time' => 'integer',
+            'branch_id' => 'integer',
         ];
     }
 
@@ -45,6 +47,17 @@ class MenuItem extends Model
         });
     }
 
+    /**
+     * The branch this menu item belongs to.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * The category this menu item belongs to.
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'category_id');

@@ -55,6 +55,12 @@ import type { PaginatedData } from '@/types';
 type Role = {
     id: number;
     name: string;
+    slug?: string;
+};
+
+type Branch = {
+    id: number;
+    name: string;
 };
 
 type User = {
@@ -64,12 +70,16 @@ type User = {
     phone: string | null;
     is_active: boolean;
     role_id: number;
+    branch_id?: number | null;
     role: Role | null;
+    branch?: Branch | null;
+    assigned_branches?: Branch[];
 };
 
 type Props = {
     users: PaginatedData<User>;
     roles: Role[];
+    branches: Branch[];
     filters: {
         search?: string;
         role?: string;
@@ -79,6 +89,7 @@ type Props = {
 export default function UsersIndex({
     users,
     roles,
+    branches = [],
     filters,
 }: Props) {
     const can = useCan();
@@ -115,10 +126,33 @@ export default function UsersIndex({
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [roleId, setRoleId] = useState('');
+    const [branchIds, setBranchIds] = useState<number[]>([]);
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] =
         useState('');
     const [isActive, setIsActive] = useState(true);
+
+    const selectedRole = roles.find(
+        (role) => String(role.id) === roleId,
+    );
+    const isManagerRole =
+        selectedRole?.slug === 'manager' ||
+        selectedRole?.name?.toLowerCase() === 'manager';
+    const isSuperAdminRole =
+        selectedRole?.slug === 'super_admin' ||
+        selectedRole?.name?.toLowerCase().includes('admin');
+
+    const toggleBranchId = (branchId: number) => {
+        setBranchIds((prev) => {
+            if (isManagerRole) {
+                return prev.includes(branchId)
+                    ? prev.filter((id) => id !== branchId)
+                    : [...prev, branchId];
+            }
+
+            return [branchId];
+        });
+    };
 
     // -----------------------------------------
     // Search
@@ -170,6 +204,7 @@ export default function UsersIndex({
         setEmail('');
         setPhone('');
         setRoleId('');
+        setBranchIds([]);
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(true);
@@ -205,6 +240,10 @@ export default function UsersIndex({
         setEmail(user.email);
         setPhone(user.phone || '');
         setRoleId(String(user.role_id));
+        setBranchIds(
+            user.assigned_branches?.map((branch) => branch.id) ??
+                (user.branch_id ? [user.branch_id] : []),
+        );
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(user.is_active);
@@ -234,6 +273,10 @@ export default function UsersIndex({
             return;
         }
 
+        if (!isSuperAdminRole && branchIds.length === 0) {
+            return;
+        }
+
         router.post(
             usersStore.url(),
             {
@@ -241,6 +284,8 @@ export default function UsersIndex({
                 email,
                 phone: phone || null,
                 role_id: Number(roleId),
+                branch_ids: branchIds,
+                branch_id: branchIds[0] ?? null,
                 password: password || null,
                 password_confirmation:
                     passwordConfirmation || null,
@@ -269,6 +314,10 @@ export default function UsersIndex({
             return;
         }
 
+        if (!isSuperAdminRole && branchIds.length === 0) {
+            return;
+        }
+
         router.put(
             usersUpdate.url(selectedUser.id),
             {
@@ -276,6 +325,8 @@ export default function UsersIndex({
                 email,
                 phone: phone || null,
                 role_id: Number(roleId),
+                branch_ids: branchIds,
+                branch_id: branchIds[0] ?? null,
                 password: password || null,
                 password_confirmation:
                     passwordConfirmation || null,
@@ -448,6 +499,10 @@ export default function UsersIndex({
                                             </th>
 
                                             <th className="p-3">
+                                                Branches
+                                            </th>
+
+                                            <th className="p-3">
                                                 Status
                                             </th>
 
@@ -493,6 +548,44 @@ export default function UsersIndex({
                                                                 ?.name ||
                                                                 'No Role'}
                                                         </Badge>
+                                                    </td>
+
+                                                    {/* Branches */}
+
+                                                    <td className="p-3">
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(user.assigned_branches
+                                                                ?.length
+                                                                ? user.assigned_branches
+                                                                : user.branch
+                                                                  ? [user.branch]
+                                                                  : []
+                                                            ).map(
+                                                                (
+                                                                    branch,
+                                                                ) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            branch.id
+                                                                        }
+                                                                        variant="outline"
+                                                                    >
+                                                                        {
+                                                                            branch.name
+                                                                        }
+                                                                    </Badge>
+                                                                ),
+                                                            )}
+
+                                                            {!user
+                                                                .assigned_branches
+                                                                ?.length &&
+                                                                !user.branch && (
+                                                                    <span className="text-muted-foreground">
+                                                                        —
+                                                                    </span>
+                                                                )}
+                                                        </div>
                                                     </td>
 
                                                     {/* Status */}
@@ -731,7 +824,10 @@ export default function UsersIndex({
 
                             <Select
                                 value={roleId}
-                                onValueChange={setRoleId}
+                                onValueChange={(value) => {
+                                    setRoleId(value);
+                                    setBranchIds([]);
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a role" />
@@ -755,6 +851,52 @@ export default function UsersIndex({
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Branch Assignment */}
+
+                        {!isSuperAdminRole && roleId && (
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    {isManagerRole
+                                        ? 'Assigned Branches'
+                                        : 'Assigned Branch'}
+                                </label>
+
+                                <div className="space-y-2 rounded-md border p-3">
+                                    {branches.map((branch) => (
+                                        <label
+                                            key={branch.id}
+                                            className="flex items-center gap-2 text-sm"
+                                        >
+                                            <input
+                                                type={
+                                                    isManagerRole
+                                                        ? 'checkbox'
+                                                        : 'radio'
+                                                }
+                                                name="assigned_branches"
+                                                checked={branchIds.includes(
+                                                    branch.id,
+                                                )}
+                                                onChange={() =>
+                                                    toggleBranchId(
+                                                        branch.id,
+                                                    )
+                                                }
+                                                className="h-4 w-4"
+                                            />
+                                            <span>{branch.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {isManagerRole
+                                        ? 'Managers can be assigned to one or more branches.'
+                                        : 'Staff can only be assigned to a single branch.'}
+                                </p>
+                            </div>
+                        )}
 
                         {/* Password */}
 
@@ -888,6 +1030,45 @@ export default function UsersIndex({
                                                 'No Role'
                                         }
                                     </Badge>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <p className="mb-2 text-sm text-muted-foreground">
+                                        Assigned Branches
+                                    </p>
+
+                                    <div className="flex flex-wrap gap-1">
+                                        {(selectedUser
+                                            .assigned_branches
+                                            ?.length
+                                            ? selectedUser.assigned_branches
+                                            : selectedUser.branch
+                                              ? [
+                                                    selectedUser.branch,
+                                                ]
+                                              : []
+                                        ).map((branch) => (
+                                            <Badge
+                                                key={
+                                                    branch.id
+                                                }
+                                                variant="outline"
+                                            >
+                                                {
+                                                    branch.name
+                                                }
+                                            </Badge>
+                                        ))}
+
+                                        {!selectedUser
+                                            .assigned_branches
+                                            ?.length &&
+                                            !selectedUser.branch && (
+                                                <span className="text-sm text-muted-foreground">
+                                                    No branches assigned
+                                                </span>
+                                            )}
+                                    </div>
                                 </div>
 
                                 <div>
@@ -1034,7 +1215,10 @@ export default function UsersIndex({
 
                             <Select
                                 value={roleId}
-                                onValueChange={setRoleId}
+                                onValueChange={(value) => {
+                                    setRoleId(value);
+                                    setBranchIds([]);
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select a role" />
@@ -1058,6 +1242,52 @@ export default function UsersIndex({
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        {/* Branch Assignment */}
+
+                        {!isSuperAdminRole && roleId && (
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    {isManagerRole
+                                        ? 'Assigned Branches'
+                                        : 'Assigned Branch'}
+                                </label>
+
+                                <div className="space-y-2 rounded-md border p-3">
+                                    {branches.map((branch) => (
+                                        <label
+                                            key={branch.id}
+                                            className="flex items-center gap-2 text-sm"
+                                        >
+                                            <input
+                                                type={
+                                                    isManagerRole
+                                                        ? 'checkbox'
+                                                        : 'radio'
+                                                }
+                                                name="edit_assigned_branches"
+                                                checked={branchIds.includes(
+                                                    branch.id,
+                                                )}
+                                                onChange={() =>
+                                                    toggleBranchId(
+                                                        branch.id,
+                                                    )
+                                                }
+                                                className="h-4 w-4"
+                                            />
+                                            <span>{branch.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {isManagerRole
+                                        ? 'Managers can be assigned to one or more branches.'
+                                        : 'Staff can only be assigned to a single branch.'}
+                                </p>
+                            </div>
+                        )}
 
                         {/* New Password */}
 

@@ -13,11 +13,42 @@ use Illuminate\Http\Request;
 class BookingManagementController extends Controller
 {
     /**
+     * Get currently selected branch ID.
+     */
+    private function currentBranchId(Request $request): int
+    {
+        $branchId = $request->session()->get('current_branch_id');
+
+        if (! $branchId) {
+            abort(400, 'No branch selected.');
+        }
+
+        return (int) $branchId;
+    }
+
+    /**
+     * Ensure booking belongs to selected branch.
+     */
+    private function assertSameBranch(
+        Request $request,
+        TableBooking $booking
+    ): void {
+        abort_unless(
+            (int) $booking->branch_id === $this->currentBranchId($request),
+            404
+        );
+    }
+
+    /**
      * Display the booking management page.
      */
     public function index(Request $request)
     {
-        $query = TableBooking::with(['customer', 'tables']);
+        $branchId = $this->currentBranchId($request);
+
+        $query = TableBooking::query()
+            ->where('branch_id', $branchId)
+            ->with(['customer', 'tables']);
 
         // Search filter
         if ($search = $request->get('search')) {
@@ -76,15 +107,21 @@ class BookingManagementController extends Controller
             });
 
         // Dashboard statistics
-        $totalBookings = TableBooking::count();
-        $activeBookings = TableBooking::where('status', 'active')
+        $totalBookings = TableBooking::where('branch_id', $branchId)->count();
+        $activeBookings = TableBooking::where('branch_id', $branchId)
+            ->where('status', 'active')
             ->where('expires_at', '>', Carbon::now())
             ->count();
-        $expiredBookings = TableBooking::where('status', 'active')
+        $expiredBookings = TableBooking::where('branch_id', $branchId)
+            ->where('status', 'active')
             ->where('expires_at', '<', Carbon::now())
             ->count();
-        $availableTables = RestaurantTable::where('status', 'available')->count();
-        $reservedTables = RestaurantTable::where('status', 'booked')->count();
+        $availableTables = RestaurantTable::where('branch_id', $branchId)
+            ->where('status', 'available')
+            ->count();
+        $reservedTables = RestaurantTable::where('branch_id', $branchId)
+            ->where('status', 'booked')
+            ->count();
 
         return inertia('admin/bookings/index', [
             'bookings' => $bookings,
@@ -102,8 +139,13 @@ class BookingManagementController extends Controller
     /**
      * Cancel a booking.
      */
-    public function cancel(TableBooking $booking): RedirectResponse
+    public function cancel(
+        Request $request,
+        TableBooking $booking
+    ): RedirectResponse
     {
+        $this->assertSameBranch($request, $booking);
+
         if ($booking->status !== 'active') {
             return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
         }
@@ -123,8 +165,13 @@ class BookingManagementController extends Controller
     /**
      * Mark a booking as completed.
      */
-    public function complete(TableBooking $booking): RedirectResponse
+    public function complete(
+        Request $request,
+        TableBooking $booking
+    ): RedirectResponse
     {
+        $this->assertSameBranch($request, $booking);
+
         if ($booking->status !== 'active') {
             return back()->withErrors(['booking' => 'This booking cannot be completed.']);
         }
@@ -143,8 +190,13 @@ class BookingManagementController extends Controller
     /**
      * Delete an expired booking.
      */
-    public function destroy(TableBooking $booking): RedirectResponse
+    public function destroy(
+        Request $request,
+        TableBooking $booking
+    ): RedirectResponse
     {
+        $this->assertSameBranch($request, $booking);
+
         if ($booking->status === 'active' && $booking->expires_at > Carbon::now()) {
             return back()->withErrors(['booking' => 'Cannot delete an active booking.']);
         }
@@ -162,8 +214,13 @@ class BookingManagementController extends Controller
     /**
      * Get booking details for the view modal (API).
      */
-    public function show(TableBooking $booking): JsonResponse
+    public function show(
+        Request $request,
+        TableBooking $booking
+    ): JsonResponse
     {
+        $this->assertSameBranch($request, $booking);
+
         $booking->load(['customer', 'tables']);
 
         $isExpired = false;

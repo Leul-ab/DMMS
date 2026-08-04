@@ -12,6 +12,7 @@ class Order extends Model
     protected $fillable = [
         'table_id',
         'customer_id',
+        'branch_id',
         'order_number',
         'status',
         'payment_status',
@@ -28,10 +29,10 @@ class Order extends Model
         'special_instructions',
     ];
 
-
     protected function casts(): array
     {
         return [
+            'branch_id' => 'integer',
             'total_amount' => 'decimal:2',
             'estimated_minutes' => 'integer',
             'preparation_time' => 'integer',
@@ -39,6 +40,14 @@ class Order extends Model
             'preparation_started_at' => 'datetime',
             'preparation_completed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The branch this order belongs to.
+     */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function table(): BelongsTo

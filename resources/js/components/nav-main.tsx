@@ -11,7 +11,7 @@ import { useRefreshOnNavigate } from '@/hooks/use-refresh-on-navigate';
 import type { NavItem } from '@/types';
 
 export function NavMain({ items = [], label }: { items: NavItem[]; label?: string }) {
-    const { isCurrentUrl } = useCurrentUrl();
+    const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
     useRefreshOnNavigate();
 
     return (
@@ -19,7 +19,11 @@ export function NavMain({ items = [], label }: { items: NavItem[]; label?: strin
             {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
             <SidebarMenu>
                 {items.map((item) => {
-                    const isActive = isCurrentUrl(item.href);
+                    const isActive =
+                        item.isActive ??
+                        (item.activePrefix
+                            ? isCurrentOrParentUrl(item.activePrefix)
+                            : isCurrentUrl(item.href));
 
                     return (
                         <SidebarMenuItem key={item.title}>
