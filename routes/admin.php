@@ -31,6 +31,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::patch('payments/{order}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateStatus'])->name('payments.update-status')->middleware('permission:status payments');
     Route::get('payments/{order}/receipt', [\App\Http\Controllers\Admin\PaymentController::class, 'printReceipt'])->name('payments.receipt')->middleware('permission:view payments');
 
+    // Customer Feedback Management
+    Route::get('feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('feedback.index')->middleware('permission:view feedback');
+    Route::get('feedback/export', [\App\Http\Controllers\Admin\FeedbackController::class, 'export'])->name('feedback.export')->middleware('permission:view feedback');
+
     // Role Management
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index')->middleware('permission:view roles');
     Route::post('roles', [RoleController::class, 'store'])->name('roles.store')->middleware('permission:create roles');

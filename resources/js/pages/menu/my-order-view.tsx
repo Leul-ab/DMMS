@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import { toast } from 'sonner';
-import { ArrowLeft, Copy, Receipt } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, Receipt, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { ReceiptModal } from '@/components/receipt-modal';
+import { FeedbackModal } from '@/components/feedback-modal';
 
 type MenuItem = {
     id: number;
@@ -73,6 +74,13 @@ type Order = {
     table: RestaurantTable;
     receipt: Receipt | null;
     payment: Payment | null;
+    feedback: {
+        id: number;
+        overall_rating: number;
+        comment: string | null;
+        anonymous: boolean;
+        created_at: string;
+    } | null;
 };
 
 type Props = {
@@ -125,15 +133,16 @@ export default function MyOrderView({
     orders = [],
     menuPath,
 }: Props) {
-    const [showPayment, setShowPayment] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+    const [isSendingVerification, setIsSendingVerification] = useState(false);
+    const [verificationSent, setVerificationSent] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const [progressPercent, setProgressPercent] = useState<number>(0);
     const [showCompletion, setShowCompletion] = useState(false);
     const [showReceipt, setShowReceipt] = useState(false);
+    const [showFeedbackModal, setShowFeedbackModal] = useState(false);
     const prevPrepTimeRef = useRef<number | null>(null);
     const prevPaymentStatusRef = useRef<string | null>(null);
     const prevOrderStatusRef = useRef<string | null>(null);
@@ -335,40 +344,49 @@ export default function MyOrderView({
         cbe_birr: { label: 'CBE Birr', number: '1000976545673', icon: '🏦' },
     };
 
-    // Copy the selected payment account number to the clipboard,
-    // show a success message, and close the modal automatically.
-    const copyAccountNumber = async () => {
-        if (!selectedPaymentMethod) return;
+    // Check if a verification request has already been sent for this order
+    const hasVerificationBeenSent = order?.payment_status === 'pending' || verificationSent;
 
-        const accountNumber = paymentAccounts[selectedPaymentMethod].number;
-
-        try {
-            await navigator.clipboard.writeText(accountNumber);
-            toast.success('Account number copied successfully.');
-        } catch {
-            // Fallback for browsers that don't support the clipboard API
-            const textarea = document.createElement('textarea');
-            textarea.value = accountNumber;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            toast.success('Account number copied successfully.');
-        }
-
-        // Close the modal after copying so the customer can proceed with the payment.
-        setShowPaymentModal(false);
-        setShowPayment(true);
-    };
-
-    // Submit payment with the selected method
-    const submitPayment = () => {
+    // Copy the account number AND submit the verification request (replaces old copyAccountNumber + submitPayment)
+    const handleCopyAndVerify = async () => {
         if (!order || !selectedPaymentMethod) return;
 
-        setIsSubmittingPayment(true);
+        // Check if verification already exists
+        if (hasVerificationBeenSent) {
+            toast.info('A payment verification request has already been sent.');
+            return;
+        }
 
+        setIsSendingVerification(true);
+
+        const accountNumber = paymentAccounts[selectedPaymentMethod].number;
+        let copySuccess = false;
+
+        // Step 1: Copy account number to clipboard
+        try {
+            await navigator.clipboard.writeText(accountNumber);
+            toast.success('✓ Account number copied successfully.');
+            copySuccess = true;
+        } catch {
+            // Fallback for browsers that don't support the clipboard API
+            try {
+                const textarea = document.createElement('textarea');
+                textarea.value = accountNumber;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                toast.success('✓ Account number copied successfully.');
+                copySuccess = true;
+            } catch {
+                toast.error('Unable to copy the account number. Please copy it manually.');
+                copySuccess = false;
+            }
+        }
+
+        // Step 2: Submit verification request (reusing existing backend logic from PaymentController::submit)
         router.post(
             `/orders/${order.id}/payment`,
             {
@@ -377,12 +395,21 @@ export default function MyOrderView({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setIsSubmittingPayment(false);
-                    toast.success('Payment submitted successfully. Please wait for confirmation.');
+                    setIsSendingVerification(false);
+                    setVerificationSent(true);
+                    setShowPaymentModal(false);
+                    toast.success(
+                        'Account number copied successfully.\n\nYour payment verification request has been sent.\n\nPlease complete your payment using the copied account number.\n\nThe restaurant will verify your payment shortly.',
+                        { duration: 8000 }
+                    );
                 },
                 onError: () => {
-                    setIsSubmittingPayment(false);
-                    toast.error('Failed to submit payment. Please try again.');
+                    setIsSendingVerification(false);
+                    if (copySuccess) {
+                        toast.error('Account number copied, but the verification request could not be sent. Please try again.');
+                    } else {
+                        toast.error('Unable to copy the account number. Please copy it manually.');
+                    }
                 },
             }
         );
@@ -834,105 +861,37 @@ export default function MyOrderView({
                                                 Your order is completed. Please choose a payment method to proceed.
                                             </p>
 
-                                            {/* Step 1: Choose Payment Method */}
-                                            {!showPayment && (
-                                                <div className="mt-6 space-y-3">
-                                                    <h3 className="text-lg font-black">
-                                                        Choose Payment Method
-                                                    </h3>
+                                            <div className="mt-6 space-y-3">
+                                                <h3 className="text-lg font-black">
+                                                    Choose Payment Method
+                                                </h3>
 
-                                                    <div className="grid gap-3 sm:grid-cols-2">
-                                                        {Object.entries(paymentAccounts).map(([key, account]) => (
-                                                            <button
-                                                                key={key}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setSelectedPaymentMethod(key);
-                                                                    setShowPaymentModal(true);
-                                                                }}
-                                                                className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
-                                                            >
-                                                                <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
-                                                                    {account.icon}
-                                                                </span>
-                                                                <div>
-                                                                    <p className="font-black text-stone-800">
-                                                                        {account.label}
-                                                                    </p>
-                                                                    <p className="text-xs text-gray-500">
-                                                                        Pay with {account.label}
-                                                                    </p>
-                                                                </div>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Step 2: Complete Payment */}
-                                            {showPayment && selectedPaymentMethod && (
-                                                <div className="mt-6 rounded-2xl bg-white p-6 animate-in fade-in slide-in-from-bottom-2 fill-mode-both">
-
-                                                    <div className="flex items-center justify-between">
-                                                        <h3 className="text-lg font-black">
-                                                            Complete Payment
-                                                        </h3>
+                                                <div className="grid gap-3 sm:grid-cols-2">
+                                                    {Object.entries(paymentAccounts).map(([key, account]) => (
                                                         <button
+                                                            key={key}
                                                             type="button"
                                                             onClick={() => {
-                                                                setShowPayment(false);
-                                                                setSelectedPaymentMethod(null);
+                                                                setSelectedPaymentMethod(key);
+                                                                setShowPaymentModal(true);
                                                             }}
-                                                            className="text-xs font-semibold text-gray-400 transition hover:text-orange-500"
+                                                            className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
                                                         >
-                                                            ← Change Method
-                                                        </button>
-                                                    </div>
-
-                                                    <div className="mt-4 flex items-center gap-3 rounded-xl bg-gray-100 p-4">
-                                                        <span className="text-2xl">
-                                                            {paymentAccounts[selectedPaymentMethod].icon}
-                                                        </span>
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-gray-500">
-                                                                Selected Payment Method
-                                                            </p>
-                                                            <p className="text-lg font-black text-stone-800">
-                                                                {paymentAccounts[selectedPaymentMethod].label}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 flex items-center justify-between rounded-xl bg-gray-100 p-4">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-gray-500">
-                                                                Amount to Pay
-                                                            </p>
-                                                            <p className="mt-1 text-2xl font-black text-orange-500">
-                                                                {Number(order.total_amount).toFixed(2)} ETB
-                                                            </p>
-                                                        </div>
-                                                        <Copy className="size-5 text-gray-400" />
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={submitPayment}
-                                                        disabled={isSubmittingPayment}
-                                                        className="mt-5 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
-                                                    >
-                                                        {isSubmittingPayment ? (
-                                                            <span className="flex items-center justify-center gap-2">
-                                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                                                Submitting...
+                                                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+                                                                {account.icon}
                                                             </span>
-                                                        ) : (
-                                                            'Paid'
-                                                        )}
-                                                    </button>
-
+                                                            <div>
+                                                                <p className="font-black text-stone-800">
+                                                                    {account.label}
+                                                                </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    Pay with {account.label}
+                                                                </p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                            )}
+                                            </div>
                                         </>
                                     )}
 
@@ -943,8 +902,8 @@ export default function MyOrderView({
                                             </p>
 
                                             <p className="mt-1 text-sm text-yellow-700">
-                                                Your payment has been submitted.
-                                                Please wait for the restaurant to confirm it.
+                                                Your payment verification request has been sent.
+                                                Please wait for the restaurant to verify your payment.
                                             </p>
                                         </div>
                                     )}
@@ -968,6 +927,28 @@ export default function MyOrderView({
                                                     <Receipt className="size-4" />
                                                     View Receipt
                                                 </button>
+                                            )}
+
+                                            {/* Rate Overall Service Button - Only when payment is verified and no feedback exists */}
+                                            {!order.feedback && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowFeedbackModal(true)}
+                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
+                                                >
+                                                    <Star className="size-4 fill-amber-200" />
+                                                    Rate Overall Service
+                                                </button>
+                                            )}
+
+                                            {/* Already Rated Message */}
+                                            {order.feedback && (
+                                                <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-3">
+                                                    <CheckCircle2 className="size-4 text-green-600" />
+                                                    <p className="text-sm font-bold text-green-700">
+                                                        You have already rated this order.
+                                                    </p>
+                                                </div>
                                             )}
                                         </div>
                                     )}
@@ -1144,14 +1125,29 @@ export default function MyOrderView({
                                 </p>
                             </div>
 
-                            {/* Copy Account Number Button */}
+                            {/* Copy & Send for Verification Button */}
                             <button
                                 type="button"
-                                onClick={copyAccountNumber}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                                onClick={handleCopyAndVerify}
+                                disabled={isSendingVerification || hasVerificationBeenSent}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
                             >
-                                <Copy className="size-4" />
-                                Copy Account Number
+                                {isSendingVerification ? (
+                                    <>
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Sending...
+                                    </>
+                                ) : hasVerificationBeenSent ? (
+                                    <>
+                                        <CheckCircle2 className="size-4" />
+                                        ✓ Verification Requested
+                                    </>
+                                ) : (
+                                    <>
+                                        <Copy className="size-4" />
+                                        Copy & Send for Verification
+                                    </>
+                                )}
                             </button>
 
                             <p className="text-center text-xs text-gray-400">
@@ -1168,6 +1164,19 @@ export default function MyOrderView({
                 onOpenChange={setShowReceipt}
                 order={order}
             />
+
+            {/* ================= FEEDBACK MODAL ================= */}
+            {order && (
+                <FeedbackModal
+                    open={showFeedbackModal}
+                    onOpenChange={setShowFeedbackModal}
+                    onSubmitted={() => {
+                        // Reload to update the order feedback state
+                        router.reload({ only: ['order', 'orders'] });
+                    }}
+                    order={order}
+                />
+            )}
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-12 border-t border-gray-200 bg-white">

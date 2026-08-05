@@ -26,6 +26,7 @@ import { Reveal } from '@/components/dashboard/reveal';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { StarRating } from '@/components/star-rating';
 
 type DashboardStats = {
     totalOrders: number;
@@ -83,6 +84,22 @@ type PaymentStatusItem = {
     total: number;
 };
 
+type FeedbackAnalytics = {
+    totalReviews: number;
+    averageRating: number;
+    overallRating: number;
+};
+
+type RecentFeedbackItem = {
+    id: number;
+    order_id: number;
+    customer_name: string;
+    order_number: string;
+    overall_rating: number;
+    comment: string | null;
+    created_at: string;
+};
+
 type Props = {
     stats: DashboardStats;
     orderStatusOverview: OrderStatusOverview[];
@@ -90,6 +107,8 @@ type Props = {
     revenueTrend: RevenueTrendPoint[];
     salesByCategory: SalesByCategoryItem[];
     paymentStatusOverview: PaymentStatusItem[];
+    feedbackAnalytics: FeedbackAnalytics;
+    recentFeedback: RecentFeedbackItem[];
 };
 
 const CATEGORY_COLORS = [
@@ -151,6 +170,8 @@ export default function Dashboard({
     revenueTrend,
     salesByCategory,
     paymentStatusOverview,
+    feedbackAnalytics,
+    recentFeedback,
 }: Props) {
     /*
     |--------------------------------------------------------------------------
@@ -743,6 +764,118 @@ export default function Dashboard({
                             </div>
                         </Reveal>
                     </div>
+
+                    {/* ================= CUSTOMER FEEDBACK ANALYTICS ================= */}
+                    <Reveal>
+                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="mb-6">
+                                <h2 className="text-lg font-black text-stone-800">
+                                    Customer Feedback Analytics
+                                </h2>
+                                <p className="text-sm text-amber-600">
+                                    Average ratings from customer reviews
+                                </p>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center">
+                                    <p className="text-sm font-semibold text-amber-600">Overall Service Rating</p>
+                                    <p className="mt-2 text-3xl font-black text-green-600">{feedbackAnalytics.overallRating.toFixed(1)}</p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">avg rating</p>
+                                </div>
+                                <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
+                                    <p className="text-sm font-semibold text-amber-600">Average Rating</p>
+                                    <p className="mt-2 text-3xl font-black text-stone-800">{feedbackAnalytics.averageRating.toFixed(1)}</p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">avg rating</p>
+                                </div>
+                                <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
+                                    <p className="text-sm font-semibold text-amber-600">Total Reviews</p>
+                                    <p className="mt-2 text-3xl font-black text-orange-600">{feedbackAnalytics.totalReviews}</p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">reviews</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between rounded-xl bg-orange-50 p-4">
+                                <p className="text-sm font-semibold text-stone-700">Total Reviews</p>
+                                <p className="text-lg font-black text-orange-600">{feedbackAnalytics.totalReviews}</p>
+                            </div>
+                        </div>
+                    </Reveal>
+
+                    {/* ================= RECENT CUSTOMER REVIEWS ================= */}
+                    <Reveal>
+                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="mb-6">
+                                <h2 className="text-lg font-black text-stone-800">
+                                    Recent Customer Reviews
+                                </h2>
+                                <p className="text-sm text-amber-600">
+                                    Latest feedback from your customers
+                                </p>
+                            </div>
+
+                            {recentFeedback.length === 0 ? (
+                                <div className="py-10 text-center text-sm text-amber-600">
+                                    No customer reviews yet.
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm">
+                                        <thead>
+                                            <tr className="border-b border-orange-100/80 text-xs font-bold uppercase tracking-wider text-amber-600">
+                                                <th className="px-4 py-3">Customer</th>
+                                                <th className="px-4 py-3">Order Number</th>
+                                                <th className="px-4 py-3">Overall Rating</th>
+                                                <th className="px-4 py-3">Review Comment</th>
+                                                <th className="px-4 py-3">Submitted Date</th>
+                                                <th className="px-4 py-3 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-orange-50">
+                                            {recentFeedback.map((review) => (
+                                                <tr key={review.id} className="transition-colors hover:bg-orange-50/40">
+                                                    <td className="px-4 py-3 font-semibold text-stone-700">
+                                                        {review.customer_name}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <Badge
+                                                            className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                            variant="secondary"
+                                                        >
+                                                            {review.order_number}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <StarRating value={review.overall_rating} readOnly size="sm" />
+                                                    </td>
+                                                    <td className="max-w-xs px-4 py-3 text-stone-600">
+                                                        <span className="line-clamp-2">
+                                                            {review.comment ?? '—'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-stone-500">
+                                                        {new Date(review.created_at).toLocaleDateString('en-US', {
+                                                            year: 'numeric',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                        })}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <Button asChild variant="ghost" size="sm">
+                                                            <Link href={`/customer/orders/${review.order_id}/feedback/view`}>
+                                                                View Details
+                                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                                            </Link>
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </Reveal>
 
                 </div>
             </div>

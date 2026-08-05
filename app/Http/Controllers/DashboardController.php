@@ -240,6 +240,52 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | Customer Feedback Analytics
+        |--------------------------------------------------------------------------
+        */
+
+        $feedbackAvg = \App\Models\Feedback::selectRaw(
+            'AVG(overall_rating) as overall_rating'
+        )->first();
+
+        $totalReviews = \App\Models\Feedback::count();
+
+        $feedbackAnalytics = [
+            'totalReviews' => $totalReviews,
+            'averageRating' => $feedbackAvg->overall_rating
+                ? round((float) $feedbackAvg->overall_rating, 1)
+                : 0,
+            'overallRating' => $feedbackAvg->overall_rating
+                ? round((float) $feedbackAvg->overall_rating, 1)
+                : 0,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recent Customer Reviews
+        |--------------------------------------------------------------------------
+        */
+
+        $recentFeedback = \App\Models\Feedback::with(['customer', 'order'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($feedback) {
+                return [
+                    'id' => $feedback->id,
+                    'order_id' => $feedback->order_id,
+                    'customer_name' => $feedback->anonymous
+                        ? 'Anonymous Customer'
+                        : ($feedback->customer?->name ?? 'Customer'),
+                    'order_number' => $feedback->order?->order_number ?? 'N/A',
+                    'overall_rating' => $feedback->overall_rating,
+                    'comment' => $feedback->comment,
+                    'created_at' => $feedback->created_at,
+                ];
+            });
+
+        /*
+        |--------------------------------------------------------------------------
         | Popular Menu Items
         |--------------------------------------------------------------------------
         */
@@ -353,6 +399,10 @@ class DashboardController extends Controller
             'salesByCategory' => $salesByCategory,
 
             'paymentStatusOverview' => $paymentStatusOverview,
+
+            'feedbackAnalytics' => $feedbackAnalytics,
+
+            'recentFeedback' => $recentFeedback,
         ]);
     }
 }

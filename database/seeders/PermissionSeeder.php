@@ -60,6 +60,9 @@ class PermissionSeeder extends Seeder
         'Reports' => [
             ['view reports', 'view'],
         ],
+        'Feedback' => [
+            ['view feedback', 'view'],
+        ],
         'Kitchen' => [
             ['view kitchen', 'view'],
             ['update kitchen', 'update'],

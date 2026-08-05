@@ -134,7 +134,7 @@ export function AppSidebar() {
                   },
               ]
             : []),
-        
+
         ...(can('view payments')
             ? [
                   {
@@ -163,7 +163,7 @@ export function AppSidebar() {
         can('view roles');
 
     const adminNavItems: NavItem[] = [
-        
+
         ...(can('view customers')
             ? [
                   {
