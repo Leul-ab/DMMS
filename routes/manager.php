@@ -7,6 +7,7 @@ use App\Http\Controllers\Manager\CustomerController;
 use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\ReportController;
 use App\Http\Controllers\Manager\PaymentVerificationController;
+use App\Http\Controllers\Manager\DiscountController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])
@@ -266,5 +267,44 @@ Route::middleware(['auth'])
                 'destroy'
             ]
         )->name('bookings.destroy')->middleware('permission:delete bookings');
+
+
+        // =========================
+        // Discounts
+        // =========================
+        Route::get(
+            'discounts',
+            [DiscountController::class, 'index']
+        )->name('discounts.index')->middleware('permission:view discounts');
+
+        Route::get(
+            'discounts/create',
+            [DiscountController::class, 'create']
+        )->name('discounts.create')->middleware('permission:create discounts');
+
+        Route::post(
+            'discounts',
+            [DiscountController::class, 'store']
+        )->name('discounts.store')->middleware('permission:create discounts');
+
+        Route::get(
+            'discounts/{discount}/edit',
+            [DiscountController::class, 'edit']
+        )->name('discounts.edit')->middleware('permission:update discounts');
+
+        Route::put(
+            'discounts/{discount}',
+            [DiscountController::class, 'update']
+        )->name('discounts.update')->middleware('permission:update discounts');
+
+        Route::delete(
+            'discounts/{discount}',
+            [DiscountController::class, 'destroy']
+        )->name('discounts.destroy')->middleware('permission:delete discounts');
+
+        Route::patch(
+            'discounts/{discount}/toggle-status',
+            [DiscountController::class, 'toggleStatus']
+        )->name('discounts.toggle-status')->middleware('permission:toggle discount status');
 
     });
