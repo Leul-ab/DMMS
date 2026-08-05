@@ -1,11 +1,11 @@
 <?php
+
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\RestaurantTable;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -32,20 +32,22 @@ class ReportController extends Controller
             'annual',
         ];
 
-        if (!in_array($tab, $allowedTabs)) {
+        if (! in_array($tab, $allowedTabs)) {
             $tab = 'revenue';
         }
 
-        if (!in_array($period, $allowedPeriods)) {
+        if (! in_array($period, $allowedPeriods)) {
             $period = 'daily';
         }
 
+        $branchId = Branch::current()?->id;
+
         $reportData = match ($tab) {
-            'revenue' => $this->revenueReport($period),
-            'orders' => $this->ordersReport($period),
-            'top-tables' => $this->topTablesReport($period),
-            'top-foods' => $this->topFoodsReport($period),
-            'sales' => $this->salesReport($period),
+            'revenue' => $this->revenueReport($period, $branchId),
+            'orders' => $this->ordersReport($period, $branchId),
+            'top-tables' => $this->topTablesReport($period, $branchId),
+            'top-foods' => $this->topFoodsReport($period, $branchId),
+            'sales' => $this->salesReport($period, $branchId),
         };
 
         return Inertia::render('manager/reports/index', [
@@ -65,11 +67,12 @@ class ReportController extends Controller
         };
     }
 
-    private function revenueReport(string $period)
+    private function revenueReport(string $period, ?int $branchId)
     {
         $dateFormat = $this->getDateFormat($period);
 
         return Order::query()
+            ->when($branchId, fn ($query) => $query->where('orders.branch_id', $branchId))
             ->select(
                 DB::raw("DATE_FORMAT(created_at, '{$dateFormat}') as period"),
                 DB::raw('COUNT(*) as total_orders'),
@@ -80,11 +83,12 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function ordersReport(string $period)
+    private function ordersReport(string $period, ?int $branchId)
     {
         $dateFormat = $this->getDateFormat($period);
 
         return Order::query()
+            ->when($branchId, fn ($query) => $query->where('orders.branch_id', $branchId))
             ->select(
                 DB::raw("DATE_FORMAT(created_at, '{$dateFormat}') as period"),
                 DB::raw('COUNT(*) as total_orders'),
@@ -97,11 +101,12 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function topTablesReport(string $period)
+    private function topTablesReport(string $period, ?int $branchId)
     {
         $dateFormat = $this->getDateFormat($period);
 
         return Order::query()
+            ->when($branchId, fn ($query) => $query->where('orders.branch_id', $branchId))
             ->join(
                 'restaurant_tables',
                 'orders.table_id',
@@ -122,11 +127,12 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function topFoodsReport(string $period)
+    private function topFoodsReport(string $period, ?int $branchId)
     {
         $dateFormat = $this->getDateFormat($period);
 
         return OrderItem::query()
+            ->when($branchId, fn ($query) => $query->where('order_items.branch_id', $branchId))
             ->join(
                 'orders',
                 'order_items.order_id',
@@ -161,11 +167,12 @@ class ReportController extends Controller
             ->get();
     }
 
-    private function salesReport(string $period)
+    private function salesReport(string $period, ?int $branchId)
     {
         $dateFormat = $this->getDateFormat($period);
 
         return OrderItem::query()
+            ->when($branchId, fn ($query) => $query->where('order_items.branch_id', $branchId))
             ->join(
                 'orders',
                 'order_items.order_id',
@@ -193,4 +200,3 @@ class ReportController extends Controller
             ->get();
     }
 }
-

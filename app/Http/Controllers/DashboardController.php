@@ -26,19 +26,24 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalOrders = Order::count();
+        $totalOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->count();
 
-        $pendingOrders = Order::where('status', 'pending')->count();
+        $pendingOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'pending')->count();
 
-        $receivedOrders = Order::where('status', 'received')->count();
+        $receivedOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'received')->count();
 
-        $completedOrders = Order::where('status', 'completed')->count();
+        $completedOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'completed')->count();
 
-        $cancelledOrders = Order::where('status', 'cancelled')->count();
+        $cancelledOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'cancelled')->count();
 
-        $totalRevenue = Order::where('status', 'completed')
+        $totalRevenue = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'completed')
             ->sum('total_amount');
-
 
         /*
         |--------------------------------------------------------------------------
@@ -46,12 +51,14 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalCustomers = Customer::count();
+        $totalCustomers = Customer::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->count();
 
-        $memberCustomers = Customer::where('is_member', true)->count();
+        $memberCustomers = Customer::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('is_member', true)->count();
 
-        $nonMemberCustomers = Customer::where('is_member', false)->count();
-
+        $nonMemberCustomers = Customer::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('is_member', false)->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -59,23 +66,26 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalTables = RestaurantTable::count();
+        $totalTables = RestaurantTable::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->count();
 
-        $availableTables = RestaurantTable::where(
-            'status',
-            'available'
-        )->count();
+        $availableTables = RestaurantTable::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'status',
+                'available'
+            )->count();
 
-        $occupiedTables = RestaurantTable::where(
-            'status',
-            'occupied'
-        )->count();
+        $occupiedTables = RestaurantTable::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'status',
+                'occupied'
+            )->count();
 
-        $awaitingPaymentTables = RestaurantTable::where(
-            'status',
-            'awaiting_payment'
-        )->count();
-
+        $awaitingPaymentTables = RestaurantTable::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'status',
+                'awaiting_payment'
+            )->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -83,30 +93,35 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalCategories = MenuCategory::count();
+        $totalCategories = MenuCategory::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->count();
 
-        $activeCategories = MenuCategory::where(
-            'is_active',
-            true
-        )->count();
+        $activeCategories = MenuCategory::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'is_active',
+                true
+            )->count();
 
-        $totalMenuItems = MenuItem::count();
+        $totalMenuItems = MenuItem::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->count();
 
-        $availableMenuItems = MenuItem::where(
-            'is_available',
-            true
-        )->count();
+        $availableMenuItems = MenuItem::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'is_available',
+                true
+            )->count();
 
-        $unavailableMenuItems = MenuItem::where(
-            'is_available',
-            false
-        )->count();
+        $unavailableMenuItems = MenuItem::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'is_available',
+                false
+            )->count();
 
-        $featuredMenuItems = MenuItem::where(
-            'featured',
-            true
-        )->count();
-
+        $featuredMenuItems = MenuItem::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'featured',
+                true
+            )->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -114,7 +129,8 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $recentOrders = Order::with('table')
+        $recentOrders = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->with('table')
             ->latest()
             ->take(5)
             ->get([
@@ -129,20 +145,19 @@ class DashboardController extends Controller
                 'created_at',
             ]);
 
-
         /*
         |--------------------------------------------------------------------------
         | Order Status Overview
         |--------------------------------------------------------------------------
         */
 
-        $orderStatusOverview = Order::select(
-            'status',
-            DB::raw('COUNT(*) as count')
-        )
+        $orderStatusOverview = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->select(
+                'status',
+                DB::raw('COUNT(*) as count')
+            )
             ->groupBy('status')
             ->get();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -150,10 +165,11 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $revenueRowsByDate = Order::where(
-            'status',
-            'completed'
-        )
+        $revenueRowsByDate = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where(
+                'status',
+                'completed'
+            )
             ->where(
                 'created_at',
                 '>=',
@@ -184,7 +200,6 @@ class DashboardController extends Controller
                 ];
             }
         )->values();
-
 
         /*
         |--------------------------------------------------------------------------
@@ -225,22 +240,20 @@ class DashboardController extends Controller
             ->orderByDesc('sales')
             ->get();
 
-
         /*
         |--------------------------------------------------------------------------
         | Payment Status Overview
         |--------------------------------------------------------------------------
         */
 
-        $paymentStatusOverview = Order::select(
-            'payment_status',
-            DB::raw('COUNT(*) as count'),
-            DB::raw('SUM(total_amount) as total')
-        )
+        $paymentStatusOverview = Order::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->select(
+                'payment_status',
+                DB::raw('COUNT(*) as count'),
+                DB::raw('SUM(total_amount) as total')
+            )
             ->groupBy('payment_status')
             ->get();
-
-
 
         /*
         |--------------------------------------------------------------------------
@@ -271,23 +284,23 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-
         /*
         |--------------------------------------------------------------------------
         | Recent Table Bookings
         |--------------------------------------------------------------------------
         */
 
-      $recentBookings = TableBooking::with(['customer', 'tables'])
-    ->latest()
-    ->take(5)
-    ->get()
+        $recentBookings = TableBooking::when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->with(['customer', 'tables'])
+            ->latest()
+            ->take(5)
+            ->get()
             ->map(function ($booking) {
                 return (object) [
                     'id' => $booking->id,
                     'customer_name' => $booking->customer?->name ?? 'Unknown',
                     'customer_phone' => $booking->customer?->phone ?? 'N/A',
-                    'tables' => $booking->tables->map(fn($t) => [
+                    'tables' => $booking->tables->map(fn ($t) => [
                         'id' => $t->id,
                         'table_number' => $t->table_number,
                     ]),
@@ -296,7 +309,6 @@ class DashboardController extends Controller
                     'expires_at' => $booking->expires_at,
                 ];
             });
-
 
         /*
         |--------------------------------------------------------------------------
@@ -361,4 +373,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-
