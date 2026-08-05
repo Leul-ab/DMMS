@@ -24,7 +24,7 @@ class SetCurrentBranch
         $branchId = null;
 
         if ($user) {
-            $canSwitch = $user->can('view branches');
+            $canSwitch = $user->can('switch branches');
 
             $branchId = $canSwitch
                 ? (session('current_branch_id') ?? $user->branch_id)

@@ -29,17 +29,11 @@ export function NavMain({ items = [], label }: { items: NavItem[]; label?: strin
                                 tooltip={{ children: item.title }}
                                 className={
                                     isActive
-                                        ? 'bg-gradient-to-b from-orange-400/90 via-orange-500/85 to-orange-600/90 text-white data-[active=true]:text-white ring-1 ring-white/25 backdrop-blur-md shadow-[0_8px_24px_-8px_rgba(194,65,12,0.6),inset_0_1px_0_rgba(255,255,255,0.45),inset_0_-1px_0_rgba(0,0,0,0.1)] hover:from-orange-500 hover:to-orange-700 hover:text-white'
-                                        : 'text-sidebar-foreground/80 transition-all hover:bg-white/35 hover:text-orange-700 hover:backdrop-blur-lg hover:ring-1 hover:ring-white/40 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]'
+                                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold data-[active=true]:text-white shadow-lg shadow-orange-500/25 hover:from-orange-500 hover:to-orange-600 hover:text-white'
+                                        : 'text-sidebar-foreground transition-all hover:bg-white/35 dark:hover:bg-white/10 hover:text-black dark:hover:text-white hover:backdrop-blur-lg hover:ring-1 hover:ring-white/40 dark:hover:ring-white/15 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]'
                                 }
                             >
                                 <Link href={item.href} prefetch className="relative">
-                                    {isActive && (
-                                        <span
-                                            aria-hidden="true"
-                                            className="pointer-events-none absolute inset-0 rounded-md bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.5),transparent_55%)]"
-                                        />
-                                    )}
                                     {item.icon && <item.icon className="relative" />}
                                     <span className="relative truncate">{item.title}</span>
                                 </Link>

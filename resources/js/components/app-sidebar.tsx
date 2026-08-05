@@ -264,7 +264,7 @@ export function AppSidebar() {
                         <SidebarMenuButton
                             size="sm"
                             onClick={toggleSidebar}
-                            className="text-sidebar-foreground/80 hover:bg-orange-100/80 hover:text-orange-700"
+                            className="text-sidebar-foreground hover:bg-orange-100/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                             tooltip={{
                                 children:
                                     state === 'collapsed'

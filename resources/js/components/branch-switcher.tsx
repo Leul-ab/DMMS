@@ -67,7 +67,7 @@ export default function BranchSwitcher() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="group rounded-xl border border-orange-200/50 bg-orange-50/40 text-sidebar-accent-foreground data-[state=open]:bg-orange-100 data-[state=open]:text-orange-700"
+                            className="group rounded-xl border border-orange-200/50 bg-orange-50/40 text-sidebar-accent-foreground data-[state=open]:bg-orange-100 data-[state=open]:text-black dark:data-[state=open]:text-white"
                         >
                             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-orange-500 text-white">
                                 <Building2 className="size-4" />
@@ -76,7 +76,7 @@ export default function BranchSwitcher() {
                                 <span className="truncate font-semibold">
                                     {activeBranch.name}
                                 </span>
-                                <span className="truncate text-xs text-muted-foreground">
+                                <span className="truncate text-xs text-black/60 dark:text-white/60">
                                     Branch
                                 </span>
                             </div>

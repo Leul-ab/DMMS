@@ -14,7 +14,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::put('branches/{branch}', [BranchController::class, 'update'])->name('branches.update')->middleware('permission:update branches');
     Route::delete('branches/{branch}', [BranchController::class, 'destroy'])->name('branches.destroy')->middleware('permission:delete branches');
     Route::patch('branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('branches.toggle-status')->middleware('permission:status branches');
-    Route::post('branches/{branch}/switch', [BranchController::class, 'switch'])->name('branches.switch')->middleware('permission:view branches');
+    Route::post('branches/{branch}/switch', [BranchController::class, 'switch'])->name('branches.switch')->middleware('permission:switch branches');
 
     // User Management
     Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('permission:view users');
