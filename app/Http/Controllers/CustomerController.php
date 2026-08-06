@@ -62,4 +62,38 @@ class CustomerController extends Controller
         ]);
     }
 
+    public function verifyMember(Request $request)
+    {
+        $request->validate([
+            'customer_code' => ['required', 'string', 'max:255'],
+        ]);
+
+        $customer = Customer::where('customer_code', $request->input('customer_code'))->first();
+
+        if (!$customer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer code not found',
+            ]);
+        }
+
+        if (!$customer->is_member) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not a member yet. Join membership to unlock discounts.',
+            ]);
+        }
+
+        session(['customer_code' => $customer->customer_code]);
+
+        return response()->json([
+            'success' => true,
+            'customer' => [
+                'id' => $customer->id,
+                'name' => $customer->name,
+                'customer_code' => $customer->customer_code,
+                'is_member' => $customer->is_member,
+            ],
+        ]);
+    }
 }

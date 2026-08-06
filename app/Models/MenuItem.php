@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
+use App\Models\Discount;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
 class MenuItem extends Model
@@ -52,6 +54,11 @@ class MenuItem extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'category_id');
+    }
+
+    public function discounts(): BelongsToMany
+    {
+        return $this->belongsToMany(Discount::class, 'discount_menu_item');
     }
 
     public function scopeAvailable($query)

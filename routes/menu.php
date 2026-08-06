@@ -20,3 +20,6 @@ Route::get('/customer-my-order', [MenuController::class, 'customerMyOrder'])
 Route::post('/customer/register', [CustomerController::class, 'store'])
     ->name('customer.register');
 
+Route::post('/customer/verify-member', [CustomerController::class, 'verifyMember'])
+    ->name('customer.verify-member');
+

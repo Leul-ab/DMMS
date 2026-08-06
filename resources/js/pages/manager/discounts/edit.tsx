@@ -1,117 +1,296 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Percent } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { index as discountsIndex, edit as discountsEdit, update as discountsUpdate } from '@/routes/manager/discounts';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    index as discountsIndex,
+    update as discountsUpdate,
+} from '@/routes/manager/discounts';
 
 type Discount = {
     id: number;
     name: string;
     description: string | null;
     discount_type: string;
+    applies_to: string;
     percentage: string | null;
     fixed_amount: string | null;
     status: string;
     start_date: string;
     end_date: string;
+    menu_items: number[];
 };
 
 type Props = {
     discount: Discount;
+    menuItems: { id: number; name: string }[];
 };
 
-export default function DiscountEdit({ discount }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+export default function DiscountEdit({ discount, menuItems }: Props) {
+    const { data, setData, processing, errors } = useForm({
         name: discount.name,
         description: discount.description || '',
         discount_type: discount.discount_type,
+        applies_to: discount.applies_to || 'all',
         percentage: discount.percentage || '',
         fixed_amount: discount.fixed_amount || '',
         status: discount.status,
         start_date: discount.start_date,
         end_date: discount.end_date,
+        menu_items: discount.menu_items || [],
     });
+
+    const toggleMenuItem = (id: number) => {
+        setData(
+            'menu_items',
+            data.menu_items.includes(id)
+                ? data.menu_items.filter((itemId) => itemId !== id)
+                : [...data.menu_items, id],
+        );
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(discountsUpdate.url(discount.id));
+
+        const formData = new FormData();
+        formData.append('name', data.name);
+        formData.append('description', data.description);
+        formData.append('discount_type', data.discount_type);
+        formData.append('applies_to', data.applies_to);
+        formData.append('status', data.status);
+        formData.append('start_date', data.start_date);
+        formData.append('end_date', data.end_date);
+
+        if (data.discount_type === 'percentage') {
+            formData.append('percentage', data.percentage);
+        } else {
+            formData.append('fixed_amount', data.fixed_amount);
+        }
+
+        data.menu_items.forEach((id) => {
+            formData.append('menu_items[]', String(id));
+        });
+
+        formData.append('_method', 'PUT');
+
+        router.post(discountsUpdate.url(discount.id), formData, {
+            forceFormData: true,
+        });
     };
 
     return (
         <>
             <Head title={`Edit ${discount.name}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <Heading title={`Edit: ${discount.name}`} description="Update discount details" icon={Percent} />
+                <Heading
+                    title={`Edit: ${discount.name}`}
+                    description="Update discount details"
+                    icon={Percent}
+                />
 
                 <Card className="max-w-2xl">
                     <CardContent className="pt-6">
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Discount Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
+                                <Input
+                                    id="name"
+                                    value={data.name}
+                                    onChange={(e) =>
+                                        setData('name', e.target.value)
+                                    }
+                                    required
+                                />
                                 <InputError message={errors.name} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="description">Description (optional)</Label>
+                                <Label htmlFor="description">
+                                    Description (optional)
+                                </Label>
                                 <textarea
                                     id="description"
                                     value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('description', e.target.value)
+                                    }
                                     placeholder="Brief description of this discount"
                                     rows={3}
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                 />
                                 <InputError message={errors.description} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="discount_type">Discount Type</Label>
-                                <Select value={data.discount_type} onValueChange={(value) => setData('discount_type', value)}>
+                                <Label htmlFor="discount_type">
+                                    Discount Type
+                                </Label>
+                                <Select
+                                    value={data.discount_type}
+                                    onValueChange={(value) =>
+                                        setData('discount_type', value)
+                                    }
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="percentage">Percentage</SelectItem>
-                                        <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                        <SelectItem value="percentage">
+                                            Percentage
+                                        </SelectItem>
+                                        <SelectItem value="fixed">
+                                            Fixed Amount
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.discount_type} />
                             </div>
 
+                            <div className="grid gap-2">
+                                <Label htmlFor="applies_to">Applies To</Label>
+                                <Select
+                                    value={data.applies_to}
+                                    onValueChange={(value) =>
+                                        setData('applies_to', value)
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select applies to" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Customers
+                                        </SelectItem>
+                                        <SelectItem value="members">
+                                            Members Only
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.applies_to} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label>Select Items</Label>
+                                <div className="max-h-60 overflow-y-auto rounded-md border p-3">
+                                    {menuItems.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No menu items available.
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {menuItems.map((menuItem) => (
+                                                <div
+                                                    key={menuItem.id}
+                                                    className="flex items-center space-x-2"
+                                                >
+                                                    <Checkbox
+                                                        id={`edit-menu-item-${menuItem.id}`}
+                                                        checked={data.menu_items.includes(
+                                                            menuItem.id,
+                                                        )}
+                                                        onCheckedChange={() =>
+                                                            toggleMenuItem(
+                                                                menuItem.id,
+                                                            )
+                                                        }
+                                                    />
+                                                    <Label
+                                                        htmlFor={`edit-menu-item-${menuItem.id}`}
+                                                        className="text-sm font-normal"
+                                                    >
+                                                        {menuItem.name}
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                <InputError message={errors.menu_items} />
+                            </div>
+
                             {data.discount_type === 'percentage' && (
                                 <div className="grid gap-2">
-                                    <Label htmlFor="percentage">Percentage (%)</Label>
-                                    <Input id="percentage" type="number" min="0" max="100" step="0.01" value={data.percentage} onChange={(e) => setData('percentage', e.target.value)} required />
+                                    <Label htmlFor="percentage">
+                                        Percentage (%)
+                                    </Label>
+                                    <Input
+                                        id="percentage"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        value={data.percentage}
+                                        onChange={(e) =>
+                                            setData(
+                                                'percentage',
+                                                e.target.value,
+                                            )
+                                        }
+                                        required
+                                    />
                                     <InputError message={errors.percentage} />
                                 </div>
                             )}
 
                             {data.discount_type === 'fixed' && (
                                 <div className="grid gap-2">
-                                    <Label htmlFor="fixed_amount">Fixed Amount</Label>
-                                    <Input id="fixed_amount" type="number" min="0" step="0.01" value={data.fixed_amount} onChange={(e) => setData('fixed_amount', e.target.value)} required />
+                                    <Label htmlFor="fixed_amount">
+                                        Fixed Amount
+                                    </Label>
+                                    <Input
+                                        id="fixed_amount"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={data.fixed_amount}
+                                        onChange={(e) =>
+                                            setData(
+                                                'fixed_amount',
+                                                e.target.value,
+                                            )
+                                        }
+                                        required
+                                    />
                                     <InputError message={errors.fixed_amount} />
                                 </div>
                             )}
 
                             <div className="grid gap-2">
                                 <Label htmlFor="status">Status</Label>
-                                <Select value={data.status} onValueChange={(value) => setData('status', value)}>
+                                <Select
+                                    value={data.status}
+                                    onValueChange={(value) =>
+                                        setData('status', value)
+                                    }
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="inactive">Inactive</SelectItem>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="expired">Expired</SelectItem>
+                                        <SelectItem value="active">
+                                            Active
+                                        </SelectItem>
+                                        <SelectItem value="inactive">
+                                            Inactive
+                                        </SelectItem>
+                                        <SelectItem value="scheduled">
+                                            Scheduled
+                                        </SelectItem>
+                                        <SelectItem value="expired">
+                                            Expired
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <InputError message={errors.status} />
@@ -119,19 +298,40 @@ export default function DiscountEdit({ discount }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="start_date">Start Date</Label>
-                                <Input id="start_date" type="date" value={data.start_date} onChange={(e) => setData('start_date', e.target.value)} required />
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    value={data.start_date}
+                                    onChange={(e) =>
+                                        setData('start_date', e.target.value)
+                                    }
+                                    required
+                                />
                                 <InputError message={errors.start_date} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="end_date">End Date</Label>
-                                <Input id="end_date" type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} required />
+                                <Input
+                                    id="end_date"
+                                    type="date"
+                                    value={data.end_date}
+                                    onChange={(e) =>
+                                        setData('end_date', e.target.value)
+                                    }
+                                    required
+                                />
                                 <InputError message={errors.end_date} />
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <Button disabled={processing}>Update Discount</Button>
-                                <Link href={discountsIndex.url()} className="text-sm text-muted-foreground hover:text-foreground">
+                                <Button disabled={processing}>
+                                    Update Discount
+                                </Button>
+                                <Link
+                                    href={discountsIndex.url()}
+                                    className="text-sm text-muted-foreground hover:text-foreground"
+                                >
                                     Cancel
                                 </Link>
                             </div>

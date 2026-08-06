@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
+use App\Models\MenuItem;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Discount extends Model
 {
@@ -15,6 +17,7 @@ class Discount extends Model
         'name',
         'description',
         'discount_type',
+        'applies_to',
         'percentage',
         'fixed_amount',
         'status',
@@ -35,6 +38,11 @@ class Discount extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function menuItems(): BelongsToMany
+    {
+        return $this->belongsToMany(MenuItem::class, 'discount_menu_item');
     }
 
     public function scopeActive($query)
