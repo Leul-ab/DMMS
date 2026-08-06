@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -62,6 +63,18 @@ class HandleInertiaRequests extends Middleware
                     }
                 }
                 return 0;
+            },
+            'notifications' => function () use ($request) {
+                $user = $request->user();
+
+                return [
+                    'kitchen' => $user?->can('view kitchen')
+                        ? Order::where('status', 'pending')->count()
+                        : 0,
+                    'paymentVerification' => $user?->can('view payments')
+                        ? Order::where('payment_status', 'pending')->whereHas('payment')->count()
+                        : 0,
+                ];
             },
         ];
     }

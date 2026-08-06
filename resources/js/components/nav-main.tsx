@@ -36,6 +36,11 @@ export function NavMain({ items = [], label }: { items: NavItem[]; label?: strin
                                 <Link href={item.href} prefetch className="relative">
                                     {item.icon && <item.icon className="relative" />}
                                     <span className="relative truncate">{item.title}</span>
+                                    {typeof item.badge === 'number' && item.badge > 0 && (
+                                        <span className="relative ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-semibold leading-none text-white ring-2 ring-sidebar">
+                                            {item.badge > 99 ? '99+' : item.badge}
+                                        </span>
+                                    )}
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

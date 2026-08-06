@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutGrid,
     Users,
@@ -53,6 +53,7 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { state, toggleSidebar } = useSidebar();
     const can = useCan();
+    const { notifications } = usePage<{ notifications?: { kitchen: number; paymentVerification: number } }>().props;
 
     const mainNavItems: NavItem[] = [
         ...(can('view dashboard')
@@ -131,6 +132,7 @@ export function AppSidebar() {
                       title: 'Kitchen',
                       href: '/kitchen/dashboard',
                       icon: ChefHat,
+                      badge: notifications?.kitchen ?? 0,
                   },
               ]
             : []),
@@ -151,6 +153,7 @@ export function AppSidebar() {
                       title: 'Payment Verification',
                       href: '/manager/payment-verification',
                       icon: ShieldCheck,
+                      badge: notifications?.paymentVerification ?? 0,
                   },
               ]
             : []),
