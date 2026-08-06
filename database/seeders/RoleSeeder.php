@@ -49,6 +49,7 @@ class RoleSeeder extends Seeder
             'delete bookings',
             'status bookings',
             'view reports',
+            'view feedback',
             'view kitchen',
             'update kitchen',
             'view menu',

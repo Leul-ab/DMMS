@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Customer extends Model
@@ -39,5 +40,10 @@ class Customer extends Model
         } while (static::where('customer_code', $code)->exists());
 
         return $code;
+    }
+
+    public function feedbacks(): HasMany
+    {
+        return $this->hasMany(Feedback::class, 'customer_id');
     }
 }

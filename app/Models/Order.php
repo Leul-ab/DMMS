@@ -75,4 +75,14 @@ class Order extends Model
     {
         return $this->hasOne(Receipt::class);
     }
+
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(Feedback::class);
+    }
+
+    public function waiterAssignments(): HasMany
+    {
+        return $this->hasMany(WaiterAssignment::class, 'order_id');
+    }
 }

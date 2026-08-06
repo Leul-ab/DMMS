@@ -186,6 +186,7 @@ class MenuController extends Controller
             'orderItems.menuItem',
             'payment.verifier',
             'receipt',
+            'feedback.customer',
         ])
             ->where('table_id', $table->id)
             ->whereIn('status', [

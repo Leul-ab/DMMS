@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,3 +26,21 @@ Route::post('/api/orders/{order}/add-items', [OrderController::class, 'addItems'
 
 // API: Release table
 Route::post('/api/orders/{order}/release-table', [OrderController::class, 'releaseTable']);
+
+// =========================
+// Customer Feedback
+// =========================
+Route::get(
+    '/customer/orders/{order}/feedback',
+    [FeedbackController::class, 'create']
+)->name('customer.feedback.create');
+
+Route::post(
+    '/customer/orders/{order}/feedback',
+    [FeedbackController::class, 'store']
+)->name('customer.feedback.store');
+
+Route::get(
+    '/customer/orders/{order}/feedback/view',
+    [FeedbackController::class, 'show']
+)->name('customer.feedback.view');
