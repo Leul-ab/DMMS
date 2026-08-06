@@ -20,58 +20,17 @@ class StaffController extends Controller
 {
     public function index(Request $request): Response
     {
-        $waiterRole = Role::where('slug', 'waiter')->first();
-        $kitchenRole = Role::where('slug', 'kitchen_staff')->first();
-
-        // Waiter staff
-        $waiters = User::with(['role', 'latestTableAssignment.table', 'activeTableAssignments.table'])
-            ->where('role_id', $waiterRole?->id)
+        $waiters = User::with(['role', 'activeTableAssignments.table'])
+            ->where('is_waiter', true)
             ->when(Branch::current(), function ($query, Branch $branch) {
                 $query->where('branch_id', $branch->id);
             })
-            ->when($request->search_waiter, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->status_waiter, function ($query, $status) {
-                $query->where('is_active', $status === 'active' ? 1 : 0);
-            })
             ->latest()
-            ->paginate(10, ['*'], 'waiter_page')
-            ->withQueryString();
-
-        // Kitchen staff
-        $kitchenStaff = User::with('role')
-            ->where('role_id', $kitchenRole?->id)
-            ->when(Branch::current(), function ($query, Branch $branch) {
-                $query->where('branch_id', $branch->id);
-            })
-            ->when($request->search_kitchen, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('phone', 'like', "%{$search}%");
-                });
-            })
-            ->when($request->status_kitchen, function ($query, $status) {
-                $query->where('is_active', $status === 'active' ? 1 : 0);
-            })
-            ->latest()
-            ->paginate(10, ['*'], 'kitchen_page')
+            ->paginate(10)
             ->withQueryString();
 
         return Inertia::render('admin/staff/index', [
             'waiters' => $waiters,
-            'kitchenStaff' => $kitchenStaff,
-            'filters' => [
-                'search_waiter' => $request->search_waiter,
-                'status_waiter' => $request->status_waiter,
-                'search_kitchen' => $request->search_kitchen,
-                'status_kitchen' => $request->status_kitchen,
-            ],
         ]);
     }
 
@@ -86,20 +45,22 @@ class StaffController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
+            'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
+            'is_waiter' => ['boolean'],
         ]);
 
         $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_waiter'] = $request->boolean('is_waiter');
         $validated['email_verified_at'] = now();
-        $validated['branch_id'] = Branch::current()?->id;
 
         unset($validated['first_name'], $validated['last_name']);
 
         User::create($validated);
 
-        $roleLabel = $roleId == Role::where('slug', 'waiter')->first()?->id ? 'Waiter' : 'Kitchen Staff';
+        $roleLabel = Role::find($roleId)?->name ?? 'Staff';
         Inertia::flash('toast', ['type' => 'success', 'message' => "{$roleLabel} created successfully."]);
 
         return back();
@@ -113,7 +74,9 @@ class StaffController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
+            'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
+            'is_waiter' => ['boolean'],
         ]);
 
         if (empty($validated['password'])) {
@@ -123,6 +86,7 @@ class StaffController extends Controller
         }
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_waiter'] = $request->boolean('is_waiter');
 
         $user->update($validated);
 

@@ -30,6 +30,7 @@ type User = {
     role_id: number;
     branch_id: number | null;
     is_active: boolean;
+    is_waiter: boolean;
 };
 
 type Props = { user: User; roles: Role[]; branches: Branch[] };
@@ -44,6 +45,7 @@ export default function UserEdit({ user, roles, branches }: Props) {
         role_id: String(user.role_id),
         branch_id: user.branch_id ? String(user.branch_id) : '',
         is_active: user.is_active,
+        is_waiter: user.is_waiter,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -202,6 +204,19 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     }
                                 />
                                 <Label htmlFor="is_active">Active</Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_waiter"
+                                    checked={data.is_waiter}
+                                    onCheckedChange={(checked) =>
+                                        setData('is_waiter', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="is_waiter">
+                                    Is this user a waiter?
+                                </Label>
                             </div>
 
                             <div className="flex items-center gap-4">

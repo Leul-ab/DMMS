@@ -8,7 +8,6 @@ import {
     CreditCard,
     ListOrdered,
     MapPin,
-    Mail,
     Pencil,
     Phone,
     Table2,
@@ -35,14 +34,8 @@ type Branch = {
     slug: string;
     address: string | null;
     phone: string | null;
-    email: string | null;
     city: string | null;
-    state: string | null;
-    postal_code: string | null;
     country: string | null;
-    tax_rate: string | null;
-    currency: string | null;
-    description: string | null;
     is_active: boolean;
     created_at: string;
     users_count: number;
@@ -251,12 +244,6 @@ export default function BranchShow({ branch }: Props) {
                             />
 
                             <DetailItem
-                                icon={Mail}
-                                label="Email"
-                                value={branch.email}
-                            />
-
-                            <DetailItem
                                 icon={MapPin}
                                 label="City"
                                 value={branch.city}
@@ -264,36 +251,8 @@ export default function BranchShow({ branch }: Props) {
 
                             <DetailItem
                                 icon={MapPin}
-                                label="State / Region"
-                                value={branch.state}
-                            />
-
-                            <DetailItem
-                                icon={MapPin}
-                                label="Postal Code"
-                                value={branch.postal_code}
-                            />
-
-                            <DetailItem
-                                icon={MapPin}
                                 label="Country"
                                 value={branch.country}
-                            />
-
-                            <DetailItem
-                                icon={ChefHat}
-                                label="Tax Rate"
-                                value={
-                                    branch.tax_rate
-                                        ? `${branch.tax_rate}%`
-                                        : null
-                                }
-                            />
-
-                            <DetailItem
-                                icon={CreditCard}
-                                label="Currency"
-                                value={branch.currency}
                             />
 
                             <DetailItem
@@ -312,16 +271,6 @@ export default function BranchShow({ branch }: Props) {
                                 }
                             />
                         </div>
-
-                        {branch.description && (
-                            <div className="mt-6 border-t pt-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Description
-                                </p>
-
-                                <p className="mt-1">{branch.description}</p>
-                            </div>
-                        )}
                     </CardContent>
                 </Card>
             </div>

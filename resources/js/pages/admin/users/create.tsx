@@ -46,6 +46,7 @@ export default function UserCreate({
               ? String(branches[0].id)
               : '',
         is_active: true,
+        is_waiter: false,
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -180,6 +181,19 @@ export default function UserCreate({
                                     }
                                 />
                                 <Label htmlFor="is_active">Active</Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_waiter"
+                                    checked={data.is_waiter}
+                                    onCheckedChange={(checked) =>
+                                        setData('is_waiter', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="is_waiter">
+                                    Is this user a waiter?
+                                </Label>
                             </div>
 
                             <div className="flex items-center gap-4">

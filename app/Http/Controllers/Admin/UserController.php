@@ -58,10 +58,12 @@ class UserController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
             'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
+            'is_waiter' => ['boolean'],
         ]);
 
         $validated['password'] = Hash::make($validated['password'] ?? '12345678');
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_waiter'] = $request->boolean('is_waiter');
         $validated['email_verified_at'] = now();
 
         User::create($validated);
@@ -90,6 +92,7 @@ class UserController extends Controller
             'role_id' => ['required', 'exists:roles,id'],
             'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
+            'is_waiter' => ['boolean'],
         ]);
 
         if (empty($validated['password'])) {
@@ -99,6 +102,7 @@ class UserController extends Controller
         }
 
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_waiter'] = $request->boolean('is_waiter');
 
         $user->update($validated);
 

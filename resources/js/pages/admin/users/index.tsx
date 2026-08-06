@@ -55,6 +55,7 @@ type User = {
     email: string;
     phone: string | null;
     is_active: boolean;
+    is_waiter: boolean;
     role_id: number;
     branch_id: number | null;
     role: Role | null;
@@ -119,6 +120,7 @@ export default function UsersIndex({
     const [password, setPassword] = useState('');
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [isWaiter, setIsWaiter] = useState(false);
 
     // -----------------------------------------
     // Search
@@ -177,6 +179,7 @@ export default function UsersIndex({
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(true);
+        setIsWaiter(false);
     };
 
     // -----------------------------------------
@@ -213,6 +216,7 @@ export default function UsersIndex({
         setPassword('');
         setPasswordConfirmation('');
         setIsActive(user.is_active);
+        setIsWaiter(user.is_waiter);
 
         setIsEditOpen(true);
     };
@@ -246,6 +250,7 @@ export default function UsersIndex({
                 password: password || null,
                 password_confirmation: passwordConfirmation || null,
                 is_active: isActive,
+                is_waiter: isWaiter,
             },
             {
                 onSuccess: () => {
@@ -276,6 +281,7 @@ export default function UsersIndex({
                 password: password || null,
                 password_confirmation: passwordConfirmation || null,
                 is_active: isActive,
+                is_waiter: isWaiter,
             },
             {
                 onSuccess: () => {
@@ -773,6 +779,21 @@ export default function UsersIndex({
                                 Active User
                             </label>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={isWaiter}
+                                onChange={(event) =>
+                                    setIsWaiter(event.target.checked)
+                                }
+                                className="h-4 w-4"
+                            />
+
+                            <label className="text-sm font-medium">
+                                Is this user a waiter?
+                            </label>
+                        </div>
                     </div>
 
                     <DialogFooter>
@@ -1036,6 +1057,21 @@ export default function UsersIndex({
 
                             <label className="text-sm font-medium">
                                 Active User
+                            </label>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={isWaiter}
+                                onChange={(event) =>
+                                    setIsWaiter(event.target.checked)
+                                }
+                                className="h-4 w-4"
+                            />
+
+                            <label className="text-sm font-medium">
+                                Is this user a waiter?
                             </label>
                         </div>
                     </div>

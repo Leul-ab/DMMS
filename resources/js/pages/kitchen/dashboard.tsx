@@ -376,22 +376,6 @@ export default function KitchenDashboard({
         });
     };
 
-    const completeOrder = (order: Order) => {
-        setIsProcessing(true);
-        router.patch(`/kitchen/orders/${order.id}/complete`, {}, {
-            preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
-                toast.success('Order completed!');
-                setIsProcessing(false);
-            },
-            onError: () => {
-                toast.error('Failed to complete order');
-                setIsProcessing(false);
-            },
-        });
-    };
-
     const getFilteredOrders = (orders: Order[]) => {
         if (!search) return orders;
         const q = search.toLowerCase();
@@ -564,15 +548,10 @@ export default function KitchenDashboard({
                             </div>
                         )}
                         {can('update kitchen') && column === 'ready' && (
-                            <Button
-                                size="sm"
-                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
-                                onClick={() => completeOrder(order)}
-                                disabled={isProcessing}
-                            >
-                                <Check className="h-4 w-4 mr-1" />
-                                Complete
-                            </Button>
+                            <p className="w-full rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-center text-xs font-bold text-green-700">
+                                <CheckCircle2 className="h-4 w-4 inline mr-1" />
+                                Ready to serve
+                            </p>
                         )}
                     </div>
                 </CardContent>

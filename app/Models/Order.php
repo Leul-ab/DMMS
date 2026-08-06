@@ -16,6 +16,7 @@ class Order extends Model
         'branch_id',
         'table_id',
         'customer_id',
+        'served_by',
         'order_number',
         'status',
         'payment_status',
@@ -84,5 +85,10 @@ class Order extends Model
     public function waiterAssignments(): HasMany
     {
         return $this->hasMany(WaiterAssignment::class, 'order_id');
+    }
+
+    public function servedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'served_by');
     }
 }

@@ -65,14 +65,8 @@ class BranchController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'string', 'email', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'state' => ['nullable', 'string', 'max:255'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:255'],
-            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'currency' => ['nullable', 'string', 'max:10'],
-            'description' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['boolean'],
         ]);
 
@@ -99,14 +93,8 @@ class BranchController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
-            'email' => ['nullable', 'string', 'email', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'state' => ['nullable', 'string', 'max:255'],
-            'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:255'],
-            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'currency' => ['nullable', 'string', 'max:10'],
-            'description' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['boolean'],
         ]);
 

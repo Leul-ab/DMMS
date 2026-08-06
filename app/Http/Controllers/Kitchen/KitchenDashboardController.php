@@ -146,26 +146,4 @@ class KitchenDashboardController extends Controller
 
         return back()->with('success', 'Order marked as ready to serve.');
     }
-
-    public function completeOrder(Order $order)
-    {
-        if ($order->status !== 'ready') {
-            return back()->with('error', 'Order cannot be completed.');
-        }
-
-        $order->update([
-            'status' => 'completed',
-            'preparation_status' => 'completed',
-        ]);
-
-        $table = $order->table;
-        if ($table && $table->current_order_id === $order->id) {
-            $table->update([
-                'status' => 'available',
-                'current_order_id' => null,
-            ]);
-        }
-
-        return back()->with('success', 'Order completed successfully.');
-    }
 }

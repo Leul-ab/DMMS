@@ -76,6 +76,10 @@ class PermissionSeeder extends Seeder
             ['view kitchen', 'view'],
             ['update kitchen', 'update'],
         ],
+        'Serve' => [
+            ['view serve', 'view'],
+            ['update serve', 'update'],
+        ],
         'Staff' => [
             ['view staff', 'view'],
             ['create staff', 'create'],

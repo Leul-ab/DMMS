@@ -58,6 +58,8 @@ class RoleSeeder extends Seeder
             'reject payments',
             'view payments',
             'status payments',
+            'view serve',
+            'update serve',
             'view discounts',
             'create discounts',
             'update discounts',
@@ -72,6 +74,8 @@ class RoleSeeder extends Seeder
         'waiter' => [
             'view menu',
             'view orders',
+            'view serve',
+            'update serve',
         ],
         'customer' => [],
     ];

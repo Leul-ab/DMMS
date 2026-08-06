@@ -34,9 +34,4 @@ Route::prefix('kitchen')->name('kitchen.')->middleware(['auth'])->group(function
     Route::patch('/orders/{order}/mark-ready', [KitchenDashboardController::class, 'markReady'])
         ->name('orders.mark-ready')
         ->middleware('permission:update kitchen');
-
-    // Complete Order (Ready → Completed)
-    Route::patch('/orders/{order}/complete', [KitchenDashboardController::class, 'completeOrder'])
-        ->name('orders.complete')
-        ->middleware('permission:update kitchen');
 });

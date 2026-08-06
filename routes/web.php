@@ -21,6 +21,7 @@ require __DIR__.'/manager.php';
 require __DIR__.'/menu.php';
 require __DIR__.'/booking.php';
 require __DIR__.'/kitchen.php';
+require __DIR__.'/serve.php';
 
 require __DIR__.'/orders.php';
 

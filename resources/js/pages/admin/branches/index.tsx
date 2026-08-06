@@ -101,14 +101,8 @@ export default function BranchesIndex({ branches, filters }: Props) {
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
     const [phone, setPhone] = useState('');
-    const [email, setEmail] = useState('');
     const [city, setCity] = useState('');
-    const [state, setState] = useState('');
-    const [postalCode, setPostalCode] = useState('');
     const [country, setCountry] = useState('');
-    const [taxRate, setTaxRate] = useState('');
-    const [currency, setCurrency] = useState('');
-    const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
 
     // -----------------------------------------
@@ -157,14 +151,8 @@ export default function BranchesIndex({ branches, filters }: Props) {
         setName('');
         setAddress('');
         setPhone('');
-        setEmail('');
         setCity('');
-        setState('');
-        setPostalCode('');
         setCountry('');
-        setTaxRate('');
-        setCurrency('');
-        setDescription('');
         setIsActive(true);
     };
 
@@ -188,14 +176,8 @@ export default function BranchesIndex({ branches, filters }: Props) {
         setName(branch.name);
         setAddress(branch.address || '');
         setPhone(branch.phone || '');
-        setEmail(branch.email || '');
         setCity(branch.city || '');
-        setState(branch.state || '');
-        setPostalCode(branch.postal_code || '');
         setCountry(branch.country || '');
-        setTaxRate(branch.tax_rate || '');
-        setCurrency(branch.currency || '');
-        setDescription(branch.description || '');
         setIsActive(branch.is_active);
 
         setIsEditOpen(true);
@@ -225,14 +207,8 @@ export default function BranchesIndex({ branches, filters }: Props) {
                 name,
                 address,
                 phone: phone || null,
-                email: email || null,
                 city: city || null,
-                state: state || null,
-                postal_code: postalCode || null,
                 country: country || null,
-                tax_rate: taxRate ? Number(taxRate) : null,
-                currency: currency || null,
-                description: description || null,
                 is_active: isActive,
             },
             {
@@ -259,14 +235,8 @@ export default function BranchesIndex({ branches, filters }: Props) {
                 name,
                 address,
                 phone: phone || null,
-                email: email || null,
                 city: city || null,
-                state: state || null,
-                postal_code: postalCode || null,
                 country: country || null,
-                tax_rate: taxRate ? Number(taxRate) : null,
-                currency: currency || null,
-                description: description || null,
                 is_active: isActive,
             },
             {
@@ -680,23 +650,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                 />
                             </div>
 
-                            {/* Email */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Email
-                                </label>
-
-                                <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(event) =>
-                                        setEmail(event.target.value)
-                                    }
-                                    placeholder="Enter email address"
-                                />
-                            </div>
-
                             {/* City */}
 
                             <div>
@@ -710,38 +663,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                         setCity(event.target.value)
                                     }
                                     placeholder="Enter city"
-                                />
-                            </div>
-
-                            {/* State / Region */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    State / Region
-                                </label>
-
-                                <Input
-                                    value={state}
-                                    onChange={(event) =>
-                                        setState(event.target.value)
-                                    }
-                                    placeholder="Enter state or region"
-                                />
-                            </div>
-
-                            {/* Postal Code */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Postal Code
-                                </label>
-
-                                <Input
-                                    value={postalCode}
-                                    onChange={(event) =>
-                                        setPostalCode(event.target.value)
-                                    }
-                                    placeholder="Enter postal code"
                                 />
                             </div>
 
@@ -760,58 +681,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                     placeholder="Enter country"
                                 />
                             </div>
-
-                            {/* Tax Rate */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Tax Rate (%)
-                                </label>
-
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={taxRate}
-                                    onChange={(event) =>
-                                        setTaxRate(event.target.value)
-                                    }
-                                    placeholder="e.g. 15"
-                                />
-                            </div>
-
-                            {/* Currency */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Currency
-                                </label>
-
-                                <Input
-                                    value={currency}
-                                    onChange={(event) =>
-                                        setCurrency(event.target.value)
-                                    }
-                                    placeholder="e.g. ETB"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Description */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <Input
-                                value={description}
-                                onChange={(event) =>
-                                    setDescription(event.target.value)
-                                }
-                                placeholder="Optional notes about this branch"
-                            />
                         </div>
 
                         {/* Active */}
@@ -906,22 +775,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                 />
                             </div>
 
-                            {/* Email */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Email
-                                </label>
-
-                                <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(event) =>
-                                        setEmail(event.target.value)
-                                    }
-                                />
-                            </div>
-
                             {/* City */}
 
                             <div>
@@ -933,36 +786,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                     value={city}
                                     onChange={(event) =>
                                         setCity(event.target.value)
-                                    }
-                                />
-                            </div>
-
-                            {/* State / Region */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    State / Region
-                                </label>
-
-                                <Input
-                                    value={state}
-                                    onChange={(event) =>
-                                        setState(event.target.value)
-                                    }
-                                />
-                            </div>
-
-                            {/* Postal Code */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Postal Code
-                                </label>
-
-                                <Input
-                                    value={postalCode}
-                                    onChange={(event) =>
-                                        setPostalCode(event.target.value)
                                     }
                                 />
                             </div>
@@ -981,55 +804,6 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                     }
                                 />
                             </div>
-
-                            {/* Tax Rate */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Tax Rate (%)
-                                </label>
-
-                                <Input
-                                    type="number"
-                                    min="0"
-                                    max="100"
-                                    step="0.01"
-                                    value={taxRate}
-                                    onChange={(event) =>
-                                        setTaxRate(event.target.value)
-                                    }
-                                />
-                            </div>
-
-                            {/* Currency */}
-
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Currency
-                                </label>
-
-                                <Input
-                                    value={currency}
-                                    onChange={(event) =>
-                                        setCurrency(event.target.value)
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        {/* Description */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <Input
-                                value={description}
-                                onChange={(event) =>
-                                    setDescription(event.target.value)
-                                }
-                            />
                         </div>
 
                         {/* Active */}

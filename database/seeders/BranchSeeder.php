@@ -18,12 +18,8 @@ class BranchSeeder extends Seeder
                 'name' => 'Main Branch',
                 'address' => 'Bole Road, Addis Ababa',
                 'phone' => '+251 11 123 4567',
-                'email' => 'main@dmms.test',
                 'city' => 'Addis Ababa',
-                'state' => 'Addis Ababa',
                 'country' => 'Ethiopia',
-                'tax_rate' => 15,
-                'currency' => 'ETB',
                 'is_active' => true,
             ],
         );

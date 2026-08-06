@@ -16,6 +16,7 @@ import {
     PanelLeftOpen,
     Store,
     Percent,
+    Utensils,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -55,7 +56,7 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { state, toggleSidebar } = useSidebar();
     const can = useCan();
-    const { notifications } = usePage<{ notifications?: { kitchen: number; paymentVerification: number } }>().props;
+    const { notifications } = usePage<{ notifications?: { kitchen: number; serve: number; paymentVerification: number } }>().props;
 
     const mainNavItems: NavItem[] = [
         ...(can('view dashboard')
@@ -145,6 +146,17 @@ export function AppSidebar() {
                       href: '/kitchen/dashboard',
                       icon: ChefHat,
                       badge: notifications?.kitchen ?? 0,
+                  },
+              ]
+            : []),
+
+        ...(can('view serve')
+            ? [
+                  {
+                      title: 'Serve',
+                      href: '/serve',
+                      icon: Utensils,
+                      badge: notifications?.serve ?? 0,
                   },
               ]
             : []),

@@ -71,6 +71,9 @@ class HandleInertiaRequests extends Middleware
                     'kitchen' => $user?->can('view kitchen')
                         ? Order::where('status', 'pending')->count()
                         : 0,
+                    'serve' => $user?->can('view serve')
+                        ? Order::where('status', 'ready')->count()
+                        : 0,
                     'paymentVerification' => $user?->can('view payments')
                         ? Order::where('payment_status', 'pending')->whereHas('payment')->count()
                         : 0,

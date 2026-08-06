@@ -24,6 +24,7 @@ import {
     MessageSquareText,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -1268,46 +1269,49 @@ export function MenuView({
             </header>
 
             {/* ================= FLOATING CART BUTTON ================= */}
-            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
-                <SheetTrigger asChild>
-                    <button
-                        type="button"
-                        className={
-                            'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
-                            (cartOpen
-                                ? ' pointer-events-none scale-0 opacity-0'
-                                : ' scale-100 opacity-100')
-                        }
-                    >
-                        <ShoppingBag className="h-4 w-4" />
-                        <span>Cart</span>
-                        {cartQuantity > 0 && (
-                            <span className="flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 ring-2 ring-orange-300 zoom-in">
-                                {cartQuantity}
-                            </span>
-                        )}
-                    </button>
-                </SheetTrigger>
-                <SheetContent
-                    side="right"
-                    className="flex w-full flex-col border-l-orange-200 p-0 sm:max-w-sm"
-                >
-                    <SheetHeader className="border-b border-orange-200/60 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
-                        <SheetTitle className="flex items-center justify-between text-stone-800">
-                            <span>Your Order</span>
+            {createPortal(
+                <Sheet open={cartOpen} onOpenChange={setCartOpen}>
+                    <SheetTrigger asChild>
+                        <button
+                            type="button"
+                            className={
+                                'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
+                                (cartOpen
+                                    ? ' pointer-events-none scale-0 opacity-0'
+                                    : ' scale-100 opacity-100')
+                            }
+                        >
+                            <ShoppingBag className="h-4 w-4" />
+                            <span>Cart</span>
                             {cartQuantity > 0 && (
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-orange-100 text-orange-700"
-                                >
-                                    {cartQuantity} items
-                                </Badge>
+                                <span className="flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 ring-2 ring-orange-300 zoom-in">
+                                    {cartQuantity}
+                                </span>
                             )}
-                        </SheetTitle>
-                    </SheetHeader>
-                    {renderCartContent()}
-                </SheetContent>
-            </Sheet>
+                        </button>
+                    </SheetTrigger>
+                    <SheetContent
+                        side="right"
+                        className="flex w-full flex-col border-l-orange-200 p-0 sm:max-w-sm"
+                    >
+                        <SheetHeader className="border-b border-orange-200/60 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
+                            <SheetTitle className="flex items-center justify-between text-stone-800">
+                                <span>Your Order</span>
+                                {cartQuantity > 0 && (
+                                    <Badge
+                                        variant="secondary"
+                                        className="bg-orange-100 text-orange-700"
+                                    >
+                                        {cartQuantity} items
+                                    </Badge>
+                                )}
+                            </SheetTitle>
+                        </SheetHeader>
+                        {renderCartContent()}
+                    </SheetContent>
+                </Sheet>,
+                document.body,
+            )}
 
             {/* ================= HERO ================= */}
             <section className="relative overflow-hidden bg-gradient-to-br from-orange-950 via-orange-900 to-amber-900">
@@ -1949,31 +1953,33 @@ export function MenuView({
             </main>
 
             {/* Mobile: Floating Cart Button (triggers same sheet) */}
-            {cart.length > 0 && (
-                <div className="fixed inset-x-4 bottom-4 z-40 sm:hidden">
-                    <button
-                        type="button"
-                        onClick={() => setCartOpen(true)}
-                        className="flex w-full items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4 text-white shadow-2xl shadow-orange-500/40 transition hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
-                    >
-                        <span className="flex items-center gap-2">
-                            <ShoppingBag className="h-5 w-5" />
-                            <span className="text-sm font-bold">
-                                View Order
+            {cart.length > 0 &&
+                createPortal(
+                    <div className="fixed inset-x-4 bottom-4 z-40 sm:hidden">
+                        <button
+                            type="button"
+                            onClick={() => setCartOpen(true)}
+                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4 text-white shadow-2xl shadow-orange-500/40 transition hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
+                        >
+                            <span className="flex items-center gap-2">
+                                <ShoppingBag className="h-5 w-5" />
+                                <span className="text-sm font-bold">
+                                    View Order
+                                </span>
                             </span>
-                        </span>
-                        <span className="flex items-center gap-3">
-                            <span className="text-sm text-orange-200">
-                                {cartQuantity} item
-                                {cartQuantity !== 1 ? 's' : ''}
+                            <span className="flex items-center gap-3">
+                                <span className="text-sm text-orange-200">
+                                    {cartQuantity} item
+                                    {cartQuantity !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-lg font-black text-white drop-shadow-sm">
+                                    {cartTotal.toFixed(2)} ETB
+                                </span>
                             </span>
-                            <span className="text-lg font-black text-white drop-shadow-sm">
-                                {cartTotal.toFixed(2)} ETB
-                            </span>
-                        </span>
-                    </button>
-                </div>
-            )}
+                        </button>
+                    </div>,
+                    document.body,
+                )}
 
             {/* My Booking Modal */}
             {showMyBooking && (
