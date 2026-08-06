@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -88,7 +89,7 @@ class MenuController extends Controller
         $selectedCategory = $request->query('category');
 
         // Get menu items
-        $menuItemsQuery = MenuItem::with('category');
+        $menuItemsQuery = MenuItem::with(['category', 'discounts']);
 
         // Filter by category if selected
         if ($selectedCategory) {
@@ -98,6 +99,14 @@ class MenuController extends Controller
         $menuItems = $menuItemsQuery
             ->orderBy('name')
             ->get();
+
+        // Determine customer membership for discount eligibility
+        $customer = null;
+        $customerCode = $request->query('customer_code');
+        if ($customerCode) {
+            $customer = Customer::where('customer_code', $customerCode)->first();
+        }
+        $isMember = $customer?->is_member ?? false;
 
         // Get available tables for manual selection.
         // The /menu page always offers free table selection via the dropdown.
@@ -125,6 +134,7 @@ class MenuController extends Controller
             'order_id' => $orderId
                 ? (int) $orderId
                 : null,
+            'isMember' => $isMember,
 
             'flash' => [
                 'success' => session('success'),

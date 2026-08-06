@@ -58,6 +58,11 @@ class RoleSeeder extends Seeder
             'reject payments',
             'view payments',
             'status payments',
+            'view discounts',
+            'create discounts',
+            'update discounts',
+            'delete discounts',
+            'toggle discount status',
         ],
         'kitchen_staff' => [
             'view kitchen',

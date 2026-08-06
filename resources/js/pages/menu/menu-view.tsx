@@ -1,6 +1,4 @@
 import { Link, router, useForm } from '@inertiajs/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
 import {
     ShoppingBag,
     Plus,
@@ -25,17 +23,10 @@ import {
     Flame,
     MessageSquareText,
 } from 'lucide-react';
-import MyBooking from '@/pages/booking/my-booking';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -44,6 +35,15 @@ import {
     DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import {
     Sheet,
     SheetContent,
@@ -51,12 +51,20 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
+import MyBooking from '@/pages/booking/my-booking';
 
 type Category = {
     id: number;
     name: string;
     description: string | null;
+};
+
+type Discount = {
+    id: number;
+    discount_type: string;
+    percentage: string | null;
+    fixed_amount: string | null;
+    applies_to: string;
 };
 
 type MenuItem = {
@@ -69,6 +77,7 @@ type MenuItem = {
     preparation_time: number | null;
     is_available: boolean;
     category: Category | null;
+    discounts: Discount[];
 };
 
 type CartItem = MenuItem & {
@@ -103,21 +112,39 @@ type Props = {
     customer_code?: string;
     tableError?: string | null;
     order_id?: number | null;
+    isMember?: boolean;
 };
 
 const formatCountdown = (seconds: number): string => {
-    if (seconds <= 0) return 'Expired';
+    if (seconds <= 0) {
+        return 'Expired';
+    }
+
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
+
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 const getCategoryIcon = (name: string) => {
     const lower = name.toLowerCase();
-    if (lower.includes('appetizer') || lower.includes('starter')) return <Leaf className="h-4 w-4" />;
-    if (lower.includes('main') || lower.includes('entree')) return <Flame className="h-4 w-4" />;
-    if (lower.includes('dessert')) return <Sparkles className="h-4 w-4" />;
-    if (lower.includes('drink') || lower.includes('beverage')) return <Pill className="h-4 w-4" />;
+
+    if (lower.includes('appetizer') || lower.includes('starter')) {
+        return <Leaf className="h-4 w-4" />;
+    }
+
+    if (lower.includes('main') || lower.includes('entree')) {
+        return <Flame className="h-4 w-4" />;
+    }
+
+    if (lower.includes('dessert')) {
+        return <Sparkles className="h-4 w-4" />;
+    }
+
+    if (lower.includes('drink') || lower.includes('beverage')) {
+        return <Pill className="h-4 w-4" />;
+    }
+
     return <Utensils className="h-4 w-4" />;
 };
 
@@ -134,12 +161,19 @@ export function MenuView({
     customer_code = '',
     tableError: propTableError = null,
     order_id = null,
+    isMember = false,
 }: Props & { basePath?: string; allowTableSelection?: boolean }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [showMemberForm, setShowMemberForm] = useState(false);
+    const [showMemberVerify, setShowMemberVerify] = useState(false);
+    const [memberVerifyCode, setMemberVerifyCode] = useState('');
+    const [memberVerifyError, setMemberVerifyError] = useState('');
+    const [isVerifyingMember, setIsVerifyingMember] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [tableError, setTableError] = useState<string | null>(propTableError);
-    const [animatingItems, setAnimatingItems] = useState<Set<number>>(new Set());
+    const [animatingItems, setAnimatingItems] = useState<Set<number>>(
+        new Set(),
+    );
     const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set());
     const cartBtnRef = useRef<HTMLButtonElement>(null);
     const [cartOpen, setCartOpen] = useState(false);
@@ -162,12 +196,15 @@ export function MenuView({
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [showMyBooking, setShowMyBooking] = useState(false);
     const [hasActiveBooking, setHasActiveBooking] = useState(false);
-    const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
+    const [showRegistrationSuccess, setShowRegistrationSuccess] =
+        useState(false);
     const [registeredCustomerCode, setRegisteredCustomerCode] = useState('');
     const [copied, setCopied] = useState(false);
     const [showBookingSuccess, setShowBookingSuccess] = useState(false);
     const [bookingCodeCopied, setBookingCodeCopied] = useState(false);
-    const [countdown, setCountdown] = useState(booking_data?.expires_in_seconds ?? 600);
+    const [countdown, setCountdown] = useState(
+        booking_data?.expires_in_seconds ?? 600,
+    );
 
     useEffect(() => {
         if (booking_success && customer_code) {
@@ -177,10 +214,14 @@ export function MenuView({
     }, [booking_success, customer_code]);
 
     useEffect(() => {
-        if (!showBookingSuccess) return;
+        if (!showBookingSuccess) {
+            return;
+        }
+
         const interval = setInterval(() => {
             setCountdown((prev) => Math.max(0, prev - 1));
         }, 1000);
+
         return () => clearInterval(interval);
     }, [showBookingSuccess]);
 
@@ -196,6 +237,7 @@ export function MenuView({
         };
         checkActiveBooking();
         const interval = setInterval(checkActiveBooking, 15000);
+
         return () => clearInterval(interval);
     }, []);
 
@@ -204,16 +246,22 @@ export function MenuView({
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
-                        const id = Number(entry.target.getAttribute('data-item-id'));
+                        const id = Number(
+                            entry.target.getAttribute('data-item-id'),
+                        );
+
                         if (id) {
                             setVisibleItems((prev) => new Set(prev).add(id));
                         }
                     }
                 });
             },
-            { threshold: 0.1 }
+            { threshold: 0.1 },
         );
-        document.querySelectorAll('[data-item-id]').forEach((el) => observer.observe(el));
+        document
+            .querySelectorAll('[data-item-id]')
+            .forEach((el) => observer.observe(el));
+
         return () => observer.disconnect();
     }, [menuItems]);
 
@@ -223,16 +271,23 @@ export function MenuView({
             setAnimatingItems((prev) => {
                 const next = new Set(prev);
                 next.delete(item.id);
+
                 return next;
             });
         }, 600);
         setCart((currentCart) => {
-            const existingItem = currentCart.find((cartItem) => cartItem.id === item.id);
+            const existingItem = currentCart.find(
+                (cartItem) => cartItem.id === item.id,
+            );
+
             if (existingItem) {
                 return currentCart.map((cartItem) =>
-                    cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                    cartItem.id === item.id
+                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                        : cartItem,
                 );
             }
+
             return [...currentCart, { ...item, quantity: 1 }];
         });
         toast.success(`${item.name} added to order`, {
@@ -244,8 +299,10 @@ export function MenuView({
     const increaseQuantity = (itemId: number) => {
         setCart((currentCart) =>
             currentCart.map((item) =>
-                item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
-            )
+                item.id === itemId
+                    ? { ...item, quantity: item.quantity + 1 }
+                    : item,
+            ),
         );
     };
 
@@ -253,18 +310,25 @@ export function MenuView({
         setCart((currentCart) =>
             currentCart
                 .map((item) =>
-                    item.id === itemId ? { ...item, quantity: item.quantity - 1 } : item
+                    item.id === itemId
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item,
                 )
-                .filter((item) => item.quantity > 0)
+                .filter((item) => item.quantity > 0),
         );
     };
 
     const removeFromCart = (itemId: number) => {
-        setCart((currentCart) => currentCart.filter((item) => item.id !== itemId));
+        setCart((currentCart) =>
+            currentCart.filter((item) => item.id !== itemId),
+        );
         toast.info('Item removed from order');
     };
 
-    const cartTotal = cart.reduce((total, item) => total + Number(item.price) * item.quantity, 0);
+    const cartTotal = cart.reduce(
+        (total, item) => total + Number(item.price) * item.quantity,
+        0,
+    );
     const cartQuantity = cart.reduce((total, item) => total + item.quantity, 0);
 
     const placeOrder = () => {
@@ -272,21 +336,28 @@ export function MenuView({
             setTableError(
                 allowTableSelection
                     ? 'Please select a table from the dropdown above before placing your order.'
-                    : 'No table assigned. Please scan the QR code on your table.'
+                    : 'No table assigned. Please scan the QR code on your table.',
             );
             setTimeout(() => setTableError(null), 4000);
+
             return;
         }
+
         if (cart.length === 0) {
             toast.error('Please add at least one item to your order.');
+
             return;
         }
+
         setIsPlacingOrder(true);
         router.post(
             '/orders',
             {
                 table_id: table.id,
-                items: cart.map((item) => ({ id: item.id, quantity: item.quantity })),
+                items: cart.map((item) => ({
+                    id: item.id,
+                    quantity: item.quantity,
+                })),
                 special_instructions: specialInstructions.trim() || null,
                 source: basePath.replace(/^\//, ''),
                 order_id: order_id || undefined,
@@ -297,7 +368,9 @@ export function MenuView({
                     setCartOpen(false);
                     toast.success('Order placed successfully!', {
                         duration: 4000,
-                        icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+                        icon: (
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ),
                     });
                     setIsPlacingOrder(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -307,16 +380,23 @@ export function MenuView({
                     setIsPlacingOrder(false);
                     toast.error('Failed to place order. Please try again.');
                 },
-            }
+            },
         );
     };
 
     const handleRegisterMember = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!memberData.name.trim() || !memberData.phone.trim()) return;
+
+        if (!memberData.name.trim() || !memberData.phone.trim()) {
+            return;
+        }
+
         try {
             const getXsrfToken = () => {
-                const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
             const response = await fetch('/customer/register', {
@@ -332,13 +412,19 @@ export function MenuView({
                     email: memberData.email || null,
                 }),
             });
+
             if (response.status === 422) {
                 const errorData = await response.json();
-                const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
+                const firstError =
+                    (Object.values(errorData.errors)[0] as string[])?.[0] ||
+                    'Validation failed.';
                 toast.error(firstError);
+
                 return;
             }
+
             const data = await response.json();
+
             if (data.success) {
                 setShowMemberForm(false);
                 resetMemberForm();
@@ -350,6 +436,62 @@ export function MenuView({
             }
         } catch {
             toast.error('Registration failed. Please try again.');
+        }
+    };
+
+    const handleVerifyMember = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMemberVerifyError('');
+
+        if (!memberVerifyCode.trim()) {
+            setMemberVerifyError('Please enter your customer code.');
+
+            return;
+        }
+
+        setIsVerifyingMember(true);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+            const response = await fetch('/customer/verify-member', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({
+                    customer_code: memberVerifyCode.trim(),
+                }),
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                setShowMemberVerify(false);
+                setMemberVerifyCode('');
+                toast.success(
+                    `Welcome ${data.customer.name}! Member discounts unlocked.`,
+                );
+
+                const url = new URL(window.location.href);
+                url.searchParams.set(
+                    'customer_code',
+                    data.customer.customer_code,
+                );
+                window.location.href = url.toString();
+            } else {
+                setMemberVerifyError(data.message || 'Verification failed.');
+            }
+        } catch {
+            setMemberVerifyError('Verification failed. Please try again.');
+        } finally {
+            setIsVerifyingMember(false);
         }
     };
 
@@ -396,20 +538,26 @@ export function MenuView({
             setTableError(
                 allowTableSelection
                     ? 'Please select a table before viewing your order.'
-                    : 'No table assigned. Please scan the QR code on your table.'
+                    : 'No table assigned. Please scan the QR code on your table.',
             );
             setTimeout(() => setTableError(null), 4000);
+
             return;
         }
+
         setTableError(null);
-        router.get(`${basePath.startsWith('/customer') ? '/customer-my-order' : '/my-order'}?table=${table.table_number}`);
+        router.get(
+            `${basePath.startsWith('/customer') ? '/customer-my-order' : '/my-order'}?table=${table.table_number}`,
+        );
     };
 
     const filteredItems = searchQuery
         ? menuItems.filter(
               (item) =>
                   item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+                  item.description
+                      ?.toLowerCase()
+                      .includes(searchQuery.toLowerCase()),
           )
         : menuItems;
 
@@ -418,8 +566,12 @@ export function MenuView({
             {!inSheet && (
                 <div className="flex items-center justify-between border-b border-orange-200/60 p-4">
                     <div>
-                        <h3 className="text-lg font-bold text-stone-800">Your Order</h3>
-                        <p className="text-sm text-amber-600">{cartQuantity} item{cartQuantity !== 1 ? 's' : ''}</p>
+                        <h3 className="text-lg font-bold text-stone-800">
+                            Your Order
+                        </h3>
+                        <p className="text-sm text-amber-600">
+                            {cartQuantity} item{cartQuantity !== 1 ? 's' : ''}
+                        </p>
                     </div>
                     <button
                         type="button"
@@ -437,7 +589,9 @@ export function MenuView({
                         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100">
                             <ShoppingBag className="h-7 w-7 text-amber-500" />
                         </div>
-                        <p className="font-semibold text-stone-800">Your order is empty</p>
+                        <p className="font-semibold text-stone-800">
+                            Your order is empty
+                        </p>
                         <p className="mt-1 text-sm text-amber-600">
                             Browse the menu and add items to get started.
                         </p>
@@ -463,27 +617,39 @@ export function MenuView({
                                     )}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-bold text-stone-800">{item.name}</p>
-                                    <p className="text-xs text-amber-600">{Number(item.price).toFixed(2)} ETB</p>
+                                    <p className="truncate text-sm font-bold text-stone-800">
+                                        {item.name}
+                                    </p>
+                                    <p className="text-xs text-amber-600">
+                                        {Number(item.price).toFixed(2)} ETB
+                                    </p>
                                     <div className="mt-2 flex items-center gap-2">
                                         <button
                                             type="button"
-                                            onClick={() => decreaseQuantity(item.id)}
+                                            onClick={() =>
+                                                decreaseQuantity(item.id)
+                                            }
                                             className="flex h-6 w-6 items-center justify-center rounded-full border border-orange-200 text-amber-700 transition hover:border-orange-400 hover:bg-orange-100"
                                         >
                                             <Minus className="h-3 w-3" />
                                         </button>
-                                        <span className="w-5 text-center text-sm font-bold text-stone-800">{item.quantity}</span>
+                                        <span className="w-5 text-center text-sm font-bold text-stone-800">
+                                            {item.quantity}
+                                        </span>
                                         <button
                                             type="button"
-                                            onClick={() => increaseQuantity(item.id)}
+                                            onClick={() =>
+                                                increaseQuantity(item.id)
+                                            }
                                             className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm transition hover:from-orange-600 hover:to-orange-700 active:scale-90"
                                         >
                                             <Plus className="h-3 w-3" />
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => removeFromCart(item.id)}
+                                            onClick={() =>
+                                                removeFromCart(item.id)
+                                            }
                                             className="ml-auto text-amber-400 transition hover:text-red-500"
                                         >
                                             <Trash2 className="h-4 w-4" />
@@ -491,7 +657,10 @@ export function MenuView({
                                     </div>
                                 </div>
                                 <div className="text-right text-sm font-bold text-orange-600">
-                                    {(Number(item.price) * item.quantity).toFixed(2)} ETB
+                                    {(
+                                        Number(item.price) * item.quantity
+                                    ).toFixed(2)}{' '}
+                                    ETB
                                 </div>
                             </div>
                         ))}
@@ -503,7 +672,10 @@ export function MenuView({
                 <div className="border-t border-orange-200/60 bg-gradient-to-t from-white to-orange-50/30 p-4">
                     {/* Additional Instructions (Mobile) */}
                     <div className="mb-3">
-                        <label htmlFor="special-instructions-mobile" className="flex items-center gap-2 text-sm font-bold text-stone-800">
+                        <label
+                            htmlFor="special-instructions-mobile"
+                            className="flex items-center gap-2 text-sm font-bold text-stone-800"
+                        >
                             <MessageSquareText className="h-4 w-4 text-orange-500" />
                             Additional Instructions
                         </label>
@@ -518,11 +690,13 @@ export function MenuView({
                             rows={3}
                             maxLength={500}
                             placeholder={`Example:\n• No onions\n• Extra spicy\n• Less sugar\n• Separate the sauce\n• Allergy: No peanuts`}
-                            className="mt-2 w-full resize-y rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm text-stone-700 placeholder:text-amber-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                            className="mt-2 w-full resize-y rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm text-stone-700 placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none"
                         />
                         <div className="mt-1 flex items-center justify-between text-xs">
                             <span className="text-amber-500">Optional</span>
-                            <span className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-500' : 'text-amber-500'}`}>
+                            <span
+                                className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-500' : 'text-amber-500'}`}
+                            >
                                 {specialInstructions.length} / 500
                             </span>
                         </div>
@@ -536,16 +710,28 @@ export function MenuView({
                         {table && (
                             <div className="flex items-center justify-between text-sm text-amber-700">
                                 <span>Table</span>
-                                <span className="font-semibold">Table {table.table_number}</span>
+                                <span className="font-semibold">
+                                    Table {table.table_number}
+                                </span>
                             </div>
                         )}
                         <Separator className="bg-orange-200/40" />
                         <div className="flex items-center justify-between">
-                            <span className="font-bold text-stone-800">Total</span>
-                            <span className="text-xl font-black text-orange-600 drop-shadow-sm">{cartTotal.toFixed(2)} ETB</span>
+                            <span className="font-bold text-stone-800">
+                                Total
+                            </span>
+                            <span className="text-xl font-black text-orange-600 drop-shadow-sm">
+                                {cartTotal.toFixed(2)} ETB
+                            </span>
                         </div>
                     </div>
-                    <Button type="button" onClick={placeOrder} disabled={isPlacingOrder} className="w-full shadow-lg shadow-orange-500/25" size="lg">
+                    <Button
+                        type="button"
+                        onClick={placeOrder}
+                        disabled={isPlacingOrder}
+                        className="w-full shadow-lg shadow-orange-500/25"
+                        size="lg"
+                    >
                         {isPlacingOrder ? (
                             <span className="flex items-center gap-2">
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -567,7 +753,7 @@ export function MenuView({
         <div className="min-h-screen bg-gradient-to-b from-orange-50 via-amber-50/30 to-white text-stone-800 selection:bg-orange-200 selection:text-orange-900">
             {/* ================= TOAST ERROR ================= */}
             {tableError && (
-                <div className="fixed left-1/2 top-24 z-[100] -translate-x-1/2 animate-in fade-in slide-in-from-top-2 rounded-2xl bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-xl">
+                <div className="fixed top-24 left-1/2 z-[100] -translate-x-1/2 animate-in rounded-2xl bg-red-500 px-6 py-3 text-sm font-semibold text-white shadow-xl fade-in slide-in-from-top-2">
                     <span className="flex items-center gap-2">
                         <X className="h-4 w-4" />
                         {tableError}
@@ -576,13 +762,18 @@ export function MenuView({
             )}
 
             {/* ================= BOOKING CONFIRMED DIALOG ================= */}
-            <Dialog open={showBookingSuccess} onOpenChange={setShowBookingSuccess}>
-                <DialogContent className="sm:max-w-md border-orange-200">
+            <Dialog
+                open={showBookingSuccess}
+                onOpenChange={setShowBookingSuccess}
+            >
+                <DialogContent className="border-orange-200 sm:max-w-md">
                     <DialogHeader className="text-center">
                         <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                             <CheckCircle2 className="h-8 w-8 text-green-600" />
                         </div>
-                        <DialogTitle className="text-2xl font-black text-stone-800">Booking Confirmed!</DialogTitle>
+                        <DialogTitle className="text-2xl font-black text-stone-800">
+                            Booking Confirmed!
+                        </DialogTitle>
                         <DialogDescription className="text-amber-600">
                             Your table has been booked successfully.
                         </DialogDescription>
@@ -591,32 +782,54 @@ export function MenuView({
                     <div className="rounded-2xl border border-orange-200/60 bg-orange-50/50 p-5">
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Booking ID</span>
-                                <span className="text-sm font-bold text-stone-800">#{booking_data?.id}</span>
+                                <span className="text-sm text-amber-600">
+                                    Booking ID
+                                </span>
+                                <span className="text-sm font-bold text-stone-800">
+                                    #{booking_data?.id}
+                                </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Customer</span>
-                                <span className="text-sm font-bold text-stone-800">{booking_data?.customer_name}</span>
+                                <span className="text-sm text-amber-600">
+                                    Customer
+                                </span>
+                                <span className="text-sm font-bold text-stone-800">
+                                    {booking_data?.customer_name}
+                                </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Customer Code</span>
-                                <Badge variant="secondary" className="bg-orange-200 text-orange-800 font-mono font-bold">
-                                    {booking_data?.customer_code || customer_code}
+                                <span className="text-sm text-amber-600">
+                                    Customer Code
+                                </span>
+                                <Badge
+                                    variant="secondary"
+                                    className="bg-orange-200 font-mono font-bold text-orange-800"
+                                >
+                                    {booking_data?.customer_code ||
+                                        customer_code}
                                 </Badge>
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Table</span>
-                                <span className="text-sm font-bold text-stone-800">{booking_data?.tables?.join(', ') || 'N/A'}</span>
+                                <span className="text-sm text-amber-600">
+                                    Table
+                                </span>
+                                <span className="text-sm font-bold text-stone-800">
+                                    {booking_data?.tables?.join(', ') || 'N/A'}
+                                </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Date</span>
+                                <span className="text-sm text-amber-600">
+                                    Date
+                                </span>
                                 <span className="text-sm font-bold text-stone-800">
                                     {booking_data?.booked_at
-                                        ? new Date(booking_data.booked_at).toLocaleDateString('en-US', {
+                                        ? new Date(
+                                              booking_data.booked_at,
+                                          ).toLocaleDateString('en-US', {
                                               year: 'numeric',
                                               month: 'short',
                                               day: 'numeric',
@@ -626,10 +839,14 @@ export function MenuView({
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Time</span>
+                                <span className="text-sm text-amber-600">
+                                    Time
+                                </span>
                                 <span className="text-sm font-bold text-stone-800">
                                     {booking_data?.booked_at
-                                        ? new Date(booking_data.booked_at).toLocaleTimeString('en-US', {
+                                        ? new Date(
+                                              booking_data.booked_at,
+                                          ).toLocaleTimeString('en-US', {
                                               hour: '2-digit',
                                               minute: '2-digit',
                                           })
@@ -638,7 +855,9 @@ export function MenuView({
                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">Expires In</span>
+                                <span className="text-sm text-amber-600">
+                                    Expires In
+                                </span>
                                 <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-sm font-bold text-orange-700">
                                     <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
                                     {formatCountdown(countdown)}
@@ -649,16 +868,27 @@ export function MenuView({
 
                     <div className="rounded-xl bg-orange-100 p-4">
                         <div className="flex items-start gap-3">
-                            <span className="mt-0.5 font-bold text-orange-700">!</span>
+                            <span className="mt-0.5 font-bold text-orange-700">
+                                !
+                            </span>
                             <div>
-                                <p className="text-sm font-bold text-orange-800">Save Your Customer Code</p>
-                                <p className="mt-1 text-xs text-orange-600">Your customer code is required to manage your booking. Please save it.</p>
+                                <p className="text-sm font-bold text-orange-800">
+                                    Save Your Customer Code
+                                </p>
+                                <p className="mt-1 text-xs text-orange-600">
+                                    Your customer code is required to manage
+                                    your booking. Please save it.
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setShowBookingSuccess(false)} className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowBookingSuccess(false)}
+                            className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
+                        >
                             Done
                         </Button>
                         <Button
@@ -675,25 +905,43 @@ export function MenuView({
             </Dialog>
 
             {/* ================= REGISTRATION SUCCESS DIALOG ================= */}
-            <Dialog open={showRegistrationSuccess} onOpenChange={setShowRegistrationSuccess}>
-                <DialogContent className="sm:max-w-md border-orange-200">
+            <Dialog
+                open={showRegistrationSuccess}
+                onOpenChange={setShowRegistrationSuccess}
+            >
+                <DialogContent className="border-orange-200 sm:max-w-md">
                     <DialogHeader className="text-center">
                         <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                             <CheckCircle2 className="h-8 w-8 text-green-600" />
                         </div>
-                        <DialogTitle className="text-2xl font-black text-stone-800">Registration Successful!</DialogTitle>
-                        <DialogDescription className="text-amber-600">Welcome to our family! You are now a valued member.</DialogDescription>
+                        <DialogTitle className="text-2xl font-black text-stone-800">
+                            Registration Successful!
+                        </DialogTitle>
+                        <DialogDescription className="text-amber-600">
+                            Welcome to our family! You are now a valued member.
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="mx-auto max-w-[220px] rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4 text-center">
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-orange-500">Customer Code</p>
-                        <p className="font-mono text-2xl font-black tracking-wider text-orange-600">{registeredCustomerCode}</p>
+                        <p className="mb-1 text-xs font-semibold tracking-wider text-orange-500 uppercase">
+                            Customer Code
+                        </p>
+                        <p className="font-mono text-2xl font-black tracking-wider text-orange-600">
+                            {registeredCustomerCode}
+                        </p>
                     </div>
 
-                    <p className="text-center text-xs text-amber-500">Save this code. You'll need it for future bookings, orders, and member verification.</p>
+                    <p className="text-center text-xs text-amber-500">
+                        Save this code. You'll need it for future bookings,
+                        orders, and member verification.
+                    </p>
 
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={handleCopyCode} className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700">
+                        <Button
+                            variant="outline"
+                            onClick={handleCopyCode}
+                            className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
+                        >
                             {copied ? (
                                 <span className="flex items-center gap-2">
                                     <CheckCircle2 className="h-4 w-4" /> Copied!
@@ -704,7 +952,10 @@ export function MenuView({
                                 </span>
                             )}
                         </Button>
-                        <Button onClick={() => setShowRegistrationSuccess(false)} className="flex-1">
+                        <Button
+                            onClick={() => setShowRegistrationSuccess(false)}
+                            className="flex-1"
+                        >
                             Continue
                         </Button>
                     </DialogFooter>
@@ -716,53 +967,89 @@ export function MenuView({
                 open={showMemberForm}
                 onOpenChange={(open) => {
                     setShowMemberForm(open);
-                    if (!open) resetMemberForm();
+
+                    if (!open) {
+                        resetMemberForm();
+                    }
                 }}
             >
-                <DialogContent className="sm:max-w-md border-orange-200">
+                <DialogContent className="border-orange-200 sm:max-w-md">
                     <DialogHeader>
-                        <Badge variant="secondary" className="mb-1 w-fit bg-orange-100 text-orange-700">
+                        <Badge
+                            variant="secondary"
+                            className="mb-1 w-fit bg-orange-100 text-orange-700"
+                        >
                             Join Us
                         </Badge>
-                        <DialogTitle className="text-2xl font-black text-stone-800">Become a Member</DialogTitle>
-                        <DialogDescription className="text-amber-600">Register to enjoy exclusive perks and faster ordering.</DialogDescription>
+                        <DialogTitle className="text-2xl font-black text-stone-800">
+                            Become a Member
+                        </DialogTitle>
+                        <DialogDescription className="text-amber-600">
+                            Register to enjoy exclusive perks and faster
+                            ordering.
+                        </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleRegisterMember} className="space-y-4">
                         <div>
-                            <label className="mb-1.5 block text-sm font-bold text-stone-700">Full Name</label>
+                            <label className="mb-1.5 block text-sm font-bold text-stone-700">
+                                Full Name
+                            </label>
                             <Input
                                 type="text"
                                 value={memberData.name}
-                                onChange={(e) => setMemberData('name', e.target.value)}
+                                onChange={(e) =>
+                                    setMemberData('name', e.target.value)
+                                }
                                 placeholder="Enter your full name"
                                 className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
                             />
-                            {memberErrors.name && <p className="mt-1 text-sm text-red-500">{memberErrors.name}</p>}
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-bold text-stone-700">Phone Number</label>
-                            <Input
-                                type="tel"
-                                value={memberData.phone}
-                                onChange={(e) => setMemberData('phone', e.target.value)}
-                                placeholder="Enter your phone number"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
-                            />
-                            {memberErrors.phone && <p className="mt-1 text-sm text-red-500">{memberErrors.phone}</p>}
+                            {memberErrors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.name}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
-                                Email Address <span className="font-normal text-amber-400">(Optional)</span>
+                                Phone Number
+                            </label>
+                            <Input
+                                type="tel"
+                                value={memberData.phone}
+                                onChange={(e) =>
+                                    setMemberData('phone', e.target.value)
+                                }
+                                placeholder="Enter your phone number"
+                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                            />
+                            {memberErrors.phone && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.phone}
+                                </p>
+                            )}
+                        </div>
+                        <div>
+                            <label className="mb-1.5 block text-sm font-bold text-stone-700">
+                                Email Address{' '}
+                                <span className="font-normal text-amber-400">
+                                    (Optional)
+                                </span>
                             </label>
                             <Input
                                 type="email"
                                 value={memberData.email}
-                                onChange={(e) => setMemberData('email', e.target.value)}
+                                onChange={(e) =>
+                                    setMemberData('email', e.target.value)
+                                }
                                 placeholder="Enter your email address"
                                 className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
                             />
-                            {memberErrors.email && <p className="mt-1 text-sm text-red-500">{memberErrors.email}</p>}
+                            {memberErrors.email && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberErrors.email}
+                                </p>
+                            )}
                         </div>
                         <DialogFooter className="gap-2 pt-2">
                             <Button
@@ -776,8 +1063,91 @@ export function MenuView({
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={isRegistering} className="flex-1">
-                                {isRegistering ? 'Registering...' : 'Become a Member'}
+                            <Button
+                                type="submit"
+                                disabled={isRegistering}
+                                className="flex-1"
+                            >
+                                {isRegistering
+                                    ? 'Registering...'
+                                    : 'Become a Member'}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* ================= MEMBER DISCOUNT VERIFICATION DIALOG ================= */}
+            <Dialog
+                open={showMemberVerify}
+                onOpenChange={(open) => {
+                    setShowMemberVerify(open);
+
+                    if (!open) {
+                        setMemberVerifyCode('');
+                        setMemberVerifyError('');
+                    }
+                }}
+            >
+                <DialogContent className="border-orange-200 sm:max-w-md">
+                    <DialogHeader>
+                        <Badge
+                            variant="secondary"
+                            className="mb-1 w-fit bg-orange-100 text-orange-700"
+                        >
+                            <Star className="mr-1 h-3 w-3" />
+                            Member Discount
+                        </Badge>
+                        <DialogTitle className="text-2xl font-black text-stone-800">
+                            Verify Membership
+                        </DialogTitle>
+                        <DialogDescription className="text-amber-600">
+                            Enter your customer code to unlock exclusive member
+                            discounts.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleVerifyMember} className="space-y-4">
+                        <div>
+                            <label className="mb-1.5 block text-sm font-bold text-stone-700">
+                                Customer Code
+                            </label>
+                            <Input
+                                type="text"
+                                value={memberVerifyCode}
+                                onChange={(e) =>
+                                    setMemberVerifyCode(e.target.value)
+                                }
+                                placeholder="e.g. CUS-ABC12345"
+                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                            />
+                            {memberVerifyError && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {memberVerifyError}
+                                </p>
+                            )}
+                        </div>
+                        <DialogFooter className="gap-2 pt-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setShowMemberVerify(false);
+                                    setMemberVerifyCode('');
+                                    setMemberVerifyError('');
+                                }}
+                                className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                disabled={isVerifyingMember}
+                                className="flex-1"
+                            >
+                                {isVerifyingMember
+                                    ? 'Verifying...'
+                                    : 'Check Discount'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -791,7 +1161,7 @@ export function MenuView({
                         <h1 className="text-2xl font-black tracking-tight text-stone-800 transition group-hover:text-orange-600">
                             DINE<span className="text-orange-500">.</span>
                         </h1>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-500">
+                        <p className="text-[10px] font-semibold tracking-[0.2em] text-amber-500 uppercase">
                             Digital Menu
                         </p>
                     </Link>
@@ -800,45 +1170,75 @@ export function MenuView({
                         {allowTableSelection ? (
                             availableTables.length > 0 ? (
                                 <Select
-                                    value={table ? String(table.table_number) : ''}
+                                    value={
+                                        table ? String(table.table_number) : ''
+                                    }
                                     onValueChange={(value) => {
-                                        router.get(`${basePath}?table=${value}`, {}, { preserveScroll: true });
+                                        router.get(
+                                            `${basePath}?table=${value}`,
+                                            {},
+                                            { preserveScroll: true },
+                                        );
                                     }}
                                 >
                                     <SelectTrigger className="h-9 w-fit gap-1 rounded-full border-orange-200 bg-orange-50/80 px-3 text-sm font-semibold text-amber-700 hover:bg-orange-100 hover:text-orange-700 [&>svg]:ml-0">
                                         <Utensils className="h-3.5 w-3.5 shrink-0" />
                                         <span className="hidden sm:inline">
-                                            {table ? `Table ${table.table_number}` : 'Choose Table'}
+                                            {table
+                                                ? `Table ${table.table_number}`
+                                                : 'Choose Table'}
                                         </span>
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-orange-200">
                                         {availableTables.map((t) => (
-                                            <SelectItem key={t.id} value={String(t.table_number)} className="font-semibold text-stone-700 focus:bg-orange-50 focus:text-orange-700">
+                                            <SelectItem
+                                                key={t.id}
+                                                value={String(t.table_number)}
+                                                className="font-semibold text-stone-700 focus:bg-orange-50 focus:text-orange-700"
+                                            >
                                                 Table {t.table_number}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             ) : (
-                                <Badge variant="secondary" className="bg-red-50 text-red-600 whitespace-nowrap">
+                                <Badge
+                                    variant="secondary"
+                                    className="bg-red-50 whitespace-nowrap text-red-600"
+                                >
                                     No tables
                                 </Badge>
                             )
                         ) : table ? (
                             <div className="flex items-center gap-1.5 rounded-full border border-orange-300 bg-orange-100/80 px-3 py-1.5 text-sm font-bold text-orange-700 shadow-sm">
                                 <Utensils className="h-3.5 w-3.5" />
-                                <span className="hidden xs:inline">Table</span>
+                                <span className="xs:inline hidden">Table</span>
                                 {table.table_number}
-                                <Badge variant="secondary" className="bg-orange-200 text-orange-800 text-[10px] px-1.5 py-0">
+                                <Badge
+                                    variant="secondary"
+                                    className="bg-orange-200 px-1.5 py-0 text-[10px] text-orange-800"
+                                >
                                     QR
                                 </Badge>
                             </div>
                         ) : null}
 
-                        <a href={basePath.startsWith('/customer') ? '/customer-booking' : '/booking'}>
-                            <Button variant="ghost" size="sm" className="rounded-full text-amber-600 hover:bg-orange-100 hover:text-orange-700">
+                        <a
+                            href={
+                                basePath.startsWith('/customer')
+                                    ? '/customer-booking'
+                                    : '/booking'
+                            }
+                        >
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="rounded-full text-amber-600 hover:bg-orange-100 hover:text-orange-700"
+                            >
                                 <Calendar className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Book a Table</span>
+                                <span className="hidden sm:inline">
+                                    Book a Table
+                                </span>
                             </Button>
                         </a>
 
@@ -873,25 +1273,33 @@ export function MenuView({
                     <button
                         type="button"
                         className={
-                            'fixed bottom-4 right-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 pl-4 pr-3 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-90 sm:bottom-6 sm:right-6' +
-                            (cartOpen ? ' scale-0 opacity-0 pointer-events-none' : ' scale-100 opacity-100')
+                            'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
+                            (cartOpen
+                                ? ' pointer-events-none scale-0 opacity-0'
+                                : ' scale-100 opacity-100')
                         }
                     >
                         <ShoppingBag className="h-4 w-4" />
                         <span>Cart</span>
                         {cartQuantity > 0 && (
-                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 ring-2 ring-orange-300 animate-in zoom-in">
+                            <span className="flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 ring-2 ring-orange-300 zoom-in">
                                 {cartQuantity}
                             </span>
                         )}
                     </button>
                 </SheetTrigger>
-                <SheetContent side="right" className="flex w-full flex-col border-l-orange-200 p-0 sm:max-w-sm">
+                <SheetContent
+                    side="right"
+                    className="flex w-full flex-col border-l-orange-200 p-0 sm:max-w-sm"
+                >
                     <SheetHeader className="border-b border-orange-200/60 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
                         <SheetTitle className="flex items-center justify-between text-stone-800">
                             <span>Your Order</span>
                             {cartQuantity > 0 && (
-                                <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                                <Badge
+                                    variant="secondary"
+                                    className="bg-orange-100 text-orange-700"
+                                >
                                     {cartQuantity} items
                                 </Badge>
                             )}
@@ -904,17 +1312,26 @@ export function MenuView({
             {/* ================= HERO ================= */}
             <section className="relative overflow-hidden bg-gradient-to-br from-orange-950 via-orange-900 to-amber-900">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-                <div className="absolute -right-40 -top-40 h-[500px] w-[500px] animate-pulse rounded-full bg-orange-500/15 blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 h-[400px] w-[400px] animate-pulse rounded-full bg-amber-500/10 blur-3xl" style={{ animationDelay: '1s' }} />
+                <div className="absolute -top-40 -right-40 h-[500px] w-[500px] animate-pulse rounded-full bg-orange-500/15 blur-3xl" />
+                <div
+                    className="absolute -bottom-40 -left-40 h-[400px] w-[400px] animate-pulse rounded-full bg-amber-500/10 blur-3xl"
+                    style={{ animationDelay: '1s' }}
+                />
 
                 <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
                     <div className="max-w-2xl">
-                        <Badge variant="secondary" className="mb-4 animate-in fade-in slide-in-from-left-4 bg-orange-500/15 text-orange-200 backdrop-blur-sm fill-mode-both">
+                        <Badge
+                            variant="secondary"
+                            className="mb-4 animate-in bg-orange-500/15 text-orange-200 backdrop-blur-sm fill-mode-both fade-in slide-in-from-left-4"
+                        >
                             <Sparkles className="mr-1 h-3 w-3" />
                             Welcome to our restaurant
                         </Badge>
 
-                        <h2 className="animate-in fade-in slide-in-from-bottom-4 fill-mode-both text-4xl font-black leading-tight text-white sm:text-5xl lg:text-6xl" style={{ animationDelay: '100ms' }}>
+                        <h2
+                            className="animate-in text-4xl leading-tight font-black text-white fill-mode-both fade-in slide-in-from-bottom-4 sm:text-5xl lg:text-6xl"
+                            style={{ animationDelay: '100ms' }}
+                        >
                             Delicious food,
                             <br />
                             <span className="bg-gradient-to-r from-orange-200 via-orange-300 to-amber-200 bg-clip-text text-transparent">
@@ -922,15 +1339,26 @@ export function MenuView({
                             </span>
                         </h2>
 
-                        <p className="mt-5 max-w-xl animate-in fade-in slide-in-from-bottom-4 fill-mode-both text-base leading-relaxed text-orange-200/80 sm:text-lg" style={{ animationDelay: '200ms' }}>
-                            Explore our menu, choose your favorite dishes, and order directly from your table.
-                            Every dish is crafted with passion and the finest ingredients.
+                        <p
+                            className="mt-5 max-w-xl animate-in text-base leading-relaxed text-orange-200/80 fill-mode-both fade-in slide-in-from-bottom-4 sm:text-lg"
+                            style={{ animationDelay: '200ms' }}
+                        >
+                            Explore our menu, choose your favorite dishes, and
+                            order directly from your table. Every dish is
+                            crafted with passion and the finest ingredients.
                         </p>
 
-                        <div className="mt-8 flex animate-in fade-in slide-in-from-bottom-4 fill-mode-both flex-wrap gap-3" style={{ animationDelay: '300ms' }}>
+                        <div
+                            className="mt-8 flex animate-in flex-wrap gap-3 fill-mode-both fade-in slide-in-from-bottom-4"
+                            style={{ animationDelay: '300ms' }}
+                        >
                             <Button
                                 type="button"
-                                onClick={() => document.getElementById('menu-section')?.scrollIntoView({ behavior: 'smooth' })}
+                                onClick={() =>
+                                    document
+                                        .getElementById('menu-section')
+                                        ?.scrollIntoView({ behavior: 'smooth' })
+                                }
                                 className="rounded-full shadow-lg shadow-orange-500/30"
                             >
                                 <ChefHat className="h-4 w-4" />
@@ -946,22 +1374,38 @@ export function MenuView({
                                 <UserPlus className="h-4 w-4" />
                                 Join as Member
                             </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowMemberVerify(true)}
+                                className="rounded-full border-orange-300/30 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+                            >
+                                <Star className="h-4 w-4" />
+                                Member Discount
+                            </Button>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* ================= MAIN CONTENT ================= */}
-            <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" id="menu-section">
+            <main
+                className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
+                id="menu-section"
+            >
                 {/* Search + Categories header */}
                 <div className="mb-8 space-y-6">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h2 className="text-3xl font-black tracking-tight text-stone-800">Explore Our Menu</h2>
-                            <p className="mt-1 text-amber-600">Discover dishes crafted to perfection.</p>
+                            <h2 className="text-3xl font-black tracking-tight text-stone-800">
+                                Explore Our Menu
+                            </h2>
+                            <p className="mt-1 text-amber-600">
+                                Discover dishes crafted to perfection.
+                            </p>
                         </div>
                         <div className="relative w-full sm:w-72">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-amber-400" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-amber-400" />
                             <Input
                                 type="text"
                                 placeholder="Search dishes..."
@@ -972,10 +1416,13 @@ export function MenuView({
                         </div>
                     </div>
 
-                    <div ref={categoryScrollRef} className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                    <div
+                        ref={categoryScrollRef}
+                        className="flex scrollbar-none gap-2 overflow-x-auto pb-2"
+                    >
                         <Link
                             href={basePath}
-                            className={`flex items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 ${
+                            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${
                                 selectedCategory === null
                                     ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
                                     : 'border border-orange-200 bg-white text-amber-600 shadow-sm hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700'
@@ -989,7 +1436,7 @@ export function MenuView({
                             <Link
                                 key={category.id}
                                 href={`${basePath}?category=${category.id}`}
-                                className={`flex items-center gap-2 whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-200 active:scale-95 ${
+                                className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${
                                     selectedCategory === category.id
                                         ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
                                         : 'border border-orange-200 bg-white text-amber-600 shadow-sm hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700'
@@ -1012,7 +1459,7 @@ export function MenuView({
                                     data-item-id={item.id}
                                     className={`group flex flex-col overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-orange-200/40 ${
                                         visibleItems.has(item.id)
-                                            ? 'animate-in fade-in slide-in-from-bottom-5 fill-mode-both'
+                                            ? 'animate-in fill-mode-both slide-in-from-bottom-5 fade-in'
                                             : 'opacity-0'
                                     }`}
                                     style={{
@@ -1027,15 +1474,25 @@ export function MenuView({
                                                 alt={item.name}
                                                 className="h-56 w-full object-cover transition duration-500 group-hover:scale-110"
                                                 onError={(e) => {
-                                                    const target = e.currentTarget;
-                                                    target.style.display = 'none';
-                                                    const parent = target.parentElement;
+                                                    const target =
+                                                        e.currentTarget;
+                                                    target.style.display =
+                                                        'none';
+                                                    const parent =
+                                                        target.parentElement;
+
                                                     if (parent) {
-                                                        const placeholder = document.createElement('div');
-                                                        placeholder.className = 'flex h-56 items-center justify-center bg-orange-100';
+                                                        const placeholder =
+                                                            document.createElement(
+                                                                'div',
+                                                            );
+                                                        placeholder.className =
+                                                            'flex h-56 items-center justify-center bg-orange-100';
                                                         placeholder.innerHTML =
                                                             '<div class="text-center text-amber-400"><svg class="mx-auto h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="mt-2 text-sm">No image available</p></div>';
-                                                        parent.appendChild(placeholder);
+                                                        parent.appendChild(
+                                                            placeholder,
+                                                        );
                                                     }
                                                 }}
                                             />
@@ -1043,23 +1500,27 @@ export function MenuView({
                                             <div className="flex h-56 items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
                                                 <div className="text-center text-amber-400">
                                                     <Utensils className="mx-auto h-10 w-10" />
-                                                    <p className="mt-2 text-sm">No image available</p>
+                                                    <p className="mt-2 text-sm">
+                                                        No image available
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}
 
                                         <div
-                                            className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
+                                            className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase shadow-sm ${
                                                 item.is_available
                                                     ? 'bg-emerald-500 text-white'
                                                     : 'bg-red-500 text-white'
                                             }`}
                                         >
-                                            {item.is_available ? 'Available' : 'Unavailable'}
+                                            {item.is_available
+                                                ? 'Available'
+                                                : 'Unavailable'}
                                         </div>
 
                                         {item.preparation_time && (
-                                            <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-amber-700 shadow-sm backdrop-blur-sm">
+                                            <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-amber-700 shadow-sm backdrop-blur-sm">
                                                 <Timer className="h-3 w-3" />
                                                 {item.preparation_time} min
                                             </div>
@@ -1069,25 +1530,38 @@ export function MenuView({
                                             <div className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4 transition-transform duration-300 group-hover:translate-y-0">
                                                 <button
                                                     type="button"
-                                                    onClick={() => addToCart(item)}
+                                                    onClick={() =>
+                                                        addToCart(item)
+                                                    }
                                                     className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg transition active:scale-[0.97] ${
-                                                        animatingItems.has(item.id)
+                                                        animatingItems.has(
+                                                            item.id,
+                                                        )
                                                             ? 'bg-emerald-500 text-white'
                                                             : 'bg-white text-stone-800 hover:bg-gradient-to-r hover:from-orange-500 hover:to-orange-600 hover:text-white'
                                                     }`}
                                                 >
-                                                    <span className={`transition-all duration-300 ${animatingItems.has(item.id) ? 'scale-0 opacity-0 w-0' : ''}`}>
+                                                    <span
+                                                        className={`transition-all duration-300 ${animatingItems.has(item.id) ? 'w-0 scale-0 opacity-0' : ''}`}
+                                                    >
                                                         <Plus className="h-4 w-4" />
                                                     </span>
-                                                    <span className={`transition-opacity duration-300 ${animatingItems.has(item.id) ? 'opacity-0' : ''}`}>
+                                                    <span
+                                                        className={`transition-opacity duration-300 ${animatingItems.has(item.id) ? 'opacity-0' : ''}`}
+                                                    >
                                                         Add to Order
                                                     </span>
                                                     <span
                                                         className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${
-                                                            animatingItems.has(item.id) ? 'opacity-100' : 'opacity-0'
+                                                            animatingItems.has(
+                                                                item.id,
+                                                            )
+                                                                ? 'opacity-100'
+                                                                : 'opacity-0'
                                                         }`}
                                                     >
-                                                        <CheckCircle2 className="h-4 w-4" /> Added!
+                                                        <CheckCircle2 className="h-4 w-4" />{' '}
+                                                        Added!
                                                     </span>
                                                 </button>
                                             </div>
@@ -1096,16 +1570,98 @@ export function MenuView({
 
                                     <div className="flex flex-1 flex-col p-5">
                                         <div className="flex items-start justify-between gap-3">
-                                            <h3 className="text-lg font-black text-stone-800">{item.name}</h3>
-                                            <span className="whitespace-nowrap text-base font-black text-orange-600 drop-shadow-sm">
-                                                {Number(item.price).toFixed(2)} ETB
-                                            </span>
+                                            <h3 className="text-lg font-black text-stone-800">
+                                                {item.name}
+                                            </h3>
+                                            {(() => {
+                                                const activeDiscount = (
+                                                    item.discounts ?? []
+                                                ).find(
+                                                    (d) =>
+                                                        d.discount_type ===
+                                                            'percentage' &&
+                                                        Number(d.percentage) >
+                                                            0,
+                                                );
+
+                                                if (!activeDiscount) {
+                                                    return (
+                                                        <span className="text-base font-black whitespace-nowrap text-orange-600 drop-shadow-sm">
+                                                            {Number(
+                                                                item.price,
+                                                            ).toFixed(2)}{' '}
+                                                            ETB
+                                                        </span>
+                                                    );
+                                                }
+
+                                                const isEligible =
+                                                    activeDiscount.applies_to ===
+                                                        'all' || isMember;
+                                                const discountedPrice =
+                                                    Number(item.price) -
+                                                    (Number(item.price) *
+                                                        Number(
+                                                            activeDiscount.percentage,
+                                                        )) /
+                                                        100;
+
+                                                if (isEligible) {
+                                                    return (
+                                                        <div className="flex flex-col items-end gap-1.5">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="bg-green-100 text-green-800"
+                                                            >
+                                                                {
+                                                                    activeDiscount.percentage
+                                                                }
+                                                                % OFF
+                                                            </Badge>
+                                                            <span className="text-sm whitespace-nowrap text-muted-foreground line-through">
+                                                                {Number(
+                                                                    item.price,
+                                                                ).toFixed(
+                                                                    2,
+                                                                )}{' '}
+                                                                ETB
+                                                            </span>
+                                                            <span className="text-base font-black whitespace-nowrap text-orange-600 drop-shadow-sm">
+                                                                {discountedPrice.toFixed(
+                                                                    2,
+                                                                )}{' '}
+                                                                ETB
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return (
+                                                    <div className="flex flex-col items-end gap-1">
+                                                        <span className="text-base font-black whitespace-nowrap text-orange-600 drop-shadow-sm">
+                                                            {Number(
+                                                                item.price,
+                                                            ).toFixed(2)}{' '}
+                                                            ETB
+                                                        </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            ⭐ Register as a
+                                                            Member to unlock
+                                                            this discount.
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
 
                                         {item.category && (
                                             <div className="mt-1.5 flex items-center gap-1">
-                                                {getCategoryIcon(item.category.name)}
-                                                <span className="text-xs font-medium text-amber-500">{item.category.name}</span>
+                                                {getCategoryIcon(
+                                                    item.category.name,
+                                                )}
+                                                <span className="text-xs font-medium text-amber-500">
+                                                    {item.category.name}
+                                                </span>
                                             </div>
                                         )}
 
@@ -1127,18 +1683,27 @@ export function MenuView({
                                                         : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700'
                                                 }`}
                                             >
-                                                <span className={`transition-transform duration-300 ${animatingItems.has(item.id) ? 'scale-0' : ''}`}>
+                                                <span
+                                                    className={`transition-transform duration-300 ${animatingItems.has(item.id) ? 'scale-0' : ''}`}
+                                                >
                                                     <Plus className="h-4 w-4" />
                                                 </span>
-                                                <span className={`transition-opacity duration-300 ${animatingItems.has(item.id) ? 'opacity-0' : ''}`}>
+                                                <span
+                                                    className={`transition-opacity duration-300 ${animatingItems.has(item.id) ? 'opacity-0' : ''}`}
+                                                >
                                                     Add to Order
                                                 </span>
                                                 <span
                                                     className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${
-                                                        animatingItems.has(item.id) ? 'opacity-100' : 'opacity-0'
+                                                        animatingItems.has(
+                                                            item.id,
+                                                        )
+                                                            ? 'opacity-100'
+                                                            : 'opacity-0'
                                                     }`}
                                                 >
-                                                    <CheckCircle2 className="h-4 w-4" /> Added!
+                                                    <CheckCircle2 className="h-4 w-4" />{' '}
+                                                    Added!
                                                 </span>
                                             </button>
                                         ) : (
@@ -1157,7 +1722,9 @@ export function MenuView({
                             <Search className="h-8 w-8 text-amber-400" />
                         </div>
                         <h2 className="mt-5 text-2xl font-black text-stone-800">
-                            {searchQuery ? 'No matching dishes' : 'No menu items available'}
+                            {searchQuery
+                                ? 'No matching dishes'
+                                : 'No menu items available'}
                         </h2>
                         <p className="mt-2 text-amber-600">
                             {searchQuery
@@ -1165,7 +1732,12 @@ export function MenuView({
                                 : 'Please check back later.'}
                         </p>
                         {searchQuery && (
-                            <Button type="button" variant="outline" onClick={() => setSearchQuery('')} className="mt-6 rounded-full border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setSearchQuery('')}
+                                className="mt-6 rounded-full border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
+                            >
                                 Clear Search
                             </Button>
                         )}
@@ -1176,14 +1748,22 @@ export function MenuView({
                 {cart.length > 0 && (
                     <section id="your-order" className="mt-20 scroll-mt-24">
                         <div className="mb-6">
-                            <Badge variant="secondary" className="mb-1 bg-orange-100 text-orange-700">
+                            <Badge
+                                variant="secondary"
+                                className="mb-1 bg-orange-100 text-orange-700"
+                            >
                                 <ShoppingBag className="mr-1 h-3 w-3" />
                                 Almost there
                             </Badge>
-                            <h2 className="text-3xl font-black text-stone-800">Your Order</h2>
+                            <h2 className="text-3xl font-black text-stone-800">
+                                Your Order
+                            </h2>
                             {table && (
                                 <p className="mt-1 text-amber-600">
-                                    Ordering for <strong className="text-stone-800">Table {table.table_number}</strong>
+                                    Ordering for{' '}
+                                    <strong className="text-stone-800">
+                                        Table {table.table_number}
+                                    </strong>
                                 </p>
                             )}
                         </div>
@@ -1198,7 +1778,11 @@ export function MenuView({
                                         >
                                             <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-orange-100">
                                                 {item.image ? (
-                                                    <img src={`/storage/${item.image}`} alt={item.name} className="h-full w-full object-cover" />
+                                                    <img
+                                                        src={`/storage/${item.image}`}
+                                                        alt={item.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
                                                 ) : (
                                                     <div className="flex h-full items-center justify-center text-amber-400">
                                                         <Utensils className="h-6 w-6" />
@@ -1207,31 +1791,56 @@ export function MenuView({
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-start justify-between">
-                                                    <h3 className="font-bold text-stone-800">{item.name}</h3>
-                                                    <span className="whitespace-nowrap text-sm font-black text-orange-600">
-                                                        {(Number(item.price) * item.quantity).toFixed(2)} ETB
+                                                    <h3 className="font-bold text-stone-800">
+                                                        {item.name}
+                                                    </h3>
+                                                    <span className="text-sm font-black whitespace-nowrap text-orange-600">
+                                                        {(
+                                                            Number(item.price) *
+                                                            item.quantity
+                                                        ).toFixed(2)}{' '}
+                                                        ETB
                                                     </span>
                                                 </div>
-                                                <p className="mt-0.5 text-xs text-amber-600">{Number(item.price).toFixed(2)} ETB each</p>
+                                                <p className="mt-0.5 text-xs text-amber-600">
+                                                    {Number(item.price).toFixed(
+                                                        2,
+                                                    )}{' '}
+                                                    ETB each
+                                                </p>
                                                 <div className="mt-3 flex items-center gap-3">
                                                     <button
                                                         type="button"
-                                                        onClick={() => decreaseQuantity(item.id)}
+                                                        onClick={() =>
+                                                            decreaseQuantity(
+                                                                item.id,
+                                                            )
+                                                        }
                                                         className="flex h-7 w-7 items-center justify-center rounded-full border border-orange-200 text-amber-600 transition hover:border-orange-400 hover:bg-orange-100"
                                                     >
                                                         <Minus className="h-3 w-3" />
                                                     </button>
-                                                    <span className="w-6 text-center text-sm font-bold text-stone-800">{item.quantity}</span>
+                                                    <span className="w-6 text-center text-sm font-bold text-stone-800">
+                                                        {item.quantity}
+                                                    </span>
                                                     <button
                                                         type="button"
-                                                        onClick={() => increaseQuantity(item.id)}
+                                                        onClick={() =>
+                                                            increaseQuantity(
+                                                                item.id,
+                                                            )
+                                                        }
                                                         className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-sm transition hover:from-orange-600 hover:to-orange-700 active:scale-90"
                                                     >
                                                         <Plus className="h-3 w-3" />
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => removeFromCart(item.id)}
+                                                        onClick={() =>
+                                                            removeFromCart(
+                                                                item.id,
+                                                            )
+                                                        }
                                                         className="ml-2 text-xs font-semibold text-amber-400 transition hover:text-red-500"
                                                     >
                                                         Remove
@@ -1245,8 +1854,8 @@ export function MenuView({
 
                             <div className="h-fit rounded-2xl bg-gradient-to-br from-stone-900 to-stone-800 p-7 text-white shadow-xl shadow-stone-900/20 lg:sticky lg:top-24">
                                 <h3 className="flex items-center gap-2 text-xl font-black">
-                                        <ShoppingBag className="h-5 w-5 text-orange-400" />
-                                        Order Summary
+                                    <ShoppingBag className="h-5 w-5 text-orange-400" />
+                                    Order Summary
                                 </h3>
 
                                 <div className="mt-6 space-y-3 border-b border-white/10 pb-6">
@@ -1256,13 +1865,20 @@ export function MenuView({
                                     </div>
                                     <div className="flex justify-between text-sm text-orange-200">
                                         <span>Table</span>
-                                        <span>{table ? `Table ${table.table_number}` : 'Not selected'}</span>
+                                        <span>
+                                            {table
+                                                ? `Table ${table.table_number}`
+                                                : 'Not selected'}
+                                        </span>
                                     </div>
                                 </div>
 
                                 {/* Additional Instructions */}
                                 <div className="mt-6 border-b border-white/10 pb-6">
-                                    <label htmlFor="special-instructions" className="flex items-center gap-2 text-sm font-bold text-white">
+                                    <label
+                                        htmlFor="special-instructions"
+                                        className="flex items-center gap-2 text-sm font-bold text-white"
+                                    >
                                         <MessageSquareText className="h-4 w-4 text-orange-400" />
                                         Additional Instructions
                                     </label>
@@ -1271,24 +1887,32 @@ export function MenuView({
                                         value={specialInstructions}
                                         onChange={(e) => {
                                             if (e.target.value.length <= 500) {
-                                                setSpecialInstructions(e.target.value);
+                                                setSpecialInstructions(
+                                                    e.target.value,
+                                                );
                                             }
                                         }}
                                         rows={4}
                                         maxLength={500}
                                         placeholder={`Example:\n• No onions\n• Extra spicy\n• Less sugar\n• Separate the sauce\n• Allergy: No peanuts`}
-                                        className="mt-3 w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-orange-200/40 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                                        className="mt-3 w-full resize-y rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-orange-200/40 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/30 focus:outline-none"
                                     />
                                     <div className="mt-1 flex items-center justify-between text-xs">
-                                        <span className="text-orange-300/60">Optional</span>
-                                        <span className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-400' : 'text-orange-200/60'}`}>
+                                        <span className="text-orange-300/60">
+                                            Optional
+                                        </span>
+                                        <span
+                                            className={`font-semibold ${specialInstructions.length >= 500 ? 'text-red-400' : 'text-orange-200/60'}`}
+                                        >
                                             {specialInstructions.length} / 500
                                         </span>
                                     </div>
                                 </div>
 
                                 <div className="mt-6 flex items-center justify-between">
-                                    <span className="text-lg font-bold">Total</span>
+                                    <span className="text-lg font-bold">
+                                        Total
+                                    </span>
                                     <span className="text-2xl font-black text-orange-400 drop-shadow-lg">
                                         {cartTotal.toFixed(2)} ETB
                                     </span>
@@ -1315,7 +1939,8 @@ export function MenuView({
                                 </Button>
 
                                 <p className="mt-4 text-center text-xs text-orange-300/60">
-                                    Your order will be sent directly to the kitchen.
+                                    Your order will be sent directly to the
+                                    kitchen.
                                 </p>
                             </div>
                         </div>
@@ -1333,20 +1958,27 @@ export function MenuView({
                     >
                         <span className="flex items-center gap-2">
                             <ShoppingBag className="h-5 w-5" />
-                            <span className="text-sm font-bold">View Order</span>
+                            <span className="text-sm font-bold">
+                                View Order
+                            </span>
                         </span>
                         <span className="flex items-center gap-3">
                             <span className="text-sm text-orange-200">
-                                {cartQuantity} item{cartQuantity !== 1 ? 's' : ''}
+                                {cartQuantity} item
+                                {cartQuantity !== 1 ? 's' : ''}
                             </span>
-                            <span className="text-lg font-black text-white drop-shadow-sm">{cartTotal.toFixed(2)} ETB</span>
+                            <span className="text-lg font-black text-white drop-shadow-sm">
+                                {cartTotal.toFixed(2)} ETB
+                            </span>
                         </span>
                     </button>
                 </div>
             )}
 
             {/* My Booking Modal */}
-            {showMyBooking && <MyBooking onClose={() => setShowMyBooking(false)} />}
+            {showMyBooking && (
+                <MyBooking onClose={() => setShowMyBooking(false)} />
+            )}
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-20 border-t border-orange-200/60 bg-gradient-to-b from-white to-orange-50/50">

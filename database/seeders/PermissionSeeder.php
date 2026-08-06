@@ -116,6 +116,13 @@ class PermissionSeeder extends Seeder
         'Menu' => [
             ['view menu', 'view'],
         ],
+        'Discounts' => [
+            ['view discounts', 'view'],
+            ['create discounts', 'create'],
+            ['update discounts', 'update'],
+            ['delete discounts', 'delete'],
+            ['toggle discount status', 'toggle'],
+        ],
     ];
 
     public function run(): void

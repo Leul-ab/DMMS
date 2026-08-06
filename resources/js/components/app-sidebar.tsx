@@ -15,6 +15,7 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     Store,
+    Percent,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -43,6 +44,7 @@ import { index as bookingsIndex } from '@/routes/manager/bookings';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as customersIndex } from '@/routes/manager/customers';
 import { index as itemsIndex } from '@/routes/manager/items';
+import { index as discountsIndex } from '@/routes/manager/discounts';
 import { index as ordersIndex } from '@/routes/manager/orders';
 
 import { index as tablesIndex } from '@/routes/manager/tables';
@@ -92,6 +94,16 @@ export function AppSidebar() {
                       title: 'Menu Items',
                       href: itemsIndex(),
                       icon: UtensilsCrossed,
+                  },
+              ]
+            : []),
+
+        ...(can('view discounts')
+            ? [
+                  {
+                      title: 'Discounts',
+                      href: discountsIndex(),
+                      icon: Percent,
                   },
               ]
             : []),
