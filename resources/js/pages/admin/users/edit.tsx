@@ -20,7 +20,7 @@ import {
     update as usersUpdate,
 } from '@/routes/admin/users';
 
-type Role = { id: number; name: string };
+type Role = { id: number; name: string; slug: string };
 type Branch = { id: number; name: string };
 type User = {
     id: number;
@@ -156,14 +156,20 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                             <SelectValue placeholder="Select a role" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {roles.map((role) => (
-                                                <SelectItem
-                                                    key={role.id}
-                                                    value={String(role.id)}
-                                                >
-                                                    {role.name}
-                                                </SelectItem>
-                                            ))}
+                                            {roles
+                                                .filter(
+                                                    (role) =>
+                                                        role.slug !==
+                                                        'super_admin',
+                                                )
+                                                .map((role) => (
+                                                    <SelectItem
+                                                        key={role.id}
+                                                        value={String(role.id)}
+                                                    >
+                                                        {role.name}
+                                                    </SelectItem>
+                                                ))}
                                         </SelectContent>
                                     </Select>
                                     <InputError message={errors.role_id} />

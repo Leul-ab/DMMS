@@ -42,6 +42,7 @@ import type { PaginatedData } from '@/types';
 type Role = {
     id: number;
     name: string;
+    slug: string;
 };
 
 type Branch = {
@@ -494,6 +495,10 @@ export default function UsersIndex({
                                                                 checked={
                                                                     user.is_active
                                                                 }
+                                                                disabled={
+                                                                    user.role?.slug ===
+                                                                    'super_admin'
+                                                                }
                                                                 onCheckedChange={() =>
                                                                     handleToggleStatus(
                                                                         user,
@@ -530,12 +535,21 @@ export default function UsersIndex({
                                                             <Button
                                                                 variant="outline"
                                                                 size="icon"
+                                                                disabled={
+                                                                    user.role?.slug ===
+                                                                    'super_admin'
+                                                                }
+                                                                title={
+                                                                    user.role?.slug ===
+                                                                    'super_admin'
+                                                                        ? 'Super Admin cannot be edited'
+                                                                        : 'Edit user'
+                                                                }
                                                                 onClick={() =>
                                                                     openEditModal(
                                                                         user,
                                                                     )
                                                                 }
-                                                                title="Edit user"
                                                             >
                                                                 <Pencil className="h-4 w-4" />
                                                             </Button>
@@ -549,12 +563,21 @@ export default function UsersIndex({
                                                             <Button
                                                                 variant="destructive"
                                                                 size="icon"
+                                                                disabled={
+                                                                    user.role?.slug ===
+                                                                    'super_admin'
+                                                                }
+                                                                title={
+                                                                    user.role?.slug ===
+                                                                    'super_admin'
+                                                                        ? 'Super Admin cannot be deleted'
+                                                                        : 'Delete user'
+                                                                }
                                                                 onClick={() =>
                                                                     openDeleteModal(
                                                                         user,
                                                                     )
                                                                 }
-                                                                title="Delete user"
                                                             >
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -684,14 +707,20 @@ export default function UsersIndex({
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map((role) => (
-                                        <SelectItem
-                                            key={role.id}
-                                            value={String(role.id)}
-                                        >
-                                            {role.name}
-                                        </SelectItem>
-                                    ))}
+                                    {roles
+                                        .filter(
+                                            (role) =>
+                                                role.slug !==
+                                                'super_admin',
+                                        )
+                                        .map((role) => (
+                                            <SelectItem
+                                                key={role.id}
+                                                value={String(role.id)}
+                                            >
+                                                {role.name}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -969,14 +998,20 @@ export default function UsersIndex({
                                 </SelectTrigger>
 
                                 <SelectContent>
-                                    {roles.map((role) => (
-                                        <SelectItem
-                                            key={role.id}
-                                            value={String(role.id)}
-                                        >
-                                            {role.name}
-                                        </SelectItem>
-                                    ))}
+                                    {roles
+                                        .filter(
+                                            (role) =>
+                                                role.slug !==
+                                                'super_admin',
+                                        )
+                                        .map((role) => (
+                                            <SelectItem
+                                                key={role.id}
+                                                value={String(role.id)}
+                                            >
+                                                {role.name}
+                                            </SelectItem>
+                                        ))}
                                 </SelectContent>
                             </Select>
                         </div>

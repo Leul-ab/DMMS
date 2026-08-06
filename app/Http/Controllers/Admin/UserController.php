@@ -61,6 +61,12 @@ class UserController extends Controller
             'is_waiter' => ['boolean'],
         ]);
 
+        if (Role::find($validated['role_id'])?->slug === 'super_admin') {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);
+
+            return back();
+        }
+
         $validated['password'] = Hash::make($validated['password'] ?? '12345678');
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_waiter'] = $request->boolean('is_waiter');
@@ -84,6 +90,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user): RedirectResponse
     {
+        $user->load('role');
+
+        if ($user->role?->slug === 'super_admin') {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'The Super Admin account cannot be edited.']);
+
+            return back();
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
@@ -94,6 +108,12 @@ class UserController extends Controller
             'is_active' => ['boolean'],
             'is_waiter' => ['boolean'],
         ]);
+
+        if (Role::find($validated['role_id'])?->slug === 'super_admin') {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);
+
+            return back();
+        }
 
         if (empty($validated['password'])) {
             unset($validated['password']);
@@ -113,6 +133,17 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
 {
+    $user->load('role');
+
+    if ($user->role?->slug === 'super_admin') {
+        Inertia::flash('toast', [
+            'type' => 'error',
+            'message' => 'The Super Admin account cannot be deleted.',
+        ]);
+
+        return back();
+    }
+
     if ($user->id === Auth::id()) {
         Inertia::flash('toast', [
             'type' => 'error',
@@ -133,6 +164,17 @@ class UserController extends Controller
 }
    public function toggleStatus(User $user): RedirectResponse
 {
+    $user->load('role');
+
+    if ($user->role?->slug === 'super_admin') {
+        Inertia::flash('toast', [
+            'type' => 'error',
+            'message' => 'The Super Admin account cannot be deactivated.',
+        ]);
+
+        return back();
+    }
+
     if ($user->id === Auth::id()) {
         Inertia::flash('toast', [
             'type' => 'error',
