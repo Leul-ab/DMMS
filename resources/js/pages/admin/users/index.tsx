@@ -3,6 +3,7 @@ import { Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -122,6 +123,7 @@ export default function UsersIndex({
     const [passwordConfirmation, setPasswordConfirmation] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [isWaiter, setIsWaiter] = useState(false);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     // -----------------------------------------
     // Search
@@ -181,6 +183,18 @@ export default function UsersIndex({
         setPasswordConfirmation('');
         setIsActive(true);
         setIsWaiter(false);
+        setFormErrors({});
+    };
+
+    const clearFieldError = (field: string) => {
+        if (formErrors[field]) {
+            setFormErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
     };
 
     // -----------------------------------------
@@ -236,9 +250,29 @@ export default function UsersIndex({
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim() || !email.trim() || !roleId) {
-            return;
+        const nextErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+nextErrors.name = 'Full name is required.';
+}
+
+        if (!email.trim()) {
+nextErrors.email = 'Email is required.';
+}
+
+        if (!roleId) {
+nextErrors.role_id = 'Please select a role.';
+}
+
+        if (password && password !== passwordConfirmation) {
+            nextErrors.password_confirmation = 'Passwords do not match.';
         }
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         router.post(
             usersStore.url(),
@@ -267,9 +301,33 @@ export default function UsersIndex({
     // -----------------------------------------
 
     const handleUpdate = () => {
-        if (!selectedUser || !name.trim() || !email.trim() || !roleId) {
-            return;
+        if (!selectedUser) {
+return;
+}
+
+        const nextErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+nextErrors.name = 'Full name is required.';
+}
+
+        if (!email.trim()) {
+nextErrors.email = 'Email is required.';
+}
+
+        if (!roleId) {
+nextErrors.role_id = 'Please select a role.';
+}
+
+        if (password && password !== passwordConfirmation) {
+            nextErrors.password_confirmation = 'Passwords do not match.';
         }
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         router.put(
             usersUpdate.url(selectedUser.id),
@@ -654,11 +712,15 @@ export default function UsersIndex({
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setName(event.target.value);
+                                    clearFieldError('name');
+                                }}
                                 placeholder="Enter full name"
+                                aria-invalid={Boolean(formErrors.name)}
+                                className={formErrors.name ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.name} className="mt-1" />
                         </div>
 
                         {/* Email */}
@@ -671,11 +733,15 @@ export default function UsersIndex({
                             <Input
                                 type="email"
                                 value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setEmail(event.target.value);
+                                    clearFieldError('email');
+                                }}
                                 placeholder="Enter email address"
+                                aria-invalid={Boolean(formErrors.email)}
+                                className={formErrors.email ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.email} className="mt-1" />
                         </div>
 
                         {/* Phone */}
@@ -687,11 +753,15 @@ export default function UsersIndex({
 
                             <Input
                                 value={phone}
-                                onChange={(event) =>
-                                    setPhone(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPhone(event.target.value);
+                                    clearFieldError('phone');
+                                }}
                                 placeholder="Enter phone number"
+                                aria-invalid={Boolean(formErrors.phone)}
+                                className={formErrors.phone ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.phone} className="mt-1" />
                         </div>
 
                         {/* Role */}
@@ -701,8 +771,11 @@ export default function UsersIndex({
                                 Role
                             </label>
 
-                            <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger>
+                            <Select value={roleId} onValueChange={(value) => {
+                                setRoleId(value);
+                                clearFieldError('role_id');
+                            }}>
+                                <SelectTrigger aria-invalid={Boolean(formErrors.role_id)} className={formErrors.role_id ? 'border-red-500' : ''}>
                                     <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
 
@@ -723,6 +796,7 @@ export default function UsersIndex({
                                         ))}
                                 </SelectContent>
                             </Select>
+                            <InputError message={formErrors.role_id} className="mt-1" />
                         </div>
 
                         {/* Branch */}
@@ -763,11 +837,16 @@ export default function UsersIndex({
                             <Input
                                 type="password"
                                 value={password}
-                                onChange={(event) =>
-                                    setPassword(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPassword(event.target.value);
+                                    clearFieldError('password');
+                                    clearFieldError('password_confirmation');
+                                }}
                                 placeholder="Leave empty for default password"
+                                aria-invalid={Boolean(formErrors.password)}
+                                className={formErrors.password ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.password} className="mt-1" />
 
                             <p className="mt-1 text-xs text-muted-foreground">
                                 If left empty, the default password will be
@@ -785,11 +864,15 @@ export default function UsersIndex({
                             <Input
                                 type="password"
                                 value={passwordConfirmation}
-                                onChange={(event) =>
-                                    setPasswordConfirmation(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPasswordConfirmation(event.target.value);
+                                    clearFieldError('password_confirmation');
+                                }}
                                 placeholder="Confirm password"
+                                aria-invalid={Boolean(formErrors.password_confirmation)}
+                                className={formErrors.password_confirmation ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.password_confirmation} className="mt-1" />
                         </div>
 
                         {/* Active */}
@@ -948,10 +1031,14 @@ export default function UsersIndex({
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setName(event.target.value);
+                                    clearFieldError('name');
+                                }}
+                                aria-invalid={Boolean(formErrors.name)}
+                                className={formErrors.name ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.name} className="mt-1" />
                         </div>
 
                         {/* Email */}
@@ -964,10 +1051,14 @@ export default function UsersIndex({
                             <Input
                                 type="email"
                                 value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setEmail(event.target.value);
+                                    clearFieldError('email');
+                                }}
+                                aria-invalid={Boolean(formErrors.email)}
+                                className={formErrors.email ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.email} className="mt-1" />
                         </div>
 
                         {/* Phone */}
@@ -979,10 +1070,14 @@ export default function UsersIndex({
 
                             <Input
                                 value={phone}
-                                onChange={(event) =>
-                                    setPhone(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPhone(event.target.value);
+                                    clearFieldError('phone');
+                                }}
+                                aria-invalid={Boolean(formErrors.phone)}
+                                className={formErrors.phone ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.phone} className="mt-1" />
                         </div>
 
                         {/* Role */}
@@ -992,8 +1087,11 @@ export default function UsersIndex({
                                 Role
                             </label>
 
-                            <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger>
+                            <Select value={roleId} onValueChange={(value) => {
+                                setRoleId(value);
+                                clearFieldError('role_id');
+                            }}>
+                                <SelectTrigger aria-invalid={Boolean(formErrors.role_id)} className={formErrors.role_id ? 'border-red-500' : ''}>
                                     <SelectValue placeholder="Select a role" />
                                 </SelectTrigger>
 
@@ -1014,6 +1112,7 @@ export default function UsersIndex({
                                         ))}
                                 </SelectContent>
                             </Select>
+                            <InputError message={formErrors.role_id} className="mt-1" />
                         </div>
 
                         {/* Branch */}
@@ -1054,11 +1153,16 @@ export default function UsersIndex({
                             <Input
                                 type="password"
                                 value={password}
-                                onChange={(event) =>
-                                    setPassword(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPassword(event.target.value);
+                                    clearFieldError('password');
+                                    clearFieldError('password_confirmation');
+                                }}
                                 placeholder="Leave empty to keep current password"
+                                aria-invalid={Boolean(formErrors.password)}
+                                className={formErrors.password ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.password} className="mt-1" />
                         </div>
 
                         {/* Confirm New Password */}
@@ -1071,11 +1175,15 @@ export default function UsersIndex({
                             <Input
                                 type="password"
                                 value={passwordConfirmation}
-                                onChange={(event) =>
-                                    setPasswordConfirmation(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setPasswordConfirmation(event.target.value);
+                                    clearFieldError('password_confirmation');
+                                }}
                                 placeholder="Confirm new password"
+                                aria-invalid={Boolean(formErrors.password_confirmation)}
+                                className={formErrors.password_confirmation ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.password_confirmation} className="mt-1" />
                         </div>
 
                         {/* Active */}

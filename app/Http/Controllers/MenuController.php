@@ -190,8 +190,9 @@ class MenuController extends Controller
 
         Branch::setCurrent($table->branch_id);
 
-        // Fetch all recent orders for the table (excluding cancelled),
-        // newest first, so the customer can see their order history.
+        // Fetch all active orders for the table (excluding served/cancelled,
+        // and completed orders that have been fully paid), newest first, so the
+        // customer can track all their active orders simultaneously.
         $orders = Order::with([
             'orderItems.menuItem',
             'payment.verifier',
@@ -199,20 +200,20 @@ class MenuController extends Controller
             'feedback.customer',
         ])
             ->where('table_id', $table->id)
-            ->whereIn('status', [
-                'pending',
-                'received',
-                'confirmed',
-                'preparing',
-                'ready',
-                'served',
-                'completed',
-            ])
+            ->whereNotIn('status', ['served', 'cancelled'])
+            ->where(function ($query) {
+                // Keep completed orders only if they still need payment
+                // (awaiting payment or payment verification).
+                $query->where('status', '!=', 'completed')
+                    ->orWhere(function ($q) {
+                        $q->where('status', 'completed')
+                            ->whereIn('payment_status', ['unpaid', 'pending']);
+                    });
+            })
             ->orderByDesc('created_at')
-            ->limit(10)
             ->get();
 
-        // The "current" order is the most recent one.
+        // The "current" order is the most recent active one.
         $order = $orders->first();
 
         return Inertia::render($view, [

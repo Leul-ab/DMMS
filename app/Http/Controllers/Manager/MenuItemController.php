@@ -8,7 +8,6 @@ use App\Models\MenuItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,9 +25,6 @@ class MenuItemController extends Controller
             ->when($request->availability !== null, function ($query) use ($request) {
                 $query->where('is_available', $request->boolean('availability'));
             })
-            ->when($request->featured !== null, function ($query) use ($request) {
-                $query->where('featured', $request->boolean('featured'));
-            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -36,7 +32,7 @@ class MenuItemController extends Controller
         return Inertia::render('manager/items/index', [
             'items' => $items,
             'categories' => MenuCategory::ordered()->get(),
-            'filters' => $request->only(['search', 'category_id', 'availability', 'featured']),
+            'filters' => $request->only(['search', 'category_id', 'availability']),
         ]);
     }
 
@@ -52,13 +48,11 @@ class MenuItemController extends Controller
         $validated = $request->validate([
             'category_id' => ['required', 'exists:menu_categories,id'],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('menu_items')],
             'description' => ['nullable', 'string', 'max:2000'],
             'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'preparation_time' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'is_available' => ['boolean'],
-            'featured' => ['boolean'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -66,7 +60,6 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $request->boolean('is_available', true);
-        $validated['featured'] = $request->boolean('featured', false);
 
         MenuItem::create($validated);
 
@@ -88,13 +81,11 @@ class MenuItemController extends Controller
         $validated = $request->validate([
             'category_id' => ['required', 'exists:menu_categories,id'],
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('menu_items')->ignore($item->id)],
             'description' => ['nullable', 'string', 'max:2000'],
             'price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
             'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'preparation_time' => ['nullable', 'integer', 'min:0', 'max:1440'],
             'is_available' => ['boolean'],
-            'featured' => ['boolean'],
         ]);
 
         if ($request->hasFile('image')) {
@@ -112,7 +103,6 @@ class MenuItemController extends Controller
         }
 
         $validated['is_available'] = $request->boolean('is_available');
-        $validated['featured'] = $request->boolean('featured');
 
         $item->update($validated);
 

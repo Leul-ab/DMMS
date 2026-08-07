@@ -1,15 +1,45 @@
 // Components
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { emailRule, requiredRule, validateFields } from '@/lib/form-validation';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const handleFieldChange = (field: string) => {
+        if (clientErrors[field]) {
+            setClientErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        const formData = new FormData(e.currentTarget);
+        const nextErrors = validateFields(
+            { email: formData.get('email') },
+            {
+                email: [requiredRule('Email address is required.'), emailRule()],
+            },
+        );
+        setClientErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            e.preventDefault();
+        }
+    };
+
     return (
         <>
             <Head title="Forgot password" />
@@ -21,7 +51,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             )}
 
             <div className="space-y-6">
-                <Form {...email.form()}>
+                <Form {...email.form()} onSubmit={handleSubmit}>
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
@@ -33,9 +63,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     autoComplete="off"
                                     autoFocus
                                     placeholder="email@example.com"
+                                    onChange={() => handleFieldChange('email')}
+                                    aria-invalid={Boolean(errors.email || clientErrors.email)}
+                                    className={errors.email || clientErrors.email ? 'border-red-500' : ''}
                                 />
 
-                                <InputError message={errors.email} />
+                                <InputError message={errors.email || clientErrors.email} />
                             </div>
 
                             <div className="my-6 flex items-center justify-start">

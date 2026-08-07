@@ -55,7 +55,6 @@ type DashboardStats = {
     totalMenuItems: number;
     availableMenuItems: number;
     unavailableMenuItems: number;
-    featuredMenuItems: number;
 };
 
 type OrderStatusOverview = {
@@ -281,7 +280,7 @@ export default function Dashboard({
                                 {/* BRANCH SCOPE TOGGLE */}
                                 {can('view all branches dashboard') && (
                                     <div className="flex items-center gap-2">
-                                        
+
 
                                         <div className="flex items-center rounded-full border border-orange-200 bg-white/70 p-1 shadow-sm backdrop-blur">
                                             <button

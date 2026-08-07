@@ -17,6 +17,7 @@ import {
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -298,6 +299,7 @@ function RoleFormDialog({
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
         [],
     );
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const isEdit = mode === 'edit';
 
@@ -305,6 +307,7 @@ function RoleFormDialog({
         setName(role?.name ?? '');
         setDescription(role?.description ?? '');
         setSelectedPermissions(role?.permissions ?? []);
+        setFormErrors({});
     };
 
     const handleOpenChange = (next: boolean) => {
@@ -356,9 +359,17 @@ function RoleFormDialog({
     };
 
     const handleSave = () => {
+        const nextErrors: Record<string, string> = {};
+
         if (!name.trim()) {
-            return;
-        }
+nextErrors.name = 'Role name is required.';
+}
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         onSave({
             name: name.trim(),
@@ -391,9 +402,23 @@ function RoleFormDialog({
 
                         <Input
                             value={name}
-                            onChange={(event) => setName(event.target.value)}
+                            onChange={(event) => {
+                                setName(event.target.value);
+
+                                if (formErrors.name) {
+                                    setFormErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next.name;
+
+                                        return next;
+                                    });
+                                }
+                            }}
                             placeholder="e.g. Cashier"
+                            aria-invalid={Boolean(formErrors.name)}
+                            className={formErrors.name ? 'border-red-500' : ''}
                         />
+                        <InputError message={formErrors.name} className="mt-1" />
 
                         <p className="mt-1 text-xs text-muted-foreground">
                             {isEdit

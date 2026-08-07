@@ -1,8 +1,10 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { CheckCircle2, Copy } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import InputError from '@/components/input-error';
+import { emailRule, phoneRule, requiredRule, validateFields } from '@/lib/form-validation';
 import { login } from '@/routes';
 import menuRoutes from '@/routes/menu';
-import { CheckCircle2, Copy } from 'lucide-react';
 
 export default function LandingPage() {
     const { auth } = usePage().props;
@@ -28,7 +30,16 @@ export default function LandingPage() {
     const handleRegisterMember = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!memberData.name.trim() || !memberData.phone.trim()) {
+        // Client-side validation with inline errors
+        const nextErrors = validateFields(memberData, {
+            name: [requiredRule('Full name is required.')],
+            phone: [requiredRule('Phone number is required.'), phoneRule()],
+            email: [emailRule()],
+        });
+
+        setMemberErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
             return;
         }
 
@@ -37,6 +48,7 @@ export default function LandingPage() {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -56,10 +68,13 @@ export default function LandingPage() {
 
             if (response.status === 422) {
                 const errorData = await response.json();
-                setMemberErrors(errorData.errors || {});
-                const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
-                alert(firstError);
+                const serverErrors: Record<string, string> = {};
+                Object.entries(errorData.errors || {}).forEach(([key, value]) => {
+                    serverErrors[key] = Array.isArray(value) ? value[0] : String(value);
+                });
+                setMemberErrors(serverErrors);
                 setIsRegistering(false);
+
                 return;
             }
 
@@ -72,13 +87,27 @@ export default function LandingPage() {
                 setShowRegistrationSuccess(true);
                 setCopied(false);
             } else {
-                alert(data.message || 'Registration failed. Please try again.');
+                setMemberErrors({ form: data.message || 'Registration failed. Please try again.' });
             }
         } catch (e) {
             console.error(e);
-            alert('Registration failed. Please try again.');
+            setMemberErrors({ form: 'Registration failed. Please try again.' });
         } finally {
             setIsRegistering(false);
+        }
+    };
+
+    // Clear a field's error in real-time as the user types
+    const handleMemberFieldChange = (field: keyof typeof memberData, value: string) => {
+        setMemberData((prev) => ({ ...prev, [field]: value }));
+
+        if (memberErrors[field]) {
+            setMemberErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
         }
     };
 
@@ -102,6 +131,7 @@ export default function LandingPage() {
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 50);
         window.addEventListener('scroll', handleScroll);
+
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -223,13 +253,14 @@ export default function LandingPage() {
                                 <input
                                     type="text"
                                     value={memberData.name}
-                                    onChange={(e) => setMemberData({ ...memberData, name: e.target.value })}
+                                    onChange={(e) => handleMemberFieldChange('name', e.target.value)}
                                     placeholder="Enter your full name"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    aria-invalid={Boolean(memberErrors.name)}
+                                    className={`w-full rounded-xl border px-4 py-3 outline-none focus:border-orange-500 ${
+                                        memberErrors.name ? 'border-red-400' : 'border-gray-200'
+                                    }`}
                                 />
-                                {memberErrors.name && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.name}</p>
-                                )}
+                                <InputError message={memberErrors.name} className="mt-1" />
                             </div>
 
                             {/* Phone */}
@@ -240,13 +271,14 @@ export default function LandingPage() {
                                 <input
                                     type="tel"
                                     value={memberData.phone}
-                                    onChange={(e) => setMemberData({ ...memberData, phone: e.target.value })}
+                                    onChange={(e) => handleMemberFieldChange('phone', e.target.value)}
                                     placeholder="Enter your phone number"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    aria-invalid={Boolean(memberErrors.phone)}
+                                    className={`w-full rounded-xl border px-4 py-3 outline-none focus:border-orange-500 ${
+                                        memberErrors.phone ? 'border-red-400' : 'border-gray-200'
+                                    }`}
                                 />
-                                {memberErrors.phone && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.phone}</p>
-                                )}
+                                <InputError message={memberErrors.phone} className="mt-1" />
                             </div>
 
                             {/* Email */}
@@ -258,14 +290,22 @@ export default function LandingPage() {
                                 <input
                                     type="email"
                                     value={memberData.email}
-                                    onChange={(e) => setMemberData({ ...memberData, email: e.target.value })}
+                                    onChange={(e) => handleMemberFieldChange('email', e.target.value)}
                                     placeholder="Enter your email address"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    aria-invalid={Boolean(memberErrors.email)}
+                                    className={`w-full rounded-xl border px-4 py-3 outline-none focus:border-orange-500 ${
+                                        memberErrors.email ? 'border-red-400' : 'border-gray-200'
+                                    }`}
                                 />
-                                {memberErrors.email && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.email}</p>
-                                )}
+                                <InputError message={memberErrors.email} className="mt-1" />
                             </div>
+
+                            {/* Form-level error */}
+                            {memberErrors.form && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600">
+                                    {memberErrors.form}
+                                </div>
+                            )}
 
                             {/* Buttons */}
                             <div className="flex gap-3 pt-2">
@@ -525,10 +565,18 @@ function FeaturesSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -618,10 +666,18 @@ function HowItWorksSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -705,10 +761,18 @@ function MenuPreviewSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -796,10 +860,18 @@ function BenefitsSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -903,10 +975,18 @@ function CustomerExperienceSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 

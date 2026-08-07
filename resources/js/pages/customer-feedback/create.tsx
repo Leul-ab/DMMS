@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { ArrowLeft, Send, Star } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { StarRating } from '@/components/star-rating';
 
 type Order = {
@@ -29,18 +30,21 @@ type Props = {
     customer: Customer;
 };
 
-export default function CustomerFeedbackCreate({ order, customer }: Props) {
+export default function CustomerFeedbackCreate({ order }: Props) {
     const [overallRating, setOverallRating] = useState(0);
     const [comment, setComment] = useState('');
     const [anonymous, setAnonymous] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ratingError, setRatingError] = useState<string | null>(null);
 
     const handleSubmit = () => {
         if (!overallRating) {
-            toast.error('Please select an overall rating before submitting.');
+            setRatingError('Please select an overall rating before submitting.');
+
             return;
         }
 
+        setRatingError(null);
         setIsSubmitting(true);
 
         router.post(
@@ -58,8 +62,13 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
                 },
                 onError: (errors) => {
                     setIsSubmitting(false);
-                    const firstError = Object.values(errors)[0];
-                    toast.error(firstError || 'Failed to submit feedback. Please try again.');
+
+                    if (errors.overall_rating) {
+                        setRatingError(errors.overall_rating);
+                    } else {
+                        const firstError = Object.values(errors)[0];
+                        toast.error(firstError || 'Failed to submit feedback. Please try again.');
+                    }
                 },
             }
         );
@@ -109,15 +118,24 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
 
                     <div className="space-y-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
                         {/* Overall Service Rating */}
-                        <div className="flex flex-col items-center gap-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-6">
+                        <div className={`flex flex-col items-center gap-4 rounded-2xl border p-6 ${
+                            ratingError ? 'border-red-300 bg-red-50/50' : 'border-amber-100 bg-amber-50/50'
+                        }`}>
                             <p className="text-lg font-black text-amber-800">
                                 Overall Service Rating
                             </p>
                             <StarRating
                                 value={overallRating}
-                                onChange={setOverallRating}
+                                onChange={(value) => {
+                                    setOverallRating(value);
+
+                                    if (ratingError) {
+setRatingError(null);
+}
+                                }}
                                 size="lg"
                             />
+                            <InputError message={ratingError ?? undefined} className="text-center" />
                         </div>
 
                         {/* Comment */}

@@ -1,4 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Percent } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -19,6 +20,7 @@ import {
     index as discountsIndex,
     store as discountsStore,
 } from '@/routes/manager/discounts';
+import { requiredRule, validateFields } from '@/lib/form-validation';
 
 type MenuItem = {
     id: number;
@@ -52,8 +54,34 @@ export default function DiscountCreate({ menuItems }: Props) {
         );
     };
 
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const nextErrors = validateFields(data, {
+            name: [requiredRule('Discount name is required.')],
+            discount_type: [requiredRule('Please select a discount type.')],
+            applies_to: [requiredRule('Please select an applies-to option.')],
+            status: [requiredRule('Please select a status.')],
+            start_date: [requiredRule('Start date is required.')],
+            end_date: [requiredRule('End date is required.')],
+        });
+
+        setClientErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
+    const handleFieldChange = (field: string, value: string | number) => {
+        setData(field as never, value as never);
+        if (clientErrors[field]) {
+            setClientErrors((prev) => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
 
         const formData = new FormData();
         formData.append('name', data.name);
@@ -98,12 +126,13 @@ export default function DiscountCreate({ menuItems }: Props) {
                                     id="name"
                                     value={data.name}
                                     onChange={(e) =>
-                                        setData('name', e.target.value)
+                                        handleFieldChange('name', e.target.value)
                                     }
                                     placeholder="e.g. Summer Sale, New Customer"
                                     required
+                                    aria-invalid={Boolean(errors.name || clientErrors.name)}
                                 />
-                                <InputError message={errors.name} />
+                                <InputError message={errors.name || clientErrors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -130,10 +159,10 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <Select
                                     value={data.discount_type}
                                     onValueChange={(value) =>
-                                        setData('discount_type', value)
+                                        handleFieldChange('discount_type', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-invalid={Boolean(errors.discount_type || clientErrors.discount_type)}>
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -145,7 +174,7 @@ export default function DiscountCreate({ menuItems }: Props) {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.discount_type} />
+                                <InputError message={errors.discount_type || clientErrors.discount_type} />
                             </div>
 
                             <div className="grid gap-2">
@@ -153,10 +182,10 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <Select
                                     value={data.applies_to}
                                     onValueChange={(value) =>
-                                        setData('applies_to', value)
+                                        handleFieldChange('applies_to', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-invalid={Boolean(errors.applies_to || clientErrors.applies_to)}>
                                         <SelectValue placeholder="Select applies to" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -168,7 +197,7 @@ export default function DiscountCreate({ menuItems }: Props) {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.applies_to} />
+                                <InputError message={errors.applies_to || clientErrors.applies_to} />
                             </div>
 
                             <div className="grid gap-2">
@@ -264,10 +293,10 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <Select
                                     value={data.status}
                                     onValueChange={(value) =>
-                                        setData('status', value)
+                                        handleFieldChange('status', value)
                                     }
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger aria-invalid={Boolean(errors.status || clientErrors.status)}>
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -285,7 +314,7 @@ export default function DiscountCreate({ menuItems }: Props) {
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.status} />
+                                <InputError message={errors.status || clientErrors.status} />
                             </div>
 
                             <div className="grid gap-2">
@@ -295,11 +324,12 @@ export default function DiscountCreate({ menuItems }: Props) {
                                     type="date"
                                     value={data.start_date}
                                     onChange={(e) =>
-                                        setData('start_date', e.target.value)
+                                        handleFieldChange('start_date', e.target.value)
                                     }
                                     required
+                                    aria-invalid={Boolean(errors.start_date || clientErrors.start_date)}
                                 />
-                                <InputError message={errors.start_date} />
+                                <InputError message={errors.start_date || clientErrors.start_date} />
                             </div>
 
                             <div className="grid gap-2">
@@ -309,11 +339,12 @@ export default function DiscountCreate({ menuItems }: Props) {
                                     type="date"
                                     value={data.end_date}
                                     onChange={(e) =>
-                                        setData('end_date', e.target.value)
+                                        handleFieldChange('end_date', e.target.value)
                                     }
                                     required
+                                    aria-invalid={Boolean(errors.end_date || clientErrors.end_date)}
                                 />
-                                <InputError message={errors.end_date} />
+                                <InputError message={errors.end_date || clientErrors.end_date} />
                             </div>
 
                             <div className="flex items-center gap-4">
