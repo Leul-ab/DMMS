@@ -99,6 +99,16 @@ export function AppSidebar() {
               ]
             : []),
 
+        ...(can('view tables')
+            ? [
+                  {
+                      title: 'Tables',
+                      href: tablesIndex(),
+                      icon: Table2,
+                  },
+              ]
+            : []),
+
         ...(can('view discounts')
             ? [
                   {
@@ -109,15 +119,6 @@ export function AppSidebar() {
               ]
             : []),
 
-        ...(can('view tables')
-            ? [
-                  {
-                      title: 'Tables',
-                      href: tablesIndex(),
-                      icon: Table2,
-                  },
-              ]
-            : []),
 
         ...(can('view menu')
             ? [

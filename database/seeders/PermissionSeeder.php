@@ -15,6 +15,7 @@ class PermissionSeeder extends Seeder
     private array $permissions = [
         'Dashboard' => [
             ['view dashboard', 'view'],
+            ['view all branches dashboard', 'view'],
         ],
         'Branches' => [
             ['view branches', 'view'],

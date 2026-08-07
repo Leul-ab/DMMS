@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
             'show branches',
             'switch branches',
             'view dashboard',
+            'view all branches dashboard',
             'view menu categories',
             'create menu categories',
             'update menu categories',

@@ -1,7 +1,8 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     BellRing,
+    Building2,
     CheckCircle2,
     ChefHat,
     ClipboardList,
@@ -19,14 +20,16 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
-import StatCard from '@/components/dashboard/stat-card';
-import { FinanceAreaChart } from '@/components/dashboard/finance-area-chart';
 import { DonutChart } from '@/components/dashboard/donut-chart';
+import { FinanceAreaChart } from '@/components/dashboard/finance-area-chart';
 import { Reveal } from '@/components/dashboard/reveal';
+import StatCard from '@/components/dashboard/stat-card';
 
+import { StarRating } from '@/components/star-rating';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { StarRating } from '@/components/star-rating';
+
+import { useCan } from '@/hooks/use-can';
 
 type DashboardStats = {
     totalOrders: number;
@@ -101,6 +104,7 @@ type RecentFeedbackItem = {
 };
 
 type Props = {
+    allBranchesScope: boolean;
     stats: DashboardStats;
     orderStatusOverview: OrderStatusOverview[];
     popularMenuItems: PopularMenuItem[];
@@ -164,6 +168,7 @@ const ORDER_STATUS_STYLES: Record<
 };
 
 export default function Dashboard({
+    allBranchesScope,
     stats,
     orderStatusOverview,
     popularMenuItems,
@@ -178,6 +183,12 @@ export default function Dashboard({
     | Helper Functions
     |--------------------------------------------------------------------------
     */
+
+    const can = useCan();
+
+    const { currentBranch } = usePage().props as unknown as {
+        currentBranch: { id: number; name: string } | null;
+    };
 
     const formatCurrency = (amount: number | string) => {
         return `ETB ${Number(amount).toLocaleString('en-US', {
@@ -250,6 +261,81 @@ export default function Dashboard({
                                     Overview of your restaurant's performance
                                     and finances.
                                 </p>
+                            </div>
+
+                            {/* RIGHT-SIDE CONTROLS */}
+                            <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end">
+                                {/* BRANCH INDICATOR */}
+                                {currentBranch && (
+                                    <span
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-orange-700 shadow-sm backdrop-blur"
+                                        title={`Working on ${currentBranch.name}`}
+                                    >
+                                        <Building2 className="h-3.5 w-3.5" />
+                                        {allBranchesScope
+                                            ? 'All Branches'
+                                            : currentBranch.name}
+                                    </span>
+                                )}
+
+                                {/* BRANCH SCOPE TOGGLE */}
+                                {can('view all branches dashboard') && (
+                                    <div className="flex items-center gap-2">
+                                        
+
+                                        <div className="flex items-center rounded-full border border-orange-200 bg-white/70 p-1 shadow-sm backdrop-blur">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (!allBranchesScope) {
+                                                        return;
+                                                    }
+
+                                                    router.get(
+                                                        '/dashboard',
+                                                        {},
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                }}
+                                                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                    !allBranchesScope
+                                                        ? 'bg-orange-500 text-white shadow'
+                                                        : 'text-orange-600 hover:bg-orange-50'
+                                                }`}
+                                            >
+                                                My Branch
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (allBranchesScope) {
+                                                        return;
+                                                    }
+
+                                                    router.get(
+                                                        '/dashboard',
+                                                        {
+                                                            all_branches: 1,
+                                                        },
+                                                        {
+                                                            preserveScroll: true,
+                                                        },
+                                                    );
+                                                }}
+                                                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                                                    allBranchesScope
+                                                        ? 'bg-orange-500 text-white shadow'
+                                                        : 'text-orange-600 hover:bg-orange-50'
+                                                }`}
+                                            >
+                                                All Branches
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Reveal>
