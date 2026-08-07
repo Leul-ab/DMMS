@@ -145,7 +145,7 @@ function PermissionPicker({
 
                 <Button
                     type="button"
-                    variant="outline"
+                    variant={allSelected ? 'destructive' : 'outline'}
                     size="sm"
                     onClick={onToggleSelectAll}
                 >
@@ -460,7 +460,7 @@ return;
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() => onOpenChange(false)}
                         disabled={submitting}
                     >
@@ -722,9 +722,8 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                                             {can('delete roles') &&
                                                 role.slug !== 'super_admin' && (
                                                     <Button
-                                                        variant="ghost"
+                                                        variant="destructive"
                                                         size="icon"
-                                                        className="text-destructive"
                                                         onClick={() =>
                                                             openDeleteModal(
                                                                 role,
@@ -904,26 +903,26 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsDeleteOpen(false)}
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
+                <DialogFooter>
+                    <Button
+                        variant="destructive"
+                        onClick={() => setIsDeleteOpen(false)}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
 
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting && (
-                                <LoaderCircle className="h-4 w-4 animate-spin" />
-                            )}
-                            Delete Role
-                        </Button>
-                    </DialogFooter>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting && (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                        Delete Role
+                    </Button>
+                </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

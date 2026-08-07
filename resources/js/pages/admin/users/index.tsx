@@ -910,7 +910,7 @@ return;
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsAddOpen(false)}
                         >
                             Cancel
@@ -1000,7 +1000,7 @@ return;
                     )}
 
                     <DialogFooter>
-                        <Button onClick={() => setIsViewOpen(false)}>
+                        <Button variant="destructive" onClick={() => setIsViewOpen(false)}>
                             Close
                         </Button>
                     </DialogFooter>
@@ -1221,7 +1221,7 @@ return;
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsEditOpen(false)}
                         >
                             Cancel
@@ -1250,7 +1250,7 @@ return;
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsDeleteOpen(false)}
                         >
                             Cancel

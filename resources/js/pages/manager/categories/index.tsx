@@ -709,7 +709,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsAddOpen(false)
                             }
@@ -826,6 +826,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
+                            variant="destructive"
                             onClick={() =>
                                 setIsViewOpen(false)
                             }
@@ -962,7 +963,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsEditOpen(false)
                             }
@@ -1002,7 +1003,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsDeleteOpen(false)
                             }

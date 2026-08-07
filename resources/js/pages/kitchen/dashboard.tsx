@@ -503,7 +503,7 @@ export default function KitchenDashboard({
                         {can('update kitchen') && column === 'new' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                                className="w-full"
                                 onClick={() => acceptOrderAndOpenDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -514,7 +514,7 @@ export default function KitchenDashboard({
                         {can('update kitchen') && column === 'preparing' && order.preparation_status === 'waiting' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                                className="w-full"
                                 onClick={() => openPrepDialog(order)}
                                 disabled={isProcessing}
                             >
@@ -528,7 +528,6 @@ export default function KitchenDashboard({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="border-orange-300 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
                                         onClick={() => openAddTimeDialog(order)}
                                         disabled={isProcessing}
                                     >
@@ -537,7 +536,6 @@ export default function KitchenDashboard({
                                     </Button>
                                     <Button
                                         size="sm"
-                                        className="bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
                                         onClick={() => markReady(order)}
                                         disabled={isProcessing}
                                     >
@@ -830,7 +828,7 @@ export default function KitchenDashboard({
 
                     <DialogFooter className="sm:justify-between">
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => {
                                 setPrepDialog(null);
                                 setIsTimerLocked(false);
@@ -943,7 +941,7 @@ export default function KitchenDashboard({
 
                     <DialogFooter className="sm:justify-between">
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setAddTimeDialog(null)}
                             disabled={isProcessing}
                         >

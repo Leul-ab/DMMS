@@ -801,9 +801,9 @@ return;
                                         <button
                                             type="button"
                                             onClick={() => setShowFeedbackModal(true)}
-                                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
+                                            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-green-600 bg-white px-6 py-3 font-black text-green-600 shadow-sm transition hover:bg-green-600 hover:text-white hover:shadow-md active:scale-[0.98]"
                                         >
-                                            <Star className="size-4 fill-amber-200" />
+                                            <Star className="size-4" />
                                             Rate Overall Service
                                         </button>
                                     )}
@@ -832,7 +832,7 @@ return;
                         <Link
                             key={orderActionLabel}
                             href={orderActionHref}
-                            className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+                            className="block w-full rounded-xl border-2 border-green-600 bg-white px-6 py-4 text-center font-black text-green-600 shadow-sm transition-all duration-300 hover:bg-green-600 hover:text-white hover:shadow-md active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
                         >
                             {orderActionLabel}
                         </Link>
@@ -901,7 +901,7 @@ return;
                                 type="button"
                                 onClick={handleCopyAndVerify}
                                 disabled={isSendingVerification || hasVerificationBeenSent}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-green-600 bg-white px-6 py-3.5 font-black text-green-600 shadow-sm transition hover:bg-green-600 hover:text-white hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                             >
                                 {isSendingVerification ? (
                                     <>

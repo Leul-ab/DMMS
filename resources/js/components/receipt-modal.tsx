@@ -309,7 +309,7 @@ export function ReceiptModal({ open, onOpenChange, order }: Props) {
                 </div>
 
                 <DialogFooter className="gap-2 sm:justify-between">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button variant="destructive" onClick={() => onOpenChange(false)}>
                         <X className="mr-2 size-4" />
                         Close
                     </Button>

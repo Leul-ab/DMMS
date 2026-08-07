@@ -913,7 +913,7 @@ export default function OrdersIndex({
                     <DialogFooter>
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="destructive"
                             onClick={
                                 closeEditModal
                             }
@@ -964,7 +964,7 @@ export default function OrdersIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setDeletingOrder(null)
                             }

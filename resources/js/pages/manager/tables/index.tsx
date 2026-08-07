@@ -783,7 +783,7 @@ export default function TablesIndex({ tables }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => {
                                 setIsAddOpen(
                                     false,
@@ -853,7 +853,7 @@ export default function TablesIndex({ tables }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsEditOpen(
                                     false,
@@ -962,7 +962,7 @@ export default function TablesIndex({ tables }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsDeleteOpen(
                                     false,

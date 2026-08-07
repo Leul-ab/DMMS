@@ -441,10 +441,10 @@ export default function CustomersIndex({
 
                                                     {/* =========================================
                                                         STATUS
-                                                        
+
                                                         MEMBER:
                                                         Black background
-                                                        
+
                                                         NOT A MEMBER:
                                                         Red background
                                                     ========================================= */}
@@ -654,7 +654,7 @@ export default function CustomersIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsAddOpen(false)
                             }
@@ -776,6 +776,7 @@ export default function CustomersIndex({
 
                     <DialogFooter>
                         <Button
+                            variant="destructive"
                             onClick={() =>
                                 setIsViewOpen(false)
                             }
@@ -908,7 +909,7 @@ export default function CustomersIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsEditOpen(false)
                             }
@@ -956,7 +957,7 @@ export default function CustomersIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsDeleteOpen(
                                     false,

@@ -51,6 +51,7 @@ type Discount = {
     status: string;
     start_date: string;
     end_date: string;
+    menu_items?: number[];
 };
 
 type Props = {
@@ -1068,7 +1069,7 @@ export default function DiscountsIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsAddOpen(false)}
                         >
                             Cancel
@@ -1194,7 +1195,7 @@ export default function DiscountsIndex({
                     )}
 
                     <DialogFooter>
-                        <Button onClick={() => setIsViewOpen(false)}>
+                        <Button variant="destructive" onClick={() => setIsViewOpen(false)}>
                             Close
                         </Button>
                     </DialogFooter>
@@ -1457,7 +1458,7 @@ export default function DiscountsIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsEditOpen(false)}
                         >
                             Cancel
@@ -1486,7 +1487,7 @@ export default function DiscountsIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsDeleteOpen(false)}
                         >
                             Cancel

@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
 import { Send } from 'lucide-react';
 import { StarRating } from '@/components/star-rating';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -121,15 +122,15 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
                     </label>
 
                     {/* Submit */}
-                    <button
+                    <Button
                         type="button"
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
+                        className="flex w-full items-center justify-center gap-2 px-6 py-4"
                     >
                         {isSubmitting ? (
                             <span className="flex items-center gap-2">
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
                                 Submitting...
                             </span>
                         ) : (
@@ -138,7 +139,7 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
                                 Submit Rating
                             </>
                         )}
-                    </button>
+                    </Button>
                 </div>
             </DialogContent>
         </Dialog>

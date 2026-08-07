@@ -1055,12 +1055,12 @@ export function MenuView({
                         <DialogFooter className="gap-2 pt-2">
                             <Button
                                 type="button"
-                                variant="outline"
+                                variant="destructive"
                                 onClick={() => {
                                     setShowMemberForm(false);
                                     resetMemberForm();
                                 }}
-                                className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
+                                className="flex-1"
                             >
                                 Cancel
                             </Button>
@@ -1275,7 +1275,7 @@ export function MenuView({
                         <button
                             type="button"
                             className={
-                                'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-orange-500/40 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
+                                'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full border-2 border-green-600 bg-white pr-3 pl-4 text-sm font-bold text-green-600 shadow-xl shadow-green-600/20 transition-all hover:bg-green-600 hover:text-white hover:shadow-2xl hover:shadow-green-600/30 active:scale-90 sm:right-6 sm:bottom-6' +
                                 (cartOpen
                                     ? ' pointer-events-none scale-0 opacity-0'
                                     : ' scale-100 opacity-100')
@@ -1284,7 +1284,7 @@ export function MenuView({
                             <ShoppingBag className="h-4 w-4" />
                             <span>Cart</span>
                             {cartQuantity > 0 && (
-                                <span className="flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-orange-600 ring-2 ring-orange-300 zoom-in">
+                                <span className="flex h-5 min-w-5 animate-in items-center justify-center rounded-full bg-green-600 px-1 text-[10px] font-bold text-white ring-2 ring-green-300 zoom-in">
                                     {cartQuantity}
                                 </span>
                             )}
@@ -1959,7 +1959,7 @@ export function MenuView({
                         <button
                             type="button"
                             onClick={() => setCartOpen(true)}
-                            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4 text-white shadow-2xl shadow-orange-500/40 transition hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
+                            className="flex w-full items-center justify-between gap-3 rounded-2xl border-2 border-green-600 bg-white px-5 py-4 text-green-600 shadow-2xl shadow-green-600/20 transition hover:bg-green-600 hover:text-white active:scale-[0.98]"
                         >
                             <span className="flex items-center gap-2">
                                 <ShoppingBag className="h-5 w-5" />
@@ -1968,11 +1968,11 @@ export function MenuView({
                                 </span>
                             </span>
                             <span className="flex items-center gap-3">
-                                <span className="text-sm text-orange-200">
+                                <span className="text-sm">
                                     {cartQuantity} item
                                     {cartQuantity !== 1 ? 's' : ''}
                                 </span>
-                                <span className="text-lg font-black text-white drop-shadow-sm">
+                                <span className="text-lg font-black drop-shadow-sm">
                                     {cartTotal.toFixed(2)} ETB
                                 </span>
                             </span>

@@ -256,7 +256,6 @@ export default function ServeOrders({ orders }: Props) {
 
                                         {can('update serve') && (
                                             <Button
-                                                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/25 hover:from-green-700 hover:to-emerald-700"
                                                 onClick={() => completeOrder(order)}
                                                 disabled={isProcessing === order.id}
                                             >

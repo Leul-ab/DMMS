@@ -1045,7 +1045,7 @@ return (
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsAddOpen(
                                 false,
@@ -1194,6 +1194,7 @@ return (
 
                 <DialogFooter>
                     <Button
+                        variant="destructive"
                         onClick={() =>
                             setIsViewOpen(
                                 false,
@@ -1414,7 +1415,7 @@ return (
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsEditOpen(
                                 false,
@@ -1469,7 +1470,7 @@ return (
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsDeleteOpen(
                                 false,
