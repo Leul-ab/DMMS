@@ -4,7 +4,6 @@ import { Utensils } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,13 +19,11 @@ type MenuItem = {
     id: number;
     category_id: number;
     name: string;
-    slug: string;
     description: string | null;
     price: string;
     image: string | null;
     preparation_time: number | null;
     is_available: boolean;
-    featured: boolean;
     category: MenuCategory | null;
 };
 
@@ -50,7 +47,6 @@ export default function ItemEdit({ item, categories }: Props) {
         remove_image: false,
         preparation_time: item.preparation_time ? String(item.preparation_time) : '',
         is_available: item.is_available,
-        featured: item.featured,
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,8 +89,32 @@ export default function ItemEdit({ item, categories }: Props) {
         }
     };
 
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const nextErrors = validateFields(data, {
+            category_id: [requiredRule('Please select a category.')],
+            name: [requiredRule('Menu item name is required.')],
+            price: [requiredRule('Price is required.'), positiveNumberRule()],
+            preparation_time: [positiveNumberRule()],
+        });
+
+        setClientErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
+    const handleFieldChange = (field: string, value: string | number | File | null) => {
+        setData(field as never, value as never);
+        if (clientErrors[field]) {
+            setClientErrors((prev) => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
         put(itemsUpdate.url(item.id), {
             forceFormData: true,
             onSuccess: () => {
@@ -116,8 +136,8 @@ export default function ItemEdit({ item, categories }: Props) {
                         <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
                             <div className="grid gap-2">
                                 <Label htmlFor="category_id">Category</Label>
-                                <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
-                                    <SelectTrigger>
+                                <Select value={data.category_id} onValueChange={(value) => handleFieldChange('category_id', value)}>
+                                    <SelectTrigger aria-invalid={Boolean(errors.category_id || clientErrors.category_id)}>
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -128,13 +148,13 @@ export default function ItemEdit({ item, categories }: Props) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.category_id} />
+                                <InputError message={errors.category_id || clientErrors.category_id} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Menu Item Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Pancakes, Chocolate Cake" required />
-                                <InputError message={errors.name} />
+                                <Input id="name" value={data.name} onChange={(e) => handleFieldChange('name', e.target.value)} placeholder="e.g. Pancakes, Chocolate Cake" required aria-invalid={Boolean(errors.name || clientErrors.name)} />
+                                <InputError message={errors.name || clientErrors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -152,8 +172,8 @@ export default function ItemEdit({ item, categories }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="price">Price (ETB)</Label>
-                                <Input id="price" type="number" step="0.01" min="0" value={data.price} onChange={(e) => setData('price', e.target.value)} placeholder="9.99" required />
-                                <InputError message={errors.price} />
+                                <Input id="price" type="number" step="0.01" min="0" value={data.price} onChange={(e) => handleFieldChange('price', e.target.value)} placeholder="9.99" required aria-invalid={Boolean(errors.price || clientErrors.price)} />
+                                <InputError message={errors.price || clientErrors.price} />
                             </div>
 
                             {/* Image Upload */}
@@ -194,7 +214,7 @@ export default function ItemEdit({ item, categories }: Props) {
                                         </Button>
                                     )}
                                 </div>
-                                <InputError message={errors.image} />
+                                <InputError message={errors.image || clientErrors.image} />
 
                                 {/* Image Preview */}
                                 {currentImagePreview && (
@@ -221,18 +241,19 @@ export default function ItemEdit({ item, categories }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="preparation_time">Preparation Time (minutes, optional)</Label>
-                                <Input id="preparation_time" type="number" min="0" value={data.preparation_time} onChange={(e) => setData('preparation_time', e.target.value)} placeholder="15" />
-                                <InputError message={errors.preparation_time} />
+                                <Input id="preparation_time" type="number" min="0" value={data.preparation_time} onChange={(e) => handleFieldChange('preparation_time', e.target.value)} placeholder="15" aria-invalid={Boolean(errors.preparation_time || clientErrors.preparation_time)} />
+                                <InputError message={errors.preparation_time || clientErrors.preparation_time} />
                             </div>
 
                             <div className="flex items-center space-x-2">
-                                <Checkbox id="is_available" checked={data.is_available} onCheckedChange={(checked) => setData('is_available', checked === true)} />
+                                <input
+                                    id="is_available"
+                                    type="checkbox"
+                                    checked={data.is_available}
+                                    onChange={(e) => setData('is_available', e.target.checked)}
+                                    className="h-4 w-4 rounded border-input"
+                                />
                                 <Label htmlFor="is_available">Available</Label>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="featured" checked={data.featured} onCheckedChange={(checked) => setData('featured', checked === true)} />
-                                <Label htmlFor="featured">Featured</Label>
                             </div>
 
                             <div className="flex items-center gap-4">

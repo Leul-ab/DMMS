@@ -10,6 +10,7 @@ Sparkles,
 TrendingUp,
 UtensilsCrossed,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -19,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { emailRule, requiredRule, validateFields } from '@/lib/form-validation';
 
 import { register } from '@/routes';
 import { store } from '@/routes/login';
@@ -48,11 +50,40 @@ description: 'Track sales and performance',
 ];
 
 export default function Login({ status, canResetPassword }: Props) {
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const handleFieldChange = (field: string) => {
+        if (clientErrors[field]) {
+            setClientErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        const formData = new FormData(e.currentTarget);
+        const nextErrors = validateFields(
+            { email: formData.get('email'), password: formData.get('password') },
+            {
+                email: [requiredRule('Email address is required.'), emailRule()],
+                password: [requiredRule('Password is required.')],
+            },
+        );
+        setClientErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            e.preventDefault();
+        }
+    };
+
 return (
 <> <Head title="Log in" />
 
 ```
-        {/* 
+        {/*
             IMPORTANT:
             The fixed inset-0 and w-screen ensure this page is not
             squished inside a narrow parent layout.
@@ -187,6 +218,7 @@ return (
                             {...store.form()}
                             resetOnSuccess={['password']}
                             className="space-y-6"
+                            onSubmit={handleSubmit}
                         >
                             {({ processing, errors }) => (
                                 <>
@@ -211,12 +243,16 @@ return (
                                                 tabIndex={1}
                                                 autoComplete="email"
                                                 placeholder="you@example.com"
-                                                className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-4 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                                                onChange={() => handleFieldChange('email')}
+                                                aria-invalid={Boolean(errors.email || clientErrors.email)}
+                                                className={`h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-4 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 ${
+                                                    errors.email || clientErrors.email ? 'border-red-500' : ''
+                                                }`}
                                             />
                                         </div>
 
                                         <InputError
-                                            message={errors.email}
+                                            message={errors.email || clientErrors.email}
                                         />
                                     </div>
 
@@ -251,12 +287,16 @@ return (
                                                 tabIndex={2}
                                                 autoComplete="current-password"
                                                 placeholder="Enter your password"
-                                                className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-12 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                                                onChange={() => handleFieldChange('password')}
+                                                aria-invalid={Boolean(errors.password || clientErrors.password)}
+                                                className={`h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-12 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 ${
+                                                    errors.password || clientErrors.password ? 'border-red-500' : ''
+                                                }`}
                                             />
                                         </div>
 
                                         <InputError
-                                            message={errors.password}
+                                            message={errors.password || clientErrors.password}
                                         />
                                     </div>
 
@@ -280,7 +320,7 @@ return (
                                     {/* Login Button */}
                                     <Button
                                         type="submit"
-                                        className="group h-13 w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/30"
+                                        className="group h-13 w-full rounded-xl"
                                         tabIndex={4}
                                         disabled={processing}
                                         data-test="login-button"

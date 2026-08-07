@@ -1,7 +1,19 @@
 import { Head, router } from '@inertiajs/react';
+import {
+    Pencil,
+    Trash2,
+    Plus,
+    Minus,
+    Clock,
+    Utensils,
+    User,
+    Phone,
+    FileText,
+    ClipboardList,
+} from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,18 +29,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Pencil,
-    Trash2,
-    Plus,
-    Minus,
-    Clock,
-    Utensils,
-    User,
-    Phone,
-    FileText,
-    ClipboardList,
-} from 'lucide-react';
+import { useCan } from '@/hooks/use-can';
 
 type MenuItem = {
     id: number;
@@ -143,11 +144,15 @@ export default function OrdersIndex({
     const [processing, setProcessing] =
         useState(false);
 
+    const [editErrors, setEditErrors] =
+        useState<Record<string, string>>({});
+
     /*
      * Open edit modal.
      */
     const openEditModal = (order: Order) => {
         setEditingOrder(order);
+        setEditErrors({});
 
         setEditTableId(
             order.table?.id ?? ''
@@ -183,6 +188,7 @@ export default function OrdersIndex({
     const closeEditModal = () => {
         setEditingOrder(null);
         setEditItems([]);
+        setEditErrors({});
     };
 
     /*
@@ -256,15 +262,19 @@ export default function OrdersIndex({
             return;
         }
 
+        const nextErrors: Record<string, string> = {};
+
         if (!editTableId) {
-            alert('Please select a table.');
-            return;
+            nextErrors.table_id = 'Please select a table.';
         }
 
         if (editItems.length === 0) {
-            alert(
-                'Please add at least one menu item.'
-            );
+            nextErrors.items = 'Please add at least one menu item.';
+        }
+
+        setEditErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
             return;
         }
 
@@ -630,14 +640,26 @@ export default function OrdersIndex({
 
                             <select
                                 value={editTableId}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     setEditTableId(
                                         Number(
                                             e.target.value
                                         )
-                                    )
-                                }
-                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                                    );
+
+                                    if (editErrors.table_id) {
+                                        setEditErrors((prev) => {
+                                            const next = { ...prev };
+                                            delete next.table_id;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                aria-invalid={Boolean(editErrors.table_id)}
+                                className={`w-full rounded-md border bg-background px-3 py-2 text-sm ${
+                                    editErrors.table_id ? 'border-red-500' : ''
+                                }`}
                             >
                                 <option value="">
                                     Select Table
@@ -655,6 +677,8 @@ export default function OrdersIndex({
                                     </option>
                                 ))}
                             </select>
+
+                            <InputError message={editErrors.table_id} className="mt-1" />
                         </div>
 
                         {/* Customer Name */}
@@ -737,13 +761,26 @@ export default function OrdersIndex({
                                     type="button"
                                     size="sm"
                                     variant="outline"
-                                    onClick={addItem}
+                                    onClick={() => {
+                                        addItem();
+
+                                        if (editErrors.items) {
+                                            setEditErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.items;
+
+                                                return next;
+                                            });
+                                        }
+                                    }}
                                 >
                                     <Plus className="mr-1 size-4" />
 
                                     Add Item
                                 </Button>
                             </div>
+
+                            <InputError message={editErrors.items} className="mb-2" />
 
                             <div className="space-y-3">
                                 {editItems.map(
@@ -876,7 +913,7 @@ export default function OrdersIndex({
                     <DialogFooter>
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="destructive"
                             onClick={
                                 closeEditModal
                             }
@@ -927,7 +964,7 @@ export default function OrdersIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setDeletingOrder(null)
                             }

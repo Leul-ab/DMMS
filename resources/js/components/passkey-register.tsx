@@ -99,7 +99,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
                 <Button type="submit" disabled={isLoading || !name.trim()}>
                     {isLoading ? 'Registering...' : 'Register passkey'}
                 </Button>
-                <Button type="button" variant="ghost" onClick={handleCancel}>
+                <Button type="button" variant="destructive" onClick={handleCancel}>
                     Cancel
                 </Button>
             </div>

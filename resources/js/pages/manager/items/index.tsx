@@ -60,13 +60,11 @@ type MenuItem = {
 id: number;
 category_id: number;
 name: string;
-slug: string;
 description: string | null;
 price: string;
 image: string | null;
 preparation_time: number | null;
 is_available: boolean;
-featured: boolean;
 category: MenuCategory | null;
 };
 
@@ -77,7 +75,6 @@ filters: {
 search?: string;
 category_id?: string;
 availability?: string;
-featured?: string;
 };
 };
 
@@ -119,14 +116,12 @@ const [selectedItem, setSelectedItem] =
 
 const [categoryId, setCategoryId] = useState('');
 const [name, setName] = useState('');
-const [slug, setSlug] = useState('');
 const [description, setDescription] = useState('');
 const [price, setPrice] = useState('');
 const [preparationTime, setPreparationTime] =
     useState('');
 const [isAvailable, setIsAvailable] =
     useState(true);
-const [featured, setFeatured] = useState(false);
 const [image, setImage] = useState<File | null>(
     null,
 );
@@ -146,7 +141,6 @@ const handleSearch = (value: string) => {
                 filters.category_id,
             availability:
                 filters.availability,
-            featured: filters.featured,
         },
         {
             preserveState: true,
@@ -172,7 +166,6 @@ const handleCategoryFilter = (
                     : value,
             availability:
                 filters.availability,
-            featured: filters.featured,
         },
         {
             preserveState: true,
@@ -198,7 +191,6 @@ const handleAvailabilityFilter = (
                 value === 'all'
                     ? undefined
                     : value,
-            featured: filters.featured,
         },
         {
             preserveState: true,
@@ -216,12 +208,10 @@ const openAddModal = () => {
 
     setCategoryId('');
     setName('');
-    setSlug('');
     setDescription('');
     setPrice('');
     setPreparationTime('');
     setIsAvailable(true);
-    setFeatured(false);
     setImage(null);
 
     setIsAddOpen(true);
@@ -251,7 +241,6 @@ const openEditModal = (
         String(item.category_id),
     );
     setName(item.name);
-    setSlug(item.slug || '');
     setDescription(
         item.description || '',
     );
@@ -266,7 +255,6 @@ const openEditModal = (
     setIsAvailable(
         item.is_available,
     );
-    setFeatured(item.featured);
     setImage(null);
 
     setIsEditOpen(true);
@@ -305,10 +293,6 @@ const handleAdd = () => {
 
     formData.append('name', name);
 
-    if (slug) {
-        formData.append('slug', slug);
-    }
-
     if (description) {
         formData.append(
             'description',
@@ -330,11 +314,6 @@ const handleAdd = () => {
         isAvailable ? '1' : '0',
     );
 
-    formData.append(
-        'featured',
-        featured ? '1' : '0',
-    );
-
     if (image) {
         formData.append('image', image);
     }
@@ -350,12 +329,10 @@ const handleAdd = () => {
 
                 setCategoryId('');
                 setName('');
-                setSlug('');
                 setDescription('');
                 setPrice('');
                 setPreparationTime('');
                 setIsAvailable(true);
-                setFeatured(false);
                 setImage(null);
             },
         },
@@ -385,10 +362,6 @@ const handleUpdate = () => {
 
     formData.append('name', name);
 
-    if (slug) {
-        formData.append('slug', slug);
-    }
-
     if (description) {
         formData.append(
             'description',
@@ -408,11 +381,6 @@ const handleUpdate = () => {
     formData.append(
         'is_available',
         isAvailable ? '1' : '0',
-    );
-
-    formData.append(
-        'featured',
-        featured ? '1' : '0',
     );
 
     if (image) {
@@ -659,10 +627,6 @@ return (
                                         </th>
 
                                         <th className="p-3">
-                                            Featured
-                                        </th>
-
-                                        <th className="p-3">
                                             Status
                                         </th>
 
@@ -733,19 +697,6 @@ return (
                                                     {item.preparation_time
                                                         ? `${item.preparation_time} min`
                                                         : '—'}
-                                                </td>
-
-                                                {/* Featured */}
-                                                <td className="p-3">
-                                                    {item.featured ? (
-                                                        <Badge>
-                                                            Featured
-                                                        </Badge>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">
-                                                            —
-                                                        </span>
-                                                    )}
                                                 </td>
 
                                                 {/* Status */}
@@ -974,26 +925,6 @@ return (
                         />
                     </div>
 
-                    {/* Slug */}
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">
-                            Slug
-                        </label>
-
-                        <Input
-                            value={slug}
-                            onChange={(
-                                event,
-                            ) =>
-                                setSlug(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                            placeholder="Example: chicken-burger"
-                        />
-                    </div>
-
                     {/* Description */}
                     <div>
                         <label className="mb-2 block text-sm font-medium">
@@ -1110,34 +1041,11 @@ return (
                                 : 'Unavailable'}
                         </label>
                     </div>
-
-                    {/* Featured */}
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={
-                                featured
-                            }
-                            onChange={(
-                                event,
-                            ) =>
-                                setFeatured(
-                                    event.target
-                                        .checked,
-                                )
-                            }
-                            className="h-4 w-4"
-                        />
-
-                        <label className="text-sm font-medium">
-                            Featured Item
-                        </label>
-                    </div>
                 </div>
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsAddOpen(
                                 false,
@@ -1228,18 +1136,6 @@ return (
 
                             <div>
                                 <p className="text-sm text-muted-foreground">
-                                    Slug
-                                </p>
-
-                                <p className="font-medium">
-                                    {
-                                        selectedItem.slug
-                                    }
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-muted-foreground">
                                     Price
                                 </p>
 
@@ -1280,23 +1176,6 @@ return (
                                 </Badge>
                             </div>
 
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Featured
-                                </p>
-
-                                <Badge
-                                    variant={
-                                        selectedItem.featured
-                                            ? 'default'
-                                            : 'secondary'
-                                    }
-                                >
-                                    {selectedItem.featured
-                                        ? 'Featured'
-                                        : 'Not Featured'}
-                                </Badge>
-                            </div>
                         </div>
 
                         {/* Description */}
@@ -1315,6 +1194,7 @@ return (
 
                 <DialogFooter>
                     <Button
+                        variant="destructive"
                         onClick={() =>
                             setIsViewOpen(
                                 false,
@@ -1403,25 +1283,6 @@ return (
                                 event,
                             ) =>
                                 setName(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                        />
-                    </div>
-
-                    {/* Slug */}
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">
-                            Slug
-                        </label>
-
-                        <Input
-                            value={slug}
-                            onChange={(
-                                event,
-                            ) =>
-                                setSlug(
                                     event.target
                                         .value,
                                 )
@@ -1550,34 +1411,11 @@ return (
                                 : 'Unavailable'}
                         </label>
                     </div>
-
-                    {/* Featured */}
-                    <div className="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            checked={
-                                featured
-                            }
-                            onChange={(
-                                event,
-                            ) =>
-                                setFeatured(
-                                    event.target
-                                        .checked,
-                                )
-                            }
-                            className="h-4 w-4"
-                        />
-
-                        <label className="text-sm font-medium">
-                            Featured Item
-                        </label>
-                    </div>
                 </div>
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsEditOpen(
                                 false,
@@ -1632,7 +1470,7 @@ return (
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() =>
                             setIsDeleteOpen(
                                 false,

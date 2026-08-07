@@ -470,7 +470,7 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                 <Search className="mr-2 h-4 w-4" />
                                 Search
                             </Button>
-                            <Button variant="outline" onClick={clearFilters}>
+                            <Button variant="destructive" onClick={clearFilters}>
                                 Clear
                             </Button>
                             {dateError && (
@@ -575,12 +575,12 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                                             </Button>
                                                         )}
                                                         {can('status payments') && order.payment_status !== 'paid' && order.payment_status !== 'cancelled' && (
-                                                            <Button variant="ghost" size="icon" onClick={() => openStatusChange(order, 'paid')} title="Mark as Paid" className="text-green-600">
+                                                            <Button variant="ghost" size="icon" onClick={() => openStatusChange(order, 'paid')} title="Mark as Paid">
                                                                 <CheckCircle2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {can('view payments') && order.payment?.payment_method && (
-                                                            <Button variant="ghost" size="icon" onClick={() => handlePrint(order)} title="Print Receipt" className="text-blue-600">
+                                                            <Button variant="ghost" size="icon" onClick={() => handlePrint(order)} title="Print Receipt">
                                                                 <Printer className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -734,7 +734,7 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                     )}
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsViewOpen(false)}>Close</Button>
+                        <Button variant="destructive" onClick={() => setIsViewOpen(false)}>Close</Button>
                         {can('view payments') && selectedOrder && selectedOrder.payment?.payment_method && (
                             <Button variant="outline" onClick={() => handlePrint(selectedOrder)}>
                                 <Printer className="mr-2 h-4 w-4" /> Print Receipt
@@ -795,7 +795,7 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                     )}
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsStatusOpen(false)} disabled={isLoading}>
+                        <Button variant="destructive" onClick={() => setIsStatusOpen(false)} disabled={isLoading}>
                             Cancel
                         </Button>
                         <Button onClick={confirmStatusChange} disabled={isLoading}>

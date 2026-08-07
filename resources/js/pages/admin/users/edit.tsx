@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { User as UserIcon } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -19,6 +20,12 @@ import {
     index as usersIndex,
     update as usersUpdate,
 } from '@/routes/admin/users';
+import {
+    confirmFieldRule,
+    emailRule,
+    requiredRule,
+    validateFields,
+} from '@/lib/form-validation';
 
 type Role = { id: number; name: string; slug: string };
 type Branch = { id: number; name: string };
@@ -48,8 +55,33 @@ export default function UserEdit({ user, roles, branches }: Props) {
         is_waiter: user.is_waiter,
     });
 
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const nextErrors = validateFields(data, {
+            name: [requiredRule('Name is required.')],
+            email: [requiredRule('Email is required.'), emailRule()],
+            role_id: [requiredRule('Please select a role.')],
+            branch_id: [requiredRule('Please select a branch.')],
+            password_confirmation: [confirmFieldRule('password')],
+        });
+
+        setClientErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
+    const handleFieldChange = (field: string, value: string) => {
+        setData(field as never, value as never);
+        if (clientErrors[field]) {
+            setClientErrors((prev) => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
         put(usersUpdate.url(user.id));
     };
 
@@ -72,12 +104,13 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     id="name"
                                     value={data.name}
                                     onChange={(e) =>
-                                        setData('name', e.target.value)
+                                        handleFieldChange('name', e.target.value)
                                     }
                                     placeholder="Full name"
                                     required
+                                    aria-invalid={Boolean(errors.name || clientErrors.name)}
                                 />
-                                <InputError message={errors.name} />
+                                <InputError message={errors.name || clientErrors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -87,12 +120,13 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     type="email"
                                     value={data.email}
                                     onChange={(e) =>
-                                        setData('email', e.target.value)
+                                        handleFieldChange('email', e.target.value)
                                     }
                                     placeholder="email@example.com"
                                     required
+                                    aria-invalid={Boolean(errors.email || clientErrors.email)}
                                 />
-                                <InputError message={errors.email} />
+                                <InputError message={errors.email || clientErrors.email} />
                             </div>
 
                             <div className="grid gap-2">
@@ -116,11 +150,12 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     id="password"
                                     value={data.password}
                                     onChange={(e) =>
-                                        setData('password', e.target.value)
+                                        handleFieldChange('password', e.target.value)
                                     }
                                     placeholder="New password"
+                                    aria-invalid={Boolean(errors.password || clientErrors.password)}
                                 />
-                                <InputError message={errors.password} />
+                                <InputError message={errors.password || clientErrors.password} />
                             </div>
 
                             <div className="grid gap-2">
@@ -131,15 +166,22 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     id="password_confirmation"
                                     value={data.password_confirmation}
                                     onChange={(e) =>
-                                        setData(
+                                        handleFieldChange(
                                             'password_confirmation',
                                             e.target.value,
                                         )
                                     }
                                     placeholder="Confirm new password"
+                                    aria-invalid={Boolean(
+                                        errors.password_confirmation ||
+                                            clientErrors.password_confirmation,
+                                    )}
                                 />
                                 <InputError
-                                    message={errors.password_confirmation}
+                                    message={
+                                        errors.password_confirmation ||
+                                        clientErrors.password_confirmation
+                                    }
                                 />
                             </div>
 
@@ -148,11 +190,15 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     <Label>Role</Label>
                                     <Select
                                         value={data.role_id}
-                                        onValueChange={(value) =>
-                                            setData('role_id', value)
-                                        }
+                                        onValueChange={(value) => {
+                                            handleFieldChange('role_id', value);
+                                        }}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger
+                                            aria-invalid={Boolean(
+                                                errors.role_id || clientErrors.role_id,
+                                            )}
+                                        >
                                             <SelectValue placeholder="Select a role" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -172,18 +218,22 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                                 ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.role_id} />
+                                    <InputError message={errors.role_id || clientErrors.role_id} />
                                 </div>
 
                                 <div className="grid gap-2">
                                     <Label>Branch</Label>
                                     <Select
                                         value={data.branch_id}
-                                        onValueChange={(value) =>
-                                            setData('branch_id', value)
-                                        }
+                                        onValueChange={(value) => {
+                                            handleFieldChange('branch_id', value);
+                                        }}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger
+                                            aria-invalid={Boolean(
+                                                errors.branch_id || clientErrors.branch_id,
+                                            )}
+                                        >
                                             <SelectValue placeholder="Select a branch" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -197,7 +247,7 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <InputError message={errors.branch_id} />
+                                    <InputError message={errors.branch_id || clientErrors.branch_id} />
                                 </div>
                             </div>
 

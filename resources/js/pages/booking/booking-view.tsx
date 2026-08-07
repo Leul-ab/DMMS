@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -348,17 +349,21 @@ return;
                                     <input
                                         type="text"
                                         value={customerCode}
-                                        onChange={(e) => setCustomerCode(e.target.value.toUpperCase())}
-                                        placeholder="Enter your customer code (e.g. AB12CD)"
-                                        className="h-11 w-full rounded-xl border border-orange-200 bg-white px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-                                    />
-                                </div>
+                                        onChange={(e) => {
+                                            setCustomerCode(e.target.value.toUpperCase());
 
-                                {verificationError && (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
-                                        {verificationError}
-                                    </div>
-                                )}
+                                            if (verificationError) {
+setVerificationError(null);
+}
+                                        }}
+                                        placeholder="Enter your customer code (e.g. AB12CD)"
+                                        aria-invalid={Boolean(verificationError)}
+                                        className={`h-11 w-full rounded-xl border bg-white px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 ${
+                                            verificationError ? 'border-red-400' : 'border-orange-200'
+                                        }`}
+                                    />
+                                    <InputError message={verificationError ?? undefined} className="mt-1" />
+                                </div>
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button

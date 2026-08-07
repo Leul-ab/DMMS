@@ -410,17 +410,17 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                                                             </Button>
                                                         )}
                                                         {can('status bookings') && canCancel && (
-                                                            <Button variant="ghost" size="icon" onClick={() => openCancelModal(booking)} title="Cancel Booking" className="text-red-500 hover:text-red-700">
+                                                            <Button variant="destructive" size="icon" onClick={() => openCancelModal(booking)} title="Cancel Booking">
                                                                 <XCircle className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {can('status bookings') && canComplete && (
-                                                            <Button variant="ghost" size="icon" onClick={() => openCompleteModal(booking)} title="Mark Completed" className="text-green-500 hover:text-green-700">
+                                                            <Button variant="ghost" size="icon" onClick={() => openCompleteModal(booking)} title="Mark Completed">
                                                                 <CheckCircle2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
                                                         {can('delete bookings') && canDelete && (
-                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteModal(booking)} title="Delete Booking" className="text-red-500 hover:text-red-700">
+                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteModal(booking)} title="Delete Booking">
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}
@@ -511,7 +511,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                         <p className="text-sm text-muted-foreground text-center py-4">Failed to load booking details.</p>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowViewModal(false)}>Close</Button>
+                        <Button variant="destructive" onClick={() => setShowViewModal(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -530,7 +530,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setShowCancelModal(false)}>Keep Booking</Button>
+                        <Button variant="default" onClick={() => setShowCancelModal(false)}>Keep Booking</Button>
                         <Button variant="destructive" onClick={handleCancelBooking} disabled={cancelLoading}>
                             {cancelLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Cancel Booking
@@ -550,7 +550,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={() => setShowCompleteModal(false)}>Cancel</Button>
                         <Button onClick={handleCompleteBooking} disabled={completeLoading}>
                             {completeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Mark Completed
@@ -570,7 +570,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0">
-                        <Button variant="outline" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
                         <Button variant="destructive" onClick={handleDeleteBooking} disabled={deleteLoading}>
                             {deleteLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Delete

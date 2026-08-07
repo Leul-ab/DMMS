@@ -138,12 +138,6 @@ class DashboardController extends Controller
                 false
             )->count();
 
-        $featuredMenuItems = $base(MenuItem::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->where(
-                'featured',
-                true
-            )->count();
-
         /*
         |--------------------------------------------------------------------------
         | Recent Orders
@@ -417,7 +411,6 @@ class DashboardController extends Controller
                 'totalMenuItems' => $totalMenuItems,
                 'availableMenuItems' => $availableMenuItems,
                 'unavailableMenuItems' => $unavailableMenuItems,
-                'featuredMenuItems' => $featuredMenuItems,
             ],
 
             /*

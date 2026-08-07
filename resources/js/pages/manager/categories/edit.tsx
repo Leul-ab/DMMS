@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { Tags } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -8,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { index as categoriesIndex, edit as categoriesEdit, update as categoriesUpdate } from '@/routes/manager/categories';
+import { requiredRule, validateFields } from '@/lib/form-validation';
 
 type MenuCategory = {
     id: number;
     name: string;
-    slug: string;
     description: string | null;
     image: string | null;
     sort_order: number;
@@ -31,8 +32,30 @@ export default function CategoryEdit({ category }: Props) {
         is_active: category.is_active,
     });
 
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const nextErrors = validateFields(data, {
+            name: [requiredRule('Category name is required.')],
+            sort_order: [requiredRule('Sort order is required.')],
+        });
+
+        setClientErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
+    const handleFieldChange = (field: string, value: string | number) => {
+        setData(field as never, value as never);
+        if (clientErrors[field]) {
+            setClientErrors((prev) => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
         put(categoriesUpdate.url(category.id));
     };
 
@@ -47,8 +70,8 @@ export default function CategoryEdit({ category }: Props) {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Breakfast, Lunch, Desserts" required />
-                                <InputError message={errors.name} />
+                                <Input id="name" value={data.name} onChange={(e) => handleFieldChange('name', e.target.value)} placeholder="e.g. Breakfast, Lunch, Desserts" required aria-invalid={Boolean(errors.name || clientErrors.name)} />
+                                <InputError message={errors.name || clientErrors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -66,8 +89,8 @@ export default function CategoryEdit({ category }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="sort_order">Sort Order</Label>
-                                <Input id="sort_order" type="number" min={0} value={data.sort_order} onChange={(e) => setData('sort_order', Number(e.target.value))} placeholder="0" />
-                                <InputError message={errors.sort_order} />
+                                <Input id="sort_order" type="number" min={0} value={data.sort_order} onChange={(e) => handleFieldChange('sort_order', Number(e.target.value))} placeholder="0" aria-invalid={Boolean(errors.sort_order || clientErrors.sort_order)} />
+                                <InputError message={errors.sort_order || clientErrors.sort_order} />
                             </div>
 
                             <div className="flex items-center space-x-2">

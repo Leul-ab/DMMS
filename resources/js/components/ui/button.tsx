@@ -10,17 +10,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold shadow-lg shadow-orange-500/25 hover:shadow-xl hover:shadow-orange-500/40 hover:scale-[1.02]",
+          "bg-white text-green-600 border-2 border-green-600 font-bold shadow-sm hover:bg-green-600 hover:text-white hover:shadow-md transition-colors duration-200",
         destructive:
-          "bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 hover:scale-[1.02]",
+          "bg-white text-red-600 border-2 border-red-600 font-bold shadow-sm hover:bg-red-600 hover:text-white hover:shadow-md transition-colors duration-200",
         outline:
-          "border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground hover:scale-[1.02]",
+          "bg-white text-green-600 border-2 border-green-600 font-bold shadow-sm hover:bg-green-600 hover:text-white hover:shadow-md transition-colors duration-200",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80 hover:scale-[1.02]",
-        ghost: 
-          "hover:bg-accent hover:text-accent-foreground hover:scale-[1.02]",
-        link: 
-          "text-primary underline-offset-4 hover:underline active:scale-100",
+          "bg-white text-green-600 border-2 border-green-600 font-bold shadow-sm hover:bg-green-600 hover:text-white hover:shadow-md transition-colors duration-200",
+        ghost:
+          "bg-white text-green-600 border-2 border-green-600 font-bold shadow-sm hover:bg-green-600 hover:text-white hover:shadow-md transition-colors duration-200",
+        link:
+          "text-green-600 underline-offset-4 hover:underline active:scale-100",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

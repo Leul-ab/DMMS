@@ -10,11 +10,13 @@ import {
     InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
+import { requiredRule, validateFields } from '@/lib/form-validation';
 import { store } from '@/routes/two-factor/login';
 
 export default function TwoFactorChallenge() {
     const [showRecoveryInput, setShowRecoveryInput] = useState<boolean>(false);
     const [code, setCode] = useState<string>('');
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
 
     const authConfigContent = useMemo<{
         title: string;
@@ -47,6 +49,24 @@ export default function TwoFactorChallenge() {
         setShowRecoveryInput(!showRecoveryInput);
         clearErrors();
         setCode('');
+        setClientErrors({});
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        const formData = new FormData(e.currentTarget);
+        const nextErrors = validateFields(
+            showRecoveryInput
+                ? { recovery_code: formData.get('recovery_code') }
+                : { code },
+            showRecoveryInput
+                ? { recovery_code: [requiredRule('Recovery code is required.')] }
+                : { code: [requiredRule('Authentication code is required.')] },
+        );
+        setClientErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            e.preventDefault();
+        }
     };
 
     return (
@@ -59,6 +79,7 @@ export default function TwoFactorChallenge() {
                     className="space-y-4"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
+                    onSubmit={handleSubmit}
                 >
                     {({ errors, processing, clearErrors }) => (
                         <>
@@ -70,9 +91,21 @@ export default function TwoFactorChallenge() {
                                         placeholder="Enter recovery code"
                                         autoFocus={showRecoveryInput}
                                         required
+                                        onChange={() => {
+                                            if (clientErrors.recovery_code) {
+                                                setClientErrors((prev) => {
+                                                    const next = { ...prev };
+                                                    delete next.recovery_code;
+
+                                                    return next;
+                                                });
+                                            }
+                                        }}
+                                        aria-invalid={Boolean(errors.recovery_code || clientErrors.recovery_code)}
+                                        className={errors.recovery_code || clientErrors.recovery_code ? 'border-red-500' : ''}
                                     />
                                     <InputError
-                                        message={errors.recovery_code}
+                                        message={errors.recovery_code || clientErrors.recovery_code}
                                     />
                                 </>
                             ) : (
@@ -82,7 +115,18 @@ export default function TwoFactorChallenge() {
                                             name="code"
                                             maxLength={OTP_MAX_LENGTH}
                                             value={code}
-                                            onChange={(value) => setCode(value)}
+                                            onChange={(value) => {
+                                                setCode(value);
+
+                                                if (clientErrors.code) {
+                                                    setClientErrors((prev) => {
+                                                        const next = { ...prev };
+                                                        delete next.code;
+
+                                                        return next;
+                                                    });
+                                                }
+                                            }}
                                             disabled={processing}
                                             pattern={REGEXP_ONLY_DIGITS}
                                             autoFocus
@@ -100,7 +144,7 @@ export default function TwoFactorChallenge() {
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
-                                    <InputError message={errors.code} />
+                                    <InputError message={errors.code || clientErrors.code} />
                                 </div>
                             )}
 

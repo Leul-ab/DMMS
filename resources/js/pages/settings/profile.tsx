@@ -1,5 +1,6 @@
 import { Form, Head, usePage } from '@inertiajs/react';
 import { Link } from '@inertiajs/react';
+import { useState } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import DeleteUser from '@/components/delete-user';
 import Heading from '@/components/heading';
@@ -7,6 +8,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { emailRule, requiredRule, validateFields } from '@/lib/form-validation';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
 import type { Auth } from '@/types';
@@ -23,6 +25,34 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<PageProps>().props;
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const handleFieldChange = (field: string) => {
+        if (clientErrors[field]) {
+            setClientErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        const formData = new FormData(e.currentTarget);
+        const nextErrors = validateFields(
+            { name: formData.get('name'), email: formData.get('email') },
+            {
+                name: [requiredRule('Name is required.')],
+                email: [requiredRule('Email address is required.'), emailRule()],
+            },
+        );
+        setClientErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            e.preventDefault();
+        }
+    };
 
     return (
         <>
@@ -43,6 +73,7 @@ export default function Profile({
                         preserveScroll: true,
                     }}
                     className="space-y-6"
+                    onSubmit={handleSubmit}
                 >
                     {({ processing, errors }) => (
                         <>
@@ -57,11 +88,13 @@ export default function Profile({
                                     required
                                     autoComplete="name"
                                     placeholder="Full name"
+                                    onChange={() => handleFieldChange('name')}
+                                    aria-invalid={Boolean(errors.name || clientErrors.name)}
                                 />
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.name}
+                                    message={errors.name || clientErrors.name}
                                 />
                             </div>
 
@@ -77,11 +110,13 @@ export default function Profile({
                                     required
                                     autoComplete="username"
                                     placeholder="Email address"
+                                    onChange={() => handleFieldChange('email')}
+                                    aria-invalid={Boolean(errors.email || clientErrors.email)}
                                 />
 
                                 <InputError
                                     className="mt-2"
-                                    message={errors.email}
+                                    message={errors.email || clientErrors.email}
                                 />
                             </div>
 

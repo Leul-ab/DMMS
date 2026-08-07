@@ -44,7 +44,6 @@ import type { PaginatedData } from '@/types';
 type MenuCategory = {
     id: number;
     name: string;
-    slug: string;
     description: string | null;
     image: string | null;
     sort_order: number;
@@ -94,7 +93,6 @@ export default function CategoriesIndex({
     // -----------------------------------------
 
     const [name, setName] = useState('');
-    const [slug, setSlug] = useState('');
     const [description, setDescription] = useState('');
     const [sortOrder, setSortOrder] = useState('');
     const [isActive, setIsActive] = useState(true);
@@ -125,7 +123,6 @@ export default function CategoriesIndex({
 
     const openAddModal = () => {
         setName('');
-        setSlug('');
         setDescription('');
         setSortOrder('');
         setIsActive(true);
@@ -156,7 +153,6 @@ export default function CategoriesIndex({
         setSelectedCategory(category);
 
         setName(category.name);
-        setSlug(category.slug || '');
         setDescription(category.description || '');
         setSortOrder(
             category.sort_order.toString(),
@@ -191,10 +187,6 @@ export default function CategoriesIndex({
 
         formData.append('name', name);
 
-        if (slug) {
-            formData.append('slug', slug);
-        }
-
         if (description) {
             formData.append(
                 'description',
@@ -228,7 +220,6 @@ export default function CategoriesIndex({
                     setIsAddOpen(false);
 
                     setName('');
-                    setSlug('');
                     setDescription('');
                     setSortOrder('');
                     setIsActive(true);
@@ -253,10 +244,6 @@ export default function CategoriesIndex({
         const formData = new FormData();
 
         formData.append('name', name);
-
-        if (slug) {
-            formData.append('slug', slug);
-        }
 
         if (description) {
             formData.append(
@@ -416,10 +403,6 @@ export default function CategoriesIndex({
                                             </th>
 
                                             <th className="p-3">
-                                                Slug
-                                            </th>
-
-                                            <th className="p-3">
                                                 Items
                                             </th>
 
@@ -446,10 +429,6 @@ export default function CategoriesIndex({
                                                 >
                                                     <td className="p-3 font-medium">
                                                         {category.name}
-                                                    </td>
-
-                                                    <td className="p-3 text-muted-foreground">
-                                                        {category.slug}
                                                     </td>
 
                                                     <td className="p-3 text-muted-foreground">
@@ -641,25 +620,6 @@ export default function CategoriesIndex({
                             />
                         </div>
 
-                        {/* Slug */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Slug
-                            </label>
-
-                            <Input
-                                value={slug}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setSlug(
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Example: breakfast"
-                            />
-                        </div>
-
                         {/* Description */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
@@ -723,29 +683,33 @@ export default function CategoriesIndex({
                         </div>
 
                         {/* Active */}
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setIsActive(
-                                        event.target.checked,
-                                    )
-                                }
-                                className="h-4 w-4"
-                            />
+                        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+                            <div>
+                                <p className="text-sm font-medium">
+                                    Active Category
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {isActive ? 'This category is currently active.' : 'This category is currently inactive.'}
+                                </p>
+                            </div>
 
-                            <label className="text-sm font-medium">
-                                Active Category
-                            </label>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isActive}
+                                onClick={() => setIsActive(!isActive)}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${isActive ? 'bg-green-600' : 'bg-gray-300'}`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${isActive ? 'translate-x-6' : 'translate-x-1'}`}
+                                />
+                            </button>
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsAddOpen(false)
                             }
@@ -809,16 +773,6 @@ export default function CategoriesIndex({
 
                                 <div>
                                     <p className="text-sm text-muted-foreground">
-                                        Slug
-                                    </p>
-
-                                    <p className="font-medium">
-                                        {selectedCategory.slug}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
                                         Menu Items
                                     </p>
 
@@ -872,6 +826,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
+                            variant="destructive"
                             onClick={() =>
                                 setIsViewOpen(false)
                             }
@@ -915,24 +870,6 @@ export default function CategoriesIndex({
                                     event: React.ChangeEvent<HTMLInputElement>,
                                 ) =>
                                     setName(
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-
-                        {/* Slug */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Slug
-                            </label>
-
-                            <Input
-                                value={slug}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setSlug(
                                         event.target.value,
                                     )
                                 }
@@ -1000,29 +937,33 @@ export default function CategoriesIndex({
                         </div>
 
                         {/* Active */}
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setIsActive(
-                                        event.target.checked,
-                                    )
-                                }
-                                className="h-4 w-4"
-                            />
+                        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-3">
+                            <div>
+                                <p className="text-sm font-medium">
+                                    Active Category
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {isActive ? 'This category is currently active.' : 'This category is currently inactive.'}
+                                </p>
+                            </div>
 
-                            <label className="text-sm font-medium">
-                                Active Category
-                            </label>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={isActive}
+                                onClick={() => setIsActive(!isActive)}
+                                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${isActive ? 'bg-green-600' : 'bg-gray-300'}`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${isActive ? 'translate-x-6' : 'translate-x-1'}`}
+                                />
+                            </button>
                         </div>
                     </div>
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsEditOpen(false)
                             }
@@ -1062,7 +1003,7 @@ export default function CategoriesIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() =>
                                 setIsDeleteOpen(false)
                             }

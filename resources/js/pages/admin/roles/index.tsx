@@ -17,6 +17,7 @@ import {
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -144,7 +145,7 @@ function PermissionPicker({
 
                 <Button
                     type="button"
-                    variant="outline"
+                    variant={allSelected ? 'destructive' : 'outline'}
                     size="sm"
                     onClick={onToggleSelectAll}
                 >
@@ -298,6 +299,7 @@ function RoleFormDialog({
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
         [],
     );
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     const isEdit = mode === 'edit';
 
@@ -305,6 +307,7 @@ function RoleFormDialog({
         setName(role?.name ?? '');
         setDescription(role?.description ?? '');
         setSelectedPermissions(role?.permissions ?? []);
+        setFormErrors({});
     };
 
     const handleOpenChange = (next: boolean) => {
@@ -356,9 +359,17 @@ function RoleFormDialog({
     };
 
     const handleSave = () => {
+        const nextErrors: Record<string, string> = {};
+
         if (!name.trim()) {
-            return;
-        }
+nextErrors.name = 'Role name is required.';
+}
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         onSave({
             name: name.trim(),
@@ -391,9 +402,23 @@ function RoleFormDialog({
 
                         <Input
                             value={name}
-                            onChange={(event) => setName(event.target.value)}
+                            onChange={(event) => {
+                                setName(event.target.value);
+
+                                if (formErrors.name) {
+                                    setFormErrors((prev) => {
+                                        const next = { ...prev };
+                                        delete next.name;
+
+                                        return next;
+                                    });
+                                }
+                            }}
                             placeholder="e.g. Cashier"
+                            aria-invalid={Boolean(formErrors.name)}
+                            className={formErrors.name ? 'border-red-500' : ''}
                         />
+                        <InputError message={formErrors.name} className="mt-1" />
 
                         <p className="mt-1 text-xs text-muted-foreground">
                             {isEdit
@@ -435,7 +460,7 @@ function RoleFormDialog({
 
                 <DialogFooter>
                     <Button
-                        variant="outline"
+                        variant="destructive"
                         onClick={() => onOpenChange(false)}
                         disabled={submitting}
                     >
@@ -697,9 +722,8 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                                             {can('delete roles') &&
                                                 role.slug !== 'super_admin' && (
                                                     <Button
-                                                        variant="ghost"
+                                                        variant="destructive"
                                                         size="icon"
-                                                        className="text-destructive"
                                                         onClick={() =>
                                                             openDeleteModal(
                                                                 role,
@@ -879,26 +903,26 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsDeleteOpen(false)}
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
+                <DialogFooter>
+                    <Button
+                        variant="destructive"
+                        onClick={() => setIsDeleteOpen(false)}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
 
-                        <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting && (
-                                <LoaderCircle className="h-4 w-4 animate-spin" />
-                            )}
-                            Delete Role
-                        </Button>
-                    </DialogFooter>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDelete}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting && (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                        Delete Role
+                    </Button>
+                </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>

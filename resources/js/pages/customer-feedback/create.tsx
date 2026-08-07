@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { ArrowLeft, Send, Star } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { StarRating } from '@/components/star-rating';
 
 type Order = {
@@ -29,18 +30,21 @@ type Props = {
     customer: Customer;
 };
 
-export default function CustomerFeedbackCreate({ order, customer }: Props) {
+export default function CustomerFeedbackCreate({ order }: Props) {
     const [overallRating, setOverallRating] = useState(0);
     const [comment, setComment] = useState('');
     const [anonymous, setAnonymous] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ratingError, setRatingError] = useState<string | null>(null);
 
     const handleSubmit = () => {
         if (!overallRating) {
-            toast.error('Please select an overall rating before submitting.');
+            setRatingError('Please select an overall rating before submitting.');
+
             return;
         }
 
+        setRatingError(null);
         setIsSubmitting(true);
 
         router.post(
@@ -58,8 +62,13 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
                 },
                 onError: (errors) => {
                     setIsSubmitting(false);
-                    const firstError = Object.values(errors)[0];
-                    toast.error(firstError || 'Failed to submit feedback. Please try again.');
+
+                    if (errors.overall_rating) {
+                        setRatingError(errors.overall_rating);
+                    } else {
+                        const firstError = Object.values(errors)[0];
+                        toast.error(firstError || 'Failed to submit feedback. Please try again.');
+                    }
                 },
             }
         );
@@ -109,15 +118,24 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
 
                     <div className="space-y-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
                         {/* Overall Service Rating */}
-                        <div className="flex flex-col items-center gap-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-6">
+                        <div className={`flex flex-col items-center gap-4 rounded-2xl border p-6 ${
+                            ratingError ? 'border-red-300 bg-red-50/50' : 'border-amber-100 bg-amber-50/50'
+                        }`}>
                             <p className="text-lg font-black text-amber-800">
                                 Overall Service Rating
                             </p>
                             <StarRating
                                 value={overallRating}
-                                onChange={setOverallRating}
+                                onChange={(value) => {
+                                    setOverallRating(value);
+
+                                    if (ratingError) {
+setRatingError(null);
+}
+                                }}
                                 size="lg"
                             />
+                            <InputError message={ratingError ?? undefined} className="text-center" />
                         </div>
 
                         {/* Comment */}
@@ -153,11 +171,11 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
                             type="button"
                             onClick={handleSubmit}
                             disabled={isSubmitting}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-green-600 bg-white px-6 py-4 font-black text-green-600 shadow-sm transition hover:bg-green-600 hover:text-white hover:shadow-md active:scale-[0.98] disabled:opacity-60"
                         >
                             {isSubmitting ? (
                                 <span className="flex items-center gap-2">
-                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-green-600 border-t-transparent" />
                                     Submitting...
                                 </span>
                             ) : (

@@ -3,6 +3,7 @@ import { Building2, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +105,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
     const [city, setCity] = useState('');
     const [country, setCountry] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
     // -----------------------------------------
     // Search
@@ -154,6 +156,18 @@ export default function BranchesIndex({ branches, filters }: Props) {
         setCity('');
         setCountry('');
         setIsActive(true);
+        setFormErrors({});
+    };
+
+    const clearFieldError = (field: string) => {
+        if (formErrors[field]) {
+            setFormErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
     };
 
     // -----------------------------------------
@@ -197,9 +211,21 @@ export default function BranchesIndex({ branches, filters }: Props) {
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim() || !address.trim()) {
-            return;
-        }
+        const nextErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+nextErrors.name = 'Branch name is required.';
+}
+
+        if (!address.trim()) {
+nextErrors.address = 'Address is required.';
+}
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         router.post(
             branchesStore.url(),
@@ -225,9 +251,25 @@ export default function BranchesIndex({ branches, filters }: Props) {
     // -----------------------------------------
 
     const handleUpdate = () => {
-        if (!selectedBranch || !name.trim() || !address.trim()) {
-            return;
-        }
+        if (!selectedBranch) {
+return;
+}
+
+        const nextErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+nextErrors.name = 'Branch name is required.';
+}
+
+        if (!address.trim()) {
+nextErrors.address = 'Address is required.';
+}
+
+        setFormErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+return;
+}
 
         router.put(
             branchesUpdate.url(selectedBranch.id),
@@ -610,11 +652,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setName(event.target.value);
+                                    clearFieldError('name');
+                                }}
                                 placeholder="Enter branch name"
+                                aria-invalid={Boolean(formErrors.name)}
+                                className={formErrors.name ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.name} className="mt-1" />
                         </div>
 
                         {/* Address */}
@@ -626,11 +672,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={address}
-                                onChange={(event) =>
-                                    setAddress(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setAddress(event.target.value);
+                                    clearFieldError('address');
+                                }}
                                 placeholder="Enter street address"
+                                aria-invalid={Boolean(formErrors.address)}
+                                className={formErrors.address ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.address} className="mt-1" />
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -643,11 +693,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={phone}
-                                    onChange={(event) =>
-                                        setPhone(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setPhone(event.target.value);
+                                        clearFieldError('phone');
+                                    }}
                                     placeholder="Enter phone number"
+                                    aria-invalid={Boolean(formErrors.phone)}
+                                    className={formErrors.phone ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.phone} className="mt-1" />
                             </div>
 
                             {/* City */}
@@ -659,11 +713,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={city}
-                                    onChange={(event) =>
-                                        setCity(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setCity(event.target.value);
+                                        clearFieldError('city');
+                                    }}
                                     placeholder="Enter city"
+                                    aria-invalid={Boolean(formErrors.city)}
+                                    className={formErrors.city ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.city} className="mt-1" />
                             </div>
 
                             {/* Country */}
@@ -675,11 +733,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={country}
-                                    onChange={(event) =>
-                                        setCountry(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setCountry(event.target.value);
+                                        clearFieldError('country');
+                                    }}
                                     placeholder="Enter country"
+                                    aria-invalid={Boolean(formErrors.country)}
+                                    className={formErrors.country ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.country} className="mt-1" />
                             </div>
                         </div>
 
@@ -703,7 +765,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsAddOpen(false)}
                         >
                             Cancel
@@ -738,10 +800,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setName(event.target.value);
+                                    clearFieldError('name');
+                                }}
+                                aria-invalid={Boolean(formErrors.name)}
+                                className={formErrors.name ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.name} className="mt-1" />
                         </div>
 
                         {/* Address */}
@@ -753,10 +819,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={address}
-                                onChange={(event) =>
-                                    setAddress(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setAddress(event.target.value);
+                                    clearFieldError('address');
+                                }}
+                                aria-invalid={Boolean(formErrors.address)}
+                                className={formErrors.address ? 'border-red-500' : ''}
                             />
+                            <InputError message={formErrors.address} className="mt-1" />
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -769,10 +839,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={phone}
-                                    onChange={(event) =>
-                                        setPhone(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setPhone(event.target.value);
+                                        clearFieldError('phone');
+                                    }}
+                                    aria-invalid={Boolean(formErrors.phone)}
+                                    className={formErrors.phone ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.phone} className="mt-1" />
                             </div>
 
                             {/* City */}
@@ -784,10 +858,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={city}
-                                    onChange={(event) =>
-                                        setCity(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setCity(event.target.value);
+                                        clearFieldError('city');
+                                    }}
+                                    aria-invalid={Boolean(formErrors.city)}
+                                    className={formErrors.city ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.city} className="mt-1" />
                             </div>
 
                             {/* Country */}
@@ -799,10 +877,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                 <Input
                                     value={country}
-                                    onChange={(event) =>
-                                        setCountry(event.target.value)
-                                    }
+                                    onChange={(event) => {
+                                        setCountry(event.target.value);
+                                        clearFieldError('country');
+                                    }}
+                                    aria-invalid={Boolean(formErrors.country)}
+                                    className={formErrors.country ? 'border-red-500' : ''}
                                 />
+                                <InputError message={formErrors.country} className="mt-1" />
                             </div>
                         </div>
 
@@ -826,7 +908,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsEditOpen(false)}
                         >
                             Cancel
@@ -855,7 +937,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setIsDeleteOpen(false)}
                         >
                             Cancel

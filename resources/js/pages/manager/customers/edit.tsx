@@ -1,8 +1,11 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 import { User } from 'lucide-react';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { emailRule, phoneRule, requiredRule, validateFields } from '@/lib/form-validation';
 
 type Customer = {
     id: number;
@@ -26,8 +29,32 @@ export default function EditCustomer({ customer }: Props) {
         is_member: customer.is_member,
     });
 
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const validateForm = () => {
+        const nextErrors = validateFields(data, {
+            customer_code: [requiredRule('Customer code is required.')],
+            name: [requiredRule('Customer name is required.')],
+            phone: [phoneRule()],
+            email: [emailRule()],
+        });
+
+        setClientErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
+
+    const handleFieldChange = (field: string, value: string | boolean) => {
+        setData(field as never, value as never);
+        if (clientErrors[field]) {
+            setClientErrors((prev) => ({ ...prev, [field]: '' }));
+        }
+    };
+
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
 
         put(`/manager/customers/${customer.id}`);
     };
@@ -63,19 +90,13 @@ export default function EditCustomer({ customer }: Props) {
                                     type="text"
                                     value={data.customer_code}
                                     onChange={(e) =>
-                                        setData(
-                                            'customer_code',
-                                            e.target.value
-                                        )
+                                        handleFieldChange('customer_code', e.target.value)
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    aria-invalid={Boolean(errors.customer_code || clientErrors.customer_code)}
                                 />
 
-                                {errors.customer_code && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.customer_code}
-                                    </p>
-                                )}
+                                <InputError message={errors.customer_code || clientErrors.customer_code} />
                             </div>
 
                             {/* Name */}
@@ -92,19 +113,13 @@ export default function EditCustomer({ customer }: Props) {
                                     type="text"
                                     value={data.name}
                                     onChange={(e) =>
-                                        setData(
-                                            'name',
-                                            e.target.value
-                                        )
+                                        handleFieldChange('name', e.target.value)
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    aria-invalid={Boolean(errors.name || clientErrors.name)}
                                 />
 
-                                {errors.name && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.name}
-                                    </p>
-                                )}
+                                <InputError message={errors.name || clientErrors.name} />
                             </div>
 
                             {/* Phone */}
@@ -121,19 +136,13 @@ export default function EditCustomer({ customer }: Props) {
                                     type="text"
                                     value={data.phone}
                                     onChange={(e) =>
-                                        setData(
-                                            'phone',
-                                            e.target.value
-                                        )
+                                        handleFieldChange('phone', e.target.value)
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    aria-invalid={Boolean(errors.phone || clientErrors.phone)}
                                 />
 
-                                {errors.phone && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.phone}
-                                    </p>
-                                )}
+                                <InputError message={errors.phone || clientErrors.phone} />
                             </div>
 
                             {/* Email */}
@@ -150,19 +159,13 @@ export default function EditCustomer({ customer }: Props) {
                                     type="email"
                                     value={data.email}
                                     onChange={(e) =>
-                                        setData(
-                                            'email',
-                                            e.target.value
-                                        )
+                                        handleFieldChange('email', e.target.value)
                                     }
                                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    aria-invalid={Boolean(errors.email || clientErrors.email)}
                                 />
 
-                                {errors.email && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.email}
-                                    </p>
-                                )}
+                                <InputError message={errors.email || clientErrors.email} />
                             </div>
 
                             {/* Membership */}

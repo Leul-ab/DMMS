@@ -335,7 +335,7 @@ export default function PaymentVerificationIndex({
                                 Search
                             </Button>
 
-                            <Button variant="outline" onClick={clearFilters}>
+                            <Button variant="destructive" onClick={clearFilters}>
                                 Clear
                             </Button>
                         </div>
@@ -414,15 +414,13 @@ export default function PaymentVerificationIndex({
                                                                 <Button
                                                                     size="sm"
                                                                     onClick={() => openVerifyModal(order)}
-                                                                    className="bg-green-600 hover:bg-green-700"
                                                                 >
                                                                     <CheckCircle2 className="mr-1 size-4" />
                                                                     Verify Payment
                                                                 </Button>
                                                                 <Button
                                                                     size="sm"
-                                                                    variant="outline"
-                                                                    className="text-red-600 hover:text-red-700"
+                                                                    variant="destructive"
                                                                     onClick={() => setRejectingOrder(order)}
                                                                 >
                                                                     <Ban className="mr-1 size-4" />
@@ -578,7 +576,7 @@ export default function PaymentVerificationIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setVerifyingOrder(null)}
                             disabled={processing}
                         >
@@ -587,7 +585,6 @@ export default function PaymentVerificationIndex({
                         <Button
                             onClick={submitVerification}
                             disabled={processing}
-                            className="bg-green-600 hover:bg-green-700"
                         >
                             {processing ? (
                                 <>
@@ -641,7 +638,7 @@ export default function PaymentVerificationIndex({
 
                     <DialogFooter>
                         <Button
-                            variant="outline"
+                            variant="destructive"
                             onClick={() => setRejectingOrder(null)}
                             disabled={processing}
                         >

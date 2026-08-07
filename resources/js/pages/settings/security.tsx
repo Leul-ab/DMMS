@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -10,6 +10,7 @@ import ManageTwoFactor from '@/components/manage-two-factor';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { minLengthRule, requiredRule, validateFields } from '@/lib/form-validation';
 import { edit } from '@/routes/security';
 
 type Props = {
@@ -20,6 +21,43 @@ type Props = {
 export default function Security(props: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+    const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+    const handleFieldChange = (field: string) => {
+        if (clientErrors[field]) {
+            setClientErrors((prev) => {
+                const next = { ...prev };
+                delete next[field];
+
+                return next;
+            });
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        const formData = new FormData(e.currentTarget);
+        const nextErrors = validateFields(
+            {
+                current_password: formData.get('current_password'),
+                password: formData.get('password'),
+                password_confirmation: formData.get('password_confirmation'),
+            },
+            {
+                current_password: [requiredRule('Current password is required.')],
+                password: [requiredRule('New password is required.'), minLengthRule(8, 'Password must be at least 8 characters.')],
+                password_confirmation: [
+                    requiredRule('Please confirm your password.'),
+                    (value, allValues) =>
+                        value !== allValues?.password ? 'Passwords do not match.' : null,
+                ],
+            },
+        );
+        setClientErrors(nextErrors);
+
+        if (Object.keys(nextErrors).length > 0) {
+            e.preventDefault();
+        }
+    };
 
     return (
         <>
@@ -54,6 +92,7 @@ export default function Security(props: Props) {
                             currentPasswordInput.current?.focus();
                         }
                     }}
+                    onSubmit={handleSubmit}
                     className="space-y-6"
                 >
                     {({ errors, processing }) => (
@@ -70,9 +109,11 @@ export default function Security(props: Props) {
                                     className="mt-1 block w-full"
                                     autoComplete="current-password"
                                     placeholder="Current password"
+                                    onChange={() => handleFieldChange('current_password')}
+                                    aria-invalid={Boolean(errors.current_password || clientErrors.current_password)}
                                 />
 
-                                <InputError message={errors.current_password} />
+                                <InputError message={errors.current_password || clientErrors.current_password} />
                             </div>
 
                             <div className="grid gap-2">
@@ -86,9 +127,11 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder="New password"
                                     passwordrules={props.passwordRules}
+                                    onChange={() => handleFieldChange('password')}
+                                    aria-invalid={Boolean(errors.password || clientErrors.password)}
                                 />
 
-                                <InputError message={errors.password} />
+                                <InputError message={errors.password || clientErrors.password} />
                             </div>
 
                             <div className="grid gap-2">
@@ -103,10 +146,12 @@ export default function Security(props: Props) {
                                     autoComplete="new-password"
                                     placeholder="Confirm password"
                                     passwordrules={props.passwordRules}
+                                    onChange={() => handleFieldChange('password_confirmation')}
+                                    aria-invalid={Boolean(errors.password_confirmation || clientErrors.password_confirmation)}
                                 />
 
                                 <InputError
-                                    message={errors.password_confirmation}
+                                    message={errors.password_confirmation || clientErrors.password_confirmation}
                                 />
                             </div>
 
