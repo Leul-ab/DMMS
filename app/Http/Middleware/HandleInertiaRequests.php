@@ -43,9 +43,18 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? $request->user()->load('role') : null,
             ],
             'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->values()->all() : [],
-            'allBranches' => fn () => ($request->user()?->can('switch branches'))
-                ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
-                : [],
+            'allBranches' => function () use ($request) {
+                if (!$request->user()?->can('switch branches')) {
+                    return [];
+                }
+                
+                $query = \App\Models\Branch::query()->orderBy('name');
+                if ($request->user()->restaurant_id) {
+                    $query->where('restaurant_id', $request->user()->restaurant_id);
+                }
+                
+                return $query->get(['id', 'name']);
+            },
             'currentBranch' => fn () => \App\Models\Branch::current()
                 ?->only(['id', 'name']),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -79,6 +88,38 @@ class HandleInertiaRequests extends Middleware
                         : 0,
                 ];
             },
+            // ── Restaurant branding ──────────────────────────────────────────
+            'restaurant' => function () use ($request) {
+                $user = $request->user();
+                if (! $user) {
+                    return $this->defaultBranding();
+                }
+
+                // Super admins see the platform default branding
+                if ($user->hasRole('Super Admin') && ! $user->restaurant_id) {
+                    return $this->defaultBranding();
+                }
+
+                $restaurant = $user->restaurant
+                    ?? ($user->branch?->restaurant ?? null);
+
+                return $restaurant
+                    ? $restaurant->brandingForFrontend()
+                    : $this->defaultBranding();
+            },
+        ];
+    }
+
+    /** Fallback branding when no restaurant is resolved. */
+    private function defaultBranding(): array
+    {
+        return [
+            'name'           => config('app.name'),
+            'logoUrl'        => null,
+            'primaryColor'   => '#e85d04',
+            'secondaryColor' => '#f48c06',
+            'accentColor'    => '#ffb703',
+            'fontFamily'     => 'Inter',
         ];
     }
 }

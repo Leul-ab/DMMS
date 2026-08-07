@@ -33,7 +33,10 @@ class UserController extends Controller
         return Inertia::render('admin/users/index', [
             'users' => $users,
             'roles' => Role::all(),
-            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'branches' => Branch::query()
+                ->when(auth()->user()->restaurant_id, fn($q, $id) => $q->where('restaurant_id', $id))
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'currentBranchId' => Branch::current()?->id,
             'filters' => $request->only(['search', 'role']),
         ]);
@@ -43,7 +46,10 @@ class UserController extends Controller
     {
         return Inertia::render('admin/users/create', [
             'roles' => Role::all(),
-            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'branches' => Branch::query()
+                ->when(auth()->user()->restaurant_id, fn($q, $id) => $q->where('restaurant_id', $id))
+                ->orderBy('name')
+                ->get(['id', 'name']),
             'currentBranchId' => Branch::current()?->id,
         ]);
     }
@@ -72,6 +78,8 @@ class UserController extends Controller
         $validated['is_waiter'] = $request->boolean('is_waiter');
         $validated['email_verified_at'] = now();
 
+        $validated['restaurant_id'] = auth()->user()->restaurant_id;
+
         User::create($validated);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'User created successfully.']);
@@ -84,7 +92,10 @@ class UserController extends Controller
         return Inertia::render('admin/users/edit', [
             'user' => $user->load('role'),
             'roles' => Role::all(),
-            'branches' => Branch::query()->orderBy('name')->get(['id', 'name']),
+            'branches' => Branch::query()
+                ->when(auth()->user()->restaurant_id, fn($q, $id) => $q->where('restaurant_id', $id))
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 

@@ -21,6 +21,9 @@ class BranchController extends Controller
             'menuItems',
             'orders',
         ])
+            ->when(auth()->user()->restaurant_id, function ($query, $restaurantId) {
+                $query->where('restaurant_id', $restaurantId);
+            })
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -72,6 +75,7 @@ class BranchController extends Controller
 
         $branch = Branch::create([
             ...$validated,
+            'restaurant_id' => auth()->user()->restaurant_id,
             'is_active' => $request->boolean('is_active'),
         ]);
 

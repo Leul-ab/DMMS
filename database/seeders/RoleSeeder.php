@@ -14,6 +14,7 @@ class RoleSeeder extends Seeder
      */
     private array $rolePermissions = [
         'super_admin' => '*',
+        'main_role' => '*',
         'manager' => [
             'view branches',
             'show branches',
@@ -85,6 +86,7 @@ class RoleSeeder extends Seeder
     {
         $roles = [
             ['name' => 'Super Admin', 'slug' => 'super_admin', 'description' => 'Full system access'],
+            ['name' => 'Main Role', 'slug' => 'main_role', 'description' => 'Restaurant owner with full system access'],
             ['name' => 'Manager', 'slug' => 'manager', 'description' => 'Restaurant operations and statistics'],
             ['name' => 'Kitchen Staff', 'slug' => 'kitchen_staff', 'description' => 'View and manage kitchen orders'],
             ['name' => 'Waiter', 'slug' => 'waiter', 'description' => 'Serve orders to customers'],
@@ -102,6 +104,16 @@ class RoleSeeder extends Seeder
             $permissions = $this->rolePermissions[$role->slug] ?? [];
             if ($permissions === '*') {
                 $permissions = $allPermissions->all();
+                
+                if ($role->slug === 'main_role') {
+                    $permissions = array_diff($permissions, [
+                        'view restaurants',
+                        'create restaurants',
+                        'update restaurants',
+                        'delete restaurants',
+                        'status restaurants',
+                    ]);
+                }
             }
 
             $role->syncPermissions($permissions);

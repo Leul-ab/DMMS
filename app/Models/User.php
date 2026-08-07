@@ -24,6 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $phone
  * @property int|null $role_id
  * @property int|null $branch_id
+ * @property int|null $restaurant_id
  * @property bool $is_waiter
  * @property bool $is_active
  * @property Carbon|null $email_verified_at
@@ -38,7 +39,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Branch|null $branch
  * @property-read WaiterTableAssignment|null $latestTableAssignment
  */
-#[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'branch_id', 'is_active', 'is_waiter'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'branch_id', 'restaurant_id', 'is_active', 'is_waiter'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -60,6 +61,11 @@ class User extends Authenticatable implements PasskeyUser
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function restaurant(): BelongsTo
+    {
+        return $this->belongsTo(Restaurant::class);
     }
 
     public function syncSpatieRoles(): void

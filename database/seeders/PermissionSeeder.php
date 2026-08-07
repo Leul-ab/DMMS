@@ -17,6 +17,13 @@ class PermissionSeeder extends Seeder
             ['view dashboard', 'view'],
             ['view all branches dashboard', 'view'],
         ],
+        'Restaurants' => [
+            ['view restaurants', 'view'],
+            ['create restaurants', 'create'],
+            ['update restaurants', 'update'],
+            ['delete restaurants', 'delete'],
+            ['status restaurants', 'status'],
+        ],
         'Branches' => [
             ['view branches', 'view'],
             ['create branches', 'create'],

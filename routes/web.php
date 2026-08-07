@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 require __DIR__.'/settings.php';
+require __DIR__.'/superadmin.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/manager.php';
 require __DIR__.'/menu.php';

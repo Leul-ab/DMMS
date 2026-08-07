@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property int|null $restaurant_id
  * @property string $name
  * @property string $slug
  * @property string|null $address
@@ -25,10 +27,12 @@ use Illuminate\Support\Str;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Restaurant|null $restaurant
  */
 class Branch extends Model
 {
     protected $fillable = [
+        'restaurant_id',
         'name',
         'slug',
         'address',
@@ -70,6 +74,11 @@ class Branch extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function restaurant(): BelongsTo
+    {
+        return $this->belongsTo(Restaurant::class);
     }
 
     public function users(): HasMany
@@ -122,10 +131,21 @@ class Branch extends Model
             $branchId = auth()->user()->branch_id;
         }
 
-        $branch = $branchId ? self::find($branchId) : null;
+        $branch = null;
+        if ($branchId !== null) {
+            $query = self::where('id', $branchId);
+            if (auth()->check() && auth()->user()->restaurant_id) {
+                $query->where('restaurant_id', auth()->user()->restaurant_id);
+            }
+            $branch = $query->first();
+        }
 
         if ($branch === null) {
-            $branch = self::active()->orderBy('id')->first();
+            $query = self::active()->orderBy('id');
+            if (auth()->check() && auth()->user()->restaurant_id) {
+                $query->where('restaurant_id', auth()->user()->restaurant_id);
+            }
+            $branch = $query->first();
         }
 
         app()->instance('current_branch', $branch);
@@ -138,7 +158,14 @@ class Branch extends Model
      */
     public static function setCurrent(?int $branchId): ?self
     {
-        $branch = $branchId ? self::find($branchId) : null;
+        $branch = null;
+        if ($branchId !== null) {
+            $query = self::where('id', $branchId);
+            if (auth()->check() && auth()->user()->restaurant_id) {
+                $query->where('restaurant_id', auth()->user()->restaurant_id);
+            }
+            $branch = $query->first();
+        }
 
         app()->instance('current_branch', $branch);
 

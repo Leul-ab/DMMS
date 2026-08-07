@@ -17,6 +17,7 @@ import {
     Store,
     Percent,
     Utensils,
+    ShieldAlert,
 } from 'lucide-react';
 
 import AppLogo from '@/components/app-logo';
@@ -56,7 +57,22 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { state, toggleSidebar } = useSidebar();
     const can = useCan();
-    const { notifications } = usePage<{ notifications?: { kitchen: number; serve: number; paymentVerification: number } }>().props;
+    const { notifications, auth } = usePage<{
+        notifications?: { kitchen: number; serve: number; paymentVerification: number };
+        auth: { user: { id: number; name: string } | null };
+    }>().props;
+
+    const isSuperAdmin = can('view restaurants');
+
+    const superAdminNavItems: NavItem[] = isSuperAdmin
+        ? [
+              {
+                  title: 'Restaurants',
+                  href: '/super-admin/restaurants',
+                  icon: ShieldAlert,
+              },
+          ]
+        : [];
 
     const mainNavItems: NavItem[] = [
         ...(can('view dashboard')
@@ -275,6 +291,11 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
+                {/* Super Admin Navigation */}
+                {superAdminNavItems.length > 0 && (
+                    <NavMain items={superAdminNavItems} label="Super Admin" />
+                )}
+
                 {/* General Navigation */}
                 {mainNavItems.length > 0 && (
                     <NavMain items={mainNavItems} label="Platform" />
