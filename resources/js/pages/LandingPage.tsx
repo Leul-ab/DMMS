@@ -116,12 +116,7 @@ export default function LandingPage() {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex items-center justify-between h-16 lg:h-20">
                             <Link href="/" className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
-                                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                    </svg>
-                                </div>
-                                <span className={`text-xl font-bold ${scrolled ? 'text-gray-900' : 'text-gray-900'}`}>DMMS</span>
+                                <img src="/maedlogo.png" alt="MAED" className="h-12 w-auto object-contain drop-shadow-sm" />
                             </Link>
                             <div className="hidden md:flex items-center gap-8">
                                 <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors text-sm font-medium">Features</a>
@@ -630,7 +625,7 @@ function HowItWorksSection() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-                        How DMMS
+                        How MAED
                         <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Works</span>
                     </h2>
                     <p className="text-lg text-gray-600">
@@ -967,7 +962,7 @@ function CTASection() {
                     <span className="block">Restaurant Experience?</span>
                 </h2>
                 <p className="text-lg sm:text-xl text-orange-100 mb-0 max-w-2xl mx-auto">
-                    Join thousands of restaurants using DMMS to streamline their operations and delight their customers.
+                    Join thousands of restaurants using MAED to streamline their operations and delight their customers.
                 </p>
             </div>
         </section>
@@ -981,13 +976,8 @@ function FooterSection() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
                     {/* Brand */}
                     <div>
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center">
-                                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                            </div>
-                            <span className="text-xl font-bold text-white">DMMS</span>
+                        <div className="flex items-center gap-2 mb-6">
+                            <img src="/maed-logo.png" alt="MAED" className="h-10 w-auto object-contain brightness-0 invert opacity-90" />
                         </div>
                         <p className="text-sm text-gray-400 leading-relaxed mb-6">
                             Digital Menu Management System — transforming restaurant operations with smart digital solutions.

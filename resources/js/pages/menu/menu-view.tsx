@@ -1158,13 +1158,20 @@ export function MenuView({
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-orange-200/60 bg-white/80 shadow-sm backdrop-blur-xl">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-                    <Link href={basePath} className="group">
-                        <h1 className="text-2xl font-black tracking-tight text-stone-800 transition group-hover:text-orange-600">
-                            DINE<span className="text-orange-500">.</span>
-                        </h1>
-                        <p className="text-[10px] font-semibold tracking-[0.2em] text-amber-500 uppercase">
-                            Digital Menu
-                        </p>
+                    <Link href={basePath} className="group flex items-center gap-2">
+                        <img
+                            src="/maedlogo.png"
+                            alt="MAED Logo"
+                            className="h-10 w-auto object-contain"
+                        />
+                        <div className="flex flex-col leading-none">
+                            <span className="text-2xl font-display font-black tracking-tight text-orange-500">
+                                ማእድ
+                            </span>
+                            <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-stone-500">
+                                Digital Menu
+                            </span>
+                        </div>
                     </Link>
 
                     <nav className="flex items-center gap-1.5 sm:gap-2.5">
@@ -1326,22 +1333,40 @@ export function MenuView({
                     <div className="max-w-2xl">
                         <Badge
                             variant="secondary"
-                            className="mb-4 animate-in bg-orange-500/15 text-orange-200 backdrop-blur-sm fill-mode-both fade-in slide-in-from-left-4"
+                            className="mb-6 animate-in bg-orange-500/15 text-orange-200 backdrop-blur-sm fill-mode-both fade-in slide-in-from-left-4"
                         >
                             <Sparkles className="mr-1 h-3 w-3" />
                             Welcome to our restaurant
                         </Badge>
 
-                        <h2
-                            className="animate-in text-4xl leading-tight font-black text-white fill-mode-both fade-in slide-in-from-bottom-4 sm:text-5xl lg:text-6xl"
-                            style={{ animationDelay: '100ms' }}
-                        >
-                            Delicious food,
-                            <br />
-                            <span className="bg-gradient-to-r from-orange-200 via-orange-300 to-amber-200 bg-clip-text text-transparent">
-                                made for you.
-                            </span>
-                        </h2>
+                        {/* Logo + Heading row */}
+                        <div className="flex items-center gap-6 sm:gap-8">
+                            {/* Circular logo */}
+                            <div
+                                className="shrink-0 animate-in fill-mode-both fade-in slide-in-from-left-4"
+                                style={{ animationDelay: '50ms' }}
+                            >
+                                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/95 p-2 shadow-2xl shadow-orange-950/40 ring-1 ring-white/40 backdrop-blur-sm sm:h-32 sm:w-32">
+                                    <img
+                                        src="/maedlogo.png"
+                                        alt="MAED Logo"
+                                        className="h-full w-full object-contain"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Heading text */}
+                            <h2
+                                className="animate-in text-4xl leading-tight font-black text-white fill-mode-both fade-in slide-in-from-bottom-4 sm:text-5xl lg:text-6xl"
+                                style={{ animationDelay: '100ms' }}
+                            >
+                                Delicious food,
+                                <br />
+                                <span className="bg-gradient-to-r from-orange-200 via-orange-300 to-amber-200 bg-clip-text text-transparent">
+                                    made for you.
+                                </span>
+                            </h2>
+                        </div>
 
                         <p
                             className="mt-5 max-w-xl animate-in text-base leading-relaxed text-orange-200/80 fill-mode-both fade-in slide-in-from-bottom-4 sm:text-lg"

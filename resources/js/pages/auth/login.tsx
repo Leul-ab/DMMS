@@ -85,8 +85,8 @@ return (
                     <div className="relative z-10 flex min-h-screen w-full flex-col justify-between p-10 xl:p-16">
                         {/* Top Icon */}
                         <div className="flex items-center">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 shadow-xl shadow-orange-900/30">
-                                <ChefHat className="h-6 w-6 text-white" />
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl  shadow-xl shadow-orange-900/30">
+                                <img src="/maedlogo.png" alt="maed" className='h-12 w-auto object-contain drop-shadow-sm' />
                             </div>
                         </div>
 
@@ -158,7 +158,7 @@ return (
                         {/* Header */}
                         <div className="mb-8">
                             <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
-                                <ChefHat className="h-7 w-7" />
+                                <img src="/maedlogo.png" alt="maed" className='h-12 w-auto object-contain drop-shadow-sm' />
                             </div>
 
                             <h2 className="text-3xl font-bold tracking-tight text-[#211b17] sm:text-4xl">
