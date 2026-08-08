@@ -190,14 +190,15 @@ class MenuController extends Controller
 
         Branch::setCurrent($table->branch_id);
 
-        // Fetch all recent orders for the table (excluding cancelled),
-        // newest first, so the customer can see their order history.
-        $orders = Order::with([
-            'orderItems.menuItem',
-            'payment.verifier',
-            'receipt',
-            'feedback.customer',
-        ])
+        // The customer "My Orders" page only needs summary data initially.
+        // Heavy relationships (orderItems, receipt, payment, feedback) are
+        // lazy-loaded via the /api/orders/{order}/details endpoint when the
+        // customer expands an order. This keeps the initial page load fast.
+        $isCustomerMyOrder = $view === 'customer-my-order/index';
+
+        $orders = Order::with($isCustomerMyOrder
+            ? ['table']
+            : ['orderItems.menuItem', 'payment.verifier', 'receipt', 'feedback.customer'])
             ->where('table_id', $table->id)
             ->whereIn('status', [
                 'pending',

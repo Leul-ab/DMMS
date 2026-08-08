@@ -21,6 +21,9 @@ Route::post(
 // API: Get active order count for a customer or table
 Route::get('/api/orders/count', [OrderController::class, 'getOrderCount']);
 
+// API: Get full order details (lazy-loaded when customer expands an order)
+Route::get('/api/orders/{order}/details', [OrderController::class, 'getOrderDetails']);
+
 // API: Add items to existing order
 Route::post('/api/orders/{order}/add-items', [OrderController::class, 'addItems']);
 

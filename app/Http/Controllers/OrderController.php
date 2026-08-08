@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
@@ -235,6 +234,27 @@ class OrderController extends Controller
 
             $order->increment('total_amount', $additionalTotal);
         });
+    }
+
+    /**
+     * Get full order details for the customer's "My Orders" page.
+     * This endpoint is only called when the customer expands an order.
+     */
+    public function getOrderDetails(Order $order)
+    {
+        $order->load([
+            'orderItems.menuItem',
+            'table',
+            'payment.verifier',
+            'receipt',
+            'customer',
+            'branch',
+            'feedback',
+        ]);
+
+        return response()->json([
+            'order' => $order,
+        ]);
     }
 
     /**
