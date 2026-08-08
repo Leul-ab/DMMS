@@ -1,5 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Percent } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -40,8 +41,12 @@ export default function DiscountCreate({ menuItems }: Props) {
         status: 'active',
         start_date: '',
         end_date: '',
+        start_time: '',
+        end_time: '',
         menu_items: [] as number[],
     });
+
+    const [menuItemSearch, setMenuItemSearch] = useState('');
 
     const toggleMenuItem = (id: number) => {
         setData(
@@ -51,6 +56,10 @@ export default function DiscountCreate({ menuItems }: Props) {
                 : [...data.menu_items, id],
         );
     };
+
+    const filteredMenuItems = menuItems.filter((menuItem) =>
+        menuItem.name.toLowerCase().includes(menuItemSearch.toLowerCase()),
+    );
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,6 +72,8 @@ export default function DiscountCreate({ menuItems }: Props) {
         formData.append('status', data.status);
         formData.append('start_date', data.start_date);
         formData.append('end_date', data.end_date);
+        formData.append('start_time', data.start_time);
+        formData.append('end_time', data.end_time);
 
         if (data.discount_type === 'percentage') {
             formData.append('percentage', data.percentage);
@@ -173,37 +184,48 @@ export default function DiscountCreate({ menuItems }: Props) {
 
                             <div className="grid gap-2">
                                 <Label>Select Items</Label>
+                                <Input
+                                    type="text"
+                                    placeholder="Search menu items..."
+                                    value={menuItemSearch}
+                                    onChange={(e) =>
+                                        setMenuItemSearch(e.target.value)
+                                    }
+                                    className="mb-2"
+                                />
                                 <div className="max-h-60 overflow-y-auto rounded-md border p-3">
-                                    {menuItems.length === 0 ? (
+                                    {filteredMenuItems.length === 0 ? (
                                         <p className="text-sm text-muted-foreground">
                                             No menu items available.
                                         </p>
                                     ) : (
                                         <div className="space-y-2">
-                                            {menuItems.map((menuItem) => (
-                                                <div
-                                                    key={menuItem.id}
-                                                    className="flex items-center space-x-2"
-                                                >
-                                                    <Checkbox
-                                                        id={`menu-item-${menuItem.id}`}
-                                                        checked={data.menu_items.includes(
-                                                            menuItem.id,
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleMenuItem(
-                                                                menuItem.id,
-                                                            )
-                                                        }
-                                                    />
-                                                    <Label
-                                                        htmlFor={`menu-item-${menuItem.id}`}
-                                                        className="text-sm font-normal"
+                                            {filteredMenuItems.map(
+                                                (menuItem) => (
+                                                    <div
+                                                        key={menuItem.id}
+                                                        className="flex items-center space-x-2"
                                                     >
-                                                        {menuItem.name}
-                                                    </Label>
-                                                </div>
-                                            ))}
+                                                        <Checkbox
+                                                            id={`menu-item-${menuItem.id}`}
+                                                            checked={data.menu_items.includes(
+                                                                menuItem.id,
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                toggleMenuItem(
+                                                                    menuItem.id,
+                                                                )
+                                                            }
+                                                        />
+                                                        <Label
+                                                            htmlFor={`menu-item-${menuItem.id}`}
+                                                            className="text-sm font-normal"
+                                                        >
+                                                            {menuItem.name}
+                                                        </Label>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -303,6 +325,21 @@ export default function DiscountCreate({ menuItems }: Props) {
                             </div>
 
                             <div className="grid gap-2">
+                                <Label htmlFor="start_time">
+                                    Start Time (optional)
+                                </Label>
+                                <Input
+                                    id="start_time"
+                                    type="time"
+                                    value={data.start_time}
+                                    onChange={(e) =>
+                                        setData('start_time', e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.start_time} />
+                            </div>
+
+                            <div className="grid gap-2">
                                 <Label htmlFor="end_date">End Date</Label>
                                 <Input
                                     id="end_date"
@@ -314,6 +351,21 @@ export default function DiscountCreate({ menuItems }: Props) {
                                     required
                                 />
                                 <InputError message={errors.end_date} />
+                            </div>
+
+                            <div className="grid gap-2">
+                                <Label htmlFor="end_time">
+                                    End Time (optional)
+                                </Label>
+                                <Input
+                                    id="end_time"
+                                    type="time"
+                                    value={data.end_time}
+                                    onChange={(e) =>
+                                        setData('end_time', e.target.value)
+                                    }
+                                />
+                                <InputError message={errors.end_time} />
                             </div>
 
                             <div className="flex items-center gap-4">

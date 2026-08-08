@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -16,6 +17,7 @@ class ReportController extends Controller
     {
         $tab = $request->input('tab', 'revenue');
         $period = $request->input('period', 'daily');
+        $branch = $request->input('branch');
 
         $allowedTabs = [
             'revenue',
@@ -23,6 +25,7 @@ class ReportController extends Controller
             'top-tables',
             'top-foods',
             'sales',
+            'user-performance',
         ];
 
         $allowedPeriods = [
@@ -40,7 +43,7 @@ class ReportController extends Controller
             $period = 'daily';
         }
 
-        $branchId = Branch::current()?->id;
+        $branchId = $branch ?: Branch::current()?->id;
 
         $reportData = match ($tab) {
             'revenue' => $this->revenueReport($period, $branchId),
@@ -48,11 +51,13 @@ class ReportController extends Controller
             'top-tables' => $this->topTablesReport($period, $branchId),
             'top-foods' => $this->topFoodsReport($period, $branchId),
             'sales' => $this->salesReport($period, $branchId),
+            'user-performance' => $this->userPerformanceReport($period, $branchId),
         };
 
         return Inertia::render('manager/reports/index', [
             'activeTab' => $tab,
             'period' => $period,
+            'branch' => $branch,
             'reportData' => $reportData,
         ]);
     }
@@ -198,5 +203,43 @@ class ReportController extends Controller
             )
             ->orderByDesc('total_sales')
             ->get();
+    }
+
+    private function userPerformanceReport(string $period, ?int $branchId)
+    {
+        $query = User::query()
+            ->when($branchId, fn ($query) => $query->where('users.branch_id', $branchId))
+            ->join('orders', 'orders.served_by', '=', 'users.id')
+            ->leftJoin('roles', 'users.role_id', '=', 'roles.id')
+            ->leftJoin('branches', 'users.branch_id', '=', 'branches.id')
+            ->select(
+                'users.name',
+                DB::raw('roles.name as role'),
+                DB::raw('branches.name as branch'),
+                DB::raw('COUNT(orders.id) as total_orders'),
+                DB::raw("SUM(CASE WHEN orders.status = 'completed' THEN 1 ELSE 0 END) as completed_orders"),
+                DB::raw("SUM(CASE WHEN orders.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders"),
+                DB::raw('SUM(orders.total_amount) as revenue')
+            )
+            ->groupBy('users.id', 'users.name', 'roles.name', 'branches.name')
+            ->orderByDesc('revenue');
+
+        $now = now();
+
+        $query->when(
+            $period === 'daily',
+            fn ($q) => $q->whereDate('orders.created_at', $now->toDateString())
+        )->when(
+            $period === 'weekly',
+            fn ($q) => $q->whereBetween('orders.created_at', [$now->startOfWeek(), $now->endOfWeek()])
+        )->when(
+            $period === 'monthly',
+            fn ($q) => $q->whereBetween('orders.created_at', [$now->startOfMonth(), $now->endOfMonth()])
+        )->when(
+            $period === 'annual',
+            fn ($q) => $q->whereBetween('orders.created_at', [$now->startOfYear(), $now->endOfYear()])
+        );
+
+        return $query->get();
     }
 }

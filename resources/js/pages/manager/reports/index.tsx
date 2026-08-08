@@ -1,19 +1,23 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
-BarChart3,
-CalendarDays,
-ShoppingCart,
-Table2,
-UtensilsCrossed,
-Wallet,
+    BarChart3,
+    Building2,
+    CalendarDays,
+    ShoppingCart,
+    Table2,
+    UtensilsCrossed,
+    User,
+    Wallet,
 } from 'lucide-react';
+import { useState } from 'react';
 
 type ReportTab =
 | 'revenue'
 | 'orders'
 | 'top-tables'
 | 'top-foods'
-| 'sales';
+| 'sales'
+| 'user-performance';
 
 type Period =
 | 'daily'
@@ -28,9 +32,10 @@ string | number | null
 > ;
 
 interface ReportsProps {
-activeTab: ReportTab;
-period: Period;
-reportData: ReportRow[];
+    activeTab: ReportTab;
+    period: Period;
+    branch: string | null;
+    reportData: ReportRow[];
 }
 
 const tabs = [
@@ -55,9 +60,14 @@ label: 'Top Foods',
 icon: UtensilsCrossed,
 },
 {
-id: 'sales' as ReportTab,
-label: 'Sales',
-icon: BarChart3,
+    id: 'sales' as ReportTab,
+    label: 'Sales',
+    icon: BarChart3,
+},
+{
+    id: 'user-performance' as ReportTab,
+    label: 'User Performance',
+    icon: User,
 },
 ];
 
@@ -166,38 +176,79 @@ orders: [
     },
 ],
 
-sales: [
-    {
-        key: 'period',
-        label: 'Period',
-    },
-    {
-        key: 'food',
-        label: 'Food Item',
-    },
-    {
-        key: 'quantity_sold',
-        label: 'Quantity Sold',
-    },
-    {
-        key: 'unit_price',
-        label: 'Unit Price',
-    },
-    {
-        key: 'total_sales',
-        label: 'Total Sales',
-    },
-],
+ sales: [
+     {
+         key: 'period',
+         label: 'Period',
+     },
+     {
+         key: 'food',
+         label: 'Food Item',
+     },
+     {
+         key: 'quantity_sold',
+         label: 'Quantity Sold',
+     },
+     {
+         key: 'unit_price',
+         label: 'Unit Price',
+     },
+     {
+         key: 'total_sales',
+         label: 'Total Sales',
+     },
+ ],
+
+ 'user-performance': [
+     {
+         key: 'name',
+         label: 'User Name',
+     },
+     {
+         key: 'role',
+         label: 'Role',
+     },
+     {
+         key: 'branch',
+         label: 'Branch',
+     },
+     {
+         key: 'total_orders',
+         label: 'Total Orders Handled',
+     },
+     {
+         key: 'completed_orders',
+         label: 'Completed Orders',
+     },
+     {
+         key: 'cancelled_orders',
+         label: 'Cancelled Orders',
+     },
+     {
+         key: 'revenue',
+         label: 'Total Revenue Generated',
+     },
+ ],
 
 
 };
 
 export default function Reports({
-activeTab,
-period,
-reportData,
+    activeTab,
+    period,
+    branch,
+    reportData,
 }: ReportsProps) {
-const activeTabLabel =
+    const { allBranches, currentBranch } = usePage().props as unknown as {
+        allBranches: { id: number; name: string }[];
+        currentBranch: { id: number; name: string } | null;
+    };
+
+    const [branchId, setBranchId] = useState<string>(
+        branch || (currentBranch?.id ? String(currentBranch.id) : '')
+    );
+
+    const activeTabLabel =
 tabs.find(
 (tab) => tab.id === activeTab,
 )?.label ?? 'Revenue';
@@ -219,6 +270,7 @@ const changeTab = (
         {
             tab,
             period,
+            branch: branchId || undefined,
         },
         {
             preserveState: true,
@@ -235,6 +287,25 @@ const changePeriod = (
         {
             tab: activeTab,
             period: newPeriod,
+            branch: branchId || undefined,
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+        },
+    );
+};
+
+const changeBranch = (
+    newBranchId: string,
+) => {
+    setBranchId(newBranchId);
+    router.get(
+        '/manager/reports',
+        {
+            tab: activeTab,
+            period,
+            branch: newBranchId || undefined,
         },
         {
             preserveState: true,
@@ -325,6 +396,31 @@ return (
                         report data.
                     </p>
                 </div>
+
+                {allBranches.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+
+                        <select
+                            value={branchId}
+                            onChange={(event) =>
+                                changeBranch(
+                                    event.target.value,
+                                )
+                            }
+                            className="rounded-md border bg-background px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            {allBranches.map((item) => (
+                                <option
+                                    key={item.id}
+                                    value={item.id}
+                                >
+                                    {item.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="flex items-center gap-2">
                     <CalendarDays className="h-4 w-4 text-muted-foreground" />

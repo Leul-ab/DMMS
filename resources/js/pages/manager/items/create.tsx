@@ -1,14 +1,14 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { useRef, useState } from 'react';
 import { Utensils } from 'lucide-react';
+import { useRef, useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
 import { create as itemsCreate, index as itemsIndex, store as itemsStore } from '@/routes/manager/items';
 
 type MenuCategory = {
@@ -37,16 +37,20 @@ export default function ItemCreate({ categories }: Props) {
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+
         if (file) {
             // Validate file type
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
             if (!allowedTypes.includes(file.type)) {
                 return;
             }
+
             // Validate file size (2MB)
             if (file.size > 2 * 1024 * 1024) {
                 return;
             }
+
             setData('image', file);
             const reader = new FileReader();
             reader.onload = () => {
@@ -59,6 +63,7 @@ export default function ItemCreate({ categories }: Props) {
     const handleRemoveImage = () => {
         setData('image', null);
         setImagePreview(null);
+
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }

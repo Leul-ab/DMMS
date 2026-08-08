@@ -5,6 +5,7 @@ import {
     XCircle,
 } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import {
     Card,
     CardContent,
@@ -12,7 +13,6 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 
-import { Badge } from '@/components/ui/badge';
 
 type OrderStatusOverview = {
     status: string;

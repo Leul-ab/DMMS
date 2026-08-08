@@ -51,6 +51,8 @@ type Discount = {
     status: string;
     start_date: string;
     end_date: string;
+    start_time: string | null;
+    end_time: string | null;
 };
 
 type Props = {
@@ -106,11 +108,27 @@ export default function DiscountsIndex({
     const [status, setStatus] = useState('active');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+    const [startTime, setStartTime] = useState('');
+    const [endTime, setEndTime] = useState('');
     const [appliesTo, setAppliesTo] = useState(filters.applies_to || 'all');
     const [selectedMenuItems, setSelectedMenuItems] = useState<number[]>([]);
     const [editSelectedMenuItems, setEditSelectedMenuItems] = useState<
         number[]
     >([]);
+    const [addMenuItemSearch, setAddMenuItemSearch] = useState('');
+    const [editMenuItemSearch, setEditMenuItemSearch] = useState('');
+
+    const filteredAddMenuItems = menuItems.filter((menuItem) =>
+        menuItem.name
+            .toLowerCase()
+            .includes(addMenuItemSearch.toLowerCase()),
+    );
+
+    const filteredEditMenuItems = menuItems.filter((menuItem) =>
+        menuItem.name
+            .toLowerCase()
+            .includes(editMenuItemSearch.toLowerCase()),
+    );
 
     // -----------------------------------------
     // Search
@@ -206,7 +224,10 @@ export default function DiscountsIndex({
         setStatus('active');
         setStartDate('');
         setEndDate('');
+        setStartTime('');
+        setEndTime('');
         setSelectedMenuItems([]);
+        setAddMenuItemSearch('');
 
         setIsAddOpen(true);
     };
@@ -236,7 +257,10 @@ export default function DiscountsIndex({
         setStatus(discount.status);
         setStartDate(discount.start_date);
         setEndDate(discount.end_date);
+        setStartTime(discount.start_time || '');
+        setEndTime(discount.end_time || '');
         setEditSelectedMenuItems(discount.menu_items || []);
+        setEditMenuItemSearch('');
 
         setIsEditOpen(true);
     };
@@ -276,6 +300,8 @@ export default function DiscountsIndex({
         formData.append('status', status);
         formData.append('start_date', startDate);
         formData.append('end_date', endDate);
+        formData.append('start_time', startTime);
+        formData.append('end_time', endTime);
 
         selectedMenuItems.forEach((id) => {
             formData.append('menu_items[]', String(id));
@@ -302,9 +328,12 @@ export default function DiscountsIndex({
                 setPercentage('');
                 setFixedAmount('');
                 setStatus('active');
-                setStartDate('');
-                setEndDate('');
-                setSelectedMenuItems([]);
+                    setStartDate('');
+                    setEndDate('');
+                    setStartTime('');
+                    setEndTime('');
+                    setSelectedMenuItems([]);
+                    setAddMenuItemSearch('');
             },
         });
     };
@@ -335,6 +364,8 @@ export default function DiscountsIndex({
         formData.append('status', status);
         formData.append('start_date', startDate);
         formData.append('end_date', endDate);
+        formData.append('start_time', startTime);
+        formData.append('end_time', endTime);
 
         editSelectedMenuItems.forEach((id) => {
             formData.append('menu_items[]', String(id));
@@ -361,6 +392,7 @@ export default function DiscountsIndex({
                 setIsEditOpen(false);
                 setSelectedDiscount(null);
                 setEditSelectedMenuItems([]);
+                setEditMenuItemSearch('');
             },
         });
     };
@@ -954,51 +986,67 @@ export default function DiscountsIndex({
                                 Select Items
                             </label>
 
+                            <Input
+                                type="text"
+                                placeholder="Search menu items..."
+                                value={addMenuItemSearch}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLInputElement>,
+                                ) =>
+                                    setAddMenuItemSearch(
+                                        event.target.value,
+                                    )
+                                }
+                                className="mb-2"
+                            />
+
                             <div className="max-h-60 overflow-y-auto rounded-md border p-3">
-                                {menuItems.length === 0 ? (
+                                {filteredAddMenuItems.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
                                         No menu items available.
                                     </p>
                                 ) : (
                                     <div className="space-y-2">
-                                        {menuItems.map((menuItem) => (
-                                            <div
-                                                key={menuItem.id}
-                                                className="flex items-center space-x-2"
-                                            >
-                                                <Checkbox
-                                                    id={`add-menu-item-${menuItem.id}`}
-                                                    checked={selectedMenuItems.includes(
-                                                        menuItem.id,
-                                                    )}
-                                                    onCheckedChange={() => {
-                                                        setSelectedMenuItems(
-                                                            (prev) =>
-                                                                prev.includes(
-                                                                    menuItem.id,
-                                                                )
-                                                                    ? prev.filter(
-                                                                          (
-                                                                              id,
-                                                                          ) =>
-                                                                              id !==
-                                                                              menuItem.id,
-                                                                      )
-                                                                    : [
-                                                                          ...prev,
-                                                                          menuItem.id,
-                                                                      ],
-                                                        );
-                                                    }}
-                                                />
-                                                <label
-                                                    htmlFor={`add-menu-item-${menuItem.id}`}
-                                                    className="text-sm font-normal"
+                                        {filteredAddMenuItems.map(
+                                            (menuItem) => (
+                                                <div
+                                                    key={menuItem.id}
+                                                    className="flex items-center space-x-2"
                                                 >
-                                                    {menuItem.name}
-                                                </label>
-                                            </div>
-                                        ))}
+                                                    <Checkbox
+                                                        id={`add-menu-item-${menuItem.id}`}
+                                                        checked={selectedMenuItems.includes(
+                                                            menuItem.id,
+                                                        )}
+                                                        onCheckedChange={() => {
+                                                            setSelectedMenuItems(
+                                                                (prev) =>
+                                                                    prev.includes(
+                                                                        menuItem.id,
+                                                                    )
+                                                                        ? prev.filter(
+                                                                              (
+                                                                                  id,
+                                                                              ) =>
+                                                                                  id !==
+                                                                                  menuItem.id,
+                                                                          )
+                                                                        : [
+                                                                              ...prev,
+                                                                              menuItem.id,
+                                                                          ],
+                                                            );
+                                                        }}
+                                                    />
+                                                    <label
+                                                        htmlFor={`add-menu-item-${menuItem.id}`}
+                                                        className="text-sm font-normal"
+                                                    >
+                                                        {menuItem.name}
+                                                    </label>
+                                                </div>
+                                            ),
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -1062,6 +1110,36 @@ export default function DiscountsIndex({
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
                                 ) => setEndDate(event.target.value)}
+                            />
+                        </div>
+
+                        {/* Start Time */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Start Time
+                            </label>
+
+                            <Input
+                                type="time"
+                                value={startTime}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLInputElement>,
+                                ) => setStartTime(event.target.value)}
+                            />
+                        </div>
+
+                        {/* End Time */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                End Time
+                            </label>
+
+                            <Input
+                                type="time"
+                                value={endTime}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLInputElement>,
+                                ) => setEndTime(event.target.value)}
                             />
                         </div>
                     </div>

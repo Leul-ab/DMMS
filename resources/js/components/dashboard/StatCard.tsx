@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { LucideIcon, ArrowRight } from 'lucide-react';
+import type { LucideIcon} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
 type StatCardProps = {

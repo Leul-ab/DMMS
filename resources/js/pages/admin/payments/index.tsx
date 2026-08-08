@@ -1,5 +1,4 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
 import {
     Search,
     Eye,
@@ -14,19 +13,11 @@ import {
     Wallet,
     ArrowUpDown,
 } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -39,7 +30,16 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCan } from '@/hooks/use-can';
 
 const paymentStatusColors: Record<string, string> = {
     pending: 'bg-yellow-500 text-white hover:bg-yellow-500',
@@ -188,11 +188,13 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
 
     const navigateToFilter = (params: Record<string, string | undefined>, route?: string) => {
         const cleaned: Record<string, string> = {};
+
         for (const [key, value] of Object.entries(params)) {
             if (value !== undefined && value !== '') {
                 cleaned[key] = value;
             }
         }
+
         if (route) {
             router.get(route, cleaned, { preserveState: true });
         } else {
@@ -271,29 +273,59 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
         // Validate date range
         if (dateFrom && dateTo && dateTo < dateFrom) {
             setDateError('End date cannot be before start date.');
+
             return;
         }
+
         setDateError('');
 
         const params: Record<string, string> = {};
-        if (search) params.search = search;
-        if (paymentStatus) params.payment_status = paymentStatus;
-        if (orderStatus) params.order_status = orderStatus;
-        if (tableId) params.table_id = tableId;
-        if (paymentMethod) params.payment_method = paymentMethod;
-        if (dateFrom) params.date_from = dateFrom;
-        if (dateTo) params.date_to = dateTo;
+
+        if (search) {
+params.search = search;
+}
+
+        if (paymentStatus) {
+params.payment_status = paymentStatus;
+}
+
+        if (orderStatus) {
+params.order_status = orderStatus;
+}
+
+        if (tableId) {
+params.table_id = tableId;
+}
+
+        if (paymentMethod) {
+params.payment_method = paymentMethod;
+}
+
+        if (dateFrom) {
+params.date_from = dateFrom;
+}
+
+        if (dateTo) {
+params.date_to = dateTo;
+}
+
         router.get('/admin/payments', params, { preserveState: true });
     };
 
     const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setDateFrom(e.target.value);
-        if (dateError) setDateError('');
+
+        if (dateError) {
+setDateError('');
+}
     };
 
     const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setDateTo(e.target.value);
-        if (dateError) setDateError('');
+
+        if (dateError) {
+setDateError('');
+}
     };
 
     const clearFilters = () => {
@@ -309,7 +341,9 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
     };
 
     const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') applyFilters();
+        if (e.key === 'Enter') {
+applyFilters();
+}
     };
 
     const openView = (order: Order) => {
@@ -326,7 +360,10 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
     };
 
     const confirmStatusChange = () => {
-        if (!selectedOrder) return;
+        if (!selectedOrder) {
+return;
+}
+
         setIsLoading(true);
         router.patch(
             `/admin/payments/${selectedOrder.id}/status`,
@@ -489,8 +526,13 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                             onClick={() => {
                                 setPaymentStatus(status);
                                 const params: Record<string, string> = { ...filters };
-                                if (status) params.payment_status = status;
-                                else delete params.payment_status;
+
+                                if (status) {
+params.payment_status = status;
+} else {
+delete params.payment_status;
+}
+
                                 router.get('/admin/payments', params, { preserveState: true });
                             }}
                             className={`rounded-full px-4 py-2 text-sm font-bold transition ${
@@ -602,7 +644,10 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                     disabled={orders.current_page <= 1}
                                     onClick={() => {
                                         const prevUrl = orders.links[0]?.url;
-                                        if (prevUrl) router.get(prevUrl, {}, { preserveState: true });
+
+                                        if (prevUrl) {
+router.get(prevUrl, {}, { preserveState: true });
+}
                                     }}
                                 >
                                     Previous
@@ -616,7 +661,10 @@ export default function PaymentsIndex({ orders, stats, tables, filters }: Props)
                                     disabled={orders.current_page >= orders.last_page}
                                     onClick={() => {
                                         const nextUrl = orders.links[orders.links.length - 1]?.url;
-                                        if (nextUrl) router.get(nextUrl, {}, { preserveState: true });
+
+                                        if (nextUrl) {
+router.get(nextUrl, {}, { preserveState: true });
+}
                                     }}
                                 >
                                     Next

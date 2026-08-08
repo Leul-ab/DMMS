@@ -1,4 +1,6 @@
+import { Printer, Download, CheckCircle2, X } from 'lucide-react';
 import { useRef } from 'react';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -7,8 +9,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Printer, Download, CheckCircle2, X } from 'lucide-react';
 
 type ReceiptItem = {
     id: number;
@@ -73,7 +73,9 @@ const paymentMethodLabels: Record<string, string> = {
 export function ReceiptModal({ open, onOpenChange, order }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
 
-    if (!order || !order.receipt) return null;
+    if (!order || !order.receipt) {
+return null;
+}
 
     const receipt = order.receipt;
     const subtotal = Number(receipt.subtotal || order.total_amount);
@@ -83,9 +85,16 @@ export function ReceiptModal({ open, onOpenChange, order }: Props) {
     const total = Number(receipt.amount || order.total_amount);
 
     const handlePrint = () => {
-        if (!printRef.current) return;
+        if (!printRef.current) {
+return;
+}
+
         const printWindow = window.open('', '_blank', 'width=800,height=600');
-        if (!printWindow) return;
+
+        if (!printWindow) {
+return;
+}
+
         const content = printRef.current.innerHTML;
         printWindow.document.write(`
             <html>
@@ -124,7 +133,10 @@ export function ReceiptModal({ open, onOpenChange, order }: Props) {
     };
 
     const handleDownload = () => {
-        if (!printRef.current) return;
+        if (!printRef.current) {
+return;
+}
+
         const content = printRef.current.innerHTML;
         const blob = new Blob(
             [`<html><head><title>Receipt ${receipt.receipt_number}</title></head><body>${content}</body></html>`],

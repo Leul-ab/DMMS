@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { ArrowLeft, CheckCircle2, Copy, Receipt, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { FeedbackModal } from '@/components/feedback-modal';
+import { ReceiptModal } from '@/components/receipt-modal';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -10,8 +12,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { ReceiptModal } from '@/components/receipt-modal';
-import { FeedbackModal } from '@/components/feedback-modal';
 
 type MenuItem = {
     id: number;
@@ -92,17 +92,35 @@ type Props = {
 
 // Get progress bar color based on percentage
 function getProgressColor(percentage: number): string {
-    if (percentage >= 100) return 'bg-green-500';
-    if (percentage >= 81) return 'bg-green-400';
-    if (percentage >= 51) return 'bg-orange-500';
+    if (percentage >= 100) {
+return 'bg-green-500';
+}
+
+    if (percentage >= 81) {
+return 'bg-green-400';
+}
+
+    if (percentage >= 51) {
+return 'bg-orange-500';
+}
+
     return 'bg-blue-500';
 }
 
 // Get progress bar background color based on percentage
 function getProgressBgColor(percentage: number): string {
-    if (percentage >= 100) return 'bg-green-100';
-    if (percentage >= 81) return 'bg-green-100';
-    if (percentage >= 51) return 'bg-orange-100';
+    if (percentage >= 100) {
+return 'bg-green-100';
+}
+
+    if (percentage >= 81) {
+return 'bg-green-100';
+}
+
+    if (percentage >= 51) {
+return 'bg-orange-100';
+}
+
     return 'bg-blue-100';
 }
 
@@ -115,6 +133,7 @@ function getStatusInfo(status: string, preparationStatus: string): { emoji: stri
             if (preparationStatus === 'preparing') {
                 return { emoji: '🍳', message: 'Preparing Your Order' };
             }
+
             return { emoji: '⏳', message: 'Waiting for Kitchen' };
         case 'ready':
             return { emoji: '✅', message: 'Ready for Pickup / Ready to Serve' };
@@ -149,7 +168,10 @@ export default function MyOrderView({
 
     // Detect when the chef adds additional preparation time and notify the customer.
     useEffect(() => {
-        if (!order) return;
+        if (!order) {
+return;
+}
+
         const currentPrepTime = order.preparation_time;
 
         if (
@@ -178,6 +200,7 @@ export default function MyOrderView({
             setRemainingSeconds(0);
             setProgressPercent(100);
             setShowCompletion(true);
+
             return;
         }
 
@@ -186,6 +209,7 @@ export default function MyOrderView({
             setRemainingSeconds(null);
             setProgressPercent(0);
             setShowCompletion(false);
+
             return;
         }
 
@@ -227,7 +251,9 @@ export default function MyOrderView({
 
     // Detect when the order becomes ready and notify the customer.
     useEffect(() => {
-        if (!order) return;
+        if (!order) {
+return;
+}
 
         const prevStatus = prevOrderStatusRef.current;
         const currentStatus = order.status;
@@ -249,7 +275,9 @@ export default function MyOrderView({
 
     // Detect when payment is verified and a receipt is generated.
     useEffect(() => {
-        if (!order) return;
+        if (!order) {
+return;
+}
 
         const currentStatus = order.payment_status;
         const hasReceipt = !!order.receipt;
@@ -273,6 +301,7 @@ export default function MyOrderView({
     // Format date/time
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
+
         return date.toLocaleString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -295,6 +324,7 @@ export default function MyOrderView({
     const formatCountdown = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
+
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
@@ -349,11 +379,14 @@ export default function MyOrderView({
 
     // Copy the account number AND submit the verification request (replaces old copyAccountNumber + submitPayment)
     const handleCopyAndVerify = async () => {
-        if (!order || !selectedPaymentMethod) return;
+        if (!order || !selectedPaymentMethod) {
+return;
+}
 
         // Check if verification already exists
         if (hasVerificationBeenSent) {
             toast.info('A payment verification request has already been sent.');
+
             return;
         }
 
@@ -405,6 +438,7 @@ export default function MyOrderView({
                 },
                 onError: () => {
                     setIsSendingVerification(false);
+
                     if (copySuccess) {
                         toast.error('Account number copied, but the verification request could not be sent. Please try again.');
                     } else {
@@ -417,7 +451,9 @@ export default function MyOrderView({
 
     // Cancel order
     const cancelOrder = () => {
-        if (!order) return;
+        if (!order) {
+return;
+}
 
         if (!confirm('Are you sure you want to cancel this order?')) {
             return;

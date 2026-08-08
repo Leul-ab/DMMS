@@ -1,5 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
 import {
     Search,
     Star,
@@ -15,11 +14,11 @@ import {
     Wallet,
     Clock,
 } from 'lucide-react';
+import { useState } from 'react';
+import Heading from '@/components/heading';
 import { StarRating } from '@/components/star-rating';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import Heading from '@/components/heading';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
     Dialog,
     DialogContent,
@@ -27,6 +26,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type FeedbackItem = {
     id: number;
@@ -144,13 +144,16 @@ export default function AdminFeedbackIndex({
     const handleExport = () => {
         const params = new URLSearchParams();
         Object.entries(getQueryParams()).forEach(([key, value]) => {
-            if (value && value !== 'all') params.append(key, value);
+            if (value && value !== 'all') {
+params.append(key, value);
+}
         });
         window.open(`/admin/feedback/export?${params.toString()}`, '_blank');
     };
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
+
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
             month: 'short',
@@ -160,6 +163,7 @@ export default function AdminFeedbackIndex({
 
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
+
         return date.toLocaleString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -170,23 +174,45 @@ export default function AdminFeedbackIndex({
 
     const timeAgo = (dateString: string) => {
         const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
-        if (seconds < 60) return 'just now';
+
+        if (seconds < 60) {
+return 'just now';
+}
+
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+
+        if (minutes < 60) {
+return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+}
+
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+
+        if (hours < 24) {
+return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+}
+
         const days = Math.floor(hours / 24);
-        if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+
+        if (days < 7) {
+return `${days} day${days > 1 ? 's' : ''} ago`;
+}
+
         return formatDate(dateString);
     };
 
     const getCustomerName = (feedback: FeedbackItem) => {
-        if (feedback.anonymous) return 'Anonymous Customer';
+        if (feedback.anonymous) {
+return 'Anonymous Customer';
+}
+
         return feedback.customer?.name ?? 'Customer';
     };
 
     const getCustomerCode = (feedback: FeedbackItem) => {
-        if (feedback.anonymous) return '—';
+        if (feedback.anonymous) {
+return '—';
+}
+
         return feedback.customer?.customer_code ?? '—';
     };
 

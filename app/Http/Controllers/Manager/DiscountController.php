@@ -58,6 +58,8 @@ class DiscountController extends Controller
             'status' => ['required', Rule::in(['active', 'inactive', 'expired', 'scheduled'])],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'menu_items' => ['nullable', 'array'],
             'menu_items.*' => ['exists:menu_items,id'],
         ]);
@@ -93,6 +95,8 @@ class DiscountController extends Controller
             'status' => ['required', Rule::in(['active', 'inactive', 'expired', 'scheduled'])],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'start_time' => ['nullable', 'date_format:H:i'],
+            'end_time' => ['nullable', 'date_format:H:i'],
             'menu_items' => ['nullable', 'array'],
             'menu_items.*' => ['exists:menu_items,id'],
         ]);

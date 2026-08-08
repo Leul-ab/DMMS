@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Link } from '@inertiajs/react';
 import { Clock, Table2, X, ChevronLeft, ChevronRight, User, Calendar, CheckCircle2, XCircle, AlertCircle, ListOrdered } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 type BookingTable = {
@@ -37,9 +37,11 @@ export default function AllBookingsSidebar() {
     const fetchAllBookings = useCallback(async () => {
         try {
             const response = await fetch('/api/bookings');
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+
             const result: BookingsResponse = await response.json();
             setData(result);
         } catch {
@@ -52,12 +54,15 @@ export default function AllBookingsSidebar() {
     useEffect(() => {
         fetchAllBookings();
         const fetchInterval = setInterval(fetchAllBookings, 15000); // Poll every 15 seconds
+
         return () => clearInterval(fetchInterval);
     }, [fetchAllBookings]);
 
     // Update countdown timers for active bookings
     useEffect(() => {
-        if (!data?.bookings) return;
+        if (!data?.bookings) {
+return;
+}
 
         const calculateTimes = () => {
             const newMap: Record<number, string> = {};
@@ -81,6 +86,7 @@ export default function AllBookingsSidebar() {
 
         calculateTimes();
         const interval = setInterval(calculateTimes, 1000);
+
         return () => clearInterval(interval);
     }, [data]);
 
@@ -93,6 +99,7 @@ export default function AllBookingsSidebar() {
                 </Badge>
             );
         }
+
         if (status === 'active') {
             return (
                 <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100">
@@ -101,6 +108,7 @@ export default function AllBookingsSidebar() {
                 </Badge>
             );
         }
+
         if (status === 'completed') {
             return (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100">
@@ -109,6 +117,7 @@ export default function AllBookingsSidebar() {
                 </Badge>
             );
         }
+
         return (
             <Badge variant="outline">
                 {status}

@@ -1,5 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, useEffect, useRef } from 'react';
 import {
     ChefHat,
     Clock,
@@ -15,11 +14,11 @@ import {
     Loader2,
     Plus,
 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { useCan } from '@/hooks/use-can';
 import {
     Dialog,
     DialogContent,
@@ -28,6 +27,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useCan } from '@/hooks/use-can';
 
 type MenuItem = {
     id: number;
@@ -102,6 +102,7 @@ const TIME_ROW_2 = TIME_OPTIONS.slice(6);    // [35, 40, 45, 50, 55, 60]
 // Round a number to the nearest 5, clamped between 5 and 60
 function roundToNearest5(minutes: number): number {
     const rounded = Math.round(minutes / 5) * 5;
+
     return Math.max(5, Math.min(60, rounded));
 }
 
@@ -137,6 +138,7 @@ export default function KitchenDashboard({
             });
             setTimeout(() => setNewOrderAlert(false), 4000);
         }
+
         prevNewCount.current = newOrders.length;
     }, [newOrders.length]);
 
@@ -180,6 +182,7 @@ export default function KitchenDashboard({
                 const hasChanged = Object.keys(updated).some(
                     (k) => Math.abs((prev[Number(k)] || 0) - (updated[Number(k)] || 0)) > 1
                 );
+
                 return hasChanged ? updated : prev;
             });
         }, 1000);
@@ -190,6 +193,7 @@ export default function KitchenDashboard({
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
+
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
@@ -197,10 +201,21 @@ export default function KitchenDashboard({
         const now = new Date().getTime();
         const date = new Date(dateStr).getTime();
         const diffMins = Math.floor((now - date) / 60000);
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins} min ago`;
+
+        if (diffMins < 1) {
+return 'Just now';
+}
+
+        if (diffMins < 60) {
+return `${diffMins} min ago`;
+}
+
         const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
+
+        if (diffHours < 24) {
+return `${diffHours}h ago`;
+}
+
         return new Date(dateStr).toLocaleDateString();
     };
 
@@ -208,8 +223,10 @@ export default function KitchenDashboard({
         if (order.status === 'pending') {
             const created = new Date(order.created_at).getTime();
             const elapsed = (Date.now() - created) / 60000;
+
             return elapsed > 15;
         }
+
         return false;
     };
 
@@ -279,7 +296,10 @@ export default function KitchenDashboard({
      * Saves the selected time, starts the countdown, and locks the time selection.
      */
     const startPreparation = () => {
-        if (!prepDialog) return;
+        if (!prepDialog) {
+return;
+}
+
         setIsProcessing(true);
         router.patch(`/kitchen/orders/${prepDialog.id}/start-preparation`, {
             preparation_time: prepTime,
@@ -297,14 +317,17 @@ export default function KitchenDashboard({
                 if (dialogTimerRef.current) {
                     clearInterval(dialogTimerRef.current);
                 }
+
                 dialogTimerRef.current = setInterval(() => {
                     setDialogTimerSeconds((prev) => {
                         if (prev === null || prev <= 1) {
                             if (dialogTimerRef.current) {
                                 clearInterval(dialogTimerRef.current);
                             }
+
                             return 0;
                         }
+
                         return prev - 1;
                     });
                 }, 1000);
@@ -315,6 +338,7 @@ export default function KitchenDashboard({
                     setPrepTime(15);
                     setIsTimerLocked(false);
                     setDialogTimerSeconds(null);
+
                     if (dialogTimerRef.current) {
                         clearInterval(dialogTimerRef.current);
                         dialogTimerRef.current = null;
@@ -357,7 +381,10 @@ export default function KitchenDashboard({
      * preparation_time so the customer's countdown and progress recalculate.
      */
     const submitAddTime = () => {
-        if (!addTimeDialog || !addTimeValue || addTimeValue <= 0) return;
+        if (!addTimeDialog || !addTimeValue || addTimeValue <= 0) {
+return;
+}
+
         setIsProcessing(true);
         router.patch(`/kitchen/orders/${addTimeDialog.id}/add-time`, {
             additional_minutes: addTimeValue,
@@ -377,8 +404,12 @@ export default function KitchenDashboard({
     };
 
     const getFilteredOrders = (orders: Order[]) => {
-        if (!search) return orders;
+        if (!search) {
+return orders;
+}
+
         const q = search.toLowerCase();
+
         return orders.filter(
             (o) =>
                 o.order_number.toLowerCase().includes(q) ||
@@ -619,6 +650,7 @@ export default function KitchenDashboard({
                         { label: 'Completed', value: stats.completed, color: 'bg-gray-500', icon: Clock },
                     ].map((stat) => {
                         const Icon = stat.icon;
+
                         return (
                             <Card key={stat.label} className="overflow-hidden">
                                 <CardContent className="p-4 flex items-center gap-3">
@@ -665,8 +697,12 @@ export default function KitchenDashboard({
                 {/* Kanban Columns */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 overflow-auto">
                     {columns.map((col) => {
-                        if (filterStatus !== 'all' && filterStatus !== col.key) return null;
+                        if (filterStatus !== 'all' && filterStatus !== col.key) {
+return null;
+}
+
                         const Icon = col.icon;
+
                         return (
                             <div key={col.key} className="flex flex-col gap-3 min-h-[300px]">
                                 {/* Column Header */}
@@ -835,6 +871,7 @@ export default function KitchenDashboard({
                                 setPrepDialog(null);
                                 setIsTimerLocked(false);
                                 setDialogTimerSeconds(null);
+
                                 if (dialogTimerRef.current) {
                                     clearInterval(dialogTimerRef.current);
                                     dialogTimerRef.current = null;
@@ -920,6 +957,7 @@ export default function KitchenDashboard({
                                     value={addTimeValue}
                                     onChange={(e) => {
                                         const val = parseInt(e.target.value, 10);
+
                                         if (!isNaN(val) && val >= 1 && val <= 120) {
                                             setAddTimeValue(val);
                                         }

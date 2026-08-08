@@ -1,6 +1,6 @@
+import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2, SearchX } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2, SearchX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -50,6 +50,7 @@ export default function MyBooking({ onClose }: Props) {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -68,6 +69,7 @@ export default function MyBooking({ onClose }: Props) {
             } else {
                 if (data.expired) {
                     setIsExpired(true);
+
                     if (booking) {
                         setBooking({ ...booking, status: 'expired' });
                     }
@@ -94,6 +96,7 @@ export default function MyBooking({ onClose }: Props) {
 
         if (!trimmedCode) {
             setCodeError('Customer Code is required.');
+
             return;
         }
 
@@ -103,6 +106,7 @@ export default function MyBooking({ onClose }: Props) {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -126,6 +130,7 @@ export default function MyBooking({ onClose }: Props) {
                 setIsLoading(false);
             } else {
                 setIsLoading(false);
+
                 if (data.found && !data.booking) {
                     setError('No active booking found for this customer.');
                     setStep('booking');
@@ -142,7 +147,9 @@ export default function MyBooking({ onClose }: Props) {
 
     // Real-time countdown
     useEffect(() => {
-        if (!booking || booking.status !== 'active' || !booking.expires_at) return;
+        if (!booking || booking.status !== 'active' || !booking.expires_at) {
+return;
+}
 
         const calculateTime = () => {
             const expiresAt = new Date(booking.expires_at!).getTime();
@@ -152,6 +159,7 @@ export default function MyBooking({ onClose }: Props) {
             if (diff <= 0) {
                 setIsExpired(true);
                 setTimeRemaining('Expired');
+
                 return;
             }
 
@@ -162,13 +170,17 @@ export default function MyBooking({ onClose }: Props) {
 
         calculateTime();
         const interval = setInterval(calculateTime, 1000);
+
         return () => clearInterval(interval);
     }, [booking]);
 
     const handleCancel = async () => {
-        if (!booking) return;
+        if (!booking) {
+return;
+}
 
         setIsCancelling(true);
+
         try {
             const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '';
 
@@ -199,7 +211,9 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const getStatusBadge = () => {
-        if (!booking) return null;
+        if (!booking) {
+return null;
+}
 
         if (isExpired || booking.status === 'cancelled' || booking.status === 'expired') {
             return (
@@ -209,6 +223,7 @@ export default function MyBooking({ onClose }: Props) {
                 </Badge>
             );
         }
+
         if (booking.status === 'active') {
             return (
                 <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 px-3 py-1.5 text-sm">
@@ -217,6 +232,7 @@ export default function MyBooking({ onClose }: Props) {
                 </Badge>
             );
         }
+
         if (booking.status === 'completed') {
             return (
                 <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100 px-3 py-1.5 text-sm">
@@ -225,6 +241,7 @@ export default function MyBooking({ onClose }: Props) {
                 </Badge>
             );
         }
+
         if (booking.status === 'confirmed') {
             return (
                 <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100 px-3 py-1.5 text-sm">
@@ -233,6 +250,7 @@ export default function MyBooking({ onClose }: Props) {
                 </Badge>
             );
         }
+
         return (
             <Badge variant="outline" className="px-3 py-1.5 text-sm">
                 {booking.status}

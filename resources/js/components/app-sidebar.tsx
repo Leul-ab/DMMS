@@ -44,8 +44,8 @@ import { index as usersIndex } from '@/routes/admin/users';
 import { index as bookingsIndex } from '@/routes/manager/bookings';
 import { index as categoriesIndex } from '@/routes/manager/categories';
 import { index as customersIndex } from '@/routes/manager/customers';
-import { index as itemsIndex } from '@/routes/manager/items';
 import { index as discountsIndex } from '@/routes/manager/discounts';
+import { index as itemsIndex } from '@/routes/manager/items';
 import { index as ordersIndex } from '@/routes/manager/orders';
 
 import { index as tablesIndex } from '@/routes/manager/tables';

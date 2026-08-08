@@ -57,9 +57,10 @@ type User = {
     phone: string | null;
     is_active: boolean;
     is_waiter: boolean;
-    role_id: number;
+    role_id: number | null;
     branch_id: number | null;
     role: Role | null;
+    branch: Branch | null;
 };
 
 type Props = {
@@ -212,7 +213,7 @@ export default function UsersIndex({
         setName(user.name);
         setEmail(user.email);
         setPhone(user.phone || '');
-        setRoleId(String(user.role_id));
+        setRoleId(user.role_id ? String(user.role_id) : '');
         setBranchId(user.branch_id ? String(user.branch_id) : '');
         setPassword('');
         setPasswordConfirmation('');
@@ -857,6 +858,16 @@ export default function UsersIndex({
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <p className="text-sm text-muted-foreground">
+                                        ID
+                                    </p>
+
+                                    <p className="font-medium">
+                                        #{selectedUser.id}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
                                         Name
                                     </p>
 
@@ -887,6 +898,16 @@ export default function UsersIndex({
 
                                 <div>
                                     <p className="text-sm text-muted-foreground">
+                                        Branch
+                                    </p>
+
+                                    <p className="font-medium">
+                                        {selectedUser.branch?.name || '—'}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
                                         Phone
                                     </p>
 
@@ -910,6 +931,24 @@ export default function UsersIndex({
                                         {selectedUser.is_active
                                             ? 'Active'
                                             : 'Inactive'}
+                                    </Badge>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Waiter
+                                    </p>
+
+                                    <Badge
+                                        variant={
+                                            selectedUser.is_waiter
+                                                ? 'default'
+                                                : 'outline'
+                                        }
+                                    >
+                                        {selectedUser.is_waiter
+                                            ? 'Yes'
+                                            : 'No'}
                                     </Badge>
                                 </div>
                             </div>

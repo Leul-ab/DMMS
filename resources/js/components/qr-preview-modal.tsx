@@ -1,13 +1,3 @@
-import { useState, useCallback } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
     Download,
     Printer,
@@ -17,6 +7,16 @@ import {
     LoaderCircle,
     ImageOff,
 } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
 
 type RestaurantTable = {
     id: number;
@@ -55,10 +55,13 @@ export function QrPreviewModal({ table, open, onOpenChange }: QrPreviewModalProp
             setImageError(false);
             setCopied(false);
         }
+
         onOpenChange(newOpen);
     }, [onOpenChange]);
 
-    if (!table) return null;
+    if (!table) {
+return null;
+}
 
     const qrImageUrl = `/storage/${table.qr_code}`;
     const menuUrl = `${window.location.origin}/menu?table=${table.table_number}`;
@@ -97,6 +100,7 @@ export function QrPreviewModal({ table, open, onOpenChange }: QrPreviewModalProp
     // Print QR code
     const handlePrint = () => {
         const printWindow = window.open('', '_blank');
+
         if (printWindow) {
             printWindow.document.write(`
                 <html>

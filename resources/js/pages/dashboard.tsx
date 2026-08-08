@@ -55,7 +55,6 @@ type DashboardStats = {
     totalMenuItems: number;
     availableMenuItems: number;
     unavailableMenuItems: number;
-    featuredMenuItems: number;
 };
 
 type OrderStatusOverview = {
@@ -210,7 +209,7 @@ export default function Dashboard({
 
     const totalCategorySales = categoryDonutData.reduce(
         (sum, item) => sum + item.value,
-        0
+        0,
     );
 
     const paymentDonutData = paymentStatusOverview.map((item) => ({
@@ -220,11 +219,11 @@ export default function Dashboard({
 
     const totalPayments = paymentDonutData.reduce(
         (sum, item) => sum + item.value,
-        0
+        0,
     );
 
     const paymentDonutColors = paymentStatusOverview.map(
-        (item) => PAYMENT_COLORS[item.payment_status] ?? '#a8a29e'
+        (item) => PAYMENT_COLORS[item.payment_status] ?? '#a8a29e',
     );
 
     return (
@@ -233,12 +232,12 @@ export default function Dashboard({
 
             <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-orange-50 via-amber-50/30 to-white text-stone-800 selection:bg-orange-200 selection:text-orange-900">
                 {/* ================= DECORATIVE BACKGROUND ================= */}
-                <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 animate-pulse rounded-full bg-orange-200 opacity-30 blur-3xl mix-blend-multiply" />
+                <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 animate-pulse rounded-full bg-orange-200 opacity-30 mix-blend-multiply blur-3xl" />
                 <div
-                    className="pointer-events-none absolute top-1/3 -left-40 h-96 w-96 animate-pulse rounded-full bg-amber-200 opacity-30 blur-3xl mix-blend-multiply"
+                    className="pointer-events-none absolute top-1/3 -left-40 h-96 w-96 animate-pulse rounded-full bg-amber-200 opacity-30 mix-blend-multiply blur-3xl"
                     style={{ animationDelay: '1s' }}
                 />
-                <div className="pointer-events-none absolute bottom-0 right-1/4 h-72 w-72 animate-pulse rounded-full bg-orange-100 opacity-40 blur-3xl mix-blend-multiply" />
+                <div className="pointer-events-none absolute right-1/4 bottom-0 h-72 w-72 animate-pulse rounded-full bg-orange-100 opacity-40 mix-blend-multiply blur-3xl" />
 
                 <div className="relative flex flex-col gap-8 p-5 lg:p-8">
                     {/* ================================================= */}
@@ -281,8 +280,6 @@ export default function Dashboard({
                                 {/* BRANCH SCOPE TOGGLE */}
                                 {can('view all branches dashboard') && (
                                     <div className="flex items-center gap-2">
-                                        
-
                                         <div className="flex items-center rounded-full border border-orange-200 bg-white/70 p-1 shadow-sm backdrop-blur">
                                             <button
                                                 type="button"
@@ -374,7 +371,6 @@ export default function Dashboard({
                             />
 
                             <StatCard
-                                featured
                                 title="Total Revenue"
                                 value={formatCurrency(stats.totalRevenue)}
                                 icon={Wallet}
@@ -445,8 +441,8 @@ export default function Dashboard({
                                                 revenueTrend.reduce(
                                                     (sum, point) =>
                                                         sum + point.revenue,
-                                                    0
-                                                )
+                                                    0,
+                                                ),
                                             )}
                                         </span>
 
@@ -486,7 +482,7 @@ export default function Dashboard({
                                         colors={CATEGORY_COLORS}
                                         centerLabel="Total Sales"
                                         centerValue={formatCurrency(
-                                            totalCategorySales
+                                            totalCategorySales,
                                         )}
                                     />
                                 ) : (
@@ -570,14 +566,13 @@ export default function Dashboard({
                                 ) : (
                                     <div className="space-y-3">
                                         {orderStatusOverview.map((item) => {
-                                            const style =
-                                                ORDER_STATUS_STYLES[
-                                                    item.status
-                                                ] ?? {
-                                                    icon: ClipboardList,
-                                                    color: 'text-amber-600',
-                                                    bg: 'bg-amber-50',
-                                                };
+                                            const style = ORDER_STATUS_STYLES[
+                                                item.status
+                                            ] ?? {
+                                                icon: ClipboardList,
+                                                color: 'text-amber-600',
+                                                bg: 'bg-amber-50',
+                                            };
 
                                             const Icon = style.icon;
 
@@ -595,7 +590,7 @@ export default function Dashboard({
                                                             />
                                                         </div>
 
-                                                        <span className="text-sm font-bold capitalize text-stone-700">
+                                                        <span className="text-sm font-bold text-stone-700 capitalize">
                                                             {item.status}
                                                         </span>
                                                     </div>
@@ -865,25 +860,51 @@ export default function Dashboard({
 
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <div className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">Overall Service Rating</p>
-                                    <p className="mt-2 text-3xl font-black text-green-600">{feedbackAnalytics.overallRating.toFixed(1)}</p>
-                                    <p className="mt-1 text-xs font-semibold text-stone-400">avg rating</p>
+                                    <p className="text-sm font-semibold text-amber-600">
+                                        Overall Service Rating
+                                    </p>
+                                    <p className="mt-2 text-3xl font-black text-green-600">
+                                        {feedbackAnalytics.overallRating.toFixed(
+                                            1,
+                                        )}
+                                    </p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">
+                                        avg rating
+                                    </p>
                                 </div>
                                 <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">Average Rating</p>
-                                    <p className="mt-2 text-3xl font-black text-stone-800">{feedbackAnalytics.averageRating.toFixed(1)}</p>
-                                    <p className="mt-1 text-xs font-semibold text-stone-400">avg rating</p>
+                                    <p className="text-sm font-semibold text-amber-600">
+                                        Average Rating
+                                    </p>
+                                    <p className="mt-2 text-3xl font-black text-stone-800">
+                                        {feedbackAnalytics.averageRating.toFixed(
+                                            1,
+                                        )}
+                                    </p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">
+                                        avg rating
+                                    </p>
                                 </div>
                                 <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">Total Reviews</p>
-                                    <p className="mt-2 text-3xl font-black text-orange-600">{feedbackAnalytics.totalReviews}</p>
-                                    <p className="mt-1 text-xs font-semibold text-stone-400">reviews</p>
+                                    <p className="text-sm font-semibold text-amber-600">
+                                        Total Reviews
+                                    </p>
+                                    <p className="mt-2 text-3xl font-black text-orange-600">
+                                        {feedbackAnalytics.totalReviews}
+                                    </p>
+                                    <p className="mt-1 text-xs font-semibold text-stone-400">
+                                        reviews
+                                    </p>
                                 </div>
                             </div>
 
                             <div className="mt-4 flex items-center justify-between rounded-xl bg-orange-50 p-4">
-                                <p className="text-sm font-semibold text-stone-700">Total Reviews</p>
-                                <p className="text-lg font-black text-orange-600">{feedbackAnalytics.totalReviews}</p>
+                                <p className="text-sm font-semibold text-stone-700">
+                                    Total Reviews
+                                </p>
+                                <p className="text-lg font-black text-orange-600">
+                                    {feedbackAnalytics.totalReviews}
+                                </p>
                             </div>
                         </div>
                     </Reveal>
@@ -908,18 +929,33 @@ export default function Dashboard({
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
                                         <thead>
-                                            <tr className="border-b border-orange-100/80 text-xs font-bold uppercase tracking-wider text-amber-600">
-                                                <th className="px-4 py-3">Customer</th>
-                                                <th className="px-4 py-3">Order Number</th>
-                                                <th className="px-4 py-3">Overall Rating</th>
-                                                <th className="px-4 py-3">Review Comment</th>
-                                                <th className="px-4 py-3">Submitted Date</th>
-                                                <th className="px-4 py-3 text-right">Actions</th>
+                                            <tr className="border-b border-orange-100/80 text-xs font-bold tracking-wider text-amber-600 uppercase">
+                                                <th className="px-4 py-3">
+                                                    Customer
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Order Number
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Overall Rating
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Review Comment
+                                                </th>
+                                                <th className="px-4 py-3">
+                                                    Submitted Date
+                                                </th>
+                                                <th className="px-4 py-3 text-right">
+                                                    Actions
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-orange-50">
                                             {recentFeedback.map((review) => (
-                                                <tr key={review.id} className="transition-colors hover:bg-orange-50/40">
+                                                <tr
+                                                    key={review.id}
+                                                    className="transition-colors hover:bg-orange-50/40"
+                                                >
                                                     <td className="px-4 py-3 font-semibold text-stone-700">
                                                         {review.customer_name}
                                                     </td>
@@ -928,27 +964,47 @@ export default function Dashboard({
                                                             className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
                                                             variant="secondary"
                                                         >
-                                                            {review.order_number}
+                                                            {
+                                                                review.order_number
+                                                            }
                                                         </Badge>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <StarRating value={review.overall_rating} readOnly size="sm" />
+                                                        <StarRating
+                                                            value={
+                                                                review.overall_rating
+                                                            }
+                                                            readOnly
+                                                            size="sm"
+                                                        />
                                                     </td>
                                                     <td className="max-w-xs px-4 py-3 text-stone-600">
                                                         <span className="line-clamp-2">
-                                                            {review.comment ?? '—'}
+                                                            {review.comment ??
+                                                                '—'}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 py-3 text-stone-500">
-                                                        {new Date(review.created_at).toLocaleDateString('en-US', {
-                                                            year: 'numeric',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                        })}
+                                                        {new Date(
+                                                            review.created_at,
+                                                        ).toLocaleDateString(
+                                                            'en-US',
+                                                            {
+                                                                year: 'numeric',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                            },
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right">
-                                                        <Button asChild variant="ghost" size="sm">
-                                                            <Link href={`/customer/orders/${review.order_id}/feedback/view`}>
+                                                        <Button
+                                                            asChild
+                                                            variant="ghost"
+                                                            size="sm"
+                                                        >
+                                                            <Link
+                                                                href={`/customer/orders/${review.order_id}/feedback/view`}
+                                                            >
                                                                 View Details
                                                                 <ArrowRight className="ml-2 h-4 w-4" />
                                                             </Link>
@@ -962,7 +1018,6 @@ export default function Dashboard({
                             )}
                         </div>
                     </Reveal>
-
                 </div>
             </div>
         </>

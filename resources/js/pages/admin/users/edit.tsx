@@ -27,7 +27,7 @@ type User = {
     name: string;
     email: string;
     phone: string | null;
-    role_id: number;
+    role_id: number | null;
     branch_id: number | null;
     is_active: boolean;
     is_waiter: boolean;
@@ -42,7 +42,7 @@ export default function UserEdit({ user, roles, branches }: Props) {
         phone: user.phone || '',
         password: '',
         password_confirmation: '',
-        role_id: String(user.role_id),
+        role_id: user.role_id ? String(user.role_id) : '',
         branch_id: user.branch_id ? String(user.branch_id) : '',
         is_active: user.is_active,
         is_waiter: user.is_waiter,

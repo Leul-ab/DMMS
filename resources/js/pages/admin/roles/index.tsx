@@ -14,7 +14,7 @@ import {
     Trash2,
     Users,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 
 import Heading from '@/components/heading';
 
@@ -307,12 +307,15 @@ function RoleFormDialog({
         setSelectedPermissions(role?.permissions ?? []);
     };
 
-    const handleOpenChange = (next: boolean) => {
-        onOpenChange(next);
-
-        if (next) {
+    useLayoutEffect(() => {
+        if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             reset();
         }
+    }, [open, role?.id]);
+
+    const handleOpenChange = (next: boolean) => {
+        onOpenChange(next);
     };
 
     const togglePermission = (permissionName: string) => {

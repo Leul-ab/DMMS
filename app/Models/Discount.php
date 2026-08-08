@@ -23,6 +23,8 @@ class Discount extends Model
         'status',
         'start_date',
         'end_date',
+        'start_time',
+        'end_time',
     ];
 
     protected function casts(): array
@@ -32,6 +34,8 @@ class Discount extends Model
             'fixed_amount' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
+            'start_time' => 'datetime:H:i:s',
+            'end_time' => 'datetime:H:i:s',
         ];
     }
 
@@ -58,5 +62,31 @@ class Discount extends Model
     public function scopeExpired($query)
     {
         return $query->where('status', 'expired');
+    }
+
+    public function scopeValid($query)
+    {
+        return $query->where('status', 'active')
+            ->where('start_date', '<=', now()->toDateString())
+            ->where('end_date', '>=', now()->toDateString())
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNotNull('start_time')
+                        ->whereNotNull('end_time')
+                        ->whereTime('start_time', '<=', now()->toTimeString())
+                        ->whereTime('end_time', '>=', now()->toTimeString());
+                })->orWhere(function ($q) {
+                    $q->whereNull('start_time')
+                        ->whereNull('end_time');
+                })->orWhere(function ($q) {
+                    $q->whereNotNull('start_time')
+                        ->whereNull('end_time')
+                        ->whereTime('start_time', '<=', now()->toTimeString());
+                })->orWhere(function ($q) {
+                    $q->whereNull('start_time')
+                        ->whereNotNull('end_time')
+                        ->whereTime('end_time', '>=', now()->toTimeString());
+                });
+            });
     }
 }
