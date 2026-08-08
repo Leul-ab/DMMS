@@ -27,7 +27,10 @@ export function StarRating({
     const displayValue = hoverValue || value;
 
     const handleClick = (rating: number) => {
-        if (readOnly || !onChange) return;
+        if (readOnly || !onChange) {
+return;
+}
+
         onChange(rating);
     };
 

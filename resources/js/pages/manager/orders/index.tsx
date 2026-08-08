@@ -1,7 +1,18 @@
 import { Head, router } from '@inertiajs/react';
+import {
+    Pencil,
+    Trash2,
+    Plus,
+    Minus,
+    Clock,
+    Utensils,
+    User,
+    Phone,
+    FileText,
+    ClipboardList,
+} from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,18 +28,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Pencil,
-    Trash2,
-    Plus,
-    Minus,
-    Clock,
-    Utensils,
-    User,
-    Phone,
-    FileText,
-    ClipboardList,
-} from 'lucide-react';
+import { useCan } from '@/hooks/use-can';
 
 type MenuItem = {
     id: number;
@@ -258,6 +258,7 @@ export default function OrdersIndex({
 
         if (!editTableId) {
             alert('Please select a table.');
+
             return;
         }
 
@@ -265,6 +266,7 @@ export default function OrdersIndex({
             alert(
                 'Please add at least one menu item.'
             );
+
             return;
         }
 

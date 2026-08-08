@@ -1,6 +1,5 @@
 
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
 import {
     Eye,
     Pencil,
@@ -9,10 +8,10 @@ import {
     Trash2,
     Users,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
-import { useCan } from '@/hooks/use-can';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +30,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useCan } from '@/hooks/use-can';
 
 import {
     store as customersStore,

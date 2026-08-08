@@ -1,5 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
 import {
     Search,
     Star,
@@ -10,10 +9,11 @@ import {
     Filter,
     Clock,
 } from 'lucide-react';
+import { useState } from 'react';
+import Heading from '@/components/heading';
 import { StarRating } from '@/components/star-rating';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import Heading from '@/components/heading';
 
 type FeedbackItem = {
     id: number;
@@ -127,7 +127,9 @@ export default function FeedbackIndex({
     const handleExport = () => {
         const params = new URLSearchParams();
         Object.entries(getQueryParams()).forEach(([key, value]) => {
-            if (value && value !== 'all') params.append(key, value);
+            if (value && value !== 'all') {
+params.append(key, value);
+}
         });
         window.open(`/manager/feedback/export?${params.toString()}`, '_blank');
     };
@@ -141,7 +143,10 @@ export default function FeedbackIndex({
     };
 
     const getCustomerName = (feedback: FeedbackItem) => {
-        if (feedback.anonymous) return 'Anonymous Customer';
+        if (feedback.anonymous) {
+return 'Anonymous Customer';
+}
+
         return feedback.customer?.name ?? 'Customer';
     };
 

@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { Send } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { StarRating } from '@/components/star-rating';
 import {
     Dialog,
@@ -35,6 +35,7 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
     const handleSubmit = () => {
         if (!overallRating) {
             toast.error('Please select an overall rating before submitting.');
+
             return;
         }
 

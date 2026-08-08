@@ -1,6 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
     Search,
     ShieldCheck,
@@ -17,12 +15,12 @@ import {
     Ban,
     Receipt,
 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { ReceiptModal } from '@/components/receipt-modal';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -35,6 +33,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
     Select,
     SelectContent,
@@ -42,6 +41,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCan } from '@/hooks/use-can';
 
 type Payment = {
     id: number;
@@ -169,9 +169,19 @@ export default function PaymentVerificationIndex({
 
     const applyFilters = () => {
         const params: Record<string, string> = {};
-        if (search) params.search = search;
-        if (paymentStatus) params.payment_status = paymentStatus;
-        if (paymentMethod) params.payment_method = paymentMethod;
+
+        if (search) {
+params.search = search;
+}
+
+        if (paymentStatus) {
+params.payment_status = paymentStatus;
+}
+
+        if (paymentMethod) {
+params.payment_method = paymentMethod;
+}
+
         router.get('/manager/payment-verification', params, { preserveState: true });
     };
 
@@ -189,10 +199,13 @@ export default function PaymentVerificationIndex({
     };
 
     const submitVerification = () => {
-        if (!verifyingOrder) return;
+        if (!verifyingOrder) {
+return;
+}
 
         if (!transactionNumber.trim()) {
             setTransactionError('Transaction number is required before verifying the payment.');
+
             return;
         }
 
@@ -214,6 +227,7 @@ export default function PaymentVerificationIndex({
                     } else {
                         toast.error('Failed to verify payment.');
                     }
+
                     setProcessing(false);
                 },
             }
@@ -300,7 +314,9 @@ export default function PaymentVerificationIndex({
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={(e) => {
-                                        if (e.key === 'Enter') applyFilters();
+                                        if (e.key === 'Enter') {
+applyFilters();
+}
                                     }}
                                     className="w-full"
                                 />
@@ -468,7 +484,10 @@ export default function PaymentVerificationIndex({
                                     disabled={orders.current_page <= 1}
                                     onClick={() => {
                                         const prevUrl = orders.links[0]?.url;
-                                        if (prevUrl) router.get(prevUrl, {}, { preserveState: true });
+
+                                        if (prevUrl) {
+router.get(prevUrl, {}, { preserveState: true });
+}
                                     }}
                                 >
                                     Previous
@@ -482,7 +501,10 @@ export default function PaymentVerificationIndex({
                                     disabled={orders.current_page >= orders.last_page}
                                     onClick={() => {
                                         const nextUrl = orders.links[orders.links.length - 1]?.url;
-                                        if (nextUrl) router.get(nextUrl, {}, { preserveState: true });
+
+                                        if (nextUrl) {
+router.get(nextUrl, {}, { preserveState: true });
+}
                                     }}
                                 >
                                     Next
@@ -557,10 +579,15 @@ export default function PaymentVerificationIndex({
                                         value={transactionNumber}
                                         onChange={(e) => {
                                             setTransactionNumber(e.target.value);
-                                            if (transactionError) setTransactionError('');
+
+                                            if (transactionError) {
+setTransactionError('');
+}
                                         }}
                                         onKeyDown={(e) => {
-                                            if (e.key === 'Enter') submitVerification();
+                                            if (e.key === 'Enter') {
+submitVerification();
+}
                                         }}
                                         placeholder="e.g. TXNX8F9A2B"
                                         className="pl-9"
@@ -612,7 +639,9 @@ export default function PaymentVerificationIndex({
             <ReceiptModal
                 open={!!viewingReceiptOrder}
                 onOpenChange={(open) => {
-                    if (!open) setViewingReceiptOrder(null);
+                    if (!open) {
+setViewingReceiptOrder(null);
+}
                 }}
                 order={viewingReceiptOrder}
             />
@@ -624,7 +653,9 @@ export default function PaymentVerificationIndex({
             <Dialog
                 open={!!rejectingOrder}
                 onOpenChange={(open) => {
-                    if (!open) setRejectingOrder(null);
+                    if (!open) {
+setRejectingOrder(null);
+}
                 }}
             >
                 <DialogContent>

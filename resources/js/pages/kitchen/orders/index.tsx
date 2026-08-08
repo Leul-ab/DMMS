@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
 import { CheckCircle, Clock, ChefHat } from 'lucide-react';
+import { useState } from 'react';
 import { useCan } from '@/hooks/use-can';
 
 type MenuItem = {

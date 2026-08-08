@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { Clock, Table2, X, ChevronRight, ChevronLeft, User, Calendar } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -54,11 +54,14 @@ export default function BookingSidebar() {
     useEffect(() => {
         fetchActiveBooking();
         const fetchInterval = setInterval(fetchActiveBooking, 10000); // Poll every 10 seconds
+
         return () => clearInterval(fetchInterval);
     }, []);
 
     useEffect(() => {
-        if (!booking) return;
+        if (!booking) {
+return;
+}
 
         const calculateTime = () => {
             const expiresAt = new Date(booking.expires_at).getTime();
@@ -68,6 +71,7 @@ export default function BookingSidebar() {
             if (diff <= 0) {
                 setIsExpired(true);
                 setTimeRemaining('Expired');
+
                 return;
             }
 
@@ -78,11 +82,14 @@ export default function BookingSidebar() {
 
         calculateTime();
         const interval = setInterval(calculateTime, 1000);
+
         return () => clearInterval(interval);
     }, [booking]);
 
     const handleCancel = async () => {
-        if (!booking || !confirm('Are you sure you want to cancel this booking?')) return;
+        if (!booking || !confirm('Are you sure you want to cancel this booking?')) {
+return;
+}
 
         try {
             await fetch(`/booking/${booking.id}/cancel`, {
@@ -99,7 +106,9 @@ export default function BookingSidebar() {
         }
     };
 
-    if (isLoading || !booking) return null;
+    if (isLoading || !booking) {
+return null;
+}
 
     const progressPercent = booking.time_remaining_seconds > 0
         ? (booking.time_remaining_seconds / 600) * 100

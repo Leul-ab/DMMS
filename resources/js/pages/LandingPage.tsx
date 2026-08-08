@@ -1,8 +1,8 @@
 import { Head, Link, usePage } from '@inertiajs/react';
+import { CheckCircle2, Copy } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { login } from '@/routes';
 import menuRoutes from '@/routes/menu';
-import { CheckCircle2, Copy } from 'lucide-react';
 
 export default function LandingPage() {
     const { auth } = usePage().props;
@@ -37,6 +37,7 @@ export default function LandingPage() {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'));
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -60,6 +61,7 @@ export default function LandingPage() {
                 const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
                 alert(firstError);
                 setIsRegistering(false);
+
                 return;
             }
 
@@ -102,6 +104,7 @@ export default function LandingPage() {
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 50);
         window.addEventListener('scroll', handleScroll);
+
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
@@ -520,10 +523,18 @@ function FeaturesSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -613,10 +624,18 @@ function HowItWorksSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -700,10 +719,18 @@ function MenuPreviewSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -791,10 +818,18 @@ function BenefitsSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 
@@ -898,10 +933,18 @@ function CustomerExperienceSection() {
 
     useEffect(() => {
         const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
+            ([entry]) => {
+ if (entry.isIntersecting) {
+setIsVisible(true);
+} 
+},
             { threshold: 0.1 }
         );
-        if (ref.current) observer.observe(ref.current);
+
+        if (ref.current) {
+observer.observe(ref.current);
+}
+
         return () => observer.disconnect();
     }, []);
 

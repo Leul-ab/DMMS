@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { ArrowRight, LucideIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type StatCardProps = {
@@ -9,7 +10,6 @@ type StatCardProps = {
     iconClassName?: string;
     iconBgClassName?: string;
     href?: string;
-    featured?: boolean;
 };
 
 export default function StatCard({
@@ -19,31 +19,20 @@ export default function StatCard({
     iconClassName = 'text-orange-600',
     iconBgClassName = 'bg-orange-50',
     href,
-    featured = false,
 }: StatCardProps) {
     const content = (
         <div
-            className={cn(
-                'flex h-full items-center justify-between gap-4 p-6',
-                featured && 'flex-col items-start justify-center'
-            )}
+            className={cn('flex h-full items-center justify-between gap-4 p-6')}
         >
             <div>
-                <p
-                    className={cn(
-                        'text-sm font-semibold',
-                        featured
-                            ? 'text-orange-100'
-                            : 'text-amber-600/80'
-                    )}
-                >
+                <p className={cn('text-sm font-semibold', 'text-amber-600/80')}>
                     {title}
                 </p>
 
                 <h3
                     className={cn(
                         'mt-2 text-3xl font-black tracking-tight',
-                        featured ? 'text-white' : 'text-stone-800'
+                        'text-stone-800',
                     )}
                 >
                     {value}
@@ -53,7 +42,7 @@ export default function StatCard({
                     <div
                         className={cn(
                             'mt-3 flex items-center gap-1 text-xs font-medium',
-                            featured ? 'text-orange-200' : 'text-muted-foreground'
+                            'text-muted-foreground',
                         )}
                     >
                         <span>View details</span>
@@ -65,17 +54,10 @@ export default function StatCard({
             <div
                 className={cn(
                     'rounded-2xl p-3.5 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6',
-                    featured
-                        ? 'bg-white/15 backdrop-blur-sm'
-                        : iconBgClassName
+                    iconBgClassName,
                 )}
             >
-                <Icon
-                    className={cn(
-                        'h-7 w-7',
-                        featured ? 'text-white' : iconClassName
-                    )}
-                />
+                <Icon className={cn('h-7 w-7', iconClassName)} />
             </div>
         </div>
     );
@@ -89,9 +71,7 @@ export default function StatCard({
                 <div
                     className={cn(
                         'h-full rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
-                        featured
-                            ? 'border-orange-400/50 bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40'
-                            : 'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40'
+                        'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40',
                     )}
                 >
                     {content}
@@ -104,9 +84,7 @@ export default function StatCard({
         <div
             className={cn(
                 'h-full rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
-                featured
-                    ? 'border-orange-400/50 bg-gradient-to-br from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40'
-                    : 'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40'
+                'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40',
             )}
         >
             {content}

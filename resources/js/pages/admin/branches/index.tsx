@@ -378,7 +378,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                             <th className="p-3">Phone</th>
 
-                                            <th className="p-3">Data</th>
+                                            <th className="p-3">Staff</th>
+
+                                            <th className="p-3">Tables</th>
+
+                                            <th className="p-3">Categories</th>
+
+                                            <th className="p-3">Items</th>
+
+                                            <th className="p-3">Orders</th>
 
                                             <th className="p-3">Status</th>
 
@@ -424,19 +432,34 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                                     {branch.phone || '—'}
                                                 </td>
 
-                                                {/* Data counts */}
+                                                {/* Staff */}
 
-                                                <td className="p-3 text-muted-foreground">
-                                                    {branch.users_count} staff ·{' '}
-                                                    {branch.tables_count} tables
-                                                    ·{' '}
-                                                    {
-                                                        branch.menu_categories_count
-                                                    }{' '}
-                                                    categories ·{' '}
-                                                    {branch.menu_items_count}{' '}
-                                                    items ·{' '}
-                                                    {branch.orders_count} orders
+                                                <td className="p-3">
+                                                    {branch.users_count}
+                                                </td>
+
+                                                {/* Tables */}
+
+                                                <td className="p-3">
+                                                    {branch.tables_count}
+                                                </td>
+
+                                                {/* Categories */}
+
+                                                <td className="p-3">
+                                                    {branch.menu_categories_count}
+                                                </td>
+
+                                                {/* Items */}
+
+                                                <td className="p-3">
+                                                    {branch.menu_items_count}
+                                                </td>
+
+                                                {/* Orders */}
+
+                                                <td className="p-3">
+                                                    {branch.orders_count}
                                                 </td>
 
                                                 {/* Status */}

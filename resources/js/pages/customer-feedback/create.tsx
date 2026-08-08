@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import { ArrowLeft, Send, Star } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { StarRating } from '@/components/star-rating';
 
 type Order = {
@@ -38,6 +38,7 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
     const handleSubmit = () => {
         if (!overallRating) {
             toast.error('Please select an overall rating before submitting.');
+
             return;
         }
 

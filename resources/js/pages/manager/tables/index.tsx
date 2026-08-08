@@ -1,5 +1,4 @@
 import { Head, router } from '@inertiajs/react';
-import { useMemo, useState } from 'react';
 import {
     Eye,
     Pencil,
@@ -11,11 +10,11 @@ import {
     Table2,
     Trash2,
 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
-import StatusToggle from '@/components/status-toggle';
-import { useCan } from '@/hooks/use-can';
 import { QrPreviewModal } from '@/components/qr-preview-modal';
+import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useCan } from '@/hooks/use-can';
 
 import {
     index as tablesIndex,
@@ -191,6 +191,7 @@ export default function TablesIndex({ tables }: Props) {
     const handleAdd = () => {
         if (!tableNumber) {
             setErrors({ table_number: 'Please enter a table number.' });
+
             return;
         }
 
@@ -724,6 +725,7 @@ export default function TablesIndex({ tables }: Props) {
                 open={isAddOpen}
                 onOpenChange={(open) => {
                     setIsAddOpen(open);
+
                     if (!open) {
                         setErrors({});
                     }
@@ -760,11 +762,13 @@ export default function TablesIndex({ tables }: Props) {
                                             .target
                                             .value,
                                     );
+
                                     // Clear error when user starts typing
                                     if (errors.table_number) {
                                         setErrors((prev) => {
                                             const next = { ...prev };
                                             delete next.table_number;
+
                                             return next;
                                         });
                                     }

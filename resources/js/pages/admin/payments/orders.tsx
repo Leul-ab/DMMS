@@ -1,11 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
 import { ArrowLeft, Search, CreditCard, AlertCircle, CheckCircle2, XCircle, Ban, DollarSign, Wallet, Eye, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const paymentStatusColors: Record<string, string> = {
@@ -90,20 +90,49 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
     const getFilterLabel = () => {
         const ps = filters.payment_status;
         const os = filters.order_status;
-        if (ps === 'pending') return 'Pending Orders';
-        if (ps === 'paid' && os === 'completed') return 'Revenue Orders';
-        if (ps === 'paid') return 'Paid Orders';
-        if (ps === 'unpaid') return 'Unpaid Orders';
-        if (ps === 'cancelled') return 'Cancelled Orders';
+
+        if (ps === 'pending') {
+return 'Pending Orders';
+}
+
+        if (ps === 'paid' && os === 'completed') {
+return 'Revenue Orders';
+}
+
+        if (ps === 'paid') {
+return 'Paid Orders';
+}
+
+        if (ps === 'unpaid') {
+return 'Unpaid Orders';
+}
+
+        if (ps === 'cancelled') {
+return 'Cancelled Orders';
+}
+
         return 'All Orders';
     };
 
     const getFilterIcon = () => {
         const ps = filters.payment_status;
-        if (ps === 'pending') return <AlertCircle className="h-5 w-5 text-yellow-600" />;
-        if (ps === 'paid') return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-        if (ps === 'unpaid') return <XCircle className="h-5 w-5 text-red-600" />;
-        if (ps === 'cancelled') return <Ban className="h-5 w-5 text-gray-600" />;
+
+        if (ps === 'pending') {
+return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+}
+
+        if (ps === 'paid') {
+return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+}
+
+        if (ps === 'unpaid') {
+return <XCircle className="h-5 w-5 text-red-600" />;
+}
+
+        if (ps === 'cancelled') {
+return <Ban className="h-5 w-5 text-gray-600" />;
+}
+
         return <CreditCard className="h-5 w-5 text-blue-600" />;
     };
 
@@ -112,10 +141,21 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
         const date = new Date(dateStr);
         const diffMs = now.getTime() - date.getTime();
         const diffMins = Math.floor(diffMs / 60000);
-        if (diffMins < 1) return 'Just now';
-        if (diffMins < 60) return `${diffMins} min ago`;
+
+        if (diffMins < 1) {
+return 'Just now';
+}
+
+        if (diffMins < 60) {
+return `${diffMins} min ago`;
+}
+
         const diffHours = Math.floor(diffMins / 60);
-        if (diffHours < 24) return `${diffHours}h ago`;
+
+        if (diffHours < 24) {
+return `${diffHours}h ago`;
+}
+
         return date.toLocaleDateString();
     };
 
@@ -252,7 +292,10 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
                             disabled={orders.current_page <= 1}
                             onClick={() => {
                                 const prevUrl = orders.links[0]?.url;
-                                if (prevUrl) router.get(prevUrl, {}, { preserveState: true });
+
+                                if (prevUrl) {
+router.get(prevUrl, {}, { preserveState: true });
+}
                             }}
                         >
                             <ChevronLeft className="h-4 w-4 mr-1" />
@@ -267,7 +310,10 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
                             disabled={orders.current_page >= orders.last_page}
                             onClick={() => {
                                 const nextUrl = orders.links[orders.links.length - 1]?.url;
-                                if (nextUrl) router.get(nextUrl, {}, { preserveState: true });
+
+                                if (nextUrl) {
+router.get(nextUrl, {}, { preserveState: true });
+}
                             }}
                         >
                             Next

@@ -1,13 +1,10 @@
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState, useEffect, useCallback } from 'react';
 import { Search, X, Eye, XCircle, CheckCircle2, Trash2, Loader2, Calendar, Clock, Table2, User, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { useCan } from '@/hooks/use-can';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
@@ -17,7 +14,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCan } from '@/hooks/use-can';
 import { index as bookingsIndex, cancel as cancelBooking, complete as completeBooking, destroy as deleteBooking } from '@/routes/manager/bookings';
 import type { PaginatedData } from '@/types';
 
@@ -85,7 +85,9 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
 
     // Update countdown timers for active bookings
     useEffect(() => {
-        if (!bookings?.data) return;
+        if (!bookings?.data) {
+return;
+}
 
         const calculateTimes = () => {
             const newMap: Record<number, string> = {};
@@ -109,6 +111,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
 
         calculateTimes();
         const interval = setInterval(calculateTimes, 1000);
+
         return () => clearInterval(interval);
     }, [bookings]);
 
@@ -120,6 +123,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
                 status: statusFilter === 'all' ? undefined : statusFilter,
             }, { preserveState: true, replace: true });
         }, 300);
+
         return () => clearTimeout(timer);
     }, [search, statusFilter]);
 
@@ -127,6 +131,7 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
     const openViewModal = async (booking: Booking) => {
         setViewLoading(true);
         setShowViewModal(true);
+
         try {
             const response = await fetch(`/api/bookings/${booking.id}`);
             const data = await response.json();
@@ -146,7 +151,10 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
     };
 
     const handleCancelBooking = () => {
-        if (!cancellingBooking) return;
+        if (!cancellingBooking) {
+return;
+}
+
         setCancelLoading(true);
         router.post(cancelBooking.url(cancellingBooking.id), {}, {
             onSuccess: () => {
@@ -169,7 +177,10 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
     };
 
     const handleCompleteBooking = () => {
-        if (!completingBooking) return;
+        if (!completingBooking) {
+return;
+}
+
         setCompleteLoading(true);
         router.post(completeBooking.url(completingBooking.id), {}, {
             onSuccess: () => {
@@ -192,7 +203,10 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
     };
 
     const handleDeleteBooking = () => {
-        if (!deletingBooking) return;
+        if (!deletingBooking) {
+return;
+}
+
         setDeleteLoading(true);
         router.delete(deleteBooking.url(deletingBooking.id), {
             onSuccess: () => {
@@ -210,12 +224,18 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
 
     // ============ PAGINATION ============
     const handlePageChange = (url: string | null) => {
-        if (!url) return;
+        if (!url) {
+return;
+}
+
         router.get(url, {}, { preserveState: true, preserveScroll: true });
     };
 
     const renderPagination = (data: PaginatedData<Booking>) => {
-        if (data.last_page <= 1) return null;
+        if (data.last_page <= 1) {
+return null;
+}
+
         return (
             <div className="flex items-center justify-center gap-2 mt-4">
                 {data.links.map((link, i) => (
@@ -237,20 +257,25 @@ export default function BookingManagementIndex({ bookings, filters, stats }: Pro
         if (isExpired || status === 'expired') {
             return <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100"><XCircle className="mr-1 h-3 w-3" />Expired</Badge>;
         }
+
         if (status === 'active') {
             return <Badge variant="default" className="bg-green-100 text-green-700 hover:bg-green-100"><CheckCircle2 className="mr-1 h-3 w-3" />Active</Badge>;
         }
+
         if (status === 'completed') {
             return <Badge variant="secondary" className="bg-blue-100 text-blue-700 hover:bg-blue-100"><CheckCircle2 className="mr-1 h-3 w-3" />Completed</Badge>;
         }
+
         if (status === 'cancelled') {
             return <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100"><XCircle className="mr-1 h-3 w-3" />Cancelled</Badge>;
         }
+
         return <Badge variant="outline">{status}</Badge>;
     };
 
     const formatDateTime = (dateStr: string) => {
         const d = new Date(dateStr);
+
         return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) + ' ' +
             d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
