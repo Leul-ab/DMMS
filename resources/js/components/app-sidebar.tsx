@@ -289,7 +289,7 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton
+                        {/* <SidebarMenuButton
                             size="sm"
                             onClick={toggleSidebar}
                             className="text-sidebar-foreground hover:bg-orange-100/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
@@ -308,7 +308,7 @@ export function AppSidebar() {
                             <span>
                                 {state === 'collapsed' ? 'Expand' : 'Collapse'}
                             </span>
-                        </SidebarMenuButton>
+                        </SidebarMenuButton> */}
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavUser />
