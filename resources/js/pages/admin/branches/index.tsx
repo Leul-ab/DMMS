@@ -466,10 +466,11 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                                                 <td className="p-3">
                                                     <Badge
-                                                        variant={
+                                                        variant="outline"
+                                                        className={
                                                             branch.is_active
-                                                                ? 'default'
-                                                                : 'destructive'
+                                                                ? 'border-green-600 bg-white text-green-600'
+                                                                : 'border-red-600 bg-white text-red-600'
                                                         }
                                                     >
                                                         {branch.is_active

@@ -592,14 +592,15 @@ export default function TablesIndex({ tables }: Props) {
                                                     {/* Status */}
                                                     <td className="p-3">
                                                         <Badge
+                                                            variant="outline"
                                                             className={
                                                                 table.status ===
                                                                 'available'
-                                                                    ? 'bg-black text-white hover:bg-black'
+                                                                    ? 'border-green-600 bg-white text-green-600'
                                                                     : table.status ===
                                                                         'occupied'
-                                                                      ? 'bg-red-600 text-white hover:bg-red-600'
-                                                                      : 'bg-yellow-500 text-white hover:bg-yellow-500'
+                                                                      ? 'border-red-600 bg-white text-red-600'
+                                                                      : 'border-yellow-500 bg-white text-yellow-600'
                                                             }
                                                         >
                                                             {

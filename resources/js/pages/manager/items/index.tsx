@@ -751,10 +751,11 @@ return (
                                                 {/* Status */}
                                                 <td className="p-3">
                                                     <Badge
-                                                        variant={
+                                                        variant="outline"
+                                                        className={
                                                             item.is_available
-                                                                ? 'default'
-                                                                : 'destructive'
+                                                                ? 'border-green-600 bg-white text-green-600'
+                                                                : 'border-red-600 bg-white text-red-600'
                                                         }
                                                     >
                                                         {item.is_available
@@ -1268,10 +1269,11 @@ return (
                                 </p>
 
                                 <Badge
-                                    variant={
+                                    variant="outline"
+                                    className={
                                         selectedItem.is_available
-                                            ? 'default'
-                                            : 'destructive'
+                                            ? 'border-green-600 bg-white text-green-600'
+                                            : 'border-red-600 bg-white text-red-600'
                                     }
                                 >
                                     {selectedItem.is_available

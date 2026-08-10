@@ -471,10 +471,11 @@ export default function UsersIndex({
 
                                                 <td className="p-3">
                                                     <Badge
-                                                        variant={
+                                                        variant="outline"
+                                                        className={
                                                             user.is_active
-                                                                ? 'default'
-                                                                : 'destructive'
+                                                                ? 'border-green-600 bg-white text-green-600'
+                                                                : 'border-red-600 bg-white text-red-600'
                                                         }
                                                     >
                                                         {user.is_active
@@ -922,16 +923,17 @@ export default function UsersIndex({
                                     </p>
 
                                     <Badge
-                                        variant={
-                                            selectedUser.is_active
-                                                ? 'default'
-                                                : 'destructive'
-                                        }
-                                    >
-                                        {selectedUser.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </Badge>
+                                                        variant="outline"
+                                                        className={
+                                                            selectedUser.is_active
+                                                                ? 'border-green-600 bg-white text-green-600'
+                                                                : 'border-red-600 bg-white text-red-600'
+                                                        }
+                                                    >
+                                                        {selectedUser.is_active
+                                                            ? 'Active'
+                                                            : 'Inactive'}
+                                                    </Badge>
                                 </div>
 
                                 <div>

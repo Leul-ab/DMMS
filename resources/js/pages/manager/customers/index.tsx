@@ -451,10 +451,11 @@ export default function CustomersIndex({
 
                                                     <td className="p-3">
                                                         <Badge
+                                                            variant="outline"
                                                             className={
                                                                 customer.is_member
-                                                                    ? 'bg-black text-white hover:bg-black'
-                                                                    : 'bg-red-500 text-white hover:bg-red-500'
+                                                                    ? 'border-green-600 bg-white text-green-600'
+                                                                    : 'border-red-600 bg-white text-red-600'
                                                             }
                                                         >
                                                             {customer.is_member
@@ -747,10 +748,11 @@ export default function CustomersIndex({
 
                                 <div className="mt-1">
                                     <Badge
+                                        variant="outline"
                                         className={
                                             selectedCustomer.is_member
-                                                ? 'bg-black text-white hover:bg-black'
-                                                : 'bg-red-500 text-white hover:bg-red-500'
+                                                ? 'border-green-600 bg-white text-green-600'
+                                                : 'border-red-600 bg-white text-red-600'
                                         }
                                     >
                                         {selectedCustomer.is_member

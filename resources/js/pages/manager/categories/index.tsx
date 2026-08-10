@@ -463,10 +463,11 @@ export default function CategoriesIndex({
                                                     {/* Status */}
                                                     <td className="p-3">
                                                         <Badge
-                                                            variant={
+                                                            variant="outline"
+                                                            className={
                                                                 category.is_active
-                                                                    ? 'default'
-                                                                    : 'destructive'
+                                                                    ? 'border-green-600 bg-white text-green-600'
+                                                                    : 'border-red-600 bg-white text-red-600'
                                                             }
                                                         >
                                                             {category.is_active
@@ -843,16 +844,17 @@ export default function CategoriesIndex({
                                     </p>
 
                                     <Badge
-                                        variant={
-                                            selectedCategory.is_active
-                                                ? 'default'
-                                                : 'destructive'
-                                        }
-                                    >
-                                        {selectedCategory.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </Badge>
+                                                        variant="outline"
+                                                        className={
+                                                            selectedCategory.is_active
+                                                                ? 'border-green-600 bg-white text-green-600'
+                                                                : 'border-red-600 bg-white text-red-600'
+                                                        }
+                                                    >
+                                                        {selectedCategory.is_active
+                                                            ? 'Active'
+                                                            : 'Inactive'}
+                                                    </Badge>
                                 </div>
                             </div>
 
