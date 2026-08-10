@@ -72,13 +72,13 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $totalCustomers = $base(Customer::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+        $totalCustomers = $base(Customer::class)
             ->count();
 
-        $memberCustomers = $base(Customer::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+        $memberCustomers = $base(Customer::class)
             ->where('is_member', true)->count();
 
-        $nonMemberCustomers = $base(Customer::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+        $nonMemberCustomers = $base(Customer::class)
             ->where('is_member', false)->count();
 
         /*

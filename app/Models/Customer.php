@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
-use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Customer extends Model
 {
-    use BelongsToBranch;
-
     protected $fillable = [
         'branch_id',
         'customer_code',
