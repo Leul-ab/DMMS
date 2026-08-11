@@ -77,6 +77,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Redirects
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the redirect paths for various authentication
+    | actions. These values override the defaults used by Fortify.
+    |
+    */
+
+    'redirects' => [
+        'logout' => '/login',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Fortify Routes Prefix / Subdomain
     |--------------------------------------------------------------------------
     |
