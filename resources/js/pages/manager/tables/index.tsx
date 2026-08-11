@@ -57,7 +57,8 @@ import {
 type TableStatus =
     | 'available'
     | 'occupied'
-    | 'awaiting_payment';
+    | 'reserved'
+    | 'unavailable';
 
 type RestaurantTable = {
     id: number;
@@ -76,7 +77,8 @@ type Props = {
 const statusLabels: Record<TableStatus, string> = {
     available: 'Available',
     occupied: 'Occupied',
-    awaiting_payment: 'Awaiting Payment',
+    reserved: 'Reserved',
+    unavailable: 'Unavailable',
 };
 
 export default function TablesIndex({ tables }: Props) {
@@ -252,17 +254,17 @@ export default function TablesIndex({ tables }: Props) {
     // -----------------------------------------
     // Toggle Table Status
     //
-    // Available = Toggle ON
-    // Occupied = Toggle OFF
-    // Awaiting Payment = Disabled
+    // Available  → Toggle ON
+    // Occupied   → Toggle OFF
+    // Reserved / Unavailable → Disabled
     // -----------------------------------------
 
     const handleToggleStatus = (
         table: RestaurantTable,
     ) => {
         if (
-            table.status ===
-            'awaiting_payment'
+            table.status === 'reserved' ||
+            table.status === 'unavailable'
         ) {
             return;
         }
@@ -492,8 +494,12 @@ export default function TablesIndex({ tables }: Props) {
                                         Occupied
                                     </SelectItem>
 
-                                    <SelectItem value="awaiting_payment">
-                                        Awaiting Payment
+                                    <SelectItem value="reserved">
+                                        Reserved
+                                    </SelectItem>
+
+                                    <SelectItem value="unavailable">
+                                        Unavailable
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
@@ -594,20 +600,16 @@ export default function TablesIndex({ tables }: Props) {
                                                         <Badge
                                                             variant="outline"
                                                             className={
-                                                                table.status ===
-                                                                'available'
+                                                                table.status === 'available'
                                                                     ? 'border-green-600 bg-white text-green-600'
-                                                                    : table.status ===
-                                                                        'occupied'
+                                                                    : table.status === 'occupied'
                                                                       ? 'border-red-600 bg-white text-red-600'
-                                                                      : 'border-yellow-500 bg-white text-yellow-600'
+                                                                      : table.status === 'reserved'
+                                                                        ? 'border-blue-600 bg-white text-blue-600'
+                                                                        : 'border-gray-400 bg-white text-gray-500'
                                                             }
                                                         >
-                                                            {
-                                                                statusLabels[
-                                                                    table.status
-                                                                ]
-                                                            }
+                                                            {statusLabels[table.status]}
                                                         </Badge>
                                                     </td>
 
@@ -636,8 +638,8 @@ export default function TablesIndex({ tables }: Props) {
                                                                             : 'Mark table available'
                                                                     }
                                                                     disabled={
-                                                                        table.status ===
-                                                                        'awaiting_payment'
+                                                                        table.status === 'reserved' ||
+                                                                        table.status === 'unavailable'
                                                                     }
                                                                 />
                                                             )}

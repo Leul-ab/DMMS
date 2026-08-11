@@ -47,7 +47,8 @@ type DashboardStats = {
     totalTables: number;
     availableTables: number;
     occupiedTables: number;
-    awaitingPaymentTables: number;
+    reservedTables: number;
+    unavailableTables: number;
 
     totalCategories: number;
     activeCategories: number;
@@ -737,13 +738,13 @@ export default function Dashboard({
 
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-yellow-100 bg-yellow-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-200/30"
+                                        className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-200/30"
                                     >
                                         <p className="text-sm font-semibold text-amber-600">
-                                            Awaiting Payment
+                                            Reserved
                                         </p>
-                                        <p className="mt-2 text-3xl font-black text-yellow-600">
-                                            {stats.awaitingPaymentTables}
+                                        <p className="mt-2 text-3xl font-black text-blue-600">
+                                            {stats.reservedTables}
                                         </p>
                                     </Link>
                                 </div>

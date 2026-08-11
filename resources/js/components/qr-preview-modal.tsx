@@ -35,13 +35,15 @@ type QrPreviewModalProps = {
 const statusLabels: Record<string, string> = {
     available: 'Available',
     occupied: 'Occupied',
-    awaiting_payment: 'Awaiting Payment',
+    reserved: 'Reserved',
+    unavailable: 'Unavailable',
 };
 
 const statusColors: Record<string, string> = {
     available: 'bg-green-500 text-white hover:bg-green-500',
     occupied: 'bg-red-600 text-white hover:bg-red-600',
-    awaiting_payment: 'bg-yellow-500 text-white hover:bg-yellow-500',
+    reserved: 'bg-blue-600 text-white hover:bg-blue-600',
+    unavailable: 'bg-gray-400 text-white hover:bg-gray-400',
 };
 
 export function QrPreviewModal({ table, open, onOpenChange }: QrPreviewModalProps) {

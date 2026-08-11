@@ -91,22 +91,16 @@ class DashboardController extends Controller
             ->count();
 
         $availableTables = $base(RestaurantTable::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->where(
-                'status',
-                'available'
-            )->count();
+            ->where('status', 'available')->count();
 
         $occupiedTables = $base(RestaurantTable::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->where(
-                'status',
-                'occupied'
-            )->count();
+            ->where('status', 'occupied')->count();
 
-        $awaitingPaymentTables = $base(RestaurantTable::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->where(
-                'status',
-                'awaiting_payment'
-            )->count();
+        $reservedTables = $base(RestaurantTable::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'reserved')->count();
+
+        $unavailableTables = $base(RestaurantTable::class)->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('status', 'unavailable')->count();
 
         /*
         |--------------------------------------------------------------------------
@@ -403,7 +397,8 @@ class DashboardController extends Controller
                 'totalTables' => $totalTables,
                 'availableTables' => $availableTables,
                 'occupiedTables' => $occupiedTables,
-                'awaitingPaymentTables' => $awaitingPaymentTables,
+                'reservedTables' => $reservedTables,
+                'unavailableTables' => $unavailableTables,
 
                 'totalCategories' => $totalCategories,
                 'activeCategories' => $activeCategories,

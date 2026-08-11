@@ -445,7 +445,7 @@ return null;
                                                             </Button>
                                                         )}
                                                         {can('delete bookings') && canDelete && (
-                                                            <Button variant="ghost" size="icon" onClick={() => openDeleteModal(booking)} title="Delete Booking" className="text-red-500 hover:text-red-700">
+                                                            <Button variant="destructive" size="icon" onClick={() => openDeleteModal(booking)} title="Delete Booking">
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         )}

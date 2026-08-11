@@ -554,12 +554,12 @@ export function MenuView({
 
     const filteredItems = searchQuery
         ? menuItems.filter(
-              (item) =>
-                  item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  item.description
-                      ?.toLowerCase()
-                      .includes(searchQuery.toLowerCase()),
-          )
+            (item) =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.description
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase()),
+        )
         : menuItems;
 
     const renderCartContent = (inSheet = false) => (
@@ -829,12 +829,12 @@ export function MenuView({
                                 <span className="text-sm font-bold text-stone-800">
                                     {booking_data?.booked_at
                                         ? new Date(
-                                              booking_data.booked_at,
-                                          ).toLocaleDateString('en-US', {
-                                              year: 'numeric',
-                                              month: 'short',
-                                              day: 'numeric',
-                                          })
+                                            booking_data.booked_at,
+                                        ).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                        })
                                         : '—'}
                                 </span>
                             </div>
@@ -846,11 +846,11 @@ export function MenuView({
                                 <span className="text-sm font-bold text-stone-800">
                                     {booking_data?.booked_at
                                         ? new Date(
-                                              booking_data.booked_at,
-                                          ).toLocaleTimeString('en-US', {
-                                              hour: '2-digit',
-                                              minute: '2-digit',
-                                          })
+                                            booking_data.booked_at,
+                                        ).toLocaleTimeString('en-US', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })
                                         : '—'}
                                 </span>
                             </div>
@@ -1451,11 +1451,10 @@ export function MenuView({
                     >
                         <Link
                             href={basePath}
-                            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${
-                                selectedCategory === null
+                            className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${selectedCategory === null
                                     ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
                                     : 'border border-orange-200 bg-white text-amber-600 shadow-sm hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700'
-                            }`}
+                                }`}
                         >
                             <Utensils className="h-4 w-4" />
                             All Items
@@ -1465,11 +1464,10 @@ export function MenuView({
                             <Link
                                 key={category.id}
                                 href={`${basePath}?category=${category.id}`}
-                                className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${
-                                    selectedCategory === category.id
+                                className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold whitespace-nowrap transition-all duration-200 active:scale-95 ${selectedCategory === category.id
                                         ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25'
                                         : 'border border-orange-200 bg-white text-amber-600 shadow-sm hover:border-orange-400 hover:bg-orange-50 hover:text-orange-700'
-                                }`}
+                                    }`}
                             >
                                 {getCategoryIcon(category.name)}
                                 {category.name}
@@ -1486,11 +1484,10 @@ export function MenuView({
                                 <article
                                     key={item.id}
                                     data-item-id={item.id}
-                                    className={`group flex flex-col overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-orange-200/40 ${
-                                        visibleItems.has(item.id)
+                                    className={`group flex flex-col overflow-hidden rounded-2xl border border-orange-100/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-orange-200/40 ${visibleItems.has(item.id)
                                             ? 'animate-in fill-mode-both slide-in-from-bottom-5 fade-in'
                                             : 'opacity-0'
-                                    }`}
+                                        }`}
                                     style={{
                                         animationDuration: '450ms',
                                         animationDelay: `${(index % 9) * 70}ms`,
@@ -1537,11 +1534,10 @@ export function MenuView({
                                         )}
 
                                         <div
-                                            className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase shadow-sm ${
-                                                item.is_available
+                                            className={`absolute top-3 left-3 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide uppercase shadow-sm ${item.is_available
                                                     ? 'bg-emerald-500 text-white'
                                                     : 'bg-red-500 text-white'
-                                            }`}
+                                                }`}
                                         >
                                             {item.is_available
                                                 ? 'Available'
@@ -1562,13 +1558,12 @@ export function MenuView({
                                                     onClick={() =>
                                                         addToCart(item)
                                                     }
-                                                    className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg transition active:scale-[0.97] ${
-                                                        animatingItems.has(
-                                                            item.id,
-                                                        )
+                                                    className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg transition active:scale-[0.97] ${animatingItems.has(
+                                                        item.id,
+                                                    )
                                                             ? 'bg-emerald-500 text-white'
                                                             : 'bg-white text-stone-800 hover:bg-gradient-to-r hover:from-orange-500 hover:to-orange-600 hover:text-white'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <span
                                                         className={`transition-all duration-300 ${animatingItems.has(item.id) ? 'w-0 scale-0 opacity-0' : ''}`}
@@ -1581,13 +1576,12 @@ export function MenuView({
                                                         Add to Order
                                                     </span>
                                                     <span
-                                                        className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${
-                                                            animatingItems.has(
-                                                                item.id,
-                                                            )
+                                                        className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${animatingItems.has(
+                                                            item.id,
+                                                        )
                                                                 ? 'opacity-100'
                                                                 : 'opacity-0'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <CheckCircle2 className="h-4 w-4" />{' '}
                                                         Added!
@@ -1599,18 +1593,36 @@ export function MenuView({
 
                                     <div className="flex flex-1 flex-col p-5">
                                         <div className="flex items-start justify-between gap-3">
-                                            <h3 className="text-lg font-black text-stone-800">
-                                                {item.name}
-                                            </h3>
+                                            <div className="flex flex-col gap-1">
+                                                <h3 className="text-lg font-black text-stone-800">
+                                                    {item.name}
+                                                </h3>
+                                                {item.category && (
+                                                    <div className="flex items-center gap-1">
+                                                        {getCategoryIcon(
+                                                            item.category.name,
+                                                        )}
+                                                        <span className="text-xs font-medium text-amber-500">
+                                                            {item.category.name}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {item.description && (
+                                                    <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-amber-700/80">
+                                                        {item.description}
+                                                    </p>
+                                                )}
+                                            </div>
+
                                             {(() => {
                                                 const activeDiscount = (
                                                     item.discounts ?? []
                                                 ).find(
                                                     (d) =>
                                                         d.discount_type ===
-                                                            'percentage' &&
+                                                        'percentage' &&
                                                         Number(d.percentage) >
-                                                            0,
+                                                        0,
                                                 );
 
                                                 if (!activeDiscount) {
@@ -1626,14 +1638,14 @@ export function MenuView({
 
                                                 const isEligible =
                                                     activeDiscount.applies_to ===
-                                                        'all' || isMember;
+                                                    'all' || isMember;
                                                 const discountedPrice =
                                                     Number(item.price) -
                                                     (Number(item.price) *
                                                         Number(
                                                             activeDiscount.percentage,
                                                         )) /
-                                                        100;
+                                                    100;
 
                                                 if (isEligible) {
                                                     return (
@@ -1683,34 +1695,16 @@ export function MenuView({
                                             })()}
                                         </div>
 
-                                        {item.category && (
-                                            <div className="mt-1.5 flex items-center gap-1">
-                                                {getCategoryIcon(
-                                                    item.category.name,
-                                                )}
-                                                <span className="text-xs font-medium text-amber-500">
-                                                    {item.category.name}
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {item.description && (
-                                            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-amber-700/80">
-                                                {item.description}
-                                            </p>
-                                        )}
-
                                         <div className="mt-auto flex-1" />
 
                                         {item.is_available ? (
                                             <button
                                                 type="button"
                                                 onClick={() => addToCart(item)}
-                                                className={`relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-200 active:scale-[0.97] sm:hidden ${
-                                                    animatingItems.has(item.id)
+                                                className={`relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 text-sm font-bold text-white shadow-md transition-all duration-200 active:scale-[0.97] sm:hidden ${animatingItems.has(item.id)
                                                         ? 'bg-emerald-500 shadow-emerald-500/30'
                                                         : 'bg-gradient-to-r from-orange-500 to-orange-600 shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700'
-                                                }`}
+                                                    }`}
                                             >
                                                 <span
                                                     className={`transition-transform duration-300 ${animatingItems.has(item.id) ? 'scale-0' : ''}`}
@@ -1723,13 +1717,12 @@ export function MenuView({
                                                     Add to Order
                                                 </span>
                                                 <span
-                                                    className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${
-                                                        animatingItems.has(
-                                                            item.id,
-                                                        )
+                                                    className={`absolute inset-0 flex items-center justify-center gap-2 transition-all duration-300 ${animatingItems.has(
+                                                        item.id,
+                                                    )
                                                             ? 'opacity-100'
                                                             : 'opacity-0'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <CheckCircle2 className="h-4 w-4" />{' '}
                                                     Added!
