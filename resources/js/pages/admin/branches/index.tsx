@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -501,17 +501,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                                 {/* Status */}
 
                                                 <td className="p-3">
-                                                    <Badge
-                                                        variant={
-                                                            branch.is_active
-                                                                ? 'default'
-                                                                : 'destructive'
-                                                        }
-                                                    >
-                                                        {branch.is_active
-                                                            ? 'Active'
-                                                            : 'Inactive'}
-                                                    </Badge>
+                                                    <StatusBadge positive={branch.is_active} positiveLabel="Active" negativeLabel="Inactive" />
                                                 </td>
 
                                                 {/* Actions */}

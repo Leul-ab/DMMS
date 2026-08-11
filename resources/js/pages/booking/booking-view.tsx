@@ -14,7 +14,6 @@ import {
     CheckCircle2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,9 +41,11 @@ export default function BookingView({ availableTables, basePath, menuPath }: Pro
     const [isVerifying, setIsVerifying] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
     const [verificationError, setVerificationError] = useState<string | null>(null);
+    const [bookingError, setBookingError] = useState<string | null>(null);
     const [showRegisterDialog, setShowRegisterDialog] = useState(false);
 
     const toggleTableSelection = (tableId: string) => {
+        setBookingError(null);
         setSelectedTables((prev) => {
             const next = new Set(prev);
 
@@ -114,7 +115,9 @@ export default function BookingView({ availableTables, basePath, menuPath }: Pro
 
     const handleBooking = () => {
         if (!customerId || selectedTables.size === 0) {
-return;
+            setBookingError('Please select at least one table.');
+
+            return;
 }
 
         setIsBooking(true);
@@ -125,8 +128,7 @@ return;
         }, {
             onSuccess: () => {},
             onError: (errors) => {
-                const errorMsg = errors.tables || 'Failed to create booking.';
-                toast.error(errorMsg);
+                setBookingError(errors.tables || 'Failed to create booking.');
                 setIsBooking(false);
             },
         });
@@ -318,6 +320,8 @@ return;
                                     </p>
                                 </div>
                             )}
+
+                            <InputError message={bookingError ?? undefined} className="mt-3" />
 
                             <div className="mt-8 flex justify-end">
                                 <Button

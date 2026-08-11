@@ -11,9 +11,9 @@ import {
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -441,17 +441,7 @@ export default function CategoriesIndex({
 
                                                     {/* Status */}
                                                     <td className="p-3">
-                                                        <Badge
-                                                            variant={
-                                                                category.is_active
-                                                                    ? 'default'
-                                                                    : 'destructive'
-                                                            }
-                                                        >
-                                                            {category.is_active
-                                                                ? 'Active'
-                                                                : 'Inactive'}
-                                                        </Badge>
+                                                        <StatusBadge positive={category.is_active} positiveLabel="Active" negativeLabel="Inactive" />
                                                     </td>
 
                                                     {/* Actions */}
@@ -791,17 +781,7 @@ export default function CategoriesIndex({
                                         Status
                                     </p>
 
-                                    <Badge
-                                        variant={
-                                            selectedCategory.is_active
-                                                ? 'default'
-                                                : 'destructive'
-                                        }
-                                    >
-                                        {selectedCategory.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </Badge>
+                                    <StatusBadge positive={selectedCategory.is_active} positiveLabel="Active" negativeLabel="Inactive" />
                                 </div>
                             </div>
 

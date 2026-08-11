@@ -16,8 +16,8 @@ import {
 } from 'lucide-react';
 
 import Heading from '@/components/heading';
+import StatusBadge from '@/components/status-badge';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -150,13 +150,7 @@ export default function BranchShow({ branch }: Props) {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                        <Badge
-                            variant={
-                                branch.is_active ? 'default' : 'destructive'
-                            }
-                        >
-                            {branch.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        <StatusBadge positive={branch.is_active} positiveLabel="Active" negativeLabel="Inactive" />
 
                         {can('view branches') && (
                             <Button

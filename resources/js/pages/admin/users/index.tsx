@@ -3,6 +3,7 @@ import { Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -470,17 +471,7 @@ export default function UsersIndex({
                                                 {/* Status */}
 
                                                 <td className="p-3">
-                                                    <Badge
-                                                        variant={
-                                                            user.is_active
-                                                                ? 'default'
-                                                                : 'destructive'
-                                                        }
-                                                    >
-                                                        {user.is_active
-                                                            ? 'Active'
-                                                            : 'Inactive'}
-                                                    </Badge>
+                                                    <StatusBadge positive={user.is_active} positiveLabel="Active" negativeLabel="Inactive" />
                                                 </td>
 
                                                 {/* Actions */}
@@ -921,17 +912,7 @@ export default function UsersIndex({
                                         Status
                                     </p>
 
-                                    <Badge
-                                        variant={
-                                            selectedUser.is_active
-                                                ? 'default'
-                                                : 'destructive'
-                                        }
-                                    >
-                                        {selectedUser.is_active
-                                            ? 'Active'
-                                            : 'Inactive'}
-                                    </Badge>
+                                    <StatusBadge positive={selectedUser.is_active} positiveLabel="Active" negativeLabel="Inactive" />
                                 </div>
 
                                 <div>

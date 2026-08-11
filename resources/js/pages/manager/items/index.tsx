@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -701,17 +702,7 @@ return (
 
                                                 {/* Status */}
                                                 <td className="p-3">
-                                                    <Badge
-                                                        variant={
-                                                            item.is_available
-                                                                ? 'default'
-                                                                : 'destructive'
-                                                        }
-                                                    >
-                                                        {item.is_available
-                                                            ? 'Available'
-                                                            : 'Unavailable'}
-                                                    </Badge>
+                                                    <StatusBadge positive={item.is_available} positiveLabel="Available" negativeLabel="Unavailable" />
                                                 </td>
 
                                                 {/* Actions */}
@@ -1163,17 +1154,7 @@ return (
                                     Status
                                 </p>
 
-                                <Badge
-                                    variant={
-                                        selectedItem.is_available
-                                            ? 'default'
-                                            : 'destructive'
-                                    }
-                                >
-                                    {selectedItem.is_available
-                                        ? 'Available'
-                                        : 'Unavailable'}
-                                </Badge>
+                                <StatusBadge positive={selectedItem.is_available} positiveLabel="Available" negativeLabel="Unavailable" />
                             </div>
                         </div>
 

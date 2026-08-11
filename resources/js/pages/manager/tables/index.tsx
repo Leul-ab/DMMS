@@ -14,9 +14,9 @@ import { useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
 import { QrPreviewModal } from '@/components/qr-preview-modal';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -591,23 +591,11 @@ export default function TablesIndex({ tables }: Props) {
 
                                                     {/* Status */}
                                                     <td className="p-3">
-                                                        <Badge
-                                                            className={
-                                                                table.status ===
-                                                                'available'
-                                                                    ? 'bg-black text-white hover:bg-black'
-                                                                    : table.status ===
-                                                                        'occupied'
-                                                                      ? 'bg-red-600 text-white hover:bg-red-600'
-                                                                      : 'bg-yellow-500 text-white hover:bg-yellow-500'
-                                                            }
-                                                        >
-                                                            {
-                                                                statusLabels[
-                                                                    table.status
-                                                                ]
-                                                            }
-                                                        </Badge>
+                                                        <StatusBadge
+                                                            positive={table.status === 'available'}
+                                                            positiveLabel="Available"
+                                                            negativeLabel={statusLabels[table.status] || 'Occupied'}
+                                                        />
                                                     </td>
 
                                                     {/* Actions */}

@@ -23,7 +23,7 @@ type Props = {
 };
 
 export default function CategoryEdit({ category }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, put, processing, errors, setError, clearErrors } = useForm({
         name: category.name,
         description: category.description || '',
         sort_order: category.sort_order,
@@ -32,6 +32,13 @@ export default function CategoryEdit({ category }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!data.name.trim()) {
+            setError('name', 'Category name is required.');
+
+            return;
+        }
+
         put(categoriesUpdate.url(category.id));
     };
 
@@ -46,8 +53,8 @@ export default function CategoryEdit({ category }: Props) {
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Breakfast, Lunch, Desserts" required />
-                                <InputError message={errors.name} />
+                                <Input id="name" value={data.name} onChange={(e) => { setData('name', e.target.value); clearErrors('name'); }} placeholder="e.g. Breakfast, Lunch, Desserts" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
+                                <InputError id="name-error" message={errors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -55,18 +62,20 @@ export default function CategoryEdit({ category }: Props) {
                                 <textarea
                                     id="description"
                                     value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
+                                    onChange={(e) => { setData('description', e.target.value); clearErrors('description'); }}
                                     placeholder="Brief description of this category"
                                     rows={3}
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    aria-invalid={!!errors.description}
+                                    aria-describedby={errors.description ? 'description-error' : undefined}
+                                    className={`flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${errors.description ? 'border-destructive' : ''}`}
                                 />
-                                <InputError message={errors.description} />
+                                <InputError id="description-error" message={errors.description} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="sort_order">Sort Order</Label>
-                                <Input id="sort_order" type="number" min={0} value={data.sort_order} onChange={(e) => setData('sort_order', Number(e.target.value))} placeholder="0" />
-                                <InputError message={errors.sort_order} />
+                                <Input id="sort_order" type="number" min={0} value={data.sort_order} onChange={(e) => { setData('sort_order', Number(e.target.value)); clearErrors('sort_order'); }} placeholder="0" aria-invalid={!!errors.sort_order} aria-describedby={errors.sort_order ? 'sort-order-error' : undefined} />
+                                <InputError id="sort-order-error" message={errors.sort_order} />
                             </div>
 
                             <div className="flex items-center justify-between rounded-lg border p-3">

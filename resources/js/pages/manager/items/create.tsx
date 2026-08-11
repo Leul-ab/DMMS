@@ -24,7 +24,7 @@ export default function ItemCreate({ categories }: Props) {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, setError, clearErrors } = useForm({
         category_id: '',
         name: '',
         description: '',
@@ -42,14 +42,19 @@ export default function ItemCreate({ categories }: Props) {
             const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
             if (!allowedTypes.includes(file.type)) {
+                setError('image', 'Please choose a JPG, JPEG, PNG, or WebP image.');
+
                 return;
             }
 
             // Validate file size (2MB)
             if (file.size > 2 * 1024 * 1024) {
+                setError('image', 'Image size must not exceed 2 MB.');
+
                 return;
             }
 
+            clearErrors('image');
             setData('image', file);
             const reader = new FileReader();
             reader.onload = () => {
@@ -70,6 +75,20 @@ export default function ItemCreate({ categories }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!data.category_id) {
+            setError('category_id', 'Please select a category.');
+        }
+        if (!data.name.trim()) {
+            setError('name', 'Menu item name is required.');
+        }
+        if (data.price === '' || Number(data.price) < 0) {
+            setError('price', 'Price must be zero or greater.');
+        }
+        if (!data.category_id || !data.name.trim() || data.price === '' || Number(data.price) < 0) {
+            return;
+        }
+
         post(itemsStore.url(), {
             forceFormData: true,
         });
@@ -86,8 +105,8 @@ export default function ItemCreate({ categories }: Props) {
                         <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
                             <div className="grid gap-2">
                                 <Label htmlFor="category_id">Category</Label>
-                                <Select value={data.category_id} onValueChange={(value) => setData('category_id', value)}>
-                                    <SelectTrigger>
+                                <Select value={data.category_id} onValueChange={(value) => { setData('category_id', value); clearErrors('category_id'); }}>
+                                    <SelectTrigger aria-invalid={!!errors.category_id} aria-describedby={errors.category_id ? 'category-error' : undefined}>
                                         <SelectValue placeholder="Select a category" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -98,13 +117,13 @@ export default function ItemCreate({ categories }: Props) {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <InputError message={errors.category_id} />
+                                <InputError id="category-error" message={errors.category_id} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Menu Item Name</Label>
-                                <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} placeholder="e.g. Pancakes, Chocolate Cake" required />
-                                <InputError message={errors.name} />
+                                <Input id="name" value={data.name} onChange={(e) => { setData('name', e.target.value); clearErrors('name'); }} placeholder="e.g. Pancakes, Chocolate Cake" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
+                                <InputError id="name-error" message={errors.name} />
                             </div>
 
                             <div className="grid gap-2">
@@ -112,18 +131,20 @@ export default function ItemCreate({ categories }: Props) {
                                 <textarea
                                     id="description"
                                     value={data.description}
-                                    onChange={(e) => setData('description', e.target.value)}
+                                    onChange={(e) => { setData('description', e.target.value); clearErrors('description'); }}
                                     placeholder="Brief description of this item"
                                     rows={3}
-                                    className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    aria-invalid={!!errors.description}
+                                    aria-describedby={errors.description ? 'description-error' : undefined}
+                                    className={`flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 ${errors.description ? 'border-destructive' : ''}`}
                                 />
-                                <InputError message={errors.description} />
+                                <InputError id="description-error" message={errors.description} />
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="price">Price (ETB)</Label>
-                                <Input id="price" type="number" step="0.01" min="0" value={data.price} onChange={(e) => setData('price', e.target.value)} placeholder="9.99" required />
-                                <InputError message={errors.price} />
+                                <Input id="price" type="number" step="0.01" min="0" value={data.price} onChange={(e) => { setData('price', e.target.value); clearErrors('price'); }} placeholder="9.99" aria-invalid={!!errors.price} aria-describedby={errors.price ? 'price-error' : undefined} />
+                                <InputError id="price-error" message={errors.price} />
                             </div>
 
                             {/* Image Upload */}
@@ -138,6 +159,8 @@ export default function ItemCreate({ categories }: Props) {
                                             accept=".jpg,.jpeg,.png,.webp"
                                             onChange={handleImageChange}
                                             className="cursor-pointer"
+                                            aria-invalid={!!errors.image}
+                                            aria-describedby={errors.image ? 'image-error' : undefined}
                                         />
                                         <p className="mt-1 text-xs text-muted-foreground">
                                             Accepted formats: JPG, JPEG, PNG, WebP. Max size: 2 MB.
@@ -154,7 +177,7 @@ export default function ItemCreate({ categories }: Props) {
                                         </Button>
                                     )}
                                 </div>
-                                <InputError message={errors.image} />
+                                <InputError id="image-error" message={errors.image} />
 
                                 {/* Image Preview */}
                                 {imagePreview && (
@@ -181,8 +204,8 @@ export default function ItemCreate({ categories }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="preparation_time">Preparation Time (minutes, optional)</Label>
-                                <Input id="preparation_time" type="number" min="0" value={data.preparation_time} onChange={(e) => setData('preparation_time', e.target.value)} placeholder="15" />
-                                <InputError message={errors.preparation_time} />
+                                <Input id="preparation_time" type="number" min="0" value={data.preparation_time} onChange={(e) => { setData('preparation_time', e.target.value); clearErrors('preparation_time'); }} placeholder="15" aria-invalid={!!errors.preparation_time} aria-describedby={errors.preparation_time ? 'preparation-time-error' : undefined} />
+                                <InputError id="preparation-time-error" message={errors.preparation_time} />
                             </div>
 
                             <div className="flex items-center space-x-2">

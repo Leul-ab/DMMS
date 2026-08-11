@@ -11,9 +11,9 @@ import {
 import { useMemo, useState } from 'react';
 
 import Heading from '@/components/heading';
+import StatusBadge from '@/components/status-badge';
 import StatusToggle from '@/components/status-toggle';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -450,17 +450,7 @@ export default function CustomersIndex({
                                                     ========================================= */}
 
                                                     <td className="p-3">
-                                                        <Badge
-                                                            className={
-                                                                customer.is_member
-                                                                    ? 'bg-black text-white hover:bg-black'
-                                                                    : 'bg-red-500 text-white hover:bg-red-500'
-                                                            }
-                                                        >
-                                                            {customer.is_member
-                                                                ? 'Member'
-                                                                : 'Not a Member'}
-                                                        </Badge>
+                                                        <StatusBadge positive={customer.is_member} positiveLabel="Member" negativeLabel="Not a Member" />
                                                     </td>
 
                                                     {/* Actions */}
@@ -746,17 +736,7 @@ export default function CustomersIndex({
                                 </p>
 
                                 <div className="mt-1">
-                                    <Badge
-                                        className={
-                                            selectedCustomer.is_member
-                                                ? 'bg-black text-white hover:bg-black'
-                                                : 'bg-red-500 text-white hover:bg-red-500'
-                                        }
-                                    >
-                                        {selectedCustomer.is_member
-                                            ? 'Member'
-                                            : 'Not a Member'}
-                                    </Badge>
+                                    <StatusBadge positive={selectedCustomer.is_member} positiveLabel="Member" negativeLabel="Not a Member" />
                                 </div>
                             </div>
 
@@ -978,4 +958,3 @@ export default function CustomersIndex({
         </>
     );
 }
-
