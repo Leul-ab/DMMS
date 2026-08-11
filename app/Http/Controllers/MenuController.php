@@ -190,9 +190,7 @@ class MenuController extends Controller
 
         Branch::setCurrent($table->branch_id);
 
-        // Fetch all recent orders for the table (excluding cancelled),
-        // newest first, so the customer can see their order history.
-        $orders = Order::with([
+        $ordersQuery = Order::with([
             'orderItems.menuItem',
             'payment.verifier',
             'receipt',
@@ -207,8 +205,18 @@ class MenuController extends Controller
                 'ready',
                 'served',
                 'completed',
-            ])
-            ->orderByDesc('created_at')
+            ]);
+
+        if ($request->session()->has('customer_code')) {
+            $customerCode = $request->session()->get('customer_code');
+            $customer = Customer::where('customer_code', $customerCode)->first();
+
+            if ($customer) {
+                $ordersQuery->where('customer_id', $customer->id);
+            }
+        }
+
+        $orders = $ordersQuery->orderByDesc('created_at')
             ->limit(10)
             ->get();
 

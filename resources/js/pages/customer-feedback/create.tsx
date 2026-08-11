@@ -2,6 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Send, Star } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { StarRating } from '@/components/star-rating';
 
 type Order = {
@@ -26,7 +27,10 @@ type Customer = {
 
 type Props = {
     order: Order;
-    customer: Customer;
+    customer: {
+        id: number;
+        name: string;
+    };
 };
 
 export default function CustomerFeedbackCreate({ order, customer }: Props) {
@@ -34,10 +38,11 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
     const [comment, setComment] = useState('');
     const [anonymous, setAnonymous] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ratingError, setRatingError] = useState('');
 
     const handleSubmit = () => {
         if (!overallRating) {
-            toast.error('Please select an overall rating before submitting.');
+            setRatingError('Please select an overall rating before submitting.');
 
             return;
         }
@@ -53,15 +58,19 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
             },
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    setIsSubmitting(false);
-                    toast.success('Thank you for your feedback! Your overall service rating has been submitted successfully.');
-                },
-                onError: (errors) => {
-                    setIsSubmitting(false);
-                    const firstError = Object.values(errors)[0];
-                    toast.error(firstError || 'Failed to submit feedback. Please try again.');
-                },
+                                onSuccess: () => {
+                                    setIsSubmitting(false);
+                                    toast.success('Thank you for your feedback! Your overall service rating has been submitted successfully.');
+                                },
+                                onError: (errors) => {
+                                    setIsSubmitting(false);
+                                    const firstError = Object.values(errors)[0];
+                                    toast.error(firstError || 'Failed to submit feedback. Please try again.');
+
+                                    if (firstError && typeof firstError === 'string' && firstError.toLowerCase().includes('overall_rating')) {
+                                        setRatingError(firstError);
+                                    }
+                                },
             }
         );
     };
@@ -116,9 +125,12 @@ export default function CustomerFeedbackCreate({ order, customer }: Props) {
                             </p>
                             <StarRating
                                 value={overallRating}
-                                onChange={setOverallRating}
+                                onChange={(value) => {
+ setOverallRating(value); setRatingError(''); 
+}}
                                 size="lg"
                             />
+                            <InputError message={ratingError} className="text-center" />
                         </div>
 
                         {/* Comment */}

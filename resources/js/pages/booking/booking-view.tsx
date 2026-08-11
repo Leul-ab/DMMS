@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -348,17 +349,16 @@ return;
                                     <input
                                         type="text"
                                         value={customerCode}
-                                        onChange={(e) => setCustomerCode(e.target.value.toUpperCase())}
+                                        onChange={(e) => {
+                                            setCustomerCode(e.target.value.toUpperCase());
+                                            setVerificationError(null);
+                                        }}
                                         placeholder="Enter your customer code (e.g. AB12CD)"
-                                        className="h-11 w-full rounded-xl border border-orange-200 bg-white px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                                        className={`h-11 w-full rounded-xl border px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 ${verificationError ? 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20' : 'border-orange-200 bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'}`}
                                     />
                                 </div>
 
-                                {verificationError && (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
-                                        {verificationError}
-                                    </div>
-                                )}
+                                <InputError message={verificationError} className="mt-2" />
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button

@@ -2,6 +2,7 @@ import { router } from '@inertiajs/react';
 import { Send } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { StarRating } from '@/components/star-rating';
 import {
     Dialog,
@@ -31,10 +32,11 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
     const [comment, setComment] = useState('');
     const [anonymous, setAnonymous] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [ratingError, setRatingError] = useState('');
 
     const handleSubmit = () => {
         if (!overallRating) {
-            toast.error('Please select an overall rating before submitting.');
+            setRatingError('Please select an overall rating before submitting.');
 
             return;
         }
@@ -54,13 +56,16 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
                     setIsSubmitting(false);
                     onOpenChange(false);
                     toast.success('Thank you for your feedback! Your overall service rating has been submitted successfully.');
-                    // Notify parent so the Rate Service button disappears immediately
                     onSubmitted?.();
                 },
                 onError: (errors) => {
                     setIsSubmitting(false);
                     const firstError = Object.values(errors)[0];
                     toast.error(firstError || 'Failed to submit feedback. Please try again.');
+
+                    if (firstError && typeof firstError === 'string' && firstError.toLowerCase().includes('overall_rating')) {
+                        setRatingError(firstError);
+                    }
                 },
             }
         );
@@ -88,9 +93,13 @@ export function FeedbackModal({ open, onOpenChange, onSubmitted, order }: Feedba
                         </p>
                         <StarRating
                             value={overallRating}
-                            onChange={setOverallRating}
+                            onChange={(value) => {
+                                setOverallRating(value);
+                                setRatingError('');
+                            }}
                             size="lg"
                         />
+                        <InputError message={ratingError} className="text-center" />
                     </div>
 
                     {/* Comment */}

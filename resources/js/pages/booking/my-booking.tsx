@@ -1,6 +1,7 @@
 import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2, SearchX } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -321,12 +322,10 @@ return null;
                                         }
                                     }}
                                     placeholder="Enter your customer code"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500 uppercase"
+                                    className={`w-full rounded-xl border px-4 py-3.5 outline-none uppercase ${codeError ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-orange-500'}`}
                                     autoFocus
                                 />
-                                {codeError && (
-                                    <p className="mt-2 text-sm text-red-500">{codeError}</p>
-                                )}
+                                <InputError message={codeError} className="mt-2" />
                             </div>
 
                             <div className="mt-6 flex gap-3">

@@ -4,7 +4,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import StatusToggle from '@/components/status-toggle';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as categoriesIndex, edit as categoriesEdit, update as categoriesUpdate } from '@/routes/manager/categories';
@@ -12,7 +12,6 @@ import { index as categoriesIndex, edit as categoriesEdit, update as categoriesU
 type MenuCategory = {
     id: number;
     name: string;
-    slug: string;
     description: string | null;
     image: string | null;
     sort_order: number;
@@ -70,9 +69,20 @@ export default function CategoryEdit({ category }: Props) {
                                 <InputError message={errors.sort_order} />
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked === true)} />
-                                <Label htmlFor="is_active">Active</Label>
+                            <div className="flex items-center justify-between rounded-lg border p-3">
+                                <Label htmlFor="is_active">Active Category</Label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">
+                                        {data.is_active ? 'Active' : 'Inactive'}
+                                    </span>
+                                    <StatusToggle
+                                        checked={data.is_active}
+                                        onCheckedChange={() => setData('is_active', !data.is_active)}
+                                        onLabel="Active category"
+                                        offLabel="Inactive category"
+                                        ariaLabel="Toggle category active status"
+                                    />
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4">

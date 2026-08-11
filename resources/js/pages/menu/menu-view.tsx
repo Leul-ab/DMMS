@@ -26,6 +26,7 @@ import {
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -186,6 +187,7 @@ export function MenuView({
         post: registerMember,
         processing: isRegistering,
         errors: memberErrors,
+        clearErrors: clearMemberErrors,
         reset: resetMemberForm,
     } = useForm({
         name: '',
@@ -999,17 +1001,18 @@ export function MenuView({
                             <Input
                                 type="text"
                                 value={memberData.name}
-                                onChange={(e) =>
-                                    setMemberData('name', e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setMemberData('name', e.target.value);
+                                    clearMemberErrors('name');
+                                }}
                                 placeholder="Enter your full name"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                                className={
+                                    memberErrors.name
+                                        ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20'
+                                        : 'border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20'
+                                }
                             />
-                            {memberErrors.name && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {memberErrors.name}
-                                </p>
-                            )}
+                            <InputError message={memberErrors.name} />
                         </div>
                         <div>
                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
@@ -1018,17 +1021,18 @@ export function MenuView({
                             <Input
                                 type="tel"
                                 value={memberData.phone}
-                                onChange={(e) =>
-                                    setMemberData('phone', e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setMemberData('phone', e.target.value);
+                                    clearMemberErrors('phone');
+                                }}
                                 placeholder="Enter your phone number"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                                className={
+                                    memberErrors.phone
+                                        ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20'
+                                        : 'border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20'
+                                }
                             />
-                            {memberErrors.phone && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {memberErrors.phone}
-                                </p>
-                            )}
+                            <InputError message={memberErrors.phone} />
                         </div>
                         <div>
                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
@@ -1040,17 +1044,18 @@ export function MenuView({
                             <Input
                                 type="email"
                                 value={memberData.email}
-                                onChange={(e) =>
-                                    setMemberData('email', e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setMemberData('email', e.target.value);
+                                    clearMemberErrors('email');
+                                }}
                                 placeholder="Enter your email address"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                                className={
+                                    memberErrors.email
+                                        ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20'
+                                        : 'border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20'
+                                }
                             />
-                            {memberErrors.email && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {memberErrors.email}
-                                </p>
-                            )}
+                            <InputError message={memberErrors.email} />
                         </div>
                         <DialogFooter className="gap-2 pt-2">
                             <Button
@@ -1116,17 +1121,18 @@ export function MenuView({
                             <Input
                                 type="text"
                                 value={memberVerifyCode}
-                                onChange={(e) =>
-                                    setMemberVerifyCode(e.target.value)
-                                }
+                                onChange={(e) => {
+                                    setMemberVerifyCode(e.target.value);
+                                    setMemberVerifyError('');
+                                }}
                                 placeholder="e.g. CUS-ABC12345"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                                className={
+                                    memberVerifyError
+                                        ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20'
+                                        : 'border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20'
+                                }
                             />
-                            {memberVerifyError && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {memberVerifyError}
-                                </p>
-                            )}
+                            <InputError message={memberVerifyError} />
                         </div>
                         <DialogFooter className="gap-2 pt-2">
                             <Button

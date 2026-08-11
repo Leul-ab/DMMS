@@ -1,6 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { UserPlus } from 'lucide-react';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -52,18 +53,19 @@ export default function CreateCustomer() {
                                     onChange={(e) =>
                                         setData(
                                             'customer_code',
-                                            e.target.value
+                                            e.target.value,
+                                            () => clearErrors('customer_code')
                                         )
                                     }
                                     placeholder="Enter customer code"
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={
+                                        errors.customer_code
+                                            ? 'w-full rounded-md border border-red-500 bg-background px-3 py-2 text-sm'
+                                            : 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                    }
                                 />
 
-                                {errors.customer_code && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.customer_code}
-                                    </p>
-                                )}
+                                <InputError message={errors.customer_code} />
                             </div>
 
                             {/* Name */}
@@ -82,18 +84,19 @@ export default function CreateCustomer() {
                                     onChange={(e) =>
                                         setData(
                                             'name',
-                                            e.target.value
+                                            e.target.value,
+                                            () => clearErrors('name')
                                         )
                                     }
                                     placeholder="Enter customer name"
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={
+                                        errors.name
+                                            ? 'w-full rounded-md border border-red-500 bg-background px-3 py-2 text-sm'
+                                            : 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                    }
                                 />
 
-                                {errors.name && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.name}
-                                    </p>
-                                )}
+                                <InputError message={errors.name} />
                             </div>
 
                             {/* Phone */}
@@ -112,18 +115,19 @@ export default function CreateCustomer() {
                                     onChange={(e) =>
                                         setData(
                                             'phone',
-                                            e.target.value
+                                            e.target.value,
+                                            () => clearErrors('phone')
                                         )
                                     }
                                     placeholder="Enter phone number"
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={
+                                        errors.phone
+                                            ? 'w-full rounded-md border border-red-500 bg-background px-3 py-2 text-sm'
+                                            : 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                    }
                                 />
 
-                                {errors.phone && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.phone}
-                                    </p>
-                                )}
+                                <InputError message={errors.phone} />
                             </div>
 
                             {/* Email */}
@@ -142,18 +146,19 @@ export default function CreateCustomer() {
                                     onChange={(e) =>
                                         setData(
                                             'email',
-                                            e.target.value
+                                            e.target.value,
+                                            () => clearErrors('email')
                                         )
                                     }
                                     placeholder="Enter email address"
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    className={
+                                        errors.email
+                                            ? 'w-full rounded-md border border-red-500 bg-background px-3 py-2 text-sm'
+                                            : 'w-full rounded-md border border-input bg-background px-3 py-2 text-sm'
+                                    }
                                 />
 
-                                {errors.email && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.email}
-                                    </p>
-                                )}
+                                <InputError message={errors.email} />
                             </div>
 
                             {/* Membership */}

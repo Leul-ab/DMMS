@@ -3,6 +3,7 @@ import { Building2, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +105,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
     const [city, setCity] = useState('');
     const [country, setCountry] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
     // -----------------------------------------
     // Search
@@ -154,6 +156,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
         setCity('');
         setCountry('');
         setIsActive(true);
+        setErrors({});
     };
 
     // -----------------------------------------
@@ -172,6 +175,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
     const openEditModal = (branch: Branch) => {
         setSelectedBranch(branch);
+        setErrors({});
 
         setName(branch.name);
         setAddress(branch.address || '');
@@ -197,9 +201,23 @@ export default function BranchesIndex({ branches, filters }: Props) {
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim() || !address.trim()) {
+        const newErrors: Record<string, string> = {};
+
+        if (!name.trim()) {
+            newErrors.name = 'Branch name is required.';
+        }
+
+        if (!address.trim()) {
+            newErrors.address = 'Address is required.';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+
             return;
         }
+
+        setErrors({});
 
         router.post(
             branchesStore.url(),
@@ -225,9 +243,27 @@ export default function BranchesIndex({ branches, filters }: Props) {
     // -----------------------------------------
 
     const handleUpdate = () => {
-        if (!selectedBranch || !name.trim() || !address.trim()) {
+        const newErrors: Record<string, string> = {};
+
+        if (!selectedBranch) {
             return;
         }
+
+        if (!name.trim()) {
+            newErrors.name = 'Branch name is required.';
+        }
+
+        if (!address.trim()) {
+            newErrors.address = 'Address is required.';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+
+            return;
+        }
+
+        setErrors({});
 
         router.put(
             branchesUpdate.url(selectedBranch.id),
@@ -633,11 +669,28 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setName(event.target.value);
+
+                                    if (errors.name) {
+                                        setErrors((prev) => {
+                                            const next = { ...prev };
+
+                                            delete next.name;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
                                 placeholder="Enter branch name"
+                                className={
+                                    errors.name
+                                        ? 'border-red-500 focus-visible:border-red-500'
+                                        : ''
+                                }
                             />
+
+                            <InputError message={errors.name} />
                         </div>
 
                         {/* Address */}
@@ -649,11 +702,28 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={address}
-                                onChange={(event) =>
-                                    setAddress(event.target.value)
-                                }
+                                onChange={(event) => {
+                                    setAddress(event.target.value);
+
+                                    if (errors.address) {
+                                        setErrors((prev) => {
+                                            const next = { ...prev };
+
+                                            delete next.address;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
                                 placeholder="Enter street address"
+                                className={
+                                    errors.address
+                                        ? 'border-red-500 focus-visible:border-red-500'
+                                        : ''
+                                }
                             />
+
+                            <InputError message={errors.address} />
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -761,10 +831,27 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
+                                onChange={(event) => {
+                                    setName(event.target.value);
+
+                                    if (errors.name) {
+                                        setErrors((prev) => {
+                                            const next = { ...prev };
+
+                                            delete next.name;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                className={
+                                    errors.name
+                                        ? 'border-red-500 focus-visible:border-red-500'
+                                        : ''
                                 }
                             />
+
+                            <InputError message={errors.name} />
                         </div>
 
                         {/* Address */}
@@ -776,10 +863,27 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <Input
                                 value={address}
-                                onChange={(event) =>
-                                    setAddress(event.target.value)
+                                onChange={(event) => {
+                                    setAddress(event.target.value);
+
+                                    if (errors.address) {
+                                        setErrors((prev) => {
+                                            const next = { ...prev };
+
+                                            delete next.address;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                className={
+                                    errors.address
+                                        ? 'border-red-500 focus-visible:border-red-500'
+                                        : ''
                                 }
                             />
+
+                            <InputError message={errors.address} />
                         </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">

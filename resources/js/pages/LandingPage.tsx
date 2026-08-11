@@ -1,6 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import { CheckCircle2, Copy } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import InputError from '@/components/input-error';
 import { login } from '@/routes';
 import menuRoutes from '@/routes/menu';
 
@@ -29,10 +30,23 @@ export default function LandingPage() {
         e.preventDefault();
 
         if (!memberData.name.trim() || !memberData.phone.trim()) {
+            const newErrors: Record<string, string> = {};
+
+            if (!memberData.name.trim()) {
+                newErrors.name = 'Full name is required.';
+            }
+
+            if (!memberData.phone.trim()) {
+                newErrors.phone = 'Phone number is required.';
+            }
+
+            setMemberErrors(newErrors);
+
             return;
         }
 
         setIsRegistering(true);
+        setMemberErrors({});
 
         try {
             const getXsrfToken = () => {
@@ -58,9 +72,6 @@ export default function LandingPage() {
             if (response.status === 422) {
                 const errorData = await response.json();
                 setMemberErrors(errorData.errors || {});
-                const firstError = (Object.values(errorData.errors)[0] as string[])?.[0] || 'Validation failed.';
-                alert(firstError);
-                setIsRegistering(false);
 
                 return;
             }
@@ -74,11 +85,11 @@ export default function LandingPage() {
                 setShowRegistrationSuccess(true);
                 setCopied(false);
             } else {
-                alert(data.message || 'Registration failed. Please try again.');
+                setMemberErrors({ general: data.message || 'Registration failed. Please try again.' });
             }
         } catch (e) {
             console.error(e);
-            alert('Registration failed. Please try again.');
+            setMemberErrors({ general: 'Registration failed. Please try again.' });
         } finally {
             setIsRegistering(false);
         }
@@ -221,13 +232,26 @@ export default function LandingPage() {
                                 <input
                                     type="text"
                                     value={memberData.name}
-                                    onChange={(e) => setMemberData({ ...memberData, name: e.target.value })}
+                                    onChange={(e) => {
+                                        setMemberData({ ...memberData, name: e.target.value });
+
+                                        if (memberErrors.name) {
+                                            setMemberErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.name;
+
+                                                return next;
+                                            });
+                                        }
+                                    }}
                                     placeholder="Enter your full name"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    className={
+                                        memberErrors.name
+                                            ? 'w-full rounded-xl border border-red-500 px-4 py-3 outline-none focus:border-red-500'
+                                            : 'w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500'
+                                    }
                                 />
-                                {memberErrors.name && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.name}</p>
-                                )}
+                                <InputError message={memberErrors.name} />
                             </div>
 
                             {/* Phone */}
@@ -238,13 +262,26 @@ export default function LandingPage() {
                                 <input
                                     type="tel"
                                     value={memberData.phone}
-                                    onChange={(e) => setMemberData({ ...memberData, phone: e.target.value })}
+                                    onChange={(e) => {
+                                        setMemberData({ ...memberData, phone: e.target.value });
+
+                                        if (memberErrors.phone) {
+                                            setMemberErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.phone;
+
+                                                return next;
+                                            });
+                                        }
+                                    }}
                                     placeholder="Enter your phone number"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    className={
+                                        memberErrors.phone
+                                            ? 'w-full rounded-xl border border-red-500 px-4 py-3 outline-none focus:border-red-500'
+                                            : 'w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500'
+                                    }
                                 />
-                                {memberErrors.phone && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.phone}</p>
-                                )}
+                                <InputError message={memberErrors.phone} />
                             </div>
 
                             {/* Email */}
@@ -256,14 +293,34 @@ export default function LandingPage() {
                                 <input
                                     type="email"
                                     value={memberData.email}
-                                    onChange={(e) => setMemberData({ ...memberData, email: e.target.value })}
+                                    onChange={(e) => {
+                                        setMemberData({ ...memberData, email: e.target.value });
+
+                                        if (memberErrors.email) {
+                                            setMemberErrors((prev) => {
+                                                const next = { ...prev };
+                                                delete next.email;
+
+                                                return next;
+                                            });
+                                        }
+                                    }}
                                     placeholder="Enter your email address"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500"
+                                    className={
+                                        memberErrors.email
+                                            ? 'w-full rounded-xl border border-red-500 px-4 py-3 outline-none focus:border-red-500'
+                                            : 'w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-orange-500'
+                                    }
                                 />
-                                {memberErrors.email && (
-                                    <p className="mt-1 text-sm text-red-500">{memberErrors.email}</p>
-                                )}
+                                <InputError message={memberErrors.email} />
                             </div>
+
+                            {/* General error */}
+                            {memberErrors.general && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+                                    {memberErrors.general}
+                                </div>
+                            )}
 
                             {/* Buttons */}
                             <div className="flex gap-3 pt-2">

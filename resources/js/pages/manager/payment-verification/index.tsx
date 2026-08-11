@@ -18,6 +18,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { ReceiptModal } from '@/components/receipt-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -581,23 +582,20 @@ router.get(nextUrl, {}, { preserveState: true });
                                             setTransactionNumber(e.target.value);
 
                                             if (transactionError) {
-setTransactionError('');
-}
+                                                setTransactionError('');
+                                            }
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
-submitVerification();
-}
+                                                submitVerification();
+                                            }
                                         }}
                                         placeholder="e.g. TXNX8F9A2B"
-                                        className="pl-9"
+                                        className={transactionError ? 'pl-9 border-red-500 focus-visible:border-red-500' : 'pl-9'}
                                     />
                                 </div>
                                 {transactionError && (
-                                    <p className="mt-2 flex items-center gap-1 text-sm text-red-600">
-                                        <AlertCircle className="size-4" />
-                                        {transactionError}
-                                    </p>
+                                    <InputError message={transactionError} className="mt-2" />
                                 )}
                             </div>
                         </div>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -143,6 +144,9 @@ export default function OrdersIndex({
     const [processing, setProcessing] =
         useState(false);
 
+    const [editErrors, setEditErrors] =
+        useState<Record<string, string>>({});
+
     /*
      * Open edit modal.
      */
@@ -183,6 +187,7 @@ export default function OrdersIndex({
     const closeEditModal = () => {
         setEditingOrder(null);
         setEditItems([]);
+        setEditErrors({});
     };
 
     /*
@@ -256,20 +261,23 @@ export default function OrdersIndex({
             return;
         }
 
-        if (!editTableId) {
-            alert('Please select a table.');
+        const newErrors: Record<string, string> = {};
 
-            return;
+        if (!editTableId) {
+            newErrors.table = 'Please select a table.';
         }
 
         if (editItems.length === 0) {
-            alert(
-                'Please add at least one menu item.'
-            );
+            newErrors.items = 'Please add at least one menu item.';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setEditErrors(newErrors);
 
             return;
         }
 
+        setEditErrors({});
         setProcessing(true);
 
         router.put(
@@ -632,14 +640,28 @@ export default function OrdersIndex({
 
                             <select
                                 value={editTableId}
-                                onChange={(e) =>
+                                onChange={(e) => {
                                     setEditTableId(
                                         Number(
                                             e.target.value
                                         )
-                                    )
+                                    );
+
+                                    if (editErrors.table) {
+                                        setEditErrors((prev) => {
+                                            const next = { ...prev };
+
+                                            delete next.table;
+
+                                            return next;
+                                        });
+                                    }
+                                }}
+                                className={
+                                    editErrors.table
+                                        ? 'w-full rounded-md border border-red-500 bg-background px-3 py-2 text-sm'
+                                        : 'w-full rounded-md border bg-background px-3 py-2 text-sm'
                                 }
-                                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             >
                                 <option value="">
                                     Select Table
@@ -657,6 +679,8 @@ export default function OrdersIndex({
                                     </option>
                                 ))}
                             </select>
+
+                            <InputError message={editErrors.table} />
                         </div>
 
                         {/* Customer Name */}
@@ -853,6 +877,8 @@ export default function OrdersIndex({
                                     )
                                 )}
                             </div>
+
+                            <InputError message={editErrors.items} />
                         </div>
 
                         {/* Notes */}
