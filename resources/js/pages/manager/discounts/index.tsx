@@ -53,6 +53,7 @@ type Discount = {
     end_date: string;
     start_time: string | null;
     end_time: string | null;
+    menu_items?: number[];
 };
 
 type Props = {
@@ -64,6 +65,18 @@ type Props = {
         status?: string;
     };
     menuItems: { id: number; name: string }[];
+};
+
+type FormErrors = {
+    name?: string;
+    discountType?: string;
+    appliesTo?: string;
+    percentage?: string;
+    menuItems?: string;
+    startDate?: string;
+    startTime?: string;
+    endDate?: string;
+    endTime?: string;
 };
 
 export default function DiscountsIndex({
@@ -117,6 +130,140 @@ export default function DiscountsIndex({
     >([]);
     const [addMenuItemSearch, setAddMenuItemSearch] = useState('');
     const [editMenuItemSearch, setEditMenuItemSearch] = useState('');
+
+    // -----------------------------------------
+    // Validation Errors
+    // -----------------------------------------
+
+    const [errors, setErrors] = useState<FormErrors>({});
+
+    // -----------------------------------------
+    // Validation Helpers
+    // -----------------------------------------
+
+    const validateName = (value: string): string => {
+        if (!value.trim()) {
+            return 'Discount Name is required.';
+        }
+
+        return '';
+    };
+
+    const validateDiscountType = (value: string): string => {
+        if (!value) {
+            return 'Discount Type is required.';
+        }
+
+        return '';
+    };
+
+    const validateAppliesTo = (value: string): string => {
+        if (!value) {
+            return 'Please select who this discount applies to.';
+        }
+
+        return '';
+    };
+
+    const validatePercentage = (value: string): string => {
+        if (!value) {
+            return 'Percentage is required.';
+        }
+
+        const num = Number(value);
+
+        if (isNaN(num) || num < 1 || num > 100) {
+            return 'Percentage must be between 1 and 100.';
+        }
+
+        return '';
+    };
+
+    const validateMenuItems = (items: number[]): string => {
+        if (items.length === 0) {
+            return 'Please select at least one item.';
+        }
+
+        return '';
+    };
+
+    const validateStartDate = (value: string): string => {
+        if (!value) {
+            return 'Start Date is required.';
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const selected = new Date(value + 'T00:00:00');
+
+        if (selected < today) {
+            return 'Start Date cannot be in the past.';
+        }
+
+        return '';
+    };
+
+    const validateStartTime = (date: string, time: string): string => {
+        if (!time) {
+            return 'Start Time is required.';
+        }
+
+        if (!date) {
+            return '';
+        }
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const selectedDate = new Date(date + 'T00:00:00');
+
+        if (selectedDate.getTime() === today.getTime()) {
+            const [hours, minutes] = time.split(':').map(Number);
+            const selectedDateTime = new Date(selectedDate);
+            selectedDateTime.setHours(hours, minutes, 0, 0);
+
+            if (selectedDateTime < now) {
+                return 'Start Time cannot be in the past.';
+            }
+        }
+
+        return '';
+    };
+
+    const validateEndDate = (value: string, startDateValue: string): string => {
+        if (!value) {
+            return 'End Date is required.';
+        }
+
+        if (startDateValue && value < startDateValue) {
+            return 'End Date must be on or after Start Date.';
+        }
+
+        return '';
+    };
+
+    const validateEndTime = (
+        endDateValue: string,
+        endTimeValue: string,
+        startDateValue: string,
+        startTimeValue: string,
+    ): string => {
+        if (!endTimeValue) {
+            return 'End Time is required.';
+        }
+
+        if (!endDateValue || !startDateValue || !startTimeValue) {
+            return '';
+        }
+
+        const startDateTime = new Date(`${startDateValue}T${startTimeValue}`);
+        const endDateTime = new Date(`${endDateValue}T${endTimeValue}`);
+
+        if (endDateTime <= startDateTime) {
+            return 'End Time must be later than Start Time.';
+        }
+
+        return '';
+    };
 
     const filteredAddMenuItems = menuItems.filter((menuItem) =>
         menuItem.name
@@ -228,6 +375,7 @@ export default function DiscountsIndex({
         setEndTime('');
         setSelectedMenuItems([]);
         setAddMenuItemSearch('');
+        setErrors({});
 
         setIsAddOpen(true);
     };
@@ -279,15 +427,63 @@ export default function DiscountsIndex({
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim() || !startDate || !endDate) {
-            return;
+        const newErrors: FormErrors = {};
+
+        const nameError = validateName(name);
+        if (nameError) {
+            newErrors.name = nameError;
         }
 
-        if (discountType === 'percentage' && !percentage) {
-            return;
+        const discountTypeError = validateDiscountType(discountType);
+        if (discountTypeError) {
+            newErrors.discountType = discountTypeError;
         }
 
-        if (discountType === 'fixed' && !fixedAmount) {
+        const appliesToError = validateAppliesTo(appliesTo);
+        if (appliesToError) {
+            newErrors.appliesTo = appliesToError;
+        }
+
+        if (discountType === 'percentage') {
+            const percentageError = validatePercentage(percentage);
+            if (percentageError) {
+                newErrors.percentage = percentageError;
+            }
+        }
+
+        const menuItemsError = validateMenuItems(selectedMenuItems);
+        if (menuItemsError) {
+            newErrors.menuItems = menuItemsError;
+        }
+
+        const startDateError = validateStartDate(startDate);
+        if (startDateError) {
+            newErrors.startDate = startDateError;
+        }
+
+        const startTimeError = validateStartTime(startDate, startTime);
+        if (startTimeError) {
+            newErrors.startTime = startTimeError;
+        }
+
+        const endDateError = validateEndDate(endDate, startDate);
+        if (endDateError) {
+            newErrors.endDate = endDateError;
+        }
+
+        const endTimeError = validateEndTime(
+            endDate,
+            endTime,
+            startDate,
+            startTime,
+        );
+        if (endTimeError) {
+            newErrors.endTime = endTimeError;
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length > 0) {
             return;
         }
 
@@ -328,12 +524,12 @@ export default function DiscountsIndex({
                 setPercentage('');
                 setFixedAmount('');
                 setStatus('active');
-                    setStartDate('');
-                    setEndDate('');
-                    setStartTime('');
-                    setEndTime('');
-                    setSelectedMenuItems([]);
-                    setAddMenuItemSearch('');
+                setStartDate('');
+                setEndDate('');
+                setStartTime('');
+                setEndTime('');
+                setSelectedMenuItems([]);
+                setAddMenuItemSearch('');
             },
         });
     };
@@ -644,7 +840,7 @@ export default function DiscountsIndex({
                                                 <td className="p-3 text-muted-foreground">
                                                     {discount.description
                                                         ? discount.description
-                                                              .length > 50
+                                                            .length > 50
                                                             ? `${discount.description.slice(0, 50)}...`
                                                             : discount.description
                                                         : '—'}
@@ -654,7 +850,7 @@ export default function DiscountsIndex({
                                                 <td className="p-3">
                                                     <Badge variant="secondary">
                                                         {discount.discount_type ===
-                                                        'percentage'
+                                                            'percentage'
                                                             ? 'Percentage'
                                                             : 'Fixed Amount'}
                                                     </Badge>
@@ -672,13 +868,13 @@ export default function DiscountsIndex({
                                                     <Badge
                                                         variant={
                                                             discount.applies_to ===
-                                                            'members'
+                                                                'members'
                                                                 ? 'outline'
                                                                 : 'secondary'
                                                         }
                                                     >
                                                         {discount.applies_to ===
-                                                        'members'
+                                                            'members'
                                                             ? 'Members Only'
                                                             : 'All Customers'}
                                                     </Badge>
@@ -717,7 +913,7 @@ export default function DiscountsIndex({
                                                         {(discount.status ===
                                                             'active' ||
                                                             discount.status ===
-                                                                'inactive') &&
+                                                            'inactive') &&
                                                             can(
                                                                 'toggle discount status',
                                                             ) && (
@@ -735,7 +931,7 @@ export default function DiscountsIndex({
                                                                     offLabel="Inactive"
                                                                     ariaLabel={
                                                                         discount.status ===
-                                                                        'active'
+                                                                            'active'
                                                                             ? 'Deactivate discount'
                                                                             : 'Activate discount'
                                                                     }
@@ -746,55 +942,55 @@ export default function DiscountsIndex({
                                                         {can(
                                                             'view discounts',
                                                         ) && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openViewModal(
-                                                                        discount,
-                                                                    )
-                                                                }
-                                                                title="View discount"
-                                                            >
-                                                                <Eye className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openViewModal(
+                                                                            discount,
+                                                                        )
+                                                                    }
+                                                                    title="View discount"
+                                                                >
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                         {/* Edit */}
                                                         {can(
                                                             'update discounts',
                                                         ) && (
-                                                            <Button
-                                                                variant="outline"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openEditModal(
-                                                                        discount,
-                                                                    )
-                                                                }
-                                                                title="Edit discount"
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                                <Button
+                                                                    variant="outline"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openEditModal(
+                                                                            discount,
+                                                                        )
+                                                                    }
+                                                                    title="Edit discount"
+                                                                >
+                                                                    <Pencil className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
 
                                                         {/* Delete */}
                                                         {can(
                                                             'delete discounts',
                                                         ) && (
-                                                            <Button
-                                                                variant="destructive"
-                                                                size="icon"
-                                                                onClick={() =>
-                                                                    openDeleteModal(
-                                                                        discount,
-                                                                    )
-                                                                }
-                                                                title="Delete discount"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        )}
+                                                                <Button
+                                                                    variant="destructive"
+                                                                    size="icon"
+                                                                    onClick={() =>
+                                                                        openDeleteModal(
+                                                                            discount,
+                                                                        )
+                                                                    }
+                                                                    title="Delete discount"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -865,26 +1061,39 @@ export default function DiscountsIndex({
                                 value={name}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setName(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setName(value);
+                                    if (errors.name) {
+                                        const error = validateName(value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            name: error || undefined,
+                                        }));
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const error = validateName(name);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        name: error || undefined,
+                                    }));
+                                }}
                                 placeholder="Example: Summer Sale"
+                                className={
+                                    errors.name
+                                        ? 'border-red-500'
+                                        : name.trim() && !errors.name
+                                            ? 'border-green-500'
+                                            : ''
+                                }
                             />
-                        </div>
 
-                        {/* Description */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <textarea
-                                value={description}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) => setDescription(event.target.value)}
-                                placeholder="Describe this discount..."
-                                rows={3}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            />
+                            {errors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.name}
+                                </p>
+                            )}
                         </div>
 
                         {/* Discount Type */}
@@ -895,9 +1104,27 @@ export default function DiscountsIndex({
 
                             <Select
                                 value={discountType}
-                                onValueChange={setDiscountType}
+                                onValueChange={(value) => {
+                                    setDiscountType(value);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        discountType:
+                                            validateDiscountType(value) || undefined,
+                                        percentage: value === 'percentage'
+                                            ? validatePercentage(percentage) || undefined
+                                            : undefined,
+                                    }));
+                                }}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger
+                                    className={
+                                        errors.discountType
+                                            ? 'border-red-500'
+                                            : discountType && !errors.discountType
+                                                ? 'border-green-500'
+                                                : ''
+                                    }
+                                >
                                     <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
 
@@ -911,6 +1138,12 @@ export default function DiscountsIndex({
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {errors.discountType && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.discountType}
+                                </p>
+                            )}
                         </div>
 
                         {/* Applies To */}
@@ -921,9 +1154,24 @@ export default function DiscountsIndex({
 
                             <Select
                                 value={appliesTo}
-                                onValueChange={setAppliesTo}
+                                onValueChange={(value) => {
+                                    setAppliesTo(value);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        appliesTo:
+                                            validateAppliesTo(value) || undefined,
+                                    }));
+                                }}
                             >
-                                <SelectTrigger>
+                                <SelectTrigger
+                                    className={
+                                        errors.appliesTo
+                                            ? 'border-red-500'
+                                            : appliesTo && !errors.appliesTo
+                                                ? 'border-green-500'
+                                                : ''
+                                    }
+                                >
                                     <SelectValue placeholder="Select applies to" />
                                 </SelectTrigger>
 
@@ -937,6 +1185,12 @@ export default function DiscountsIndex({
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {errors.appliesTo && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.appliesTo}
+                                </p>
+                            )}
                         </div>
 
                         {/* Percentage */}
@@ -954,9 +1208,39 @@ export default function DiscountsIndex({
                                     value={percentage}
                                     onChange={(
                                         event: React.ChangeEvent<HTMLInputElement>,
-                                    ) => setPercentage(event.target.value)}
+                                    ) => {
+                                        const value = event.target.value;
+                                        setPercentage(value);
+                                        if (errors.percentage) {
+                                            const error = validatePercentage(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                percentage: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validatePercentage(percentage);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            percentage: error || undefined,
+                                        }));
+                                    }}
                                     placeholder="Example: 15"
+                                    className={
+                                        errors.percentage
+                                            ? 'border-red-500'
+                                            : percentage && !errors.percentage
+                                                ? 'border-green-500'
+                                                : ''
+                                    }
                                 />
+
+                                {errors.percentage && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.percentage}
+                                    </p>
+                                )}
                             </div>
                         )}
 
@@ -1000,7 +1284,15 @@ export default function DiscountsIndex({
                                 className="mb-2"
                             />
 
-                            <div className="max-h-60 overflow-y-auto rounded-md border p-3">
+                            <div
+                                className={
+                                    errors.menuItems
+                                        ? 'max-h-60 overflow-y-auto rounded-md border border-red-500 p-3'
+                                        : selectedMenuItems.length > 0
+                                            ? 'max-h-60 overflow-y-auto rounded-md border border-green-500 p-3'
+                                            : 'max-h-60 overflow-y-auto rounded-md border p-3'
+                                }
+                            >
                                 {filteredAddMenuItems.length === 0 ? (
                                     <p className="text-sm text-muted-foreground">
                                         No menu items available.
@@ -1020,21 +1312,28 @@ export default function DiscountsIndex({
                                                         )}
                                                         onCheckedChange={() => {
                                                             setSelectedMenuItems(
-                                                                (prev) =>
-                                                                    prev.includes(
+                                                                (prev) => {
+                                                                    const next = prev.includes(
                                                                         menuItem.id,
                                                                     )
                                                                         ? prev.filter(
-                                                                              (
-                                                                                  id,
-                                                                              ) =>
-                                                                                  id !==
-                                                                                  menuItem.id,
-                                                                          )
+                                                                            (
+                                                                                id,
+                                                                            ) =>
+                                                                                id !==
+                                                                                menuItem.id,
+                                                                        )
                                                                         : [
-                                                                              ...prev,
-                                                                              menuItem.id,
-                                                                          ],
+                                                                            ...prev,
+                                                                            menuItem.id,
+                                                                        ];
+                                                                    setErrors((current) => ({
+                                                                        ...current,
+                                                                        menuItems:
+                                                                            validateMenuItems(next) || undefined,
+                                                                    }));
+                                                                    return next;
+                                                                },
                                                             );
                                                         }}
                                                     />
@@ -1050,6 +1349,12 @@ export default function DiscountsIndex({
                                     </div>
                                 )}
                             </div>
+
+                            {errors.menuItems && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.menuItems}
+                                </p>
+                            )}
                         </div>
 
                         {/* Status */}
@@ -1094,8 +1399,38 @@ export default function DiscountsIndex({
                                 value={startDate}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setStartDate(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setStartDate(value);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        startDate: validateStartDate(value) || undefined,
+                                        startTime: validateStartTime(value, startTime) || undefined,
+                                        endDate: validateEndDate(endDate, value) || undefined,
+                                        endTime: validateEndTime(endDate, endTime, value, startTime) || undefined,
+                                    }));
+                                }}
+                                onBlur={() => {
+                                    const error = validateStartDate(startDate);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        startDate: error || undefined,
+                                    }));
+                                }}
+                                className={
+                                    errors.startDate
+                                        ? 'border-red-500'
+                                        : startDate && !errors.startDate
+                                            ? 'border-green-500'
+                                            : ''
+                                }
                             />
+
+                            {errors.startDate && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.startDate}
+                                </p>
+                            )}
                         </div>
 
                         {/* End Date */}
@@ -1109,8 +1444,36 @@ export default function DiscountsIndex({
                                 value={endDate}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setEndDate(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setEndDate(value);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        endDate: validateEndDate(value, startDate) || undefined,
+                                        endTime: validateEndTime(value, endTime, startDate, startTime) || undefined,
+                                    }));
+                                }}
+                                onBlur={() => {
+                                    const error = validateEndDate(endDate, startDate);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        endDate: error || undefined,
+                                    }));
+                                }}
+                                className={
+                                    errors.endDate
+                                        ? 'border-red-500'
+                                        : endDate && !errors.endDate
+                                            ? 'border-green-500'
+                                            : ''
+                                }
                             />
+
+                            {errors.endDate && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.endDate}
+                                </p>
+                            )}
                         </div>
 
                         {/* Start Time */}
@@ -1124,8 +1487,36 @@ export default function DiscountsIndex({
                                 value={startTime}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setStartTime(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setStartTime(value);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        startTime: validateStartTime(startDate, value) || undefined,
+                                        endTime: validateEndTime(endDate, endTime, startDate, value) || undefined,
+                                    }));
+                                }}
+                                onBlur={() => {
+                                    const error = validateStartTime(startDate, startTime);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        startTime: error || undefined,
+                                    }));
+                                }}
+                                className={
+                                    errors.startTime
+                                        ? 'border-red-500'
+                                        : startTime && !errors.startTime
+                                            ? 'border-green-500'
+                                            : ''
+                                }
                             />
+
+                            {errors.startTime && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.startTime}
+                                </p>
+                            )}
                         </div>
 
                         {/* End Time */}
@@ -1139,7 +1530,64 @@ export default function DiscountsIndex({
                                 value={endTime}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setEndTime(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setEndTime(value);
+                                    if (errors.endTime) {
+                                        const error = validateEndTime(
+                                            endDate,
+                                            value,
+                                            startDate,
+                                            startTime,
+                                        );
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            endTime: error || undefined,
+                                        }));
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const error = validateEndTime(
+                                        endDate,
+                                        endTime,
+                                        startDate,
+                                        startTime,
+                                    );
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        endTime: error || undefined,
+                                    }));
+                                }}
+                                className={
+                                    errors.endTime
+                                        ? 'border-red-500'
+                                        : endTime && !errors.endTime
+                                            ? 'border-green-500'
+                                            : ''
+                                }
+                            />
+
+                            {errors.endTime && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.endTime}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
+
+                            <textarea
+                                value={description}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) => setDescription(event.target.value)}
+                                placeholder="Describe this discount..."
+                                rows={3}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                             />
                         </div>
                     </div>
@@ -1192,7 +1640,7 @@ export default function DiscountsIndex({
 
                                     <Badge variant="secondary">
                                         {selectedDiscount.discount_type ===
-                                        'percentage'
+                                            'percentage'
                                             ? 'Percentage'
                                             : 'Fixed Amount'}
                                     </Badge>
@@ -1205,17 +1653,17 @@ export default function DiscountsIndex({
 
                                     <p className="font-medium">
                                         {selectedDiscount.discount_type ===
-                                        'percentage'
+                                            'percentage'
                                             ? `${selectedDiscount.percentage}%`
                                             : new Intl.NumberFormat('en-US', {
-                                                  style: 'currency',
-                                                  currency: 'USD',
-                                              }).format(
-                                                  Number(
-                                                      selectedDiscount.fixed_amount ||
-                                                          0,
-                                                  ),
-                                              )}
+                                                style: 'currency',
+                                                currency: 'USD',
+                                            }).format(
+                                                Number(
+                                                    selectedDiscount.fixed_amount ||
+                                                    0,
+                                                ),
+                                            )}
                                     </p>
                                 </div>
 
@@ -1445,16 +1893,16 @@ export default function DiscountsIndex({
                                                                     menuItem.id,
                                                                 )
                                                                     ? prev.filter(
-                                                                          (
-                                                                              id,
-                                                                          ) =>
-                                                                              id !==
-                                                                              menuItem.id,
-                                                                      )
+                                                                        (
+                                                                            id,
+                                                                        ) =>
+                                                                            id !==
+                                                                            menuItem.id,
+                                                                    )
                                                                     : [
-                                                                          ...prev,
-                                                                          menuItem.id,
-                                                                      ],
+                                                                        ...prev,
+                                                                        menuItem.id,
+                                                                    ],
                                                         );
                                                     }}
                                                 />
