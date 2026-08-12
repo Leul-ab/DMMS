@@ -44,7 +44,6 @@ import type { PaginatedData } from '@/types';
 type MenuCategory = {
     id: number;
     name: string;
-    slug: string;
     description: string | null;
     image: string | null;
     sort_order: number;
@@ -94,7 +93,6 @@ export default function CategoriesIndex({
     // -----------------------------------------
 
     const [name, setName] = useState('');
-    const [slug, setSlug] = useState('');
     const [description, setDescription] = useState('');
     const [sortOrder, setSortOrder] = useState('');
     const [isActive, setIsActive] = useState(true);
@@ -125,7 +123,6 @@ export default function CategoriesIndex({
 
     const openAddModal = () => {
         setName('');
-        setSlug('');
         setDescription('');
         setSortOrder('');
         setIsActive(true);
@@ -156,7 +153,6 @@ export default function CategoriesIndex({
         setSelectedCategory(category);
 
         setName(category.name);
-        setSlug(category.slug || '');
         setDescription(category.description || '');
         setSortOrder(
             category.sort_order.toString(),
@@ -191,10 +187,6 @@ export default function CategoriesIndex({
 
         formData.append('name', name);
 
-        if (slug) {
-            formData.append('slug', slug);
-        }
-
         if (description) {
             formData.append(
                 'description',
@@ -228,7 +220,6 @@ export default function CategoriesIndex({
                     setIsAddOpen(false);
 
                     setName('');
-                    setSlug('');
                     setDescription('');
                     setSortOrder('');
                     setIsActive(true);
@@ -253,10 +244,6 @@ export default function CategoriesIndex({
         const formData = new FormData();
 
         formData.append('name', name);
-
-        if (slug) {
-            formData.append('slug', slug);
-        }
 
         if (description) {
             formData.append(
@@ -416,10 +403,6 @@ export default function CategoriesIndex({
                                             </th>
 
                                             <th className="p-3">
-                                                Slug
-                                            </th>
-
-                                            <th className="p-3">
                                                 Items
                                             </th>
 
@@ -446,10 +429,6 @@ export default function CategoriesIndex({
                                                 >
                                                     <td className="p-3 font-medium">
                                                         {category.name}
-                                                    </td>
-
-                                                    <td className="p-3 text-muted-foreground">
-                                                        {category.slug}
                                                     </td>
 
                                                     <td className="p-3 text-muted-foreground">
@@ -642,24 +621,7 @@ export default function CategoriesIndex({
                             />
                         </div>
 
-                        {/* Slug */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Slug
-                            </label>
 
-                            <Input
-                                value={slug}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setSlug(
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Example: breakfast"
-                            />
-                        </div>
 
                         {/* Description */}
                         <div>
@@ -808,15 +770,7 @@ export default function CategoriesIndex({
                                     </p>
                                 </div>
 
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Slug
-                                    </p>
 
-                                    <p className="font-medium">
-                                        {selectedCategory.slug}
-                                    </p>
-                                </div>
 
                                 <div>
                                     <p className="text-sm text-muted-foreground">

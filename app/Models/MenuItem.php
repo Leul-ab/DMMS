@@ -17,7 +17,6 @@ class MenuItem extends Model
         'branch_id',
         'category_id',
         'name',
-        'slug',
         'description',
         'price',
         'image',
@@ -34,21 +33,6 @@ class MenuItem extends Model
             'featured' => 'boolean',
             'preparation_time' => 'integer',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (MenuItem $item) {
-            if (empty($item->slug)) {
-                $item->slug = Str::slug($item->name);
-            }
-        });
-
-        static::updating(function (MenuItem $item) {
-            if ($item->isDirty('name') && !$item->isDirty('slug')) {
-                $item->slug = Str::slug($item->name);
-            }
-        });
     }
 
     public function category(): BelongsTo

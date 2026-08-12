@@ -60,7 +60,6 @@ type MenuItem = {
 id: number;
 category_id: number;
 name: string;
-slug: string;
 description: string | null;
 price: string;
 image: string | null;
@@ -119,7 +118,6 @@ const [selectedItem, setSelectedItem] =
 
 const [categoryId, setCategoryId] = useState('');
 const [name, setName] = useState('');
-const [slug, setSlug] = useState('');
 const [description, setDescription] = useState('');
 const [price, setPrice] = useState('');
 const [preparationTime, setPreparationTime] =
@@ -216,7 +214,6 @@ const openAddModal = () => {
 
     setCategoryId('');
     setName('');
-    setSlug('');
     setDescription('');
     setPrice('');
     setPreparationTime('');
@@ -251,7 +248,6 @@ const openEditModal = (
         String(item.category_id),
     );
     setName(item.name);
-    setSlug(item.slug || '');
     setDescription(
         item.description || '',
     );
@@ -305,10 +301,6 @@ const handleAdd = () => {
 
     formData.append('name', name);
 
-    if (slug) {
-        formData.append('slug', slug);
-    }
-
     if (description) {
         formData.append(
             'description',
@@ -350,7 +342,6 @@ const handleAdd = () => {
 
                 setCategoryId('');
                 setName('');
-                setSlug('');
                 setDescription('');
                 setPrice('');
                 setPreparationTime('');
@@ -384,10 +375,6 @@ const handleUpdate = () => {
     );
 
     formData.append('name', name);
-
-    if (slug) {
-        formData.append('slug', slug);
-    }
 
     if (description) {
         formData.append(
@@ -975,25 +962,7 @@ return (
                         />
                     </div>
 
-                    {/* Slug */}
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">
-                            Slug
-                        </label>
 
-                        <Input
-                            value={slug}
-                            onChange={(
-                                event,
-                            ) =>
-                                setSlug(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                            placeholder="Example: chicken-burger"
-                        />
-                    </div>
 
                     {/* Description */}
                     <div>
@@ -1227,17 +1196,7 @@ return (
                                 </p>
                             </div>
 
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Slug
-                                </p>
 
-                                <p className="font-medium">
-                                    {
-                                        selectedItem.slug
-                                    }
-                                </p>
-                            </div>
 
                             <div>
                                 <p className="text-sm text-muted-foreground">
@@ -1412,24 +1371,7 @@ return (
                         />
                     </div>
 
-                    {/* Slug */}
-                    <div>
-                        <label className="mb-2 block text-sm font-medium">
-                            Slug
-                        </label>
 
-                        <Input
-                            value={slug}
-                            onChange={(
-                                event,
-                            ) =>
-                                setSlug(
-                                    event.target
-                                        .value,
-                                )
-                            }
-                        />
-                    </div>
 
                     {/* Description */}
                     <div>
