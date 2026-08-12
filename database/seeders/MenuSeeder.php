@@ -6,7 +6,6 @@ use App\Models\Branch;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class MenuSeeder extends Seeder
 {
@@ -26,8 +25,8 @@ class MenuSeeder extends Seeder
 
         foreach ($categories as $data) {
             MenuCategory::firstOrCreate(
-                ['slug' => Str::slug($data['name'])],
-                [...$data, 'branch_id' => $branch?->id]
+                ['name' => $data['name'], 'branch_id' => $branch?->id],
+                $data
             );
         }
 
@@ -52,7 +51,6 @@ class MenuSeeder extends Seeder
             ['category' => 'Beverages', 'name' => 'Italian Soda', 'description' => 'Sparkling water with fruit syrup', 'price' => 3.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
             ['category' => 'Beverages', 'name' => 'Espresso', 'description' => 'Double shot espresso', 'price' => 2.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
             ['category' => 'Beverages', 'name' => 'Iced Coffee', 'description' => 'Cold brew with ice', 'price' => 3.99, 'preparation_time' => 3, 'is_available' => true, 'featured' => true],
-
             // Desserts
             ['category' => 'Desserts', 'name' => 'Chocolate Cake', 'description' => 'Rich chocolate layer cake', 'price' => 6.99, 'preparation_time' => 5, 'is_available' => true, 'featured' => true],
             ['category' => 'Desserts', 'name' => 'Tiramisu', 'description' => 'Classic Italian tiramisu', 'price' => 7.49, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],
@@ -71,10 +69,10 @@ class MenuSeeder extends Seeder
         ];
 
         foreach ($items as $data) {
-            $category = MenuCategory::where('slug', Str::slug($data['category']))->first();
+            $category = MenuCategory::where('name', $data['category'])->where('branch_id', $branch?->id)->first();
             if ($category) {
                 MenuItem::firstOrCreate(
-                    ['slug' => Str::slug($data['name'])],
+                    ['name' => $data['name'], 'branch_id' => $branch?->id, 'category_id' => $category->id],
                     [
                         'branch_id' => $branch?->id,
                         'category_id' => $category->id,

@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\MenuCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -51,7 +51,20 @@ class MenuCategoryController extends Controller
 
         $validated['is_active'] = $request->boolean('is_active', true);
 
-        MenuCategory::create($validated);
+        DB::transaction(function () use ($validated) {
+            $maxSortOrder = MenuCategory::query()->lockForUpdate()->max('sort_order') ?? 0;
+            $sortOrder = $validated['sort_order'] ?? ($maxSortOrder + 1);
+
+            if ($sortOrder <= $maxSortOrder) {
+                MenuCategory::query()
+                    ->where('sort_order', '>=', $sortOrder)
+                    ->increment('sort_order');
+            }
+
+            $validated['sort_order'] = $sortOrder;
+
+            MenuCategory::create($validated);
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Category created successfully.']);
 
