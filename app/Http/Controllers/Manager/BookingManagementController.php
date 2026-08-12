@@ -84,7 +84,7 @@ class BookingManagementController extends Controller
             ->where('expires_at', '<', Carbon::now())
             ->count();
         $availableTables = RestaurantTable::where('status', 'available')->count();
-        $reservedTables = RestaurantTable::where('status', 'booked')->count();
+        $reservedTables = RestaurantTable::where('status', 'reserved')->count();
 
         return inertia('admin/bookings/index', [
             'bookings' => $bookings,
@@ -149,9 +149,9 @@ class BookingManagementController extends Controller
             return back()->withErrors(['booking' => 'Cannot delete an active booking.']);
         }
 
-        // Release tables if still booked
+        // Release tables if still reserved
         $tableIds = $booking->tables()->pluck('restaurant_tables.id');
-        RestaurantTable::whereIn('id', $tableIds)->where('status', 'booked')->update(['status' => 'available']);
+        RestaurantTable::whereIn('id', $tableIds)->where('status', 'reserved')->update(['status' => 'available']);
 
         $booking->tables()->detach();
         $booking->delete();

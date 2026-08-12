@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { UserPlus } from 'lucide-react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -49,6 +49,11 @@ export default function UserCreate({
         is_waiter: false,
     });
 
+    const pageErrors = (usePage().props.errors ?? {}) as Record<
+        string,
+        string | undefined
+    >;
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(usersStore.url());
@@ -97,7 +102,7 @@ export default function UserCreate({
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone (optional)</Label>
+                                <Label htmlFor="phone">Phone Number</Label>
                                 <Input
                                     id="phone"
                                     value={data.phone}
@@ -106,7 +111,9 @@ export default function UserCreate({
                                     }
                                     placeholder="+1234567890"
                                 />
-                                <InputError message={errors.phone} />
+                                <InputError
+                                    message={errors.phone ?? pageErrors.phone}
+                                />
                             </div>
 
                             <div className="grid gap-2">

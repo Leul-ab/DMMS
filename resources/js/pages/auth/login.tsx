@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Form, Head } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -5,7 +6,6 @@ import {
     ChefHat,
     Lock,
     Mail,
-    Phone,
     ShoppingCart,
     Sparkles,
     TrendingUp,
@@ -49,6 +49,13 @@ description: 'Track sales and performance',
 ];
 
 export default function Login({ status, canResetPassword }: Props) {
+const [loginId, setLoginId] = useState('');
+
+const isPhone = (value: string): boolean => {
+    const trimmed = value.trim();
+    return trimmed.length > 0 && !trimmed.includes('@');
+};
+
 return (
 <> <Head title="Log in" />
 
@@ -191,61 +198,47 @@ return (
                         >
                             {({ processing, errors }) => (
                                 <>
-                                    {/* Email */}
+                                    {/* Email or Phone Number */}
                                     <div className="space-y-2">
                                         <Label
-                                            htmlFor="email"
+                                            htmlFor="loginId"
                                             className="text-sm font-semibold text-[#211b17]"
                                         >
-                                            Email address
+                                            Email or Phone Number
                                         </Label>
 
                                         <div className="group relative">
                                             <Mail className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-orange-500" />
 
                                             <Input
-                                                id="email"
-                                                type="email"
-                                                name="email"
+                                                id="loginId"
+                                                type="text"
+                                                name="loginId"
                                                 tabIndex={1}
-                                                autoComplete="email"
-                                                placeholder="you@example.com"
+                                                autoComplete="username"
+                                                placeholder="Enter your email or phone number"
+                                                value={loginId}
+                                                onChange={(e) =>
+                                                    setLoginId(e.target.value)
+                                                }
                                                 className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-4 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                                             />
                                         </div>
 
                                         <InputError
-                                            message={errors.email}
+                                            message={
+                                                errors.email ?? errors.phone
+                                            }
                                         />
                                     </div>
 
-                                    {/* Phone */}
-                                    <div className="space-y-2">
-                                        <Label
-                                            htmlFor="phone"
-                                            className="text-sm font-semibold text-[#211b17]"
-                                        >
-                                            Phone number
-                                        </Label>
-
-                                        <div className="group relative">
-                                            <Phone className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-orange-500" />
-
-                                            <Input
-                                                id="phone"
-                                                type="tel"
-                                                name="phone"
-                                                tabIndex={2}
-                                                autoComplete="tel"
-                                                placeholder="+251 911 234 567"
-                                                className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-4 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                                            />
-                                        </div>
-
-                                        <InputError
-                                            message={errors.phone}
-                                        />
-                                    </div>
+                                    <input
+                                        type="hidden"
+                                        name={
+                                            isPhone(loginId) ? 'phone' : 'email'
+                                        }
+                                        value={loginId}
+                                    />
 
                                     {/* Password */}
                                     <div className="space-y-2">

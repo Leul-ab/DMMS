@@ -136,6 +136,12 @@ class MenuController extends Controller
                 : null,
             'isMember' => $isMember,
 
+            // Booking confirmation data (passed explicitly so the confirmation
+            // dialog always receives the real booking details after a redirect).
+            'booking_success' => session('booking_success', false),
+            'booking_data' => session('booking_data'),
+            'customer_code' => session('customer_code', ''),
+
             'flash' => [
                 'success' => session('success'),
                 'order_number' => session('order_number'),

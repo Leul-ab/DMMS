@@ -1,5 +1,6 @@
 import { Clock, Table2, X, User, Calendar, CheckCircle2, XCircle, RefreshCw, Loader2, SearchX } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,18 @@ export default function MyBooking({ onClose }: Props) {
     useEffect(() => {
         // Don't fetch on mount - wait for code verification
         setIsLoading(false);
+    }, []);
+
+    // Lock background scroll while the modal is open. The current scroll
+    // position is preserved (we never change scrollY), and it is restored
+    // automatically when the modal unmounts (on close).
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
     }, []);
 
     const handleVerifyCode = async () => {
@@ -272,7 +285,7 @@ return null;
 
     const showCancelButton = booking && !isExpired && booking.status === 'active';
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
             <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl">
                 {/* Header */}
@@ -511,6 +524,7 @@ return null;
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }

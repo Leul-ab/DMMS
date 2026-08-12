@@ -74,7 +74,7 @@ $validated = $request->validate([
     'is_active' => ['boolean'],
     'is_waiter' => ['boolean'],
 ], [
-    'phone.unique' => 'This phone number is already used.',
+    'phone.unique' => 'This phone number already exists. Please use another phone number.',
 ]);
         if (Role::find($validated['role_id'])?->slug === 'super_admin') {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);

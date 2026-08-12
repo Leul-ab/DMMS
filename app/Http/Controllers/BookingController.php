@@ -139,8 +139,8 @@ class BookingController extends Controller
         // Attach tables
         $booking->tables()->attach($validated['table_ids']);
 
-        // Update table statuses to 'booked'
-        RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'booked']);
+        // Update table statuses to 'reserved'
+        RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'reserved']);
 
         // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
@@ -162,7 +162,7 @@ class BookingController extends Controller
                 'expires_at' => $booking->expires_at,
                 'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 600,
             ],
-            'customer_code' => $booking->customer->customer_code,
+            'customer_code' => $customer?->customer_code ?? '',
         ]);
     }
 

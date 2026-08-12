@@ -877,24 +877,6 @@ export default function CategoriesIndex({
                             />
                         </div>
 
-                        {/* Slug */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Slug
-                            </label>
-
-                            <Input
-                                value={slug}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setSlug(
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                        </div>
-
                         {/* Description */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">

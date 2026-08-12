@@ -109,7 +109,7 @@ type Props = {
     table: RestaurantTable | null;
     availableTables: RestaurantTable[];
     booking_success?: boolean;
-    booking_data?: BookingData | null;
+    bookingConfirm?: BookingData | null;
     customer_code?: string;
     tableError?: string | null;
     order_id?: number | null;
@@ -203,16 +203,20 @@ export function MenuView({
     const [copied, setCopied] = useState(false);
     const [showBookingSuccess, setShowBookingSuccess] = useState(false);
     const [bookingCodeCopied, setBookingCodeCopied] = useState(false);
+    // Snapshot of the confirmation data so it survives re-renders where the
+    // transient flash prop (booking_data) has reverted to null.
+    const [bookingConfirm, setBookingConfirm] = useState<BookingData | null>(null);
     const [countdown, setCountdown] = useState(
-        booking_data?.expires_in_seconds ?? 600,
+        bookingConfirm?.expires_in_seconds ?? 600,
     );
 
     useEffect(() => {
-        if (booking_success && customer_code) {
+        if (booking_success && customer_code && booking_data) {
+            setBookingConfirm(booking_data);
             setShowBookingSuccess(true);
-            setCountdown(booking_data?.expires_in_seconds ?? 600);
+            setCountdown(booking_data.expires_in_seconds ?? 600);
         }
-    }, [booking_success, customer_code]);
+    }, [booking_success, customer_code, booking_data]);
 
     useEffect(() => {
         if (!showBookingSuccess) {
@@ -765,7 +769,12 @@ export function MenuView({
             {/* ================= BOOKING CONFIRMED DIALOG ================= */}
             <Dialog
                 open={showBookingSuccess}
-                onOpenChange={setShowBookingSuccess}
+                onOpenChange={(open) => {
+                    setShowBookingSuccess(open);
+                    if (!open) {
+                        setBookingConfirm(null);
+                    }
+                }}
             >
                 <DialogContent className="border-orange-200 sm:max-w-md">
                     <DialogHeader className="text-center">
@@ -787,7 +796,7 @@ export function MenuView({
                                     Booking ID
                                 </span>
                                 <span className="text-sm font-bold text-stone-800">
-                                    #{booking_data?.id}
+                                    #{bookingConfirm?.id}
                                 </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
@@ -796,7 +805,7 @@ export function MenuView({
                                     Customer
                                 </span>
                                 <span className="text-sm font-bold text-stone-800">
-                                    {booking_data?.customer_name}
+                                    {bookingConfirm?.customer_name}
                                 </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
@@ -808,7 +817,7 @@ export function MenuView({
                                     variant="secondary"
                                     className="bg-orange-200 font-mono font-bold text-orange-800"
                                 >
-                                    {booking_data?.customer_code ||
+                                    {bookingConfirm?.customer_code ||
                                         customer_code}
                                 </Badge>
                             </div>
@@ -818,7 +827,7 @@ export function MenuView({
                                     Table
                                 </span>
                                 <span className="text-sm font-bold text-stone-800">
-                                    {booking_data?.tables?.join(', ') || 'N/A'}
+                                    {bookingConfirm?.tables?.join(', ') || 'N/A'}
                                 </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
@@ -827,9 +836,9 @@ export function MenuView({
                                     Date
                                 </span>
                                 <span className="text-sm font-bold text-stone-800">
-                                    {booking_data?.booked_at
+                                    {bookingConfirm?.booked_at
                                         ? new Date(
-                                            booking_data.booked_at,
+                                            bookingConfirm.booked_at,
                                         ).toLocaleDateString('en-US', {
                                             year: 'numeric',
                                             month: 'short',
@@ -844,9 +853,9 @@ export function MenuView({
                                     Time
                                 </span>
                                 <span className="text-sm font-bold text-stone-800">
-                                    {booking_data?.booked_at
+                                    {bookingConfirm?.booked_at
                                         ? new Date(
-                                            booking_data.booked_at,
+                                            bookingConfirm.booked_at,
                                         ).toLocaleTimeString('en-US', {
                                             hour: '2-digit',
                                             minute: '2-digit',
@@ -887,7 +896,10 @@ export function MenuView({
                     <DialogFooter className="gap-2">
                         <Button
                             variant="outline"
-                            onClick={() => setShowBookingSuccess(false)}
+                            onClick={() => {
+                                setShowBookingSuccess(false);
+                                setBookingConfirm(null);
+                            }}
                             className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                         >
                             Done
@@ -895,6 +907,7 @@ export function MenuView({
                         <Button
                             onClick={() => {
                                 setShowBookingSuccess(false);
+                                setBookingConfirm(null);
                                 setShowMyBooking(true);
                             }}
                             className="flex-1"
