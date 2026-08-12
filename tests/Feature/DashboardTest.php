@@ -18,7 +18,9 @@ class DashboardTest extends TestCase
 
     public function test_authenticated_users_can_visit_the_dashboard()
     {
+        \Spatie\Permission\Models\Permission::findOrCreate('view dashboard');
         $user = User::factory()->create();
+        $user->givePermissionTo('view dashboard');
         $this->actingAs($user);
 
         $response = $this->get(route('dashboard'));

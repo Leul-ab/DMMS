@@ -6,11 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\PhoneHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,17 +52,30 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
-            'role_id' => ['required', 'exists:roles,id'],
-            'branch_id' => ['required', 'exists:branches,id'],
-            'is_active' => ['boolean'],
-            'is_waiter' => ['boolean'],
-        ]);
+        $phone = null;
 
+        if ($request->has('phone')) {
+            $phone = PhoneHelper::normalize($request->input('phone'));
+            $request->merge(['phone' => $phone]);
+        }
+$phoneRules = ['nullable', 'string', 'max:20'];
+
+if ($phone !== null) {
+    $phoneRules[] = Rule::unique('users', 'phone');
+}
+
+$validated = $request->validate([
+    'name' => ['required', 'string', 'max:255'],
+    'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+    'phone' => $phoneRules,
+    'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
+    'role_id' => ['required', 'exists:roles,id'],
+    'branch_id' => ['required', 'exists:branches,id'],
+    'is_active' => ['boolean'],
+    'is_waiter' => ['boolean'],
+], [
+    'phone.unique' => 'This phone number is already used.',
+]);
         if (Role::find($validated['role_id'])?->slug === 'super_admin') {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);
 
@@ -98,10 +113,23 @@ class UserController extends Controller
             return back();
         }
 
+        $phone = null;
+
+        if ($request->has('phone')) {
+            $phone = PhoneHelper::normalize($request->input('phone'));
+            $request->merge(['phone' => $phone]);
+        }
+
+        $phoneRules = ['nullable', 'string', 'max:20'];
+
+        if ($phone !== null) {
+            $phoneRules[] = Rule::unique('users', 'phone')->ignore($user->id);
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => $phoneRules,
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
             'branch_id' => ['required', 'exists:branches,id'],
@@ -198,3 +226,4 @@ class UserController extends Controller
     return back();
 }
 }
+

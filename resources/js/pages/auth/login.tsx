@@ -1,14 +1,15 @@
 import { Form, Head } from '@inertiajs/react';
 import {
-ArrowRight,
-Check,
-ChefHat,
-Lock,
-Mail,
-ShoppingCart,
-Sparkles,
-TrendingUp,
-UtensilsCrossed,
+    ArrowRight,
+    Check,
+    ChefHat,
+    Lock,
+    Mail,
+    Phone,
+    ShoppingCart,
+    Sparkles,
+    TrendingUp,
+    UtensilsCrossed,
 } from 'lucide-react';
 
 import InputError from '@/components/input-error';
@@ -206,8 +207,6 @@ return (
                                                 id="email"
                                                 type="email"
                                                 name="email"
-                                                required
-                                                autoFocus
                                                 tabIndex={1}
                                                 autoComplete="email"
                                                 placeholder="you@example.com"
@@ -217,6 +216,34 @@ return (
 
                                         <InputError
                                             message={errors.email}
+                                        />
+                                    </div>
+
+                                    {/* Phone */}
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="phone"
+                                            className="text-sm font-semibold text-[#211b17]"
+                                        >
+                                            Phone number
+                                        </Label>
+
+                                        <div className="group relative">
+                                            <Phone className="pointer-events-none absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-stone-400 transition-colors group-focus-within:text-orange-500" />
+
+                                            <Input
+                                                id="phone"
+                                                type="tel"
+                                                name="phone"
+                                                tabIndex={2}
+                                                autoComplete="tel"
+                                                placeholder="+251 911 234 567"
+                                                className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-4 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                                            />
+                                        </div>
+
+                                        <InputError
+                                            message={errors.phone}
                                         />
                                     </div>
 
@@ -248,7 +275,7 @@ return (
                                                 id="password"
                                                 name="password"
                                                 required
-                                                tabIndex={2}
+                                                tabIndex={3}
                                                 autoComplete="current-password"
                                                 placeholder="Enter your password"
                                                 className="h-13 w-full rounded-xl border-stone-200 bg-white pl-12 pr-12 text-sm shadow-sm transition-all placeholder:text-stone-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"

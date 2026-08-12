@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
+use App\Actions\Fortify\HomeRedirectResponse;
 use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureRedirects();
     }
 
     /**
@@ -96,5 +98,14 @@ class FortifyServiceProvider extends ServiceProvider
                 ($request->input('credential.id') ?: $request->session()->getId()).'|'.$request->ip(),
             );
         });
+    }
+
+    /**
+     * Configure post-authentication redirects by role.
+     */
+    private function configureRedirects(): void
+    {
+        app()->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, HomeRedirectResponse::class);
+        app()->singleton(\Laravel\Fortify\Contracts\RegisterResponse::class, HomeRedirectResponse::class);
     }
 }
