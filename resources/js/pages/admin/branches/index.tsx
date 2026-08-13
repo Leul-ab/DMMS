@@ -954,7 +954,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                         ),
                                     )}
                                 />
-
+                                
                                 <InputError
                                     message={addErrors.country}
                                     className="mt-1"
@@ -964,10 +964,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                         {/* Active */}
 
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">
-                                Active Branch
-                            </label>
+                        <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={isActive}
                                 onCheckedChange={() =>
@@ -977,6 +974,9 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                 offLabel="Inactive"
                                 ariaLabel="Toggle active branch status"
                             />
+                            <label className="text-sm font-medium">
+                                Active Branch
+                            </label>
                         </div>
                     </div>
 
@@ -1087,10 +1087,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                         {/* Active */}
 
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">
-                                Active Branch
-                            </label>
+                        <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={isActive}
                                 onCheckedChange={() =>
@@ -1100,6 +1097,9 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                 offLabel="Inactive"
                                 ariaLabel="Toggle active branch status"
                             />
+                            <label className="text-sm font-medium">
+                                Active Branch
+                            </label>
                         </div>
                     </div>
 
