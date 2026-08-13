@@ -964,19 +964,19 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                         {/* Active */}
 
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
-
+                        <div className="flex items-center justify-between">
                             <label className="text-sm font-medium">
                                 Active Branch
                             </label>
+                            <StatusToggle
+                                checked={isActive}
+                                onCheckedChange={() =>
+                                    setIsActive(!isActive)
+                                }
+                                onLabel="Active"
+                                offLabel="Inactive"
+                                ariaLabel="Toggle active branch status"
+                            />
                         </div>
                     </div>
 
@@ -1087,19 +1087,19 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                         {/* Active */}
 
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
-
+                        <div className="flex items-center justify-between">
                             <label className="text-sm font-medium">
                                 Active Branch
                             </label>
+                            <StatusToggle
+                                checked={isActive}
+                                onCheckedChange={() =>
+                                    setIsActive(!isActive)
+                                }
+                                onLabel="Active"
+                                offLabel="Inactive"
+                                ariaLabel="Toggle active branch status"
+                            />
                         </div>
                     </div>
 

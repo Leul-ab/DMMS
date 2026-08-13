@@ -1,5 +1,13 @@
 import { Link, router } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Copy, Receipt, Star } from 'lucide-react';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    ChevronDown,
+    ChevronUp,
+    Copy,
+    Receipt,
+    Star,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { FeedbackModal } from '@/components/feedback-modal';
@@ -90,300 +98,282 @@ type Props = {
     menuPath: string;
 };
 
-// Get progress bar color based on percentage
-function getProgressColor(percentage: number): string {
-    if (percentage >= 100) {
-return 'bg-green-500';
+// ─────────────────────────────────────────────────────────────
+// Helper functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build a compact order name from the actual menu item names.
+ *  - 1 item  → "Burger"
+ *  - 2 items → "Burger and Juice"
+ *  - 3+ items → "Burger, French Fries, and Juice"
+ */
+function getOrderName(order: Order): string {
+    const names = order.order_items.map((item) => item.menu_item.name).filter(Boolean);
+
+    if (names.length === 0) {
+        return 'Order';
+    }
+
+    if (names.length === 1) {
+        return names[0];
+    }
+
+    if (names.length === 2) {
+        return `${names[0]} and ${names[1]}`;
+    }
+
+    return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
 }
 
-    if (percentage >= 81) {
-return 'bg-green-400';
+/**
+ * Compute the progress percentage for a single order using the
+ * *existing* order-progress logic:
+ *  - ready / served / completed → 100%
+ *  - no preparation_started_at or preparation_time → 0%
+ *  - otherwise → elapsed / total * 100  (live countdown)
+ */
+function calculateOrderProgress(
+    order: Order,
+    now: number
+): { progress: number; remaining: number | null } {
+    if (['ready', 'served', 'completed'].includes(order.status)) {
+        return { progress: 100, remaining: 0 };
+    }
+
+    if (!order.preparation_started_at || !order.preparation_time) {
+        return { progress: 0, remaining: null };
+    }
+
+    const startedAt = new Date(order.preparation_started_at).getTime();
+    const elapsed = Math.floor((now - startedAt) / 1000);
+    const total = order.preparation_time * 60;
+    const remaining = Math.max(0, total - elapsed);
+    const progress = Math.min(100, Math.round((elapsed / total) * 100));
+
+    return { progress, remaining };
 }
 
-    if (percentage >= 51) {
-return 'bg-orange-500';
-}
-
-    return 'bg-blue-500';
-}
-
-// Get progress bar background color based on percentage
-function getProgressBgColor(percentage: number): string {
-    if (percentage >= 100) {
-return 'bg-green-100';
-}
-
-    if (percentage >= 81) {
-return 'bg-green-100';
-}
-
-    if (percentage >= 51) {
-return 'bg-orange-100';
-}
-
-    return 'bg-blue-100';
-}
-
-// Get status message and emoji
-function getStatusInfo(status: string, preparationStatus: string): { emoji: string; message: string } {
+// Status color for the status badge (kept for card & detail status display)
+function getStatusColor(status: string): string {
     switch (status) {
         case 'pending':
-            return { emoji: '⏳', message: 'Waiting for Kitchen' };
+            return 'bg-yellow-500';
+        case 'confirmed':
+            return 'bg-blue-500';
         case 'preparing':
-            if (preparationStatus === 'preparing') {
-                return { emoji: '🍳', message: 'Preparing Your Order' };
-            }
-
-            return { emoji: '⏳', message: 'Waiting for Kitchen' };
+            return 'bg-orange-500';
         case 'ready':
-            return { emoji: '✅', message: 'Ready for Pickup / Ready to Serve' };
+            return 'bg-purple-500';
+        case 'served':
+            return 'bg-teal-500';
         case 'completed':
-            return { emoji: '🎉', message: 'Order Completed' };
+            return 'bg-green-500';
         case 'cancelled':
-            return { emoji: '❌', message: 'Order Cancelled' };
+            return 'bg-red-500';
         default:
-            return { emoji: '📋', message: 'Order Received' };
+            return 'bg-gray-500';
     }
 }
 
-export default function MyOrderView({
-    table,
-    order,
-    orders = [],
-    menuPath,
-}: Props) {
+function getStatusEmoji(status: string): string {
+    switch (status) {
+        case 'pending':
+            return '⏳';
+        case 'preparing':
+            return '🍳';
+        case 'ready':
+            return '✅';
+        case 'served':
+            return '🍽️';
+        case 'completed':
+            return '🎉';
+        case 'cancelled':
+            return '❌';
+        default:
+            return '📋';
+    }
+}
+
+function formatDateTime(dateString: string): string {
+    const date = new Date(dateString);
+
+    return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+function formatTimeOnly(date: Date): string {
+    return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
+// Single consistent progress-bar colour used for *every* order.
+// Only the width changes — never the colour.
+const PROGRESS_COLOR = 'bg-orange-500';
+const PROGRESS_BG = 'bg-orange-100';
+
+function ProgressBar({ percentage }: { percentage: number }) {
+    return (
+        <div className={`w-full rounded-full h-4 ${PROGRESS_BG} overflow-hidden`}>
+            <div
+                className={`h-full rounded-full ${PROGRESS_COLOR} transition-all duration-1000 ease-linear`}
+                style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
+            />
+        </div>
+    );
+}
+
+// Payment method account numbers
+const paymentAccounts: Record<string, { label: string; number: string; icon: string }> = {
+    telebirr: { label: 'Telebirr', number: '0987574556', icon: '📱' },
+    cbe_birr: { label: 'CBE Birr', number: '1000976545673', icon: '🏦' },
+};
+
+export default function MyOrderView({ table, order, orders = [], menuPath }: Props) {
+    // ── Order-level state ──
+    // Track progress and completion independently for every order.
+    const [progressMap, setProgressMap] = useState<Record<number, number>>({});
+
+    // Which order's View Details is expanded (null = none).
+    const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+
+    // Payment workflow — keyed to whichever order the customer is paying for.
+    const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
     const [isSendingVerification, setIsSendingVerification] = useState(false);
     const [verificationSent, setVerificationSent] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
-    const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
-    const [progressPercent, setProgressPercent] = useState<number>(0);
-    const [showCompletion, setShowCompletion] = useState(false);
+
+    // Cancel workflow
+    const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
+
+    // Receipt / Feedback
     const [showReceipt, setShowReceipt] = useState(false);
     const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-    const prevPrepTimeRef = useRef<number | null>(null);
-    const prevPaymentStatusRef = useRef<string | null>(null);
-    const prevOrderStatusRef = useRef<string | null>(null);
 
-    // Detect when the chef adds additional preparation time and notify the customer.
+    // Refs for change-detection notifications
+    const prevPrepTimeRef = useRef<Record<number, number>>({});
+    const prevPaymentStatusRef = useRef<Record<number, string>>({});
+    const prevOrderStatusRef = useRef<Record<number, string>>({});
+
+    // ── Effects ─────────────────────────────────────────────
+
+    // Live, per-order progress + countdown (1 s interval).
+    // Reuses the existing elapsed/total calculation so there are no
+    // conflicting progress numbers — only the width of each bar changes.
     useEffect(() => {
-        if (!order) {
-return;
-}
-
-        const currentPrepTime = order.preparation_time;
-
-        if (
-            prevPrepTimeRef.current !== null &&
-            currentPrepTime !== null &&
-            currentPrepTime > prevPrepTimeRef.current &&
-            order.status === 'preparing'
-        ) {
-            const addedMinutes = currentPrepTime - prevPrepTimeRef.current;
-            toast.info(
-                `Preparation time has been updated. Your order will take approximately ${addedMinutes} additional minutes.`,
-                { duration: 5000 }
-            );
-        }
-
-        prevPrepTimeRef.current = currentPrepTime;
-    }, [order?.preparation_time, order?.status]);
-
-    // Live countdown timer and progress calculation.
-    // The progress bar must stop immediately when the kitchen marks the
-    // order as ready or completed, regardless of the elapsed time.
-    useEffect(() => {
-        // If the chef marked the order as ready or completed (early finish),
-        // stop the countdown immediately and complete the progress bar.
-        if (order && (order.status === 'ready' || order.status === 'completed')) {
-            setRemainingSeconds(0);
-            setProgressPercent(100);
-            setShowCompletion(true);
-
-            return;
-        }
-
-        // No active preparation timer yet
-        if (!order || !order.preparation_started_at || !order.preparation_time) {
-            setRemainingSeconds(null);
-            setProgressPercent(0);
-            setShowCompletion(false);
-
-            return;
-        }
-
         const interval = setInterval(() => {
-            const startedAt = new Date(order.preparation_started_at!).getTime();
             const now = Date.now();
-            const elapsed = Math.floor((now - startedAt) / 1000);
-            // The total may have been increased by the chef ("Add Time").
-            // Recalculating based on the updated preparation_time automatically
-            // bumps the remaining time and resets the progress percentage.
-            const total = order.preparation_time! * 60;
-            const remaining = Math.max(0, total - elapsed);
-            const progress = Math.min(100, Math.round((elapsed / total) * 100));
+            const nextProgress: Record<number, number> = {};
 
-            setRemainingSeconds(remaining);
-            setProgressPercent(progress);
+            orders.forEach((o) => {
+                const { progress } = calculateOrderProgress(o, now);
+                nextProgress[o.id] = progress;
+            });
 
-            // Show completion animation when progress reaches 100%
-            if (progress >= 100) {
-                setShowCompletion(true);
-            }
+            setProgressMap(nextProgress);
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [order?.preparation_started_at, order?.preparation_time, order?.status, order?.id]);
+    }, [orders]);
 
-    // Poll for order updates every 2 seconds for real-time sync
+    // Poll for order updates every 2 seconds for real-time sync.
     useEffect(() => {
         const interval = setInterval(() => {
-            router.reload({
-                only: ['order', 'orders'],
-            });
+            router.reload({ only: ['order', 'orders'] });
         }, 2000);
 
-        return () => {
-            clearInterval(interval);
-        };
+        return () => clearInterval(interval);
     }, []);
 
-    // Detect when the order becomes ready and notify the customer.
+    // Detect when the chef adds additional preparation time.
     useEffect(() => {
-        if (!order) {
-return;
-}
+        orders.forEach((o) => {
+            const currentPrepTime = o.preparation_time;
+            const prev = prevPrepTimeRef.current[o.id];
 
-        const prevStatus = prevOrderStatusRef.current;
-        const currentStatus = order.status;
+            if (
+                prev !== undefined &&
+                currentPrepTime !== null &&
+                currentPrepTime > prev &&
+                o.status === 'preparing'
+            ) {
+                const addedMinutes = currentPrepTime - prev;
+                toast.info(
+                    `Order ${o.order_number}: Preparation time updated. Approximately ${addedMinutes} additional minutes.`,
+                    { duration: 5000 }
+                );
+            }
 
-        // When the order transitions to "ready" (early completion or normal),
-        // notify the customer that their order is ready.
-        if (
-            prevStatus &&
-            prevStatus !== 'ready' &&
-            currentStatus === 'ready'
-        ) {
-            toast.success('Your order is ready!', {
-                duration: 5000,
-            });
-        }
+            prevPrepTimeRef.current[o.id] = currentPrepTime ?? 0;
+        });
+    }, [orders]);
 
-        prevOrderStatusRef.current = currentStatus;
-    }, [order?.status]);
+    // Detect when an order becomes ready and notify the customer.
+    useEffect(() => {
+        orders.forEach((o) => {
+            const prevStatus = prevOrderStatusRef.current[o.id];
+            const currentStatus = o.status;
+
+            if (
+                prevStatus &&
+                prevStatus !== 'ready' &&
+                currentStatus === 'ready'
+            ) {
+                toast.success(`Order ${o.order_number} is ready!`, {
+                    duration: 5000,
+                });
+            }
+
+            prevOrderStatusRef.current[o.id] = currentStatus;
+        });
+    }, [orders]);
 
     // Detect when payment is verified and a receipt is generated.
     useEffect(() => {
-        if (!order) {
-return;
-}
+        orders.forEach((o) => {
+            const currentStatus = o.payment_status;
+            const hasReceipt = !!o.receipt;
+            const prev = prevPaymentStatusRef.current[o.id];
 
-        const currentStatus = order.payment_status;
-        const hasReceipt = !!order.receipt;
+            if (prev === 'pending' && currentStatus === 'paid' && hasReceipt) {
+                toast.success(
+                    `Payment verified for ${o.order_number}. Your receipt is ready.`,
+                    { duration: 5000 }
+                );
+                setPaymentOrder(o);
+                setShowReceipt(true);
+            }
 
-        // When the payment transitions to "paid" and a receipt exists,
-        // notify the customer and open the receipt modal automatically.
-        if (
-            prevPaymentStatusRef.current === 'pending' &&
-            currentStatus === 'paid' &&
-            hasReceipt
-        ) {
-            toast.success('Payment verified successfully. Your receipt is ready.', {
-                duration: 5000,
-            });
-            setShowReceipt(true);
-        }
-
-        prevPaymentStatusRef.current = currentStatus;
-    }, [order?.payment_status, order?.receipt]);
-
-    // Format date/time
-    const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-
-        return date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            prevPaymentStatusRef.current[o.id] = currentStatus;
         });
+    }, [orders]);
+
+    // ── Handlers ────────────────────────────────────────────
+
+    const hasVerificationBeenSent =
+        paymentOrder?.payment_status === 'pending' || verificationSent;
+
+    const openPaymentModal = (targetOrder: Order, method: string) => {
+        setPaymentOrder(targetOrder);
+        setSelectedPaymentMethod(method);
+        setVerificationSent(false);
+        setShowPaymentModal(true);
     };
 
-    // Format time only (e.g., "2:35 PM")
-    const formatTimeOnly = (date: Date) => {
-        return date.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-        });
-    };
-
-    // Format countdown as "MM:SS" (e.g., "14:32")
-    const formatCountdown = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-
-    // Get status color
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return 'bg-yellow-500';
-            case 'confirmed':
-                return 'bg-blue-500';
-            case 'preparing':
-                return 'bg-orange-500';
-            case 'ready':
-                return 'bg-purple-500';
-            case 'served':
-                return 'bg-teal-500';
-            case 'completed':
-                return 'bg-green-500';
-            case 'cancelled':
-                return 'bg-red-500';
-            default:
-                return 'bg-gray-500';
-        }
-    };
-
-    // Get status emoji
-    const getStatusEmoji = (status: string) => {
-        switch (status) {
-            case 'pending':
-                return '⏳';
-            case 'preparing':
-                return '🍳';
-            case 'ready':
-                return '✅';
-            case 'completed':
-                return '🎉';
-            case 'cancelled':
-                return '❌';
-            default:
-                return '📋';
-        }
-    };
-
-    // Payment method account numbers
-    const paymentAccounts: Record<string, { label: string; number: string; icon: string }> = {
-        telebirr: { label: 'Telebirr', number: '0987574556', icon: '📱' },
-        cbe_birr: { label: 'CBE Birr', number: '1000976545673', icon: '🏦' },
-    };
-
-    // Check if a verification request has already been sent for this order
-    const hasVerificationBeenSent = order?.payment_status === 'pending' || verificationSent;
-
-    // Copy the account number AND submit the verification request (replaces old copyAccountNumber + submitPayment)
     const handleCopyAndVerify = async () => {
-        if (!order || !selectedPaymentMethod) {
+        if (!paymentOrder || !selectedPaymentMethod) {
 return;
 }
 
-        // Check if verification already exists
         if (hasVerificationBeenSent) {
             toast.info('A payment verification request has already been sent.');
 
@@ -391,7 +381,6 @@ return;
         }
 
         setIsSendingVerification(true);
-
         const accountNumber = paymentAccounts[selectedPaymentMethod].number;
         let copySuccess = false;
 
@@ -401,7 +390,6 @@ return;
             toast.success('✓ Account number copied successfully.');
             copySuccess = true;
         } catch {
-            // Fallback for browsers that don't support the clipboard API
             try {
                 const textarea = document.createElement('textarea');
                 textarea.value = accountNumber;
@@ -414,14 +402,15 @@ return;
                 toast.success('✓ Account number copied successfully.');
                 copySuccess = true;
             } catch {
-                toast.error('Unable to copy the account number. Please copy it manually.');
-                copySuccess = false;
+                toast.error(
+                    'Unable to copy the account number. Please copy it manually.'
+                );
             }
         }
 
-        // Step 2: Submit verification request (reusing existing backend logic from PaymentController::submit)
+        // Step 2: Submit verification request
         router.post(
-            `/orders/${order.id}/payment`,
+            `/orders/${paymentOrder.id}/payment`,
             {
                 payment_method: selectedPaymentMethod,
             },
@@ -440,93 +429,102 @@ return;
                     setIsSendingVerification(false);
 
                     if (copySuccess) {
-                        toast.error('Account number copied, but the verification request could not be sent. Please try again.');
+                        toast.error(
+                            'Account number copied, but the verification request could not be sent. Please try again.'
+                        );
                     } else {
-                        toast.error('Unable to copy the account number. Please copy it manually.');
+                        toast.error(
+                            'Unable to copy the account number. Please copy it manually.'
+                        );
                     }
                 },
             }
         );
     };
 
-    // Cancel order
-    const cancelOrder = () => {
-        if (!order) {
-return;
-}
-
-        if (!confirm('Are you sure you want to cancel this order?')) {
+    const cancelOrder = (targetOrder: Order) => {
+        if (
+            !confirm(
+                `Are you sure you want to cancel order ${targetOrder.order_number}?`
+            )
+        ) {
             return;
         }
 
-        setIsCancelling(true);
+        setCancellingOrderId(targetOrder.id);
 
         router.post(
-            `/api/orders/${order.id}/cancel`,
+            `/api/orders/${targetOrder.id}/cancel`,
             {},
             {
                 onSuccess: () => {
-                    setIsCancelling(false);
+                    setCancellingOrderId(null);
                     toast.success('Order cancelled successfully.');
                 },
                 onError: () => {
-                    setIsCancelling(false);
+                    setCancellingOrderId(null);
                     toast.error('Failed to cancel order.');
                 },
             }
         );
     };
 
-    // Determine the preparation time to display
-    const displayPrepTime = order?.preparation_time || order?.estimated_minutes;
-    const isTimerRunning = order?.preparation_started_at && order?.preparation_time && remainingSeconds !== null && remainingSeconds > 0;
-    const isTimerExpired = remainingSeconds !== null && remainingSeconds <= 0;
+    // ── Derived values ──────────────────────────────────────
 
-    // Calculate expected ready time
-    const expectedReadyTime = order?.preparation_started_at && order?.preparation_time
-        ? new Date(new Date(order.preparation_started_at).getTime() + order.preparation_time * 60 * 1000)
-        : null;
+    // The most-recent order drives the "+ Add Order" / "+ New Order" button.
+    const latestOrder = orders[0] ?? order ?? null;
 
-    // Get status info
-    const statusInfo = order ? getStatusInfo(order.status, order.preparation_status) : { emoji: '', message: '' };
-
-    // Progress bar color
-    const progressColor = getProgressColor(progressPercent);
-    const progressBgColor = getProgressBgColor(progressPercent);
-
-    // ─────────────────────────────────────────────────────────────
-    // Dynamic Order Button:
-    //   - pending/confirmed  → "Add Order" (attach to current order)
-    //   - preparing/ready/served → "New Order" (create separate order)
-    //   - completed/cancelled → hide the action button
-    // ─────────────────────────────────────────────────────────────
-    const orderIsLocked = order
-        ? ['preparing', 'ready', 'served'].includes(order.status)
+    const canAddToOrder = latestOrder
+        ? ['pending', 'received', 'confirmed'].includes(latestOrder.status)
         : false;
 
-    const canAddToOrder = order
-        ? ['pending', 'received', 'confirmed'].includes(order.status)
-        : false;
+    const showOrderActionButton =
+        latestOrder && latestOrder.status !== 'cancelled';
 
-    // Show the order action button for all active orders AND completed orders.
-    // Cancelled orders are excluded.
-    const showOrderActionButton = order && order.status !== 'cancelled';
-
-    const orderActionHref = canAddToOrder && order
-        ? `${menuPath}?table=${table.table_number}&order_id=${order.id}`
-        : `${menuPath}?table=${table.table_number}`;
+    const orderActionHref =
+        canAddToOrder && latestOrder
+            ? `${menuPath}?table=${table.table_number}&order_id=${latestOrder.id}`
+            : `${menuPath}?table=${table.table_number}`;
 
     const orderActionLabel = canAddToOrder ? '+ Add Order' : '+ New Order';
 
-    // Orders to show in history: all orders except the currently displayed one
-    const previousOrders = orders.filter((o) => o.id !== order?.id);
+    const totalAmount = (o: Order) => Number(o.total_amount ?? 0);
+    const subtotalOf = (o: Order) =>
+        o.order_items.reduce(
+            (sum, item) => sum + Number(item.price) * item.quantity,
+            0
+        );
+
+    // ── Render helpers ──────────────────────────────────────
+
+    const renderPaymentStatus = (status: 'unpaid' | 'pending' | 'paid') => {
+        if (status === 'paid') {
+            return (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700">
+                    <CheckCircle2 className="size-3" />
+                    Paid
+                </span>
+            );
+        }
+
+        if (status === 'pending') {
+            return (
+                <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-bold text-yellow-700">
+                    Pending Verification
+                </span>
+            );
+        }
+
+        return <span className="font-bold text-red-600">Unpaid</span>;
+    };
+
+    // ── Main render ─────────────────────────────────────────
 
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
 
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
-
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
 
                     {/* Restaurant Logo */}
@@ -534,7 +532,6 @@ return;
                         <h1 className="text-2xl font-black tracking-tight transition group-hover:text-orange-600">
                             DINE<span className="text-orange-500">.</span>
                         </h1>
-
                         <p className="text-xs font-medium uppercase tracking-widest text-gray-500">
                             Digital Menu
                         </p>
@@ -543,23 +540,14 @@ return;
                     {/* Table Information */}
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2">
-
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
                                 {table.table_number}
                             </div>
-
                             <div className="hidden sm:block">
-                                <p className="text-xs text-gray-500">
-                                    Your table
-                                </p>
-
-                                <p className="text-sm font-bold">
-                                    Table {table.table_number}
-                                </p>
+                                <p className="text-xs text-gray-500">Your table</p>
+                                <p className="text-sm font-bold">Table {table.table_number}</p>
                             </div>
-
                         </div>
-
                         <Link href={menuPath}>
                             <Button size="sm" className="rounded-full">
                                 <ArrowLeft className="h-3.5 w-3.5" />
@@ -570,7 +558,6 @@ return;
                     </div>
 
                 </div>
-
             </header>
 
             {/* ================= MAIN ================= */}
@@ -578,543 +565,395 @@ return;
 
                 {/* Page Header */}
                 <div className="mb-10 text-center">
-
                     <p className="font-semibold uppercase tracking-widest text-orange-500">
                         Order Tracking
                     </p>
-
                     <h1 className="mt-2 text-4xl font-black sm:text-5xl">
-                        My Order
+                        My Orders
                     </h1>
-
                     <p className="mt-3 text-gray-500">
-                        Track your order and enjoy your meal.
+                        Track your orders and enjoy your meal.
                     </p>
-
                 </div>
 
                 {/* ================= NO ORDER ================= */}
-                {!order && (
+                {orders.length === 0 && (
                     <div className="rounded-3xl border border-gray-100 bg-white p-10 text-center shadow-sm">
-
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
                             🍽️
                         </div>
-
-                        <h2 className="mt-6 text-2xl font-black">
-                            No Active Order
-                        </h2>
-
+                        <h2 className="mt-6 text-2xl font-black">No Active Order</h2>
                         <p className="mt-2 text-gray-500">
                             You don't have an active order yet.
                         </p>
-
                         <Link
                             href={`${menuPath}?table=${table.table_number}`}
                             className="mt-7 inline-block rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-7 py-4 font-bold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
                         >
                             Browse Menu →
                         </Link>
-
                     </div>
                 )}
 
-                {/* ================= ORDER ================= */}
-                {order && (
+                {/* ================= ORDER CARDS ================= */}
+                {orders.length > 0 && (
                     <div className="space-y-6">
-
-                        {/* Order Header */}
-                        <div className="overflow-hidden rounded-3xl bg-gray-900 text-white shadow-xl">
-
-                            <div className="p-7">
-
-                                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-                                    <div>
-                                        <p className="text-sm font-semibold uppercase tracking-widest text-orange-400">
-                                            Order Number
-                                        </p>
-
-                                        <h2 className="mt-2 text-2xl font-black">
-                                            {order.order_number}
-                                        </h2>
-
-                                        <p className="mt-2 text-gray-400">
-                                            Table {table.table_number}
-                                        </p>
-
-                                        {/* Order Date/Time */}
-                                        <p className="mt-1 text-sm text-gray-500">
-                                            {formatDateTime(order.created_at)}
-                                        </p>
-                                    </div>
-
-                                    {/* Status */}
-                                    <div className="flex items-center gap-2">
-                                        <span className={`h-3 w-3 rounded-full ${getStatusColor(order.status)}`}></span>
-                                        <span className="w-fit rounded-full bg-orange-500 px-5 py-2 text-sm font-black capitalize text-white">
-                                            {order.status} {getStatusEmoji(order.status)}
-                                        </span>
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            {/* Status Message */}
-                            <div className="border-t border-white/10 bg-white/5 px-7 py-5">
-
-                                <p className="text-sm text-gray-300">
-                                    <span className="text-lg">{statusInfo.emoji}</span>{' '}
-                                    <strong className="text-orange-400">
-                                        {statusInfo.message}
-                                    </strong>
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        {/* Preparation Time Section with Progress Bar */}
-                        {displayPrepTime && (
-                            <div className={`rounded-2xl border p-6 ${
-                                isTimerRunning
-                                    ? 'border-orange-100 bg-orange-50'
-                                    : isTimerExpired || showCompletion
-                                        ? 'border-green-100 bg-green-50'
-                                        : 'border-orange-100 bg-orange-50'
-                            }`}>
-                                {/* Completion Animation */}
-                                {showCompletion && (
-                                    <div className="mb-4 text-center animate-bounce">
-                                        <span className="text-4xl">✅</span>
-                                        <p className="mt-2 text-lg font-bold text-green-600">
-                                            Your order is ready!
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="flex items-center gap-4">
-                                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-xl ${
-                                        isTimerExpired || showCompletion ? 'bg-green-500' : 'bg-orange-500'
-                                    }`}>
-                                        {isTimerExpired || showCompletion ? '✅' : '⏱️'}
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <p className="text-sm font-semibold text-gray-500">
-                                            {isTimerRunning
-                                                ? 'Preparing'
-                                                : isTimerExpired || showCompletion
-                                                    ? 'Ready to Serve'
-                                                    : 'Estimated Ready Time'}
-                                        </p>
-
-                                        <p className="mt-1 text-lg font-black">
-                                            {order.preparation_time || order.estimated_minutes} Minutes
-                                        </p>
-
-                                        {/* Live Countdown Display */}
-                                        {isTimerRunning && remainingSeconds !== null && (
-                                            <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 shadow-sm border border-orange-200">
-                                                <span className="font-mono text-lg font-black tabular-nums text-orange-600">
-                                                    {formatCountdown(remainingSeconds)}
-                                                </span>
-                                                <span className="text-xs font-semibold text-gray-500">
-                                                    remaining
-                                                </span>
-                                            </div>
-                                        )}
-
-                                        {isTimerExpired && !showCompletion && (
-                                            <p className="mt-1 text-sm font-bold text-green-600">
-                                                Your order is ready! A waiter will bring it to you shortly.
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                {(isTimerRunning || showCompletion) && (
-                                    <div className="mt-5">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-sm font-semibold text-gray-500">Preparation Progress</p>
-                                            <span className={`text-sm font-bold ${
-                                                progressPercent >= 100 ? 'text-green-600' :
-                                                progressPercent >= 81 ? 'text-green-500' :
-                                                progressPercent >= 51 ? 'text-orange-600' :
-                                                'text-blue-600'
-                                            }`}>
-                                                {progressPercent}%
-                                            </span>
-                                        </div>
-
-                                        {/* Progress Bar Track */}
-                                        <div className={`w-full rounded-full h-5 ${progressBgColor} overflow-hidden`}>
-                                            <div
-                                                className={`h-full rounded-full ${progressColor} transition-all duration-1000 ease-linear`}
-                                                style={{ width: `${Math.min(100, progressPercent)}%` }}
-                                            >
-                                                {/* Completion Checkmark */}
-                                                {progressPercent >= 100 && (
-                                                    <div className="flex items-center justify-center h-full text-white text-sm font-bold">
-                                                        ✅
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Expected Ready Time */}
-                                        {expectedReadyTime && (
-                                            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
-                                                <span>⏰</span>
-                                                <span>
-                                                    Expected Ready:{' '}
-                                                    <strong className="text-gray-700">
-                                                        {formatTimeOnly(expectedReadyTime)}
-                                                    </strong>
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* ================= PREPARING LOCKED MESSAGE ================= */}
-                        {orderIsLocked && (
-                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                                <div className="flex items-start gap-3">
-                                    <span className="text-2xl">🔒</span>
-                                    <div>
-                                        <p className="font-bold text-amber-800">
-                                            This order is being prepared
-                                        </p>
-                                        <p className="mt-1 text-sm text-amber-700">
-                                            Your current order is being prepared. You can place a new order instead.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Order Items */}
-                        <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-
-                            <div className="mb-6">
-
-                                <h2 className="text-2xl font-black">
-                                    Your Items
-                                </h2>
-
-                                <p className="mt-1 text-sm text-gray-500">
-                                    Items included in your order
-                                </p>
-
-                            </div>
-
-                            <div className="space-y-4">
-
-                                {order.order_items.map(
-                                    (item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-stone-50 p-4"
-                                        >
-
-                                            <div>
-
-                                                <h3 className="font-bold">
-                                                    {item.menu_item.name}
-                                                </h3>
-
-                                                <p className="mt-1 text-sm text-gray-500">
-                                                    {item.quantity} ×{' '}
-                                                    {Number(
-                                                        item.price
-                                                    ).toFixed(2)}{' '}
-                                                    ETB
-                                                </p>
-
-                                            </div>
-
-                                            <div className="whitespace-nowrap font-black">
-                                                {(
-                                                    Number(
-                                                        item.price
-                                                    ) *
-                                                    item.quantity
-                                                ).toFixed(2)}{' '}
-                                                ETB
-                                            </div>
-
-                                        </div>
+                        {orders.map((o) => {
+                            const progress = progressMap[o.id] ?? 0;
+                            const isExpanded = expandedOrderId === o.id;
+                            const isActive = !['completed', 'cancelled', 'served'].includes(o.status);
+                            const isCompleted = o.status === 'completed';
+                            const displayPrepTime = o.preparation_time || o.estimated_minutes;
+                            const expectedReadyTime =
+                                o.preparation_started_at && o.preparation_time
+                                    ? new Date(
+                                        new Date(o.preparation_started_at).getTime() +
+                                        o.preparation_time * 60 * 1000
                                     )
-                                )}
+                                    : null;
+                            const subtotal = subtotalOf(o);
 
-                            </div>
-
-                            {/* Additional Instructions */}
-                            {order.special_instructions && (
-                                <div className="mt-7 rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                                    <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800">
-                                        <span>📝</span>
-                                        Additional Instructions
-                                    </h3>
-                                    <p className="mt-2 whitespace-pre-line text-sm text-amber-900">
-                                        {order.special_instructions}
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Total */}
-                            <div className="mt-7 flex items-center justify-between border-t border-gray-200 pt-6">
-
-                                <span className="text-lg font-bold">
-                                    Total
-                                </span>
-
-                                <span className="text-2xl font-black text-orange-500">
-                                    {Number(
-                                        order.total_amount
-                                    ).toFixed(2)}{' '}
-                                    ETB
-                                </span>
-
-                            </div>
-
-                            {/* ================= PAYMENT ================= */}
-                            {order.status === 'completed' && (
-                                <div className="mt-8 rounded-3xl border border-orange-100 bg-orange-50 p-6 sm:p-8">
-
-                                    <h2 className="text-2xl font-black">
-                                        Payment
-                                    </h2>
-
-                                    {order.payment_status === 'unpaid' && (
-                                        <>
-                                            <p className="mt-2 text-gray-600">
-                                                Your order is completed. Please choose a payment method to proceed.
-                                            </p>
-
-                                            <div className="mt-6 space-y-3">
-                                                <h3 className="text-lg font-black">
-                                                    Choose Payment Method
-                                                </h3>
-
-                                                <div className="grid gap-3 sm:grid-cols-2">
-                                                    {Object.entries(paymentAccounts).map(([key, account]) => (
-                                                        <button
-                                                            key={key}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setSelectedPaymentMethod(key);
-                                                                setShowPaymentModal(true);
-                                                            }}
-                                                            className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
-                                                        >
-                                                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
-                                                                {account.icon}
-                                                            </span>
-                                                            <div>
-                                                                <p className="font-black text-stone-800">
-                                                                    {account.label}
-                                                                </p>
-                                                                <p className="text-xs text-gray-500">
-                                                                    Pay with {account.label}
-                                                                </p>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
+                            return (
+                                <div
+                                    key={o.id}
+                                    className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm"
+                                >
+                                    {/* Card Header: order # + status */}
+                                    <div className="p-6">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <p className="text-sm font-semibold uppercase tracking-widest text-gray-400">
+                                                    Order Number
+                                                </p>
+                                                <h2 className="mt-1 text-2xl font-black">
+                                                    {o.order_number}
+                                                </h2>
+                                                <p className="mt-1 text-sm text-gray-500">
+                                                    {formatDateTime(o.created_at)}
+                                                </p>
                                             </div>
-                                        </>
-                                    )}
-
-                                    {order.payment_status === 'pending' && (
-                                        <div className="mt-5 rounded-2xl bg-yellow-100 p-5">
-                                            <p className="font-bold text-yellow-800">
-                                                Payment Pending Verification
-                                            </p>
-
-                                            <p className="mt-1 text-sm text-yellow-700">
-                                                Your payment verification request has been sent.
-                                                Please wait for the restaurant to verify your payment.
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`h-3 w-3 rounded-full ${getStatusColor(o.status)}`}
+                                                ></span>
+                                                <span className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-black capitalize text-white">
+                                                    {o.status} {getStatusEmoji(o.status)}
+                                                </span>
+                                            </div>
                                         </div>
-                                    )}
 
-                                    {order.payment_status === 'paid' && (
-                                        <div className="mt-5 rounded-2xl bg-green-100 p-5">
-                                            <p className="font-bold text-green-800">
-                                                Payment Confirmed ✓
+                                        {/* Order Name — displayed before the progress bar */}
+                                        <div className="mt-5">
+                                            <p className="text-lg font-bold text-gray-800">
+                                                {getOrderName(o)}
                                             </p>
-
-                                            <p className="mt-1 text-sm text-green-700">
-                                                Your payment has been successfully verified.
-                                            </p>
-
-                                            {order.receipt && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowReceipt(true)}
-                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-black text-white shadow-lg shadow-green-600/25 transition hover:bg-green-700 active:scale-[0.98]"
-                                                >
-                                                    <Receipt className="size-4" />
-                                                    View Receipt
-                                                </button>
-                                            )}
-
-                                            {/* Rate Overall Service Button - Only when payment is verified and no feedback exists */}
-                                            {!order.feedback && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowFeedbackModal(true)}
-                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
-                                                >
-                                                    <Star className="size-4 fill-amber-200" />
-                                                    Rate Overall Service
-                                                </button>
-                                            )}
-
-                                            {/* Already Rated Message */}
-                                            {order.feedback && (
-                                                <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-3">
-                                                    <CheckCircle2 className="size-4 text-green-600" />
-                                                    <p className="text-sm font-bold text-green-700">
-                                                        You have already rated this order.
-                                                    </p>
-                                                </div>
+                                            {o.special_instructions && (
+                                                <p className="mt-1.5 text-xs italic text-gray-500 break-words">
+                                                    {o.special_instructions}
+                                                </p>
                                             )}
                                         </div>
-                                    )}
 
-                                </div>
-                            )}
-
-                        </div>
-
-                        {/* ================= ORDER HISTORY ================= */}
-                        {previousOrders.length > 0 && (
-                            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8">
-
-                                <div className="mb-6">
-
-                                    <h2 className="text-2xl font-black">
-                                        Order History
-                                    </h2>
-
-                                    <p className="mt-1 text-sm text-gray-500">
-                                        Your previous orders for this table
-                                    </p>
-
-                                </div>
-
-                                <div className="space-y-4">
-
-                                    {previousOrders.map((prevOrder) => (
-                                        <div
-                                            key={prevOrder.id}
-                                            className="rounded-2xl border border-gray-100 bg-stone-50 p-5"
-                                        >
-
-                                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-
-                                                <div>
-                                                    <p className="text-sm font-semibold uppercase tracking-widest text-gray-400">
-                                                        Order Number
+                                        {/* Order Progress — simple bar, one consistent colour */}
+                                        {(isActive || isCompleted) && (
+                                            <div className="mt-5">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-semibold text-gray-500">
+                                                        Order Progress
                                                     </p>
-
-                                                    <p className="mt-1 text-lg font-black">
-                                                        {prevOrder.order_number}
-                                                    </p>
-                                                </div>
-
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`h-2.5 w-2.5 rounded-full ${getStatusColor(prevOrder.status)}`}></span>
-                                                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold capitalize text-gray-600">
-                                                        {prevOrder.status}
+                                                    <span className="text-sm font-bold text-gray-700">
+                                                        {progress}%
                                                     </span>
                                                 </div>
 
-                                            </div>
-
-                                            <div className="mt-4 border-t border-gray-200 pt-4">
-
-                                                <div className="flex items-center justify-between">
-
-                                                    <div className="space-y-1">
-                                                        {prevOrder.order_items.slice(0, 3).map((item) => (
-                                                            <p key={item.id} className="text-sm text-gray-500">
-                                                                {item.quantity} × {item.menu_item.name}
-                                                            </p>
-                                                        ))}
-                                                        {prevOrder.order_items.length > 3 && (
-                                                            <p className="text-xs font-semibold text-gray-400">
-                                                                +{prevOrder.order_items.length - 3} more items
-                                                            </p>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="text-right">
-                                                        <p className="text-lg font-black text-orange-500">
-                                                            {Number(prevOrder.total_amount).toFixed(2)} ETB
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-gray-400">
-                                                            {formatDateTime(prevOrder.created_at)}
-                                                        </p>
-                                                    </div>
-
+                                                <div className="mt-2">
+                                                    <ProgressBar percentage={progress} />
                                                 </div>
 
+                                                {progress >= 100 &&
+                                                    ['ready', 'served'].includes(o.status) && (
+                                                        <p className="mt-2 text-sm font-bold text-green-600">
+                                                            ✅ Your order is ready!
+                                                        </p>
+                                                    )}
+
+                                                {displayPrepTime && expectedReadyTime && (
+                                                    <p className="mt-2 text-sm text-gray-500">
+                                                        Expected Ready:{' '}
+                                                        <strong className="text-gray-700">
+                                                            {formatTimeOnly(expectedReadyTime)}
+                                                        </strong>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* View Details Button */}
+                                        {!isExpanded && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setExpandedOrderId(o.id)
+                                                }
+                                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-orange-200 bg-white px-6 py-3 font-black text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                            >
+                                                <ChevronDown className="h-4 w-4" />
+                                                View Details
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Expanded Details */}
+                                    {isExpanded && (
+                                        <div className="border-t border-gray-100 bg-stone-50 p-6">
+                                            {/* Order Info Grid */}
+                                            <div className="grid gap-4 sm:grid-cols-2">
+                                                <div>
+                                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                                        Order Date/Time
+                                                    </p>
+                                                    <p className="mt-1 font-semibold">
+                                                        {formatDateTime(o.created_at)}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                                        Payment Status
+                                                    </p>
+                                                    <div className="mt-1">
+                                                        {renderPaymentStatus(o.payment_status)}
+                                                    </div>
+                                                </div>
                                             </div>
 
+                                            {/* Order Items */}
+                                            <div className="mt-6">
+                                                <h3 className="text-lg font-black">
+                                                    Order Items
+                                                </h3>
+                                                <div className="mt-3 space-y-2">
+                                                    {o.order_items.map((item) => (
+                                                        <div
+                                                            key={item.id}
+                                                            className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3"
+                                                        >
+                                                            <div>
+                                                                <p className="font-bold">
+                                                                    {item.menu_item.name}
+                                                                </p>
+                                                                <p className="text-sm text-gray-500">
+                                                                    {item.quantity} ×{' '}
+                                                                    {Number(item.price).toFixed(2)}{' '}
+                                                                    ETB
+                                                                </p>
+                                                            </div>
+                                                            <p className="whitespace-nowrap font-black">
+                                                                {(
+                                                                    Number(item.price) *
+                                                                    item.quantity
+                                                                ).toFixed(2)}{' '}
+                                                                ETB
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Subtotal / Total */}
+                                            <div className="mt-5 space-y-1.5 border-t border-gray-200 pt-4 text-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-500">
+                                                        Subtotal
+                                                    </span>
+                                                    <span className="font-semibold">
+                                                        {subtotal.toFixed(2)} ETB
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-lg font-black">
+                                                    <span>Total</span>
+                                                    <span className="text-orange-500">
+                                                        {totalAmount(o).toFixed(2)} ETB
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Special Instructions */}
+                                            {o.special_instructions && (
+                                                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                                    <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                                                        <span>📝</span>
+                                                        Additional Instructions
+                                                    </h3>
+                                                    <p className="mt-2 whitespace-pre-line text-sm text-amber-900">
+                                                        {o.special_instructions}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* Payment section for completed orders */}
+                                            {isCompleted && (
+                                                <div className="mt-6 rounded-3xl border border-orange-100 bg-orange-50 p-5">
+                                                    <h3 className="text-lg font-black">
+                                                        Payment
+                                                    </h3>
+
+                                                    {o.payment_status === 'unpaid' && (
+                                                        <>
+                                                            <p className="mt-2 text-sm text-gray-600">
+                                                                Your order is completed.
+                                                                Please choose a payment method to proceed.
+                                                            </p>
+                                                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                                {Object.entries(
+                                                                    paymentAccounts
+                                                                ).map(([key, account]) => (
+                                                                    <button
+                                                                        key={key}
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            openPaymentModal(o, key)
+                                                                        }
+                                                                        className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
+                                                                    >
+                                                                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+                                                                            {account.icon}
+                                                                        </span>
+                                                                        <div>
+                                                                            <p className="font-black text-stone-800">
+                                                                                {account.label}
+                                                                            </p>
+                                                                            <p className="text-xs text-gray-500">
+                                                                                Pay with{' '}
+                                                                                {account.label}
+                                                                            </p>
+                                                                        </div>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {o.payment_status === 'pending' && (
+                                                        <div className="mt-4 rounded-2xl bg-yellow-100 p-4">
+                                                            <p className="font-bold text-yellow-800">
+                                                                Payment Pending Verification
+                                                            </p>
+                                                            <p className="mt-1 text-sm text-yellow-700">
+                                                                Your payment verification
+                                                                request has been sent. Please wait for the
+                                                                restaurant to verify your payment.
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {o.payment_status === 'paid' && (
+                                                        <div className="mt-4 rounded-2xl bg-green-100 p-4">
+                                                            <p className="font-bold text-green-800">
+                                                                Payment Confirmed ✓
+                                                            </p>
+                                                            <p className="mt-1 text-sm text-green-700">
+                                                                Your payment has been successfully
+                                                                verified.
+                                                            </p>
+
+                                                            {o.receipt && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setPaymentOrder(o);
+                                                                        setShowReceipt(true);
+                                                                    }}
+                                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-black text-white shadow-lg shadow-green-600/25 transition hover:bg-green-700 active:scale-[0.98]"
+                                                                >
+                                                                    <Receipt className="size-4" />
+                                                                    View Receipt
+                                                                </button>
+                                                            )}
+
+                                                            {!o.feedback && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setPaymentOrder(o);
+                                                                        setShowFeedbackModal(true);
+                                                                    }}
+                                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
+                                                                >
+                                                                    <Star className="size-4 fill-amber-200" />
+                                                                    Rate Overall Service
+                                                                </button>
+                                                            )}
+
+                                                            {o.feedback && (
+                                                                <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-3">
+                                                                    <CheckCircle2 className="size-4 text-green-600" />
+                                                                    <p className="text-sm font-bold text-green-700">
+                                                                        You have already rated this order.
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Cancel button — only for active orders that aren't locked */}
+                                            {!isCompleted &&
+                                                !['cancelled', 'served'].includes(o.status) &&
+                                                !['preparing', 'ready'].includes(o.status) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => cancelOrder(o)}
+                                                        disabled={cancellingOrderId === o.id}
+                                                        className="mt-6 block w-full rounded-xl border-2 border-red-200 bg-white px-6 py-3 text-center font-black text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
+                                                    >
+                                                        {cancellingOrderId === o.id
+                                                            ? 'Cancelling...'
+                                                            : 'Cancel Order'}
+                                                    </button>
+                                                )}
+
+                                            {/* Hide Details Button — moved to bottom of expanded details */}
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setExpandedOrderId(isExpanded ? null : o.id)
+                                                }
+                                                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-orange-200 bg-white px-6 py-3 font-black text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                            >
+                                                <ChevronUp className="h-4 w-4" />
+                                                Hide Details
+                                            </button>
                                         </div>
-                                    ))}
-
+                                    )}
                                 </div>
-
-                            </div>
-                        )}
-
-                        {/* Action Buttons */}
-                        <div className="space-y-3">
-                            {/* Dynamic Order Button:
-                                - Pending/Confirmed → "+ Add Order" (attaches to current order)
-                                - Preparing/Ready/Served → "+ New Order" (creates a separate order) */}
-                            {showOrderActionButton && (
-                                <Link
-                                    key={orderActionLabel}
-                                    href={orderActionHref}
-                                    className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
-                                >
-                                    {orderActionLabel}
-                                </Link>
-                            )}
-
-                            {/* Cancel Order Button - Only show for active orders that aren't locked */}
-                            {!['completed', 'cancelled'].includes(order.status) && !orderIsLocked && (
-                                <button
-                                    type="button"
-                                    onClick={cancelOrder}
-                                    disabled={isCancelling}
-                                    className="block w-full rounded-xl border-2 border-red-200 bg-white px-6 py-4 text-center font-black text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
-                                >
-                                    {isCancelling ? 'Cancelling...' : 'Cancel Order'}
-                                </button>
-                            )}
-
-                            <Link
-                                href={`${menuPath}?table=${table.table_number}`}
-                                className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
-                            >
-                                ← Back to Menu
-                            </Link>
-                        </div>
-
+                            );
+                        })}
                     </div>
                 )}
 
+                {/* ================= ACTION BUTTONS ================= */}
+                {orders.length > 0 && (
+                    <div className="mt-10 space-y-3">
+                        {/* Dynamic Order Button */}
+                        {showOrderActionButton && (
+                            <Link
+                                key={orderActionLabel}
+                                href={orderActionHref}
+                                className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+                            >
+                                {orderActionLabel}
+                            </Link>
+                        )}
+
+                        <Link
+                            href={`${menuPath}?table=${table.table_number}`}
+                            className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                        >
+                            ← Back to Menu
+                        </Link>
+                    </div>
+                )}
             </main>
 
             {/* ================= PAYMENT METHOD MODAL ================= */}
@@ -1122,7 +961,10 @@ return;
                 <DialogContent className="max-w-sm gap-5 rounded-3xl p-6 sm:max-w-sm">
                     <DialogHeader className="text-center">
                         <DialogTitle className="text-center text-lg font-black">
-                            Pay with {selectedPaymentMethod ? paymentAccounts[selectedPaymentMethod].label : ''}
+                            Pay with{' '}
+                            {selectedPaymentMethod
+                                ? paymentAccounts[selectedPaymentMethod].label
+                                : ''}
                         </DialogTitle>
                         <DialogDescription>
                             Copy the account number below and complete your payment.
@@ -1141,7 +983,7 @@ return;
                                 </p>
                             </div>
 
-                            {/* Account Number in read-only field */}
+                            {/* Account Number */}
                             <div className="rounded-2xl border-2 border-dashed border-orange-200 bg-orange-50 p-4 text-center">
                                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
                                     Account Number
@@ -1157,7 +999,7 @@ return;
                                     Amount
                                 </p>
                                 <p className="text-lg font-black text-orange-500">
-                                    {Number(order?.total_amount || 0).toFixed(2)} ETB
+                                    {totalAmount(paymentOrder ?? ({} as Order)).toFixed(2)} ETB
                                 </p>
                             </div>
 
@@ -1165,7 +1007,10 @@ return;
                             <button
                                 type="button"
                                 onClick={handleCopyAndVerify}
-                                disabled={isSendingVerification || hasVerificationBeenSent}
+                                disabled={
+                                    isSendingVerification ||
+                                    hasVerificationBeenSent
+                                }
                                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
                             >
                                 {isSendingVerification ? (
@@ -1198,39 +1043,32 @@ return;
             <ReceiptModal
                 open={showReceipt}
                 onOpenChange={setShowReceipt}
-                order={order}
+                order={paymentOrder}
             />
 
             {/* ================= FEEDBACK MODAL ================= */}
-            {order && (
+            {paymentOrder && (
                 <FeedbackModal
                     open={showFeedbackModal}
                     onOpenChange={setShowFeedbackModal}
                     onSubmitted={() => {
-                        // Reload to update the order feedback state
                         router.reload({ only: ['order', 'orders'] });
                     }}
-                    order={order}
+                    order={paymentOrder}
                 />
             )}
 
             {/* ================= FOOTER ================= */}
             <footer className="mt-12 border-t border-gray-200 bg-white">
-
                 <div className="mx-auto max-w-5xl px-5 py-8 text-center">
-
                     <p className="font-black">
                         DINE<span className="text-orange-500">.</span>
                     </p>
-
                     <p className="mt-2 text-sm text-gray-500">
                         Thank you for dining with us.
                     </p>
-
                 </div>
-
             </footer>
-
         </div>
     );
 }
