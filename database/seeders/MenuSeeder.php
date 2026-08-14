@@ -51,7 +51,6 @@ class MenuSeeder extends Seeder
             ['category' => 'Beverages', 'name' => 'Italian Soda', 'description' => 'Sparkling water with fruit syrup', 'price' => 3.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
             ['category' => 'Beverages', 'name' => 'Espresso', 'description' => 'Double shot espresso', 'price' => 2.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
             ['category' => 'Beverages', 'name' => 'Iced Coffee', 'description' => 'Cold brew with ice', 'price' => 3.99, 'preparation_time' => 3, 'is_available' => true, 'featured' => true],
-
             // Desserts
             ['category' => 'Desserts', 'name' => 'Chocolate Cake', 'description' => 'Rich chocolate layer cake', 'price' => 6.99, 'preparation_time' => 5, 'is_available' => true, 'featured' => true],
             ['category' => 'Desserts', 'name' => 'Tiramisu', 'description' => 'Classic Italian tiramisu', 'price' => 7.49, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],

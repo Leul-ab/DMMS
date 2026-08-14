@@ -11,6 +11,7 @@ import {
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useCan } from '@/hooks/use-can';
+import { cn } from '@/lib/utils';
 
 import {
     index as categoriesIndex,
@@ -57,6 +59,137 @@ type Props = {
         search?: string;
     };
 };
+
+type AddCategoryField = 'name' | 'sortOrder' | 'image';
+
+type AddCategoryFormValues = {
+    name: string;
+    sortOrder: string;
+    image: File | null;
+};
+
+const ALLOWED_IMAGE_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+];
+
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+
+function getNextSortOrder(categories: MenuCategory[]): string {
+    if (categories.length === 0) {
+        return '1';
+    }
+
+    const maxOrder = Math.max(
+        ...categories.map((category) => category.sort_order),
+    );
+
+    return String(maxOrder + 1);
+}
+
+function isValidSortOrder(value: string): boolean {
+    const trimmed = value.trim();
+
+    if (trimmed === '') {
+        return false;
+    }
+
+    if (!/^\d+$/.test(trimmed)) {
+        return false;
+    }
+
+    return Number(trimmed) >= 0;
+}
+
+function validateAddCategoryImage(file: File | null): string | null {
+    if (!file) {
+        return null;
+    }
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        return 'Image must be a JPG, PNG, or WebP file.';
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+        return 'Image must not exceed 2MB.';
+    }
+
+    return null;
+}
+
+function validateAddCategoryField(
+    field: AddCategoryField,
+    values: AddCategoryFormValues,
+): string | null {
+    switch (field) {
+        case 'name':
+            return values.name.trim()
+                ? null
+                : 'Category Name is required.';
+        case 'sortOrder':
+            return isValidSortOrder(values.sortOrder)
+                ? null
+                : 'Sort Order must be a valid number.';
+        case 'image':
+            return validateAddCategoryImage(values.image);
+    }
+}
+
+function validateAllAddCategoryFields(
+    values: AddCategoryFormValues,
+): Partial<Record<AddCategoryField, string>> {
+    const errors: Partial<Record<AddCategoryField, string>> = {};
+
+    for (const field of ['name', 'sortOrder'] as const) {
+        const error = validateAddCategoryField(field, values);
+
+        if (error) {
+            errors[field] = error;
+        }
+    }
+
+    if (values.image) {
+        const imageError = validateAddCategoryImage(values.image);
+
+        if (imageError) {
+            errors.image = imageError;
+        }
+    }
+
+    return errors;
+}
+
+function getAddCategoryFieldInputClassName(
+    field: 'name' | 'sortOrder',
+    errors: Partial<Record<AddCategoryField, string>>,
+    touched: Partial<Record<AddCategoryField, boolean>>,
+    submitAttempted: boolean,
+): string {
+    const hasError = Boolean(errors[field]);
+    const showValidation = touched[field] || submitAttempted;
+
+    if (hasError) {
+        return 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20';
+    }
+
+    if (showValidation) {
+        return 'border-green-500 focus-visible:border-green-500 focus-visible:ring-green-500/20';
+    }
+
+    return '';
+}
+
+function getAddCategoryImageInputClassName(
+    error: string | undefined,
+): string {
+    if (error) {
+        return 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20';
+    }
+
+    return '';
+}
 
 export default function CategoriesIndex({
     categories,
@@ -98,6 +231,111 @@ export default function CategoriesIndex({
     const [isActive, setIsActive] = useState(true);
     const [image, setImage] = useState<File | null>(null);
 
+    // Add Category inline validation (Add modal only)
+    const [addErrors, setAddErrors] = useState<
+        Partial<Record<AddCategoryField, string>>
+    >({});
+    const [addTouched, setAddTouched] = useState<
+        Partial<Record<AddCategoryField, boolean>>
+    >({});
+    const [addSubmitAttempted, setAddSubmitAttempted] = useState(false);
+
+    const getAddFormValues = (
+        sortOrderValue = sortOrder,
+        imageValue = image,
+    ): AddCategoryFormValues => ({
+        name,
+        sortOrder: sortOrderValue,
+        image: imageValue,
+    });
+
+    const resetAddValidation = () => {
+        setAddErrors({});
+        setAddTouched({});
+        setAddSubmitAttempted(false);
+    };
+
+    const revalidateAddField = (
+        field: AddCategoryField,
+        values: AddCategoryFormValues,
+    ) => {
+        const error = validateAddCategoryField(field, values);
+
+        setAddErrors((previous) => {
+            const next = { ...previous };
+
+            if (error) {
+                next[field] = error;
+            } else {
+                delete next[field];
+            }
+
+            return next;
+        });
+    };
+
+    const shouldRevalidateAddField = (field: AddCategoryField) =>
+        addTouched[field] ||
+        Boolean(addErrors[field]) ||
+        addSubmitAttempted;
+
+    const handleAddFieldBlur = (field: AddCategoryField) => {
+        setAddTouched((previous) => ({ ...previous, [field]: true }));
+        revalidateAddField(field, getAddFormValues());
+    };
+
+    const handleAddNameChange = (value: string) => {
+        setName(value);
+
+        const values = getAddFormValues();
+        values.name = value;
+
+        if (shouldRevalidateAddField('name')) {
+            revalidateAddField('name', values);
+        }
+    };
+
+    const handleAddSortOrderChange = (value: string) => {
+        setSortOrder(value);
+
+        const values = getAddFormValues(value);
+
+        if (shouldRevalidateAddField('sortOrder')) {
+            revalidateAddField('sortOrder', values);
+        }
+    };
+
+    const handleAddSortOrderBlur = () => {
+        setAddTouched((previous) => ({ ...previous, sortOrder: true }));
+
+        let currentSortOrder = sortOrder;
+
+        if (!currentSortOrder.trim()) {
+            currentSortOrder = getNextSortOrder(categories.data);
+            setSortOrder(currentSortOrder);
+        }
+
+        revalidateAddField(
+            'sortOrder',
+            getAddFormValues(currentSortOrder),
+        );
+    };
+
+    const handleAddImageChange = (
+        event: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0] || null;
+
+        setImage(file);
+        setAddTouched((previous) => ({ ...previous, image: true }));
+
+        const values = getAddFormValues(sortOrder, file);
+
+        if (shouldRevalidateAddField('image') || file) {
+            revalidateAddField('image', values);
+        }
+    };
+
     // -----------------------------------------
     // Search
     // -----------------------------------------
@@ -128,6 +366,7 @@ export default function CategoriesIndex({
         setIsActive(true);
         setImage(null);
         setSelectedCategory(null);
+        resetAddValidation();
 
         setIsAddOpen(true);
     };
@@ -179,13 +418,27 @@ export default function CategoriesIndex({
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim()) {
+        setAddSubmitAttempted(true);
+
+        let currentSortOrder = sortOrder;
+
+        if (!currentSortOrder.trim()) {
+            currentSortOrder = getNextSortOrder(categories.data);
+            setSortOrder(currentSortOrder);
+        }
+
+        const values = getAddFormValues(currentSortOrder);
+        const errors = validateAllAddCategoryFields(values);
+
+        setAddErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
         const formData = new FormData();
 
-        formData.append('name', name);
+        formData.append('name', name.trim());
 
         if (description) {
             formData.append(
@@ -194,12 +447,10 @@ export default function CategoriesIndex({
             );
         }
 
-        if (sortOrder) {
-            formData.append(
-                'sort_order',
-                sortOrder,
-            );
-        }
+        formData.append(
+            'sort_order',
+            currentSortOrder,
+        );
 
         formData.append(
             'is_active',
@@ -224,6 +475,7 @@ export default function CategoriesIndex({
                     setSortOrder('');
                     setIsActive(true);
                     setImage(null);
+                    resetAddValidation();
                 },
             },
         );
@@ -602,7 +854,7 @@ export default function CategoriesIndex({
 
                     <div className="space-y-4 py-4">
 
-                        {/* Name */}
+                        {/* Category Name */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Category Name
@@ -613,34 +865,28 @@ export default function CategoriesIndex({
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
                                 ) =>
-                                    setName(
+                                    handleAddNameChange(
                                         event.target.value,
                                     )
+                                }
+                                onBlur={() =>
+                                    handleAddFieldBlur('name')
                                 }
                                 placeholder="Example: Breakfast"
+                                aria-invalid={Boolean(addErrors.name)}
+                                className={cn(
+                                    getAddCategoryFieldInputClassName(
+                                        'name',
+                                        addErrors,
+                                        addTouched,
+                                        addSubmitAttempted,
+                                    ),
+                                )}
                             />
-                        </div>
 
-
-
-                        {/* Description */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <textarea
-                                value={description}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) =>
-                                    setDescription(
-                                        event.target.value,
-                                    )
-                                }
-                                placeholder="Describe this category..."
-                                rows={4}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            <InputError
+                                message={addErrors.name}
+                                className="mt-1"
                             />
                         </div>
 
@@ -657,15 +903,32 @@ export default function CategoriesIndex({
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
                                 ) =>
-                                    setSortOrder(
+                                    handleAddSortOrderChange(
                                         event.target.value,
                                     )
                                 }
+                                onBlur={handleAddSortOrderBlur}
                                 placeholder="Example: 1"
+                                aria-invalid={Boolean(
+                                    addErrors.sortOrder,
+                                )}
+                                className={cn(
+                                    getAddCategoryFieldInputClassName(
+                                        'sortOrder',
+                                        addErrors,
+                                        addTouched,
+                                        addSubmitAttempted,
+                                    ),
+                                )}
+                            />
+
+                            <InputError
+                                message={addErrors.sortOrder}
+                                className="mt-1"
                             />
                         </div>
 
-                        {/* Image */}
+                        {/* Category Image */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Category Image
@@ -673,36 +936,65 @@ export default function CategoriesIndex({
 
                             <Input
                                 type="file"
-                                accept="image/*"
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setImage(
-                                        event.target.files?.[0] ||
-                                            null,
-                                    )
-                                }
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleAddImageChange}
+                                aria-invalid={Boolean(addErrors.image)}
+                                className={cn(
+                                    getAddCategoryImageInputClassName(
+                                        addErrors.image,
+                                    ),
+                                )}
+                            />
+
+                            <InputError
+                                message={addErrors.image}
+                                className="mt-1"
                             />
                         </div>
 
-                        {/* Active */}
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) =>
-                                    setIsActive(
-                                        event.target.checked,
-                                    )
-                                }
-                                className="h-4 w-4"
-                            />
+                        {/* Description + Active Category */}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Description
+                                </label>
 
-                            <label className="text-sm font-medium">
-                                Active Category
-                            </label>
+                                <textarea
+                                    value={description}
+                                    onChange={(
+                                        event: React.ChangeEvent<HTMLTextAreaElement>,
+                                    ) =>
+                                        setDescription(
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="Describe this category..."
+                                    rows={4}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Active Category
+                                </label>
+
+                                <div className="flex items-center pt-1">
+                                    <StatusToggle
+                                        checked={isActive}
+                                        onCheckedChange={() =>
+                                            setIsActive(!isActive)
+                                        }
+                                        onLabel="Active"
+                                        offLabel="Inactive"
+                                        ariaLabel={
+                                            isActive
+                                                ? 'Deactivate category'
+                                                : 'Activate category'
+                                        }
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

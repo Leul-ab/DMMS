@@ -17,6 +17,28 @@ type OrderItem = {
     };
 };
 
+type Receipt = {
+    id: number;
+    receipt_number: string;
+    transaction_number: string | null;
+    payment_method: string | null;
+    amount: string;
+    subtotal: string;
+    tax: string;
+    service_charge: string;
+    discount: string;
+    generated_at: string | null;
+};
+
+type Payment = {
+    id: number;
+    payment_method: string | null;
+    payment_status: string;
+    verified_at: string | null;
+    paid_at: string | null;
+    verifier: { id: number; name: string } | null;
+};
+
 type Order = {
     id: number;
     order_number: string;
@@ -24,6 +46,7 @@ type Order = {
     payment_status: 'unpaid' | 'pending' | 'paid';
     payment_submitted_at: string | null;
     total_amount: string;
+    customer_name: string | null;
     estimated_minutes: number | null;
     preparation_time: number | null;
     preparation_started_at: string | null;
@@ -34,6 +57,15 @@ type Order = {
     updated_at: string;
     order_items: OrderItem[];
     table: RestaurantTable;
+    receipt: Receipt | null;
+    payment: Payment | null;
+    feedback: {
+        id: number;
+        overall_rating: number;
+        comment: string | null;
+        anonymous: boolean;
+        created_at: string;
+    } | null;
 };
 
 type Props = {

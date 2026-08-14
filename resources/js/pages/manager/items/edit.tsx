@@ -25,7 +25,6 @@ type MenuItem = {
     image: string | null;
     preparation_time: number | null;
     is_available: boolean;
-    featured: boolean;
     category: MenuCategory | null;
 };
 
@@ -49,7 +48,6 @@ export default function ItemEdit({ item, categories }: Props) {
         remove_image: false,
         preparation_time: item.preparation_time ? String(item.preparation_time) : '',
         is_available: item.is_available,
-        featured: item.featured,
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,11 +231,6 @@ export default function ItemEdit({ item, categories }: Props) {
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="is_available" checked={data.is_available} onCheckedChange={(checked) => setData('is_available', checked === true)} />
                                 <Label htmlFor="is_available">Available</Label>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="featured" checked={data.featured} onCheckedChange={(checked) => setData('featured', checked === true)} />
-                                <Label htmlFor="featured">Featured</Label>
                             </div>
 
                             <div className="flex items-center gap-4">
