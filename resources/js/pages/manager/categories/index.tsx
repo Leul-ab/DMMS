@@ -124,10 +124,19 @@ function validateAddCategoryField(
     values: AddCategoryFormValues,
 ): string | null {
     switch (field) {
-        case 'name':
-            return values.name.trim()
-                ? null
-                : 'Category Name is required.';
+        case 'name': {
+            const trimmedName = values.name.trim();
+
+            if (!trimmedName) {
+                return 'Category Name is required.';
+            }
+
+            if (!/^[a-zA-Z\s]+$/.test(trimmedName)) {
+                return 'Category Name must contain letters only.';
+            }
+
+            return null;
+        }
         case 'sortOrder':
             return isValidSortOrder(values.sortOrder)
                 ? null
@@ -952,49 +961,45 @@ export default function CategoriesIndex({
                             />
                         </div>
 
-                        {/* Description + Active Category */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Description
-                                </label>
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
 
-                                <textarea
-                                    value={description}
-                                    onChange={(
-                                        event: React.ChangeEvent<HTMLTextAreaElement>,
-                                    ) =>
-                                        setDescription(
-                                            event.target.value,
-                                        )
-                                    }
-                                    placeholder="Describe this category..."
-                                    rows={4}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
+                            <textarea
+                                value={description}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) =>
+                                    setDescription(
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Describe this category..."
+                                rows={4}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
 
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Active Category
-                                </label>
-
-                                <div className="flex items-center pt-1">
-                                    <StatusToggle
-                                        checked={isActive}
-                                        onCheckedChange={() =>
-                                            setIsActive(!isActive)
-                                        }
-                                        onLabel="Active"
-                                        offLabel="Inactive"
-                                        ariaLabel={
-                                            isActive
-                                                ? 'Deactivate category'
-                                                : 'Activate category'
-                                        }
-                                    />
-                                </div>
-                            </div>
+                        {/* Active Category */}
+                        <div className="flex items-center gap-2">
+                            <StatusToggle
+                                checked={isActive}
+                                onCheckedChange={() =>
+                                    setIsActive(!isActive)
+                                }
+                                onLabel="Active"
+                                offLabel="Inactive"
+                                ariaLabel={
+                                    isActive
+                                        ? 'Deactivate category'
+                                        : 'Activate category'
+                                }
+                            />
+                            <label className="text-sm font-medium">
+                                Active Category
+                            </label>
                         </div>
                     </div>
 

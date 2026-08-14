@@ -1,6 +1,5 @@
 import { Link, router } from '@inertiajs/react';
 import {
-    ArrowLeft,
     CheckCircle2,
     ChevronDown,
     ChevronUp,
@@ -537,24 +536,23 @@ return;
                         </p>
                     </Link>
 
-                    {/* Table Information */}
+                    {/* Table Information + Menu Button */}
                     <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
-                                {table.table_number}
-                            </div>
-                            <div className="hidden sm:block">
-                                <p className="text-xs text-gray-500">Your table</p>
-                                <p className="text-sm font-bold">Table {table.table_number}</p>
+                        <div className="flex items-center">
+                            <div className="flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                                    {table.table_number}
+                                </div>
+                                <div className="hidden sm:block">
+                                    <p className="text-xs text-gray-500">Your table</p>
+                                    <p className="text-sm font-bold">Table {table.table_number}</p>
+                                </div>
                             </div>
                         </div>
-                        <Link href={menuPath}>
-                            <Button size="sm" className="rounded-full">
-                                <ArrowLeft className="h-3.5 w-3.5" />
-                                <span className="hidden xs:inline">Back to</span>
-                                Menu
-                            </Button>
-                        </Link>
+
+                        <Button size="sm" variant="outline" asChild>
+                            <Link href={menuPath}>Menu</Link>
+                        </Button>
                     </div>
 
                 </div>
@@ -897,33 +895,35 @@ return;
                                                 </div>
                                             )}
 
-                                            {/* Cancel button — only for active orders that aren't locked */}
-                                            {!isCompleted &&
-                                                !['cancelled', 'served'].includes(o.status) &&
-                                                !['preparing', 'ready'].includes(o.status) && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => cancelOrder(o)}
-                                                        disabled={cancellingOrderId === o.id}
-                                                        className="mt-6 block w-full rounded-xl border-2 border-red-200 bg-white px-6 py-3 text-center font-black text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
-                                                    >
-                                                        {cancellingOrderId === o.id
-                                                            ? 'Cancelling...'
-                                                            : 'Cancel Order'}
-                                                    </button>
-                                                )}
+                                            <div className="mt-6 flex flex-row gap-2 sm:gap-3">
+                                                {/* Cancel button — only for active orders that aren't locked */}
+                                                {!isCompleted &&
+                                                    !['cancelled', 'served'].includes(o.status) &&
+                                                    !['preparing', 'ready'].includes(o.status) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => cancelOrder(o)}
+                                                            disabled={cancellingOrderId === o.id}
+                                                            className="flex-1 rounded-xl border-2 border-red-200 bg-white px-4 py-2 text-center text-sm font-bold text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
+                                                        >
+                                                            {cancellingOrderId === o.id
+                                                                ? 'Cancelling...'
+                                                                : 'Cancel Order'}
+                                                        </button>
+                                                    )}
 
-                                            {/* Hide Details Button — moved to bottom of expanded details */}
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    setExpandedOrderId(isExpanded ? null : o.id)
-                                                }
-                                                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-orange-200 bg-white px-6 py-3 font-black text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
-                                            >
-                                                <ChevronUp className="h-4 w-4" />
-                                                Hide Details
-                                            </button>
+                                                {/* Hide Details Button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setExpandedOrderId(isExpanded ? null : o.id)
+                                                    }
+                                                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-orange-200 bg-white px-4 py-2 text-sm font-bold text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                                >
+                                                    <ChevronUp className="h-3.5 w-3.5" />
+                                                    Hide Details
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -945,13 +945,6 @@ return;
                                 {orderActionLabel}
                             </Link>
                         )}
-
-                        <Link
-                            href={`${menuPath}?table=${table.table_number}`}
-                            className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
-                        >
-                            ← Back to Menu
-                        </Link>
                     </div>
                 )}
             </main>
