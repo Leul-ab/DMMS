@@ -95,7 +95,6 @@ type RestaurantTable = {
 type BookingData = {
     id: number;
     customer_name: string;
-    customer_code: string;
     tables: number[];
     booked_at: string;
     expires_at: string;
@@ -110,7 +109,7 @@ type Props = {
     availableTables: RestaurantTable[];
     booking_success?: boolean;
     bookingConfirm?: BookingData | null;
-    customer_code?: string;
+    customer_phone?: string;
     tableError?: string | null;
     order_id?: number | null;
     isMember?: boolean;
@@ -159,7 +158,7 @@ export function MenuView({
     availableTables,
     booking_success = false,
     booking_data = null,
-    customer_code = '',
+    customer_phone = '',
     tableError: propTableError = null,
     order_id = null,
     isMember = false,
@@ -167,7 +166,7 @@ export function MenuView({
     const [cart, setCart] = useState<CartItem[]>([]);
     const [showMemberForm, setShowMemberForm] = useState(false);
     const [showMemberVerify, setShowMemberVerify] = useState(false);
-    const [memberVerifyCode, setMemberVerifyCode] = useState('');
+    const [memberVerifyPhone, setMemberVerifyPhone] = useState('');
     const [memberVerifyError, setMemberVerifyError] = useState('');
     const [isVerifyingMember, setIsVerifyingMember] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -199,10 +198,9 @@ export function MenuView({
     const [hasActiveBooking, setHasActiveBooking] = useState(false);
     const [showRegistrationSuccess, setShowRegistrationSuccess] =
         useState(false);
-    const [registeredCustomerCode, setRegisteredCustomerCode] = useState('');
+    const [registeredCustomerPhone, setRegisteredCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
     const [showBookingSuccess, setShowBookingSuccess] = useState(false);
-    const [bookingCodeCopied, setBookingCodeCopied] = useState(false);
     // Snapshot of the confirmation data so it survives re-renders where the
     // transient flash prop (booking_data) has reverted to null.
     const [bookingConfirm, setBookingConfirm] = useState<BookingData | null>(null);
@@ -211,12 +209,12 @@ export function MenuView({
     );
 
     useEffect(() => {
-        if (booking_success && customer_code && booking_data) {
+        if (booking_success && customer_phone && booking_data) {
             setBookingConfirm(booking_data);
             setShowBookingSuccess(true);
             setCountdown(booking_data.expires_in_seconds ?? 600);
         }
-    }, [booking_success, customer_code, booking_data]);
+    }, [booking_success, customer_phone, booking_data]);
 
     useEffect(() => {
         if (!showBookingSuccess) {
@@ -354,19 +352,20 @@ export function MenuView({
             return;
         }
 
-        setIsPlacingOrder(true);
-        router.post(
-            '/orders',
-            {
-                table_id: table.id,
-                items: cart.map((item) => ({
-                    id: item.id,
-                    quantity: item.quantity,
-                })),
-                special_instructions: specialInstructions.trim() || null,
-                source: basePath.replace(/^\//, ''),
-                order_id: order_id || undefined,
-            },
+         setIsPlacingOrder(true);
+         router.post(
+             '/orders',
+             {
+                 table_id: table.id,
+                 items: cart.map((item) => ({
+                     id: item.id,
+                     quantity: item.quantity,
+                 })),
+                 customer_phone: customer_phone || null,
+                 special_instructions: specialInstructions.trim() || null,
+                 source: basePath.replace(/^\//, ''),
+                 order_id: order_id || undefined,
+             },
             {
                 onSuccess: () => {
                     setCart([]);
@@ -433,7 +432,7 @@ export function MenuView({
             if (data.success) {
                 setShowMemberForm(false);
                 resetMemberForm();
-                setRegisteredCustomerCode(data.customer_code);
+                setRegisteredCustomerPhone(data.customer.phone);
                 setShowRegistrationSuccess(true);
                 setCopied(false);
             } else {
@@ -448,8 +447,8 @@ export function MenuView({
         e.preventDefault();
         setMemberVerifyError('');
 
-        if (!memberVerifyCode.trim()) {
-            setMemberVerifyError('Please enter your customer code.');
+        if (!memberVerifyPhone.trim()) {
+            setMemberVerifyError('Please enter your phone number.');
 
             return;
         }
@@ -472,22 +471,22 @@ export function MenuView({
                     'X-XSRF-TOKEN': getXsrfToken(),
                 },
                 body: JSON.stringify({
-                    customer_code: memberVerifyCode.trim(),
+                    phone: memberVerifyPhone.trim(),
                 }),
             });
             const data = await response.json();
 
             if (data.success) {
                 setShowMemberVerify(false);
-                setMemberVerifyCode('');
+                setMemberVerifyPhone('');
                 toast.success(
                     `Welcome ${data.customer.name}! Member discounts unlocked.`,
                 );
 
                 const url = new URL(window.location.href);
                 url.searchParams.set(
-                    'customer_code',
-                    data.customer.customer_code,
+                    'customer_phone',
+                    data.customer.phone,
                 );
                 window.location.href = url.toString();
             } else {
@@ -500,41 +499,22 @@ export function MenuView({
         }
     };
 
-    const handleCopyCode = async () => {
+    const handleCopyPhone = async () => {
         try {
-            await navigator.clipboard.writeText(registeredCustomerCode);
+            await navigator.clipboard.writeText(registeredCustomerPhone);
             setCopied(true);
-            toast.success('Code copied!');
+            toast.success('Phone number copied!');
             setTimeout(() => setCopied(false), 2000);
         } catch {
             const textArea = document.createElement('textarea');
-            textArea.value = registeredCustomerCode;
+            textArea.value = registeredCustomerPhone;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
             setCopied(true);
-            toast.success('Code copied!');
+            toast.success('Phone number copied!');
             setTimeout(() => setCopied(false), 2000);
-        }
-    };
-
-    const handleCopyBookingCode = async () => {
-        try {
-            await navigator.clipboard.writeText(customer_code);
-            setBookingCodeCopied(true);
-            toast.success('Customer code copied!');
-            setTimeout(() => setBookingCodeCopied(false), 2000);
-        } catch {
-            const textArea = document.createElement('textarea');
-            textArea.value = customer_code;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            setBookingCodeCopied(true);
-            toast.success('Customer code copied!');
-            setTimeout(() => setBookingCodeCopied(false), 2000);
         }
     };
 
@@ -809,18 +789,17 @@ export function MenuView({
                                 </span>
                             </div>
                             <Separator className="bg-orange-200/40" />
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-amber-600">
-                                    Customer Code
-                                </span>
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-orange-200 font-mono font-bold text-orange-800"
-                                >
-                                    {bookingConfirm?.customer_code ||
-                                        customer_code}
-                                </Badge>
-                            </div>
+                             <div className="flex items-center justify-between">
+                                 <span className="text-sm text-amber-600">
+                                     Phone Number
+                                 </span>
+                                 <Badge
+                                     variant="secondary"
+                                     className="bg-orange-200 font-mono font-bold text-orange-800"
+                                 >
+                                     {customer_phone}
+                                 </Badge>
+                             </div>
                             <Separator className="bg-orange-200/40" />
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-amber-600">
@@ -882,13 +861,13 @@ export function MenuView({
                                 !
                             </span>
                             <div>
-                                <p className="text-sm font-bold text-orange-800">
-                                    Save Your Customer Code
-                                </p>
-                                <p className="mt-1 text-xs text-orange-600">
-                                    Your customer code is required to manage
-                                    your booking. Please save it.
-                                </p>
+                                 <p className="text-sm font-bold text-orange-800">
+                                     Save Your Phone Number
+                                 </p>
+                                 <p className="mt-1 text-xs text-orange-600">
+                                     Your phone number is required to manage
+                                     your booking. Please save it.
+                                 </p>
                             </div>
                         </div>
                     </div>
@@ -938,22 +917,22 @@ export function MenuView({
 
                     <div className="mx-auto max-w-[220px] rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4 text-center">
                         <p className="mb-1 text-xs font-semibold tracking-wider text-orange-500 uppercase">
-                            Customer Code
+                            Phone Number
                         </p>
                         <p className="font-mono text-2xl font-black tracking-wider text-orange-600">
-                            {registeredCustomerCode}
+                             {registeredCustomerPhone}
                         </p>
                     </div>
 
                     <p className="text-center text-xs text-amber-500">
-                        Save this code. You'll need it for future bookings,
+                        Save this phone number. You'll need it for future bookings,
                         orders, and member verification.
                     </p>
 
                     <DialogFooter className="gap-2">
                         <Button
                             variant="outline"
-                            onClick={handleCopyCode}
+                             onClick={handleCopyPhone}
                             className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                         >
                             {copied ? (
@@ -962,7 +941,7 @@ export function MenuView({
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-2">
-                                    <Copy className="h-4 w-4" /> Copy Code
+                                    <Copy className="h-4 w-4" /> Copy Phone
                                 </span>
                             )}
                         </Button>
@@ -1116,25 +1095,25 @@ export function MenuView({
                             Verify Membership
                         </DialogTitle>
                         <DialogDescription className="text-amber-600">
-                            Enter your customer code to unlock exclusive member
-                            discounts.
+                            Enter your phone number to verify membership and unlock
+                            exclusive member discounts.
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleVerifyMember} className="space-y-4">
                         <div>
-                            <label className="mb-1.5 block text-sm font-bold text-stone-700">
-                                Customer Code
-                            </label>
-                            <Input
-                                type="text"
-                                value={memberVerifyCode}
-                                onChange={(e) =>
-                                    setMemberVerifyCode(e.target.value)
-                                }
-                                placeholder="e.g. CUS-ABC12345"
-                                className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
-                            />
+                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
+                                 Phone Number
+                             </label>
+                             <Input
+                                 type="tel"
+                                 value={memberVerifyPhone}
+                                 onChange={(e) =>
+                                     setMemberVerifyPhone(e.target.value)
+                                 }
+                                 placeholder="Enter your phone number"
+                                 className="border-orange-200 focus-visible:border-orange-500 focus-visible:ring-orange-500/20"
+                             />
                             {memberVerifyError && (
                                 <p className="mt-1 text-sm text-red-500">
                                     {memberVerifyError}
@@ -1146,10 +1125,10 @@ export function MenuView({
                                 type="button"
                                 variant="outline"
                                 onClick={() => {
-                                    setShowMemberVerify(false);
-                                    setMemberVerifyCode('');
-                                    setMemberVerifyError('');
-                                }}
+                                     setShowMemberVerify(false);
+                                     setMemberVerifyPhone('');
+                                     setMemberVerifyError('');
+                                 }}
                                 className="flex-1 border-orange-200 text-amber-700 hover:bg-orange-50 hover:text-orange-700"
                             >
                                 Cancel

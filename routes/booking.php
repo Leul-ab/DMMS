@@ -27,5 +27,5 @@ Route::get('/api/bookings', [BookingController::class, 'getAllBookings']);
 // API route for single booking details
 Route::get('/api/bookings/{booking}', [BookingController::class, 'getBookingDetails']);
 
-// API route to find booking by customer code
+// API route to find booking by customer phone
 Route::post('/api/bookings/lookup', [BookingController::class, 'lookupByCustomerCode']);

@@ -3,6 +3,7 @@ import { Building2, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useCan } from '@/hooks/use-can';
+import { cn } from '@/lib/utils';
 
 import {
     index as branchesIndex,
@@ -40,6 +42,95 @@ import {
 } from '@/routes/admin/branches';
 
 import type { PaginatedData } from '@/types';
+
+type AddBranchField = 'name' | 'address' | 'phone' | 'city' | 'country';
+
+type AddBranchFormValues = {
+    name: string;
+    address: string;
+    phone: string;
+    city: string;
+    country: string;
+};
+
+function isValidPhoneNumber(value: string): boolean {
+    const trimmed = value.trim();
+
+    if (!/^[\d\s+\-().]+$/.test(trimmed)) {
+        return false;
+    }
+
+    const digits = trimmed.replace(/\D/g, '');
+
+    return digits.length >= 7 && digits.length <= 15;
+}
+
+function validateAddBranchField(
+    field: AddBranchField,
+    values: AddBranchFormValues,
+): string | null {
+    switch (field) {
+        case 'name':
+            return values.name.trim() ? null : 'Branch Name is required.';
+        case 'address':
+            return values.address.trim() ? null : 'Address is required.';
+        case 'phone':
+            if (!values.phone.trim()) {
+                return 'Phone is required.';
+            }
+
+            return isValidPhoneNumber(values.phone)
+                ? null
+                : 'Please enter a valid phone number.';
+        case 'city':
+            return values.city.trim() ? null : 'City is required.';
+        case 'country':
+            return values.country.trim() ? null : 'Country is required.';
+    }
+}
+
+function validateAllAddBranchFields(
+    values: AddBranchFormValues,
+): Partial<Record<AddBranchField, string>> {
+    const fields: AddBranchField[] = [
+        'name',
+        'address',
+        'phone',
+        'city',
+        'country',
+    ];
+    const errors: Partial<Record<AddBranchField, string>> = {};
+
+    for (const field of fields) {
+        const error = validateAddBranchField(field, values);
+
+        if (error) {
+            errors[field] = error;
+        }
+    }
+
+    return errors;
+}
+
+function getAddFieldInputClassName(
+    field: AddBranchField,
+    errors: Partial<Record<AddBranchField, string>>,
+    touched: Partial<Record<AddBranchField, boolean>>,
+    submitAttempted: boolean,
+): string {
+    const hasError = Boolean(errors[field]);
+    const showValidation = touched[field] || submitAttempted;
+
+    if (hasError) {
+        return 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500/20';
+    }
+
+    if (showValidation) {
+        return 'border-green-500 focus-visible:border-green-500 focus-visible:ring-green-500/20';
+    }
+
+    return '';
+}
 
 type Branch = {
     id: number;
@@ -105,6 +196,70 @@ export default function BranchesIndex({ branches, filters }: Props) {
     const [country, setCountry] = useState('');
     const [isActive, setIsActive] = useState(true);
 
+    // Add Branch inline validation (Add modal only)
+    const [addErrors, setAddErrors] = useState<
+        Partial<Record<AddBranchField, string>>
+    >({});
+    const [addTouched, setAddTouched] = useState<
+        Partial<Record<AddBranchField, boolean>>
+    >({});
+    const [addSubmitAttempted, setAddSubmitAttempted] = useState(false);
+
+    const getAddFormValues = (): AddBranchFormValues => ({
+        name,
+        address,
+        phone,
+        city,
+        country,
+    });
+
+    const resetAddValidation = () => {
+        setAddErrors({});
+        setAddTouched({});
+        setAddSubmitAttempted(false);
+    };
+
+    const revalidateAddField = (
+        field: AddBranchField,
+        values: AddBranchFormValues,
+    ) => {
+        const error = validateAddBranchField(field, values);
+
+        setAddErrors((previous) => {
+            const next = { ...previous };
+
+            if (error) {
+                next[field] = error;
+            } else {
+                delete next[field];
+            }
+
+            return next;
+        });
+    };
+
+    const shouldRevalidateAddField = (field: AddBranchField) =>
+        addTouched[field] || Boolean(addErrors[field]) || addSubmitAttempted;
+
+    const handleAddFieldBlur = (field: AddBranchField) => {
+        setAddTouched((previous) => ({ ...previous, [field]: true }));
+        revalidateAddField(field, getAddFormValues());
+    };
+
+    const handleAddFieldChange = (
+        field: AddBranchField,
+        value: string,
+        setter: (value: string) => void,
+    ) => {
+        setter(value);
+
+        const values = { ...getAddFormValues(), [field]: value };
+
+        if (shouldRevalidateAddField(field)) {
+            revalidateAddField(field, values);
+        }
+    };
+
     // -----------------------------------------
     // Search
     // -----------------------------------------
@@ -154,6 +309,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
         setCity('');
         setCountry('');
         setIsActive(true);
+        resetAddValidation();
     };
 
     // -----------------------------------------
@@ -197,7 +353,14 @@ export default function BranchesIndex({ branches, filters }: Props) {
     // -----------------------------------------
 
     const handleAdd = () => {
-        if (!name.trim() || !address.trim()) {
+        setAddSubmitAttempted(true);
+
+        const values = getAddFormValues();
+        const errors = validateAllAddBranchFields(values);
+
+        setAddErrors(errors);
+
+        if (Object.keys(errors).length > 0) {
             return;
         }
 
@@ -619,7 +782,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                         <DialogTitle>Add Branch</DialogTitle>
 
                         <DialogDescription>
-                            Create a new restaurant branch. Name and address are
+                            Create a new restaurant branch. All fields are
                             required.
                         </DialogDescription>
                     </DialogHeader>
@@ -635,10 +798,26 @@ export default function BranchesIndex({ branches, filters }: Props) {
                             <Input
                                 value={name}
                                 onChange={(event) =>
-                                    setName(event.target.value)
+                                    handleAddFieldChange(
+                                        'name',
+                                        event.target.value,
+                                        setName,
+                                    )
                                 }
+                                onBlur={() => handleAddFieldBlur('name')}
                                 placeholder="Enter branch name"
+                                aria-invalid={Boolean(addErrors.name)}
+                                className={cn(
+                                    getAddFieldInputClassName(
+                                        'name',
+                                        addErrors,
+                                        addTouched,
+                                        addSubmitAttempted,
+                                    ),
+                                )}
                             />
+
+                            <InputError message={addErrors.name} className="mt-1" />
                         </div>
 
                         {/* Address */}
@@ -651,9 +830,28 @@ export default function BranchesIndex({ branches, filters }: Props) {
                             <Input
                                 value={address}
                                 onChange={(event) =>
-                                    setAddress(event.target.value)
+                                    handleAddFieldChange(
+                                        'address',
+                                        event.target.value,
+                                        setAddress,
+                                    )
                                 }
+                                onBlur={() => handleAddFieldBlur('address')}
                                 placeholder="Enter street address"
+                                aria-invalid={Boolean(addErrors.address)}
+                                className={cn(
+                                    getAddFieldInputClassName(
+                                        'address',
+                                        addErrors,
+                                        addTouched,
+                                        addSubmitAttempted,
+                                    ),
+                                )}
+                            />
+
+                            <InputError
+                                message={addErrors.address}
+                                className="mt-1"
                             />
                         </div>
 
@@ -662,15 +860,34 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    Phone
+                                    Phone *
                                 </label>
 
                                 <Input
                                     value={phone}
                                     onChange={(event) =>
-                                        setPhone(event.target.value)
+                                        handleAddFieldChange(
+                                            'phone',
+                                            event.target.value,
+                                            setPhone,
+                                        )
                                     }
+                                    onBlur={() => handleAddFieldBlur('phone')}
                                     placeholder="Enter phone number"
+                                    aria-invalid={Boolean(addErrors.phone)}
+                                    className={cn(
+                                        getAddFieldInputClassName(
+                                            'phone',
+                                            addErrors,
+                                            addTouched,
+                                            addSubmitAttempted,
+                                        ),
+                                    )}
+                                />
+
+                                <InputError
+                                    message={addErrors.phone}
+                                    className="mt-1"
                                 />
                             </div>
 
@@ -678,15 +895,34 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    City
+                                    City *
                                 </label>
 
                                 <Input
                                     value={city}
                                     onChange={(event) =>
-                                        setCity(event.target.value)
+                                        handleAddFieldChange(
+                                            'city',
+                                            event.target.value,
+                                            setCity,
+                                        )
                                     }
+                                    onBlur={() => handleAddFieldBlur('city')}
                                     placeholder="Enter city"
+                                    aria-invalid={Boolean(addErrors.city)}
+                                    className={cn(
+                                        getAddFieldInputClassName(
+                                            'city',
+                                            addErrors,
+                                            addTouched,
+                                            addSubmitAttempted,
+                                        ),
+                                    )}
+                                />
+
+                                <InputError
+                                    message={addErrors.city}
+                                    className="mt-1"
                                 />
                             </div>
 
@@ -694,15 +930,34 @@ export default function BranchesIndex({ branches, filters }: Props) {
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium">
-                                    Country
+                                    Country *
                                 </label>
 
                                 <Input
                                     value={country}
                                     onChange={(event) =>
-                                        setCountry(event.target.value)
+                                        handleAddFieldChange(
+                                            'country',
+                                            event.target.value,
+                                            setCountry,
+                                        )
                                     }
+                                    onBlur={() => handleAddFieldBlur('country')}
                                     placeholder="Enter country"
+                                    aria-invalid={Boolean(addErrors.country)}
+                                    className={cn(
+                                        getAddFieldInputClassName(
+                                            'country',
+                                            addErrors,
+                                            addTouched,
+                                            addSubmitAttempted,
+                                        ),
+                                    )}
+                                />
+                                
+                                <InputError
+                                    message={addErrors.country}
+                                    className="mt-1"
                                 />
                             </div>
                         </div>
@@ -710,15 +965,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
                         {/* Active */}
 
                         <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
+                            <StatusToggle
                                 checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
+                                onCheckedChange={() =>
+                                    setIsActive(!isActive)
                                 }
-                                className="h-4 w-4"
+                                onLabel="Active"
+                                offLabel="Inactive"
+                                ariaLabel="Toggle active branch status"
                             />
-
                             <label className="text-sm font-medium">
                                 Active Branch
                             </label>
@@ -833,15 +1088,15 @@ export default function BranchesIndex({ branches, filters }: Props) {
                         {/* Active */}
 
                         <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
+                            <StatusToggle
                                 checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
+                                onCheckedChange={() =>
+                                    setIsActive(!isActive)
                                 }
-                                className="h-4 w-4"
+                                onLabel="Active"
+                                offLabel="Inactive"
+                                ariaLabel="Toggle active branch status"
                             />
-
                             <label className="text-sm font-medium">
                                 Active Branch
                             </label>

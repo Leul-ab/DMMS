@@ -58,7 +58,7 @@ type Order = {
     preparation_started_at: string | null;
     preparation_status: string;
     table: { id: number; table_number: number } | null;
-    customer: { id: number; customer_code: string; name: string } | null;
+    customer: { id: number; name: string } | null;
     order_items: OrderItem[];
 };
 

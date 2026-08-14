@@ -4,7 +4,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
+import StatusToggle from '@/components/status-toggle';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { create as categoriesCreate, index as categoriesIndex, store as categoriesStore } from '@/routes/manager/categories';
@@ -56,9 +56,19 @@ export default function CategoryCreate() {
                                 <InputError message={errors.sort_order} />
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked === true)} />
-                                <Label htmlFor="is_active">Active</Label>
+                            <div className="flex items-center gap-2">
+                                <StatusToggle
+                                    checked={data.is_active}
+                                    onCheckedChange={() =>
+                                        setData('is_active', !data.is_active)
+                                    }
+                                    onLabel="Active"
+                                    offLabel="Inactive"
+                                    ariaLabel="Toggle active category status"
+                                />
+                                <label className="text-sm font-medium">
+                                    Active Category
+                                </label>
                             </div>
 
                             <div className="flex items-center gap-4">

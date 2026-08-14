@@ -32,7 +32,6 @@ export default function ItemCreate({ categories }: Props) {
         image: null as File | null,
         preparation_time: '',
         is_available: true,
-        featured: false,
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,11 +188,6 @@ export default function ItemCreate({ categories }: Props) {
                             <div className="flex items-center space-x-2">
                                 <Checkbox id="is_available" checked={data.is_available} onCheckedChange={(checked) => setData('is_available', checked === true)} />
                                 <Label htmlFor="is_available">Available</Label>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="featured" checked={data.featured} onCheckedChange={(checked) => setData('featured', checked === true)} />
-                                <Label htmlFor="featured">Featured</Label>
                             </div>
 
                             <div className="flex items-center gap-4">

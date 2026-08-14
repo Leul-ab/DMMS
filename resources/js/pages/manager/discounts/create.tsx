@@ -47,6 +47,21 @@ export default function DiscountCreate({ menuItems }: Props) {
     });
 
     const [menuItemSearch, setMenuItemSearch] = useState('');
+    const [nameError, setNameError] = useState('');
+
+    const validateDiscountName = (value: string): string => {
+        const trimmed = value.trim();
+
+        if (!trimmed) {
+            return 'Discount Name is required.';
+        }
+
+        if (!/^[a-zA-Z\s]+$/.test(trimmed)) {
+            return 'Discount Name must contain letters only.';
+        }
+
+        return '';
+    };
 
     const toggleMenuItem = (id: number) => {
         setData(
@@ -63,6 +78,13 @@ export default function DiscountCreate({ menuItems }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        const nameValidationError = validateDiscountName(data.name);
+        setNameError(nameValidationError);
+
+        if (nameValidationError) {
+            return;
+        }
 
         const formData = new FormData();
         formData.append('name', data.name);
@@ -108,12 +130,31 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <Input
                                     id="name"
                                     value={data.name}
-                                    onChange={(e) =>
-                                        setData('name', e.target.value)
-                                    }
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setData('name', value);
+                                        const error = validateDiscountName(value);
+                                        setNameError(error);
+                                    }}
+                                    onBlur={() => {
+                                        const error = validateDiscountName(data.name);
+                                        setNameError(error);
+                                    }}
                                     placeholder="e.g. Summer Sale, New Customer"
                                     required
+                                    className={
+                                        nameError
+                                            ? 'border-red-500'
+                                            : data.name.trim() && !nameError
+                                                ? 'border-green-500'
+                                                : ''
+                                    }
                                 />
+                                {nameError && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {nameError}
+                                    </p>
+                                )}
                                 <InputError message={errors.name} />
                             </div>
 
