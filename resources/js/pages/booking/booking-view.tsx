@@ -35,8 +35,8 @@ type Props = {
 export default function BookingView({ availableTables, basePath, menuPath }: Props) {
     const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
     const [step, setStep] = useState<'select' | 'verify' | 'confirm'>('select');
-    const [customerCode, setCustomerCode] = useState('');
-    const [customerData, setCustomerData] = useState<{name: string, phone: string, code: string} | null>(null);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [customerData, setCustomerData] = useState<{name: string, phone: string} | null>(null);
     const [customerId, setCustomerId] = useState<number | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
@@ -58,8 +58,8 @@ export default function BookingView({ availableTables, basePath, menuPath }: Pro
     };
 
     const handleVerifyCustomer = async () => {
-        if (!customerCode.trim()) {
-            setVerificationError('Please enter your customer code.');
+        if (!phoneNumber.trim()) {
+            setVerificationError('Please enter your phone number.');
 
             return;
         }
@@ -80,7 +80,7 @@ export default function BookingView({ availableTables, basePath, menuPath }: Pro
                     'Content-Type': 'application/json',
                     'X-XSRF-TOKEN': getXsrfToken(),
                 },
-                body: JSON.stringify({ customer_code: customerCode }),
+                body: JSON.stringify({ phone: phoneNumber }),
             });
 
             const data = await response.json();
@@ -94,7 +94,6 @@ export default function BookingView({ availableTables, basePath, menuPath }: Pro
                 setCustomerData({
                     name: data.customer.name,
                     phone: data.customer.phone,
-                    code: data.customer.customer_code,
                 });
                 setStep('confirm');
             } else {
@@ -335,23 +334,23 @@ return;
                     {step === 'verify' && (
                         <div className="rounded-3xl border border-orange-200/60 bg-white p-6 shadow-sm sm:p-8">
                             <div className="mb-6">
-                                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
-                                    <UserCheck className="h-5 w-5 text-orange-500" />
-                                    Verify Your Identity
-                                </h2>
-                                <p className="mt-1 text-amber-600">Enter your customer code to verify.</p>
-                            </div>
+                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
+                    <UserCheck className="h-5 w-5 text-orange-500" />
+                    Verify Your Identity
+                </h2>
+                <p className="mt-1 text-amber-600">Enter your phone number to verify.</p>
+            </div>
 
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="mb-2 block text-sm font-bold text-stone-700">Customer Code</label>
-                                    <input
-                                        type="text"
-                                        value={customerCode}
-                                        onChange={(e) => setCustomerCode(e.target.value.toUpperCase())}
-                                        placeholder="Enter your customer code (e.g. AB12CD)"
-                                        className="h-11 w-full rounded-xl border border-orange-200 bg-white px-4 text-stone-700 uppercase outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-                                    />
+            <div className="space-y-5">
+                <div>
+                    <label className="mb-2 block text-sm font-bold text-stone-700">Phone Number</label>
+                    <input
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        placeholder="Enter your phone number"
+                        className="h-11 w-full rounded-xl border border-orange-200 bg-white px-4 text-stone-700 outline-none transition placeholder:text-amber-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                    />
                                 </div>
 
                                 {verificationError && (
@@ -406,11 +405,10 @@ return;
                                 {/* Customer Info */}
                                 <div className="rounded-2xl border border-orange-100/80 bg-orange-50/40 p-5">
                                     <p className="text-xs font-semibold uppercase tracking-wider text-amber-500">Customer</p>
-                                    <p className="mt-1 text-lg font-black text-stone-800">{customerData?.name}</p>
-                                    <p className="mt-0.5 text-sm text-amber-600">
-                                        {customerData?.phone} • Code:{' '}
-                                        <span className="font-bold text-orange-600">{customerData?.code}</span>
-                                    </p>
+                <p className="mt-1 text-lg font-black text-stone-800">{customerData?.name}</p>
+                <p className="mt-0.5 text-sm text-amber-600">
+                    {customerData?.phone}
+                </p>
                                 </div>
 
                                 {/* Selected Tables */}

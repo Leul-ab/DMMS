@@ -102,9 +102,9 @@ class MenuController extends Controller
 
         // Determine customer membership for discount eligibility
         $customer = null;
-        $customerCode = $request->query('customer_code');
-        if ($customerCode) {
-            $customer = Customer::where('customer_code', $customerCode)->first();
+        $customerPhone = $request->query('customer_phone');
+        if ($customerPhone) {
+            $customer = Customer::where('phone', $customerPhone)->first();
         }
         $isMember = $customer?->is_member ?? false;
 
@@ -140,7 +140,7 @@ class MenuController extends Controller
             // dialog always receives the real booking details after a redirect).
             'booking_success' => session('booking_success', false),
             'booking_data' => session('booking_data'),
-            'customer_code' => session('customer_code', ''),
+            'customer_phone' => session('customer_phone', ''),
 
             'flash' => [
                 'success' => session('success'),

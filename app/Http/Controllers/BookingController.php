@@ -68,17 +68,17 @@ class BookingController extends Controller
     public function verifyCustomer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'customer_code' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20'],
         ]);
 
-        $code = trim($validated['customer_code']);
+        $phone = trim($validated['phone']);
 
-        $customer = Customer::where('customer_code', $code)->first();
+        $customer = Customer::where('phone', $phone)->first();
 
         if (!$customer) {
             return response()->json([
                 'found' => false,
-                'message' => 'Customer code not found. Please register or check your code.',
+                'message' => 'Customer not found. Please register or check your phone number.',
             ]);
         }
 
@@ -88,7 +88,6 @@ class BookingController extends Controller
                 'id' => $customer->id,
                 'name' => $customer->name,
                 'phone' => $customer->phone,
-                'customer_code' => $customer->customer_code,
                 'is_member' => $customer->is_member,
             ],
         ]);
@@ -152,18 +151,18 @@ class BookingController extends Controller
         return redirect()
             ->route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index')
             ->with([
-            'booking_success' => true,
-            'booking_data' => [
-                'id' => $booking->id,
-                'customer_name' => $customer?->name ?? 'Unknown',
-                'customer_code' => $customer?->customer_code ?? '',
-                'tables' => $tablesList,
-                'booked_at' => $booking->booked_at,
-                'expires_at' => $booking->expires_at,
-                'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 600,
-            ],
-            'customer_code' => $customer?->customer_code ?? '',
-        ]);
+                'booking_success' => true,
+                'booking_data' => [
+                    'id' => $booking->id,
+                    'customer_name' => $customer?->name ?? 'Unknown',
+                    'customer_phone' => $customer?->phone ?? '',
+                    'tables' => $tablesList,
+                    'booked_at' => $booking->booked_at,
+                    'expires_at' => $booking->expires_at,
+                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 600,
+                ],
+                'customer_phone' => $customer?->phone ?? '',
+            ]);
     }
 
     /**
@@ -241,7 +240,7 @@ class BookingController extends Controller
             'booking' => [
                 'id' => $booking->id,
                 'customer_name' => $booking->customer?->name ?? 'Unknown',
-                'customer_code' => $booking->customer?->customer_code ?? '',
+                'customer_phone' => $booking->customer?->phone ?? 'N/A',
                 'customer_id' => $booking->customer?->id,
                 'tables' => $booking->tables->map(function ($table) {
                     return [
@@ -305,22 +304,22 @@ class BookingController extends Controller
     }
 
     /**
-     * Look up booking by customer code (API endpoint for My Booking).
+     * Look up booking by customer phone (API endpoint for My Booking).
      */
     public function lookupByCustomerCode(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'customer_code' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20'],
         ]);
 
-        $code = trim($validated['customer_code']);
+        $phone = trim($validated['phone']);
 
-        $customer = Customer::where('customer_code', $code)->first();
+        $customer = Customer::where('phone', $phone)->first();
 
         if (!$customer) {
             return response()->json([
                 'found' => false,
-                'message' => 'Invalid customer code. Please try again.',
+                'message' => 'No customer found with that phone number.',
             ]);
         }
 
@@ -332,7 +331,7 @@ class BookingController extends Controller
         if (!$booking) {
             return response()->json([
                 'found' => false,
-                'message' => 'No booking found for this customer code.',
+                'message' => 'No booking found for this customer.',
             ]);
         }
 
@@ -352,7 +351,6 @@ class BookingController extends Controller
                 'id' => $booking->id,
                 'customer_name' => $booking->customer?->name ?? 'Unknown',
                 'customer_phone' => $booking->customer?->phone ?? 'N/A',
-                'customer_code' => $booking->customer?->customer_code ?? '',
                 'customer_id' => $booking->customer?->id,
                 'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,

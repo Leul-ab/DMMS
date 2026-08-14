@@ -14,7 +14,6 @@ type BookingData = {
     id: number;
     customer_name: string;
     customer_phone: string;
-    customer_code: string;
     customer_id: number;
     tables: BookingTable[];
     status: string;
@@ -30,8 +29,8 @@ type Props = {
 };
 
 export default function MyBooking({ onClose }: Props) {
-    const [step, setStep] = useState<'code' | 'booking'>('code');
-    const [customerCodeInput, setCustomerCodeInput] = useState('');
+    const [step, setStep] = useState<'phone' | 'booking'>('phone');
+    const [phoneInput, setPhoneInput] = useState('');
     const [codeError, setCodeError] = useState<string | null>(null);
     const [isVerifying, setIsVerifying] = useState(false);
 
@@ -105,10 +104,10 @@ export default function MyBooking({ onClose }: Props) {
     }, []);
 
     const handleVerifyCode = async () => {
-        const trimmedCode = customerCodeInput.trim();
+        const trimmedPhone = phoneInput.trim();
 
-        if (!trimmedCode) {
-            setCodeError('Customer Code is required.');
+        if (!trimmedPhone) {
+            setCodeError('Phone number is required.');
 
             return;
         }
@@ -130,7 +129,7 @@ export default function MyBooking({ onClose }: Props) {
                     'Accept': 'application/json',
                     'X-XSRF-TOKEN': getXsrfToken(),
                 },
-                body: JSON.stringify({ customer_code: trimmedCode }),
+                body: JSON.stringify({ phone: trimmedPhone }),
             });
 
             const data = await response.json();
@@ -145,14 +144,14 @@ export default function MyBooking({ onClose }: Props) {
                 setIsLoading(false);
 
                 if (data.found && !data.booking) {
-                    setError('No active booking found for this customer.');
+                    setError('No active booking found for this phone number.');
                     setStep('booking');
                 } else {
-                    setCodeError('Invalid Customer Code. Please try again.');
+                    setCodeError('No booking found. Please check your phone number.');
                 }
             }
         } catch {
-            setCodeError('Failed to verify code. Please try again.');
+            setCodeError('Failed to verify phone number. Please try again.');
         } finally {
             setIsVerifying(false);
         }
@@ -304,28 +303,28 @@ return null;
 
                 {/* Content */}
                 <div className="p-6">
-                    {/* Step 1: Enter Customer Code */}
-                    {step === 'code' && (
+                    {/* Step 1: Enter Phone Number */}
+                    {step === 'phone' && (
                         <div>
                             <div className="text-center mb-6">
                                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
                                     <User className="h-8 w-8 text-orange-500" />
                                 </div>
-                                <h3 className="mt-4 text-xl font-black text-gray-900">Enter Customer Code</h3>
+                                <h3 className="mt-4 text-xl font-black text-gray-900">Enter Your Phone Number</h3>
                                 <p className="mt-2 text-sm text-gray-500">
-                                    Please enter your Customer Code to view your booking.
+                                    Please enter your phone number to view your booking.
                                 </p>
                             </div>
 
                             <div className="mt-6">
                                 <label className="mb-2 block text-sm font-bold text-gray-700">
-                                    Customer Code
+                                    Phone Number
                                 </label>
                                 <input
-                                    type="text"
-                                    value={customerCodeInput}
+                                    type="tel"
+                                    value={phoneInput}
                                     onChange={(e) => {
-                                        setCustomerCodeInput(e.target.value.toUpperCase());
+                                        setPhoneInput(e.target.value);
                                         setCodeError(null);
                                     }}
                                     onKeyDown={(e) => {
@@ -333,8 +332,8 @@ return null;
                                             handleVerifyCode();
                                         }
                                     }}
-                                    placeholder="Enter your customer code"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500 uppercase"
+                                    placeholder="Enter your phone number"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-orange-500"
                                     autoFocus
                                 />
                                 {codeError && (
@@ -385,9 +384,9 @@ return null;
                             </p>
                             <Button
                                 variant="outline"
-                                onClick={() => {
-                                    setStep('code');
-                                    setCustomerCodeInput('');
+                                 onClick={() => {
+                                    setStep('phone');
+                                    setPhoneInput('');
                                     setCodeError(null);
                                 }}
                                 className="mt-4 rounded-xl py-3.5 px-6 font-bold"
@@ -434,13 +433,13 @@ return null;
                             </div>
 
                             {/* Customer Info */}
-                            <div className="rounded-2xl bg-stone-50 p-4">
-                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Customer</p>
-                                <p className="text-lg font-bold text-gray-900">{booking.customer_name}</p>
-                                <p className="text-sm text-gray-500 mt-0.5">
-                                    Code: <span className="font-bold text-gray-900">{booking.customer_code}</span>
-                                </p>
-                            </div>
+                             <div className="rounded-2xl bg-stone-50 p-4">
+                                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Customer</p>
+                                 <p className="text-lg font-bold text-gray-900">{booking.customer_name}</p>
+                                 <p className="text-sm text-gray-500 mt-0.5">
+                                     Phone: <span className="font-bold text-gray-900">{booking.customer_phone}</span>
+                                 </p>
+                             </div>
 
                             {/* Booking ID */}
                             <div className="rounded-2xl bg-stone-50 p-4">

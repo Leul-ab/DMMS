@@ -40,7 +40,6 @@ import {
 
 type Customer = {
     id: number;
-    customer_code: string;
     name: string;
     email: string | null;
     phone: string | null;
@@ -105,9 +104,6 @@ export default function CustomersIndex({
         return customers.filter((customer) => {
             return (
                 customer.name
-                    .toLowerCase()
-                    .includes(searchValue) ||
-                customer.customer_code
                     .toLowerCase()
                     .includes(searchValue) ||
                 (customer.phone ?? '')
@@ -322,7 +318,7 @@ export default function CustomersIndex({
                             <Search className="absolute left-3 top-1/2 mt-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
                             <Input
-                                placeholder="Search by name, customer code, phone, or email..."
+                                placeholder="Search by name, phone, or email..."
                                 value={search}
                                 onChange={(event) =>
                                     setSearch(
@@ -355,10 +351,6 @@ export default function CustomersIndex({
                                 <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b text-left">
-                                            <th className="p-3">
-                                                Customer Code
-                                            </th>
-
                                             <th className="p-3">
                                                 Full Name
                                             </th>
@@ -395,17 +387,8 @@ export default function CustomersIndex({
                                                         customer.id
                                                     }
                                                     className="border-b last:border-0 hover:bg-muted/50"
-                                                >
-                                                    {/* Customer Code */}
-                                                    <td className="p-3">
-                                                        <span className="font-mono font-bold text-orange-600">
-                                                            {
-                                                                customer.customer_code
-                                                            }
-                                                        </span>
-                                                    </td>
-
-                                                    {/* Name */}
+                                                 >
+                                                     {/* Name */}
                                                     <td className="p-3 font-medium">
                                                         {
                                                             customer.name
@@ -564,7 +547,7 @@ export default function CustomersIndex({
                         </DialogTitle>
 
                         <DialogDescription>
-                            Create a new customer. The customer code will be generated automatically.
+                            Create a new customer.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -691,32 +674,20 @@ export default function CustomersIndex({
                         </DialogDescription>
                     </DialogHeader>
 
-                    {selectedCustomer && (
-                        <div className="space-y-4 py-4">
+                        {selectedCustomer && (
+                            <div className="space-y-4 py-4">
 
-                            <div className="rounded-lg border bg-muted/30 p-4">
-                                <p className="text-sm text-muted-foreground">
-                                    Customer Code
-                                </p>
+                                <div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Full Name
+                                    </p>
 
-                                <p className="mt-1 text-lg font-bold">
-                                    {
-                                        selectedCustomer.customer_code
-                                    }
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-sm text-muted-foreground">
-                                    Full Name
-                                </p>
-
-                                <p className="font-medium">
-                                    {
-                                        selectedCustomer.name
-                                    }
-                                </p>
-                            </div>
+                                    <p className="font-medium">
+                                        {
+                                            selectedCustomer.name
+                                        }
+                                    </p>
+                                </div>
 
                             <div>
                                 <p className="text-sm text-muted-foreground">
@@ -803,30 +774,11 @@ export default function CustomersIndex({
                         </DialogTitle>
 
                         <DialogDescription>
-                            Update customer information. The customer code cannot be changed.
+                            Update customer information.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-
-                        {/* Customer Code */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Customer Code
-                            </label>
-
-                            <Input
-                                value={
-                                    selectedCustomer?.customer_code ||
-                                    ''
-                                }
-                                disabled
-                            />
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                Customer codes are generated automatically and cannot be changed.
-                            </p>
-                        </div>
 
                         {/* Full Name */}
                         <div>
@@ -942,7 +894,7 @@ export default function CustomersIndex({
                         </DialogTitle>
 
                         <DialogDescription>
-                            Are you sure you want to delete{' '}
+                             Are you sure you want to delete{' '}
                             <strong>
                                 {
                                     selectedCustomer?.name
@@ -950,7 +902,7 @@ export default function CustomersIndex({
                             </strong>{' '}
                             (
                             {
-                                selectedCustomer?.customer_code
+                                selectedCustomer?.phone
                             }
                             )? This action cannot be undone.
                         </DialogDescription>

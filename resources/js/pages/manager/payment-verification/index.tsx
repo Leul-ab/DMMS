@@ -89,7 +89,7 @@ type Order = {
     customer_phone: string | null;
     created_at: string;
     table: { id: number; table_number: number } | null;
-    customer: { id: number; customer_code: string; name: string } | null;
+    customer: { id: number; name: string } | null;
     payment: Payment | null;
     receipt: ReceiptData | null;
     order_items: ReceiptItem[];

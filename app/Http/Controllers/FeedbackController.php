@@ -132,16 +132,16 @@ class FeedbackController extends Controller
     }
 
     /**
-     * Resolve the customer from the session customer_code,
+     * Resolve the customer from the session customer_phone,
      * falling back to the order's customer_id.
      */
     protected function resolveCustomer(Order $order): ?Customer
     {
-        // First try the session customer_code
-        $customerCode = session('customer_code');
+        // First try the session customer_phone
+        $customerPhone = session('customer_phone');
 
-        if ($customerCode) {
-            $customer = Customer::where('customer_code', $customerCode)->first();
+        if ($customerPhone) {
+            $customer = Customer::where('phone', $customerPhone)->first();
             if ($customer) {
                 return $customer;
             }
