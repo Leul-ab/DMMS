@@ -33,6 +33,9 @@ class Order extends Model
         'special_instructions',
     ];
 
+    protected $appends = [
+        'queue_estimated_minutes',
+    ];
 
     protected function casts(): array
     {
@@ -44,6 +47,56 @@ class Order extends Model
             'preparation_started_at' => 'datetime',
             'preparation_completed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Calculate the cumulative estimated preparation time for this order
+     * based on its position in the global kitchen queue.
+     *
+     * The queue includes active orders (pending, preparing) only
+     * from ALL tables, sorted by arrival (created_at) time.
+     * The queue time for an order = sum of individual prep times of all
+     * orders that arrived at or before this order's arrival time.
+     *
+     * Individual prep time for an order = sum of (quantity × preparation_time)
+     * for all its items.
+     */
+    public function getQueueEstimatedMinutesAttribute(): ?int
+    {
+        $individualMinutes = $this->estimated_minutes ?? 0;
+
+        if (! $individualMinutes) {
+            return null;
+        }
+
+        // Get all active orders from the same branch, sorted by arrival time.
+        // Only pending and preparing orders are in the active kitchen queue.
+        // Orders marked as 'ready' (sent to waiter), 'served', or 'completed'
+        // are excluded so their queue time is removed and remaining orders
+        // are recalculated automatically.
+        $activeOrders = Order::query()
+            ->where('branch_id', $this->branch_id)
+            ->whereIn('status', ['pending', 'preparing'])
+            ->orderBy('created_at')
+            ->get();
+
+        if ($activeOrders->isEmpty()) {
+            return $individualMinutes;
+        }
+
+        $cumulative = 0;
+
+        foreach ($activeOrders as $activeOrder) {
+            $cumulative += $activeOrder->estimated_minutes ?? 0;
+
+            if ($activeOrder->id === $this->id) {
+                return $cumulative > 0 ? $cumulative : null;
+            }
+        }
+
+        // If this order wasn't found in the active list (e.g., completed or ready),
+        // return its own individual time as a fallback
+        return $individualMinutes > 0 ? $individualMinutes : null;
     }
 
     public function table(): BelongsTo

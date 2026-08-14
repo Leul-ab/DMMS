@@ -15,11 +15,7 @@ import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -57,6 +53,7 @@ type Order = {
     payment_submitted_at: string | null;
     total_amount: string;
     estimated_minutes: number | null;
+    queue_estimated_minutes: number | null;
     customer_name: string | null;
     customer_phone: string | null;
     notes: string | null;
@@ -109,39 +106,28 @@ const paymentLabels: Record<string, string> = {
     paid: 'Paid',
 };
 
-export default function OrdersIndex({
-    orders,
-    tables,
-    menuItems,
-}: Props) {
+export default function OrdersIndex({ orders, tables, menuItems }: Props) {
     const can = useCan();
 
-    const [editingOrder, setEditingOrder] =
-        useState<Order | null>(null);
+    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
-    const [deletingOrder, setDeletingOrder] =
-        useState<Order | null>(null);
+    const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
 
-    const [editTableId, setEditTableId] =
-        useState<number | ''>('');
+    const [editTableId, setEditTableId] = useState<number | ''>('');
 
-    const [editCustomerName, setEditCustomerName] =
-        useState('');
+    const [editCustomerName, setEditCustomerName] = useState('');
 
-    const [editCustomerPhone, setEditCustomerPhone] =
-        useState('');
+    const [editCustomerPhone, setEditCustomerPhone] = useState('');
 
-    const [editEstimatedMinutes, setEditEstimatedMinutes] =
-        useState<number | ''>('');
+    const [editEstimatedMinutes, setEditEstimatedMinutes] = useState<
+        number | ''
+    >('');
 
-    const [editNotes, setEditNotes] =
-        useState('');
+    const [editNotes, setEditNotes] = useState('');
 
-    const [editItems, setEditItems] =
-        useState<EditItem[]>([]);
+    const [editItems, setEditItems] = useState<EditItem[]>([]);
 
-    const [processing, setProcessing] =
-        useState(false);
+    const [processing, setProcessing] = useState(false);
 
     /*
      * Open edit modal.
@@ -149,31 +135,21 @@ export default function OrdersIndex({
     const openEditModal = (order: Order) => {
         setEditingOrder(order);
 
-        setEditTableId(
-            order.table?.id ?? ''
-        );
+        setEditTableId(order.table?.id ?? '');
 
-        setEditCustomerName(
-            order.customer_name ?? ''
-        );
+        setEditCustomerName(order.customer_name ?? '');
 
-        setEditCustomerPhone(
-            order.customer_phone ?? ''
-        );
+        setEditCustomerPhone(order.customer_phone ?? '');
 
-        setEditEstimatedMinutes(
-            order.estimated_minutes ?? ''
-        );
+        setEditEstimatedMinutes(order.estimated_minutes ?? '');
 
-        setEditNotes(
-            order.notes ?? ''
-        );
+        setEditNotes(order.notes ?? '');
 
         setEditItems(
             order.order_items.map((item) => ({
                 menu_item_id: item.menu_item.id,
                 quantity: item.quantity,
-            }))
+            })),
         );
     };
 
@@ -206,21 +182,13 @@ export default function OrdersIndex({
      * Remove menu item from order.
      */
     const removeItem = (index: number) => {
-        setEditItems(
-            editItems.filter(
-                (_, itemIndex) =>
-                    itemIndex !== index
-            )
-        );
+        setEditItems(editItems.filter((_, itemIndex) => itemIndex !== index));
     };
 
     /*
      * Change menu item.
      */
-    const changeItem = (
-        index: number,
-        menuItemId: number
-    ) => {
+    const changeItem = (index: number, menuItemId: number) => {
         const updatedItems = [...editItems];
 
         updatedItems[index] = {
@@ -234,10 +202,7 @@ export default function OrdersIndex({
     /*
      * Change item quantity.
      */
-    const changeQuantity = (
-        index: number,
-        quantity: number
-    ) => {
+    const changeQuantity = (index: number, quantity: number) => {
         const updatedItems = [...editItems];
 
         updatedItems[index] = {
@@ -263,9 +228,7 @@ export default function OrdersIndex({
         }
 
         if (editItems.length === 0) {
-            alert(
-                'Please add at least one menu item.'
-            );
+            alert('Please add at least one menu item.');
 
             return;
         }
@@ -276,12 +239,9 @@ export default function OrdersIndex({
             `/manager/orders/${editingOrder.id}`,
             {
                 table_id: editTableId,
-                customer_name:
-                    editCustomerName || null,
-                customer_phone:
-                    editCustomerPhone || null,
-                estimated_minutes:
-                    editEstimatedMinutes || null,
+                customer_name: editCustomerName || null,
+                customer_phone: editCustomerPhone || null,
+                estimated_minutes: editEstimatedMinutes || null,
                 notes: editNotes || null,
                 items: editItems,
             },
@@ -293,7 +253,7 @@ export default function OrdersIndex({
                 onSuccess: () => {
                     closeEditModal();
                 },
-            }
+            },
         );
     };
 
@@ -307,18 +267,15 @@ export default function OrdersIndex({
 
         setProcessing(true);
 
-        router.delete(
-            `/manager/orders/${deletingOrder.id}`,
-            {
-                preserveScroll: true,
-                onFinish: () => {
-                    setProcessing(false);
-                },
-                onSuccess: () => {
-                    setDeletingOrder(null);
-                },
-            }
-        );
+        router.delete(`/manager/orders/${deletingOrder.id}`, {
+            preserveScroll: true,
+            onFinish: () => {
+                setProcessing(false);
+            },
+            onSuccess: () => {
+                setDeletingOrder(null);
+            },
+        });
     };
 
     return (
@@ -351,10 +308,7 @@ export default function OrdersIndex({
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         {orders.map((order) => (
-                            <Card
-                                key={order.id}
-                                className="overflow-hidden"
-                            >
+                            <Card key={order.id} className="overflow-hidden">
                                 {/* Card Header */}
                                 <CardHeader className="border-b bg-muted/30">
                                     <div className="flex items-start justify-between gap-3">
@@ -365,7 +319,6 @@ export default function OrdersIndex({
 
                                             <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                                                 <Utensils className="size-4" />
-
                                                 Table{' '}
                                                 {order.table?.table_number ??
                                                     'Unknown'}
@@ -374,14 +327,11 @@ export default function OrdersIndex({
 
                                         <Badge
                                             className={`capitalize ${
-                                                statusColors[
-                                                    order.status
-                                                ] ?? ''
+                                                statusColors[order.status] ?? ''
                                             }`}
                                         >
-                                            {statusLabels[
-                                                order.status
-                                            ] ?? order.status}
+                                            {statusLabels[order.status] ??
+                                                order.status}
                                         </Badge>
                                     </div>
 
@@ -393,24 +343,26 @@ export default function OrdersIndex({
                                                 ] ?? ''
                                             }`}
                                         >
-                                            {
-                                                paymentLabels[
-                                                    order.payment_status
-                                                ] ??
-                                                    order.payment_status
-                                            }
+                                            {paymentLabels[
+                                                order.payment_status
+                                            ] ?? order.payment_status}
                                         </Badge>
 
-                                        {order.estimated_minutes !==
+                                        {order.estimated_minutes !== null && (
+                                            <Badge variant="outline">
+                                                <Clock className="mr-1 size-3" />
+                                                {order.estimated_minutes} min
+                                            </Badge>
+                                        )}
+                                        {order.queue_estimated_minutes !==
                                             null && (
                                             <Badge
                                                 variant="outline"
+                                                className="bg-orange-50 text-orange-800"
                                             >
                                                 <Clock className="mr-1 size-3" />
-
-                                                {
-                                                    order.estimated_minutes
-                                                }{' '}
+                                                Queue:{' '}
+                                                {order.queue_estimated_minutes}{' '}
                                                 min
                                             </Badge>
                                         )}
@@ -430,9 +382,7 @@ export default function OrdersIndex({
                                                 <p className="flex items-center gap-2 text-sm">
                                                     <User className="size-4 text-muted-foreground" />
 
-                                                    {
-                                                        order.customer_name
-                                                    }
+                                                    {order.customer_name}
                                                 </p>
                                             )}
 
@@ -440,9 +390,7 @@ export default function OrdersIndex({
                                                 <p className="mt-1 flex items-center gap-2 text-sm">
                                                     <Phone className="size-4 text-muted-foreground" />
 
-                                                    {
-                                                        order.customer_phone
-                                                    }
+                                                    {order.customer_phone}
                                                 </p>
                                             )}
                                         </div>
@@ -455,49 +403,37 @@ export default function OrdersIndex({
                                         </h4>
 
                                         <div className="space-y-2">
-                                            {order.order_items.map(
-                                                (item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="flex items-center justify-between rounded-lg border p-3"
-                                                    >
-                                                        <div>
-                                                            <p className="text-sm font-medium">
-                                                                {
-                                                                    item
-                                                                        .menu_item
-                                                                        .name
-                                                                }
-                                                            </p>
+                                            {order.order_items.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="flex items-center justify-between rounded-lg border p-3"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium">
+                                                            {
+                                                                item.menu_item
+                                                                    .name
+                                                            }
+                                                        </p>
 
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {
-                                                                    item.quantity
-                                                                }{' '}
-                                                                ×{' '}
-                                                                {Number(
-                                                                    item.price
-                                                                ).toFixed(
-                                                                    2
-                                                                )}{' '}
-                                                                ETB
-                                                            </p>
-                                                        </div>
-
-                                                        <span className="text-sm font-semibold">
-                                                            {(
-                                                                Number(
-                                                                    item.price
-                                                                ) *
-                                                                item.quantity
-                                                            ).toFixed(
-                                                                2
-                                                            )}{' '}
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {item.quantity} ×{' '}
+                                                            {Number(
+                                                                item.price,
+                                                            ).toFixed(2)}{' '}
                                                             ETB
-                                                        </span>
+                                                        </p>
                                                     </div>
-                                                )
-                                            )}
+
+                                                    <span className="text-sm font-semibold">
+                                                        {(
+                                                            Number(item.price) *
+                                                            item.quantity
+                                                        ).toFixed(2)}{' '}
+                                                        ETB
+                                                    </span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -512,7 +448,7 @@ export default function OrdersIndex({
                                                         Additional Instructions
                                                     </p>
 
-                                                    <p className="mt-1 whitespace-pre-line text-sm text-amber-800">
+                                                    <p className="mt-1 text-sm whitespace-pre-line text-amber-800">
                                                         {
                                                             order.special_instructions
                                                         }
@@ -534,9 +470,7 @@ export default function OrdersIndex({
                                                     </p>
 
                                                     <p className="mt-1 text-sm text-yellow-800">
-                                                        {
-                                                            order.notes
-                                                        }
+                                                        {order.notes}
                                                     </p>
                                                 </div>
                                             </div>
@@ -550,9 +484,9 @@ export default function OrdersIndex({
                                         </span>
 
                                         <span className="text-xl font-bold">
-                                            {Number(
-                                                order.total_amount
-                                            ).toFixed(2)}{' '}
+                                            {Number(order.total_amount).toFixed(
+                                                2,
+                                            )}{' '}
                                             ETB
                                         </span>
                                     </div>
@@ -564,13 +498,10 @@ export default function OrdersIndex({
                                                 variant="outline"
                                                 className="flex-1"
                                                 onClick={() =>
-                                                    openEditModal(
-                                                        order
-                                                    )
+                                                    openEditModal(order)
                                                 }
                                             >
                                                 <Pencil className="mr-2 size-4" />
-
                                                 Edit
                                             </Button>
                                         )}
@@ -580,13 +511,10 @@ export default function OrdersIndex({
                                                 variant="destructive"
                                                 className="flex-1"
                                                 onClick={() =>
-                                                    setDeletingOrder(
-                                                        order
-                                                    )
+                                                    setDeletingOrder(order)
                                                 }
                                             >
                                                 <Trash2 className="mr-2 size-4" />
-
                                                 Delete
                                             </Button>
                                         )}
@@ -613,13 +541,12 @@ export default function OrdersIndex({
                 <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>
-                            Edit Order{' '}
-                            {editingOrder?.order_number}
+                            Edit Order {editingOrder?.order_number}
                         </DialogTitle>
 
                         <DialogDescription>
-                            Update the customer information, table,
-                            notes, and order items.
+                            Update the customer information, table, notes, and
+                            order items.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -633,27 +560,15 @@ export default function OrdersIndex({
                             <select
                                 value={editTableId}
                                 onChange={(e) =>
-                                    setEditTableId(
-                                        Number(
-                                            e.target.value
-                                        )
-                                    )
+                                    setEditTableId(Number(e.target.value))
                                 }
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                             >
-                                <option value="">
-                                    Select Table
-                                </option>
+                                <option value="">Select Table</option>
 
                                 {tables.map((table) => (
-                                    <option
-                                        key={table.id}
-                                        value={table.id}
-                                    >
-                                        Table{' '}
-                                        {
-                                            table.table_number
-                                        }
+                                    <option key={table.id} value={table.id}>
+                                        Table {table.table_number}
                                     </option>
                                 ))}
                             </select>
@@ -667,13 +582,9 @@ export default function OrdersIndex({
 
                             <input
                                 type="text"
-                                value={
-                                    editCustomerName
-                                }
+                                value={editCustomerName}
                                 onChange={(e) =>
-                                    setEditCustomerName(
-                                        e.target.value
-                                    )
+                                    setEditCustomerName(e.target.value)
                                 }
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 placeholder="Customer name"
@@ -688,13 +599,9 @@ export default function OrdersIndex({
 
                             <input
                                 type="text"
-                                value={
-                                    editCustomerPhone
-                                }
+                                value={editCustomerPhone}
                                 onChange={(e) =>
-                                    setEditCustomerPhone(
-                                        e.target.value
-                                    )
+                                    setEditCustomerPhone(e.target.value)
                                 }
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 placeholder="Phone number"
@@ -710,17 +617,12 @@ export default function OrdersIndex({
                             <input
                                 type="number"
                                 min="0"
-                                value={
-                                    editEstimatedMinutes
-                                }
+                                value={editEstimatedMinutes}
                                 onChange={(e) =>
                                     setEditEstimatedMinutes(
                                         e.target.value
-                                            ? Number(
-                                                  e.target
-                                                      .value
-                                              )
-                                            : ''
+                                            ? Number(e.target.value)
+                                            : '',
                                     )
                                 }
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -742,116 +644,81 @@ export default function OrdersIndex({
                                     onClick={addItem}
                                 >
                                     <Plus className="mr-1 size-4" />
-
                                     Add Item
                                 </Button>
                             </div>
 
                             <div className="space-y-3">
-                                {editItems.map(
-                                    (item, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex gap-2"
+                                {editItems.map((item, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <select
+                                            value={item.menu_item_id}
+                                            onChange={(e) =>
+                                                changeItem(
+                                                    index,
+                                                    Number(e.target.value),
+                                                )
+                                            }
+                                            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
                                         >
-                                            <select
-                                                value={
-                                                    item.menu_item_id
-                                                }
-                                                onChange={(
-                                                    e
-                                                ) =>
-                                                    changeItem(
+                                            {menuItems.map((menuItem) => (
+                                                <option
+                                                    key={menuItem.id}
+                                                    value={menuItem.id}
+                                                >
+                                                    {menuItem.name} -{' '}
+                                                    {Number(
+                                                        menuItem.price,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <div className="flex items-center rounded-md border">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    changeQuantity(
                                                         index,
-                                                        Number(
-                                                            e
-                                                                .target
-                                                                .value
-                                                        )
+                                                        item.quantity - 1,
                                                     )
                                                 }
-                                                className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
                                             >
-                                                {menuItems.map(
-                                                    (
-                                                        menuItem
-                                                    ) => (
-                                                        <option
-                                                            key={
-                                                                menuItem.id
-                                                            }
-                                                            value={
-                                                                menuItem.id
-                                                            }
-                                                        >
-                                                            {
-                                                                menuItem.name
-                                                            }{' '}
-                                                            -{' '}
-                                                            {Number(
-                                                                menuItem.price
-                                                            ).toFixed(
-                                                                2
-                                                            )}{' '}
-                                                            ETB
-                                                        </option>
-                                                    )
-                                                )}
-                                            </select>
+                                                <Minus className="size-4" />
+                                            </Button>
 
-                                            <div className="flex items-center rounded-md border">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        changeQuantity(
-                                                            index,
-                                                            item.quantity -
-                                                                1
-                                                        )
-                                                    }
-                                                >
-                                                    <Minus className="size-4" />
-                                                </Button>
-
-                                                <span className="w-8 text-center text-sm">
-                                                    {
-                                                        item.quantity
-                                                    }
-                                                </span>
-
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        changeQuantity(
-                                                            index,
-                                                            item.quantity +
-                                                                1
-                                                        )
-                                                    }
-                                                >
-                                                    <Plus className="size-4" />
-                                                </Button>
-                                            </div>
+                                            <span className="w-8 text-center text-sm">
+                                                {item.quantity}
+                                            </span>
 
                                             <Button
                                                 type="button"
-                                                variant="destructive"
+                                                variant="ghost"
                                                 size="icon"
                                                 onClick={() =>
-                                                    removeItem(
-                                                        index
+                                                    changeQuantity(
+                                                        index,
+                                                        item.quantity + 1,
                                                     )
                                                 }
                                             >
-                                                <Trash2 className="size-4" />
+                                                <Plus className="size-4" />
                                             </Button>
                                         </div>
-                                    )
-                                )}
+
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            onClick={() => removeItem(index)}
+                                        >
+                                            <Trash2 className="size-4" />
+                                        </Button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -863,11 +730,7 @@ export default function OrdersIndex({
 
                             <textarea
                                 value={editNotes}
-                                onChange={(e) =>
-                                    setEditNotes(
-                                        e.target.value
-                                    )
-                                }
+                                onChange={(e) => setEditNotes(e.target.value)}
                                 rows={3}
                                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                                 placeholder="Special instructions..."
@@ -879,9 +742,7 @@ export default function OrdersIndex({
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={
-                                closeEditModal
-                            }
+                            onClick={closeEditModal}
                             disabled={processing}
                         >
                             Cancel
@@ -892,9 +753,7 @@ export default function OrdersIndex({
                             onClick={updateOrder}
                             disabled={processing}
                         >
-                            {processing
-                                ? 'Saving...'
-                                : 'Save Changes'}
+                            {processing ? 'Saving...' : 'Save Changes'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -914,25 +773,19 @@ export default function OrdersIndex({
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>
-                            Delete Order?
-                        </DialogTitle>
+                        <DialogTitle>Delete Order?</DialogTitle>
 
                         <DialogDescription>
                             Are you sure you want to delete order{' '}
-                            <strong>
-                                {deletingOrder?.order_number}
-                            </strong>
-                            ? This action cannot be undone.
+                            <strong>{deletingOrder?.order_number}</strong>? This
+                            action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() =>
-                                setDeletingOrder(null)
-                            }
+                            onClick={() => setDeletingOrder(null)}
                             disabled={processing}
                         >
                             Cancel
@@ -943,9 +796,7 @@ export default function OrdersIndex({
                             onClick={deleteOrder}
                             disabled={processing}
                         >
-                            {processing
-                                ? 'Deleting...'
-                                : 'Delete Order'}
+                            {processing ? 'Deleting...' : 'Delete Order'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

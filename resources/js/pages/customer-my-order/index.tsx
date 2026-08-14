@@ -37,6 +37,7 @@ type Order = {
     total_amount: string;
     customer_name: string | null;
     estimated_minutes: number | null;
+    queue_estimated_minutes: number | null;
     preparation_time: number | null;
     preparation_started_at: string | null;
     preparation_status: string;
@@ -73,5 +74,12 @@ type Props = {
 };
 
 export default function CustomerMyOrderIndex({ table, order, orders }: Props) {
-    return <MyOrderView table={table} order={order} orders={orders} menuPath="/customer-menu" />;
+    return (
+        <MyOrderView
+            table={table}
+            order={order}
+            orders={orders}
+            menuPath="/customer-menu"
+        />
+    );
 }

@@ -115,8 +115,7 @@ class OrderController extends Controller
                 'table_id' => $validated['table_id'],
                 'customer_name' => $validated['customer_name'] ?? null,
                 'customer_phone' => $validated['customer_phone'] ?? null,
-                'estimated_minutes' =>
-                    $validated['estimated_minutes'] ?? null,
+                'estimated_minutes' => $validated['estimated_minutes'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
@@ -226,5 +225,4 @@ class OrderController extends Controller
             'Order deleted successfully.'
         );
     }
-
 }

@@ -15,19 +15,9 @@ Route::prefix('kitchen')->name('kitchen.')->middleware(['auth'])->group(function
         ->name('orders.accept')
         ->middleware('permission:update kitchen');
 
-    // Update Estimated Time (for customer sync before timer starts)
-    Route::patch('/orders/{order}/update-estimated-time', [KitchenDashboardController::class, 'updateEstimatedTime'])
-        ->name('orders.update-estimated-time')
-        ->middleware('permission:update kitchen');
-
     // Start Preparation Timer
     Route::patch('/orders/{order}/start-preparation', [KitchenDashboardController::class, 'startPreparation'])
         ->name('orders.start-preparation')
-        ->middleware('permission:update kitchen');
-
-    // Add Additional Preparation Time
-    Route::patch('/orders/{order}/add-time', [KitchenDashboardController::class, 'addTime'])
-        ->name('orders.add-time')
         ->middleware('permission:update kitchen');
 
     // Mark as Ready (Preparing → Ready)

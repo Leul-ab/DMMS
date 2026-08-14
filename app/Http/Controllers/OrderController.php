@@ -69,7 +69,7 @@ class OrderController extends Controller
         ]);
 
         // If no table_id in request, use the session-scanned table
-        if (!$tableId) {
+        if (! $tableId) {
             return back()->withErrors([
                 'table' => 'No table selected. Please scan the QR code on your table.',
             ])->withInput();
@@ -84,7 +84,7 @@ class OrderController extends Controller
 
         // If an order_id is provided, try to add items to that specific order
         // Only allowed if the order is still pending/confirmed (not preparing yet)
-        if (!empty($validated['order_id'])) {
+        if (! empty($validated['order_id'])) {
             $existingOrder = Order::find($validated['order_id']);
 
             if ($existingOrder && in_array($existingOrder->status, ['pending', 'received', 'confirmed'])) {
@@ -130,7 +130,7 @@ class OrderController extends Controller
 
             // Find customer by phone if provided
             $customerId = null;
-            if (!empty($validated['customer_phone'])) {
+            if (! empty($validated['customer_phone'])) {
                 $customer = Customer::where('phone', $validated['customer_phone'])->first();
                 $customerId = $customer?->id;
             }
@@ -138,12 +138,12 @@ class OrderController extends Controller
             $order = Order::create([
                 'table_id' => $table->id,
                 'customer_id' => $customerId,
-                'order_number' => 'ORD-' . strtoupper(
+                'order_number' => 'ORD-'.strtoupper(
                     Str::random(8)
                 ),
                 'status' => 'pending',
                 'total_amount' => 0,
-                'special_instructions' => !empty($validated['special_instructions'])
+                'special_instructions' => ! empty($validated['special_instructions'])
                     ? trim($validated['special_instructions'])
                     : null,
             ]);
@@ -162,10 +162,9 @@ class OrderController extends Controller
                 $totalAmount += $itemTotal;
 
                 if ($menuItem->preparation_time) {
-                    $estimatedMinutes = max(
-                        $estimatedMinutes,
-                        $menuItem->preparation_time
-                    );
+                    $estimatedMinutes +=
+                        $menuItem->preparation_time *
+                        $quantity;
                 }
 
                 OrderItem::create([
@@ -179,8 +178,7 @@ class OrderController extends Controller
 
             $order->update([
                 'total_amount' => $totalAmount,
-                'estimated_minutes' =>
-                    $estimatedMinutes ?: null,
+                'estimated_minutes' => $estimatedMinutes ?: null,
             ]);
 
             // Set table status to occupied
@@ -193,11 +191,11 @@ class OrderController extends Controller
         });
 
         return redirect()
-          ->route($redirectRoute, [
-        'table' => $table->table_number,
-         ])
-        ->with('success', 'Order placed successfully!')
-        ->with('order_number', $order->order_number);
+            ->route($redirectRoute, [
+                'table' => $table->table_number,
+            ])
+            ->with('success', 'Order placed successfully!')
+            ->with('order_number', $order->order_number);
     }
 
     /**
@@ -235,6 +233,19 @@ class OrderController extends Controller
             }
 
             $order->increment('total_amount', $additionalTotal);
+
+            // Recalculate estimated_minutes from all current order items
+            $estimatedMinutes = 0;
+            $orderItems = $order->fresh()->orderItems()->with('menuItem')->get();
+            foreach ($orderItems as $orderItem) {
+                if ($orderItem->menuItem && $orderItem->menuItem->preparation_time) {
+                    $estimatedMinutes += $orderItem->menuItem->preparation_time * $orderItem->quantity;
+                }
+            }
+
+            $order->update([
+                'estimated_minutes' => $estimatedMinutes ?: null,
+            ]);
         });
     }
 
@@ -249,18 +260,18 @@ class OrderController extends Controller
         ]);
 
         $query = Order::whereIn('status', [
-            'pending', 'received', 'confirmed', 'preparing', 'ready', 'served'
+            'pending', 'received', 'confirmed', 'preparing', 'ready', 'served',
         ]);
 
         // If customer phone provided, count orders for that customer
-        if (!empty($validated['customer_phone'])) {
+        if (! empty($validated['customer_phone'])) {
             $customer = Customer::where('phone', $validated['customer_phone'])->first();
             if ($customer) {
                 $query->where('customer_id', $customer->id);
             } else {
                 return response()->json(['count' => 0]);
             }
-        } elseif (!empty($validated['table_id'])) {
+        } elseif (! empty($validated['table_id'])) {
             // Fallback to table-based counting
             $query->where('table_id', $validated['table_id']);
         } else {
@@ -278,7 +289,7 @@ class OrderController extends Controller
     public function addItems(Request $request, Order $order)
     {
         // Only allow adding to pending/confirmed orders
-        if (!in_array($order->status, ['pending', 'received', 'confirmed'])) {
+        if (! in_array($order->status, ['pending', 'received', 'confirmed'])) {
             return response()->json([
                 'error' => 'Cannot add items to an order that is already being prepared or completed.',
             ], 422);
@@ -313,7 +324,7 @@ class OrderController extends Controller
      */
     public function releaseTable(Order $order)
     {
-        if (!in_array($order->status, ['completed', 'cancelled'])) {
+        if (! in_array($order->status, ['completed', 'cancelled'])) {
             return back()->withErrors([
                 'order' => 'Table can only be released for completed or cancelled orders.',
             ]);

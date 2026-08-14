@@ -3,6 +3,7 @@ import {
     CheckCircle2,
     ChevronDown,
     ChevronUp,
+    Clock,
     Copy,
     Receipt,
     Star,
@@ -70,6 +71,7 @@ type Order = {
     total_amount: string;
     customer_name: string | null;
     estimated_minutes: number | null;
+    queue_estimated_minutes: number | null;
     preparation_time: number | null;
     preparation_started_at: string | null;
     preparation_status: string;
@@ -108,7 +110,9 @@ type Props = {
  *  - 3+ items → "Burger, French Fries, and Juice"
  */
 function getOrderName(order: Order): string {
-    const names = order.order_items.map((item) => item.menu_item.name).filter(Boolean);
+    const names = order.order_items
+        .map((item) => item.menu_item.name)
+        .filter(Boolean);
 
     if (names.length === 0) {
         return 'Order';
@@ -134,7 +138,7 @@ function getOrderName(order: Order): string {
  */
 function calculateOrderProgress(
     order: Order,
-    now: number
+    now: number,
 ): { progress: number; remaining: number | null } {
     if (['ready', 'served', 'completed'].includes(order.status)) {
         return { progress: 100, remaining: 0 };
@@ -221,7 +225,9 @@ const PROGRESS_BG = 'bg-orange-100';
 
 function ProgressBar({ percentage }: { percentage: number }) {
     return (
-        <div className={`w-full rounded-full h-4 ${PROGRESS_BG} overflow-hidden`}>
+        <div
+            className={`h-4 w-full rounded-full ${PROGRESS_BG} overflow-hidden`}
+        >
             <div
                 className={`h-full rounded-full ${PROGRESS_COLOR} transition-all duration-1000 ease-linear`}
                 style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
@@ -231,12 +237,20 @@ function ProgressBar({ percentage }: { percentage: number }) {
 }
 
 // Payment method account numbers
-const paymentAccounts: Record<string, { label: string; number: string; icon: string }> = {
+const paymentAccounts: Record<
+    string,
+    { label: string; number: string; icon: string }
+> = {
     telebirr: { label: 'Telebirr', number: '0987574556', icon: '📱' },
     cbe_birr: { label: 'CBE Birr', number: '1000976545673', icon: '🏦' },
 };
 
-export default function MyOrderView({ table, order, orders = [], menuPath }: Props) {
+export default function MyOrderView({
+    table,
+    order,
+    orders = [],
+    menuPath,
+}: Props) {
     // ── Order-level state ──
     // Track progress and completion independently for every order.
     const [progressMap, setProgressMap] = useState<Record<number, number>>({});
@@ -247,12 +261,16 @@ export default function MyOrderView({ table, order, orders = [], menuPath }: Pro
     // Payment workflow — keyed to whichever order the customer is paying for.
     const [paymentOrder, setPaymentOrder] = useState<Order | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
+        string | null
+    >(null);
     const [isSendingVerification, setIsSendingVerification] = useState(false);
     const [verificationSent, setVerificationSent] = useState(false);
 
     // Cancel workflow
-    const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
+    const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(
+        null,
+    );
 
     // Receipt / Feedback
     const [showReceipt, setShowReceipt] = useState(false);
@@ -308,7 +326,7 @@ export default function MyOrderView({ table, order, orders = [], menuPath }: Pro
                 const addedMinutes = currentPrepTime - prev;
                 toast.info(
                     `Order ${o.order_number}: Preparation time updated. Approximately ${addedMinutes} additional minutes.`,
-                    { duration: 5000 }
+                    { duration: 5000 },
                 );
             }
 
@@ -346,7 +364,7 @@ export default function MyOrderView({ table, order, orders = [], menuPath }: Pro
             if (prev === 'pending' && currentStatus === 'paid' && hasReceipt) {
                 toast.success(
                     `Payment verified for ${o.order_number}. Your receipt is ready.`,
-                    { duration: 5000 }
+                    { duration: 5000 },
                 );
                 setPaymentOrder(o);
                 setShowReceipt(true);
@@ -370,8 +388,8 @@ export default function MyOrderView({ table, order, orders = [], menuPath }: Pro
 
     const handleCopyAndVerify = async () => {
         if (!paymentOrder || !selectedPaymentMethod) {
-return;
-}
+            return;
+        }
 
         if (hasVerificationBeenSent) {
             toast.info('A payment verification request has already been sent.');
@@ -402,7 +420,7 @@ return;
                 copySuccess = true;
             } catch {
                 toast.error(
-                    'Unable to copy the account number. Please copy it manually.'
+                    'Unable to copy the account number. Please copy it manually.',
                 );
             }
         }
@@ -421,7 +439,7 @@ return;
                     setShowPaymentModal(false);
                     toast.success(
                         'Account number copied successfully.\n\nYour payment verification request has been sent.\n\nPlease complete your payment using the copied account number.\n\nThe restaurant will verify your payment shortly.',
-                        { duration: 8000 }
+                        { duration: 8000 },
                     );
                 },
                 onError: () => {
@@ -429,22 +447,22 @@ return;
 
                     if (copySuccess) {
                         toast.error(
-                            'Account number copied, but the verification request could not be sent. Please try again.'
+                            'Account number copied, but the verification request could not be sent. Please try again.',
                         );
                     } else {
                         toast.error(
-                            'Unable to copy the account number. Please copy it manually.'
+                            'Unable to copy the account number. Please copy it manually.',
                         );
                     }
                 },
-            }
+            },
         );
     };
 
     const cancelOrder = (targetOrder: Order) => {
         if (
             !confirm(
-                `Are you sure you want to cancel order ${targetOrder.order_number}?`
+                `Are you sure you want to cancel order ${targetOrder.order_number}?`,
             )
         ) {
             return;
@@ -464,7 +482,7 @@ return;
                     setCancellingOrderId(null);
                     toast.error('Failed to cancel order.');
                 },
-            }
+            },
         );
     };
 
@@ -491,7 +509,7 @@ return;
     const subtotalOf = (o: Order) =>
         o.order_items.reduce(
             (sum, item) => sum + Number(item.price) * item.quantity,
-            0
+            0,
         );
 
     // ── Render helpers ──────────────────────────────────────
@@ -521,17 +539,15 @@ return;
 
     return (
         <div className="min-h-screen bg-stone-50 text-gray-900">
-
             {/* ================= HEADER ================= */}
             <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
-
                     {/* Restaurant Logo */}
                     <Link href={menuPath} className="group">
                         <h1 className="text-2xl font-black tracking-tight transition group-hover:text-orange-600">
                             DINE<span className="text-orange-500">.</span>
                         </h1>
-                        <p className="text-xs font-medium uppercase tracking-widest text-gray-500">
+                        <p className="text-xs font-medium tracking-widest text-gray-500 uppercase">
                             Digital Menu
                         </p>
                     </Link>
@@ -544,8 +560,12 @@ return;
                                     {table.table_number}
                                 </div>
                                 <div className="hidden sm:block">
-                                    <p className="text-xs text-gray-500">Your table</p>
-                                    <p className="text-sm font-bold">Table {table.table_number}</p>
+                                    <p className="text-xs text-gray-500">
+                                        Your table
+                                    </p>
+                                    <p className="text-sm font-bold">
+                                        Table {table.table_number}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -554,16 +574,14 @@ return;
                             <Link href={menuPath}>Menu</Link>
                         </Button>
                     </div>
-
                 </div>
             </header>
 
             {/* ================= MAIN ================= */}
             <main className="mx-auto max-w-3xl px-5 py-12">
-
                 {/* Page Header */}
                 <div className="mb-10 text-center">
-                    <p className="font-semibold uppercase tracking-widest text-orange-500">
+                    <p className="font-semibold tracking-widest text-orange-500 uppercase">
                         Order Tracking
                     </p>
                     <h1 className="mt-2 text-4xl font-black sm:text-5xl">
@@ -580,7 +598,9 @@ return;
                         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
                             🍽️
                         </div>
-                        <h2 className="mt-6 text-2xl font-black">No Active Order</h2>
+                        <h2 className="mt-6 text-2xl font-black">
+                            No Active Order
+                        </h2>
                         <p className="mt-2 text-gray-500">
                             You don't have an active order yet.
                         </p>
@@ -599,16 +619,40 @@ return;
                         {orders.map((o) => {
                             const progress = progressMap[o.id] ?? 0;
                             const isExpanded = expandedOrderId === o.id;
-                            const isActive = !['completed', 'cancelled', 'served'].includes(o.status);
+                            const isActive = ![
+                                'completed',
+                                'cancelled',
+                                'served',
+                            ].includes(o.status);
                             const isCompleted = o.status === 'completed';
-                            const displayPrepTime = o.preparation_time || o.estimated_minutes;
+                            const displayPrepTime =
+                                o.preparation_time || o.estimated_minutes;
+                            const queuePrepTime =
+                                o.queue_estimated_minutes || displayPrepTime;
                             const expectedReadyTime =
                                 o.preparation_started_at && o.preparation_time
                                     ? new Date(
-                                        new Date(o.preparation_started_at).getTime() +
-                                        o.preparation_time * 60 * 1000
-                                    )
-                                    : null;
+                                          new Date(
+                                              o.preparation_started_at,
+                                          ).getTime() +
+                                              o.preparation_time * 60 * 1000,
+                                      )
+                                    : o.queue_estimated_minutes
+                                      ? new Date(
+                                            new Date(o.created_at).getTime() +
+                                                o.queue_estimated_minutes *
+                                                    60 *
+                                                    1000,
+                                        )
+                                      : o.estimated_minutes
+                                        ? new Date(
+                                              new Date(o.created_at).getTime() +
+                                                  o.estimated_minutes *
+                                                      60 *
+                                                      1000,
+                                          )
+                                        : null;
+
                             const subtotal = subtotalOf(o);
 
                             return (
@@ -620,22 +664,25 @@ return;
                                     <div className="p-6">
                                         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                             <div>
-                                                <p className="text-sm font-semibold uppercase tracking-widest text-gray-400">
+                                                <p className="text-sm font-semibold tracking-widest text-gray-400 uppercase">
                                                     Order Number
                                                 </p>
                                                 <h2 className="mt-1 text-2xl font-black">
                                                     {o.order_number}
                                                 </h2>
                                                 <p className="mt-1 text-sm text-gray-500">
-                                                    {formatDateTime(o.created_at)}
+                                                    {formatDateTime(
+                                                        o.created_at,
+                                                    )}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span
                                                     className={`h-3 w-3 rounded-full ${getStatusColor(o.status)}`}
                                                 ></span>
-                                                <span className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-black capitalize text-white">
-                                                    {o.status} {getStatusEmoji(o.status)}
+                                                <span className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-black text-white capitalize">
+                                                    {o.status}{' '}
+                                                    {getStatusEmoji(o.status)}
                                                 </span>
                                             </div>
                                         </div>
@@ -646,11 +693,24 @@ return;
                                                 {getOrderName(o)}
                                             </p>
                                             {o.special_instructions && (
-                                                <p className="mt-1.5 text-xs italic text-gray-500 break-words">
+                                                <p className="mt-1.5 text-xs break-words text-gray-500 italic">
                                                     {o.special_instructions}
                                                 </p>
                                             )}
                                         </div>
+
+                                        {/* Estimated Preparation Time - queue-based cumulative time */}
+                                        {queuePrepTime && (
+                                            <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                                                <Clock className="h-4 w-4 text-orange-500" />
+                                                <span>
+                                                    <strong className="text-gray-700">
+                                                        Estimated Wait:
+                                                    </strong>{' '}
+                                                    {queuePrepTime} minutes
+                                                </span>
+                                            </p>
+                                        )}
 
                                         {/* Order Progress — simple bar, one consistent colour */}
                                         {(isActive || isCompleted) && (
@@ -665,21 +725,29 @@ return;
                                                 </div>
 
                                                 <div className="mt-2">
-                                                    <ProgressBar percentage={progress} />
+                                                    <ProgressBar
+                                                        percentage={progress}
+                                                    />
                                                 </div>
 
                                                 {progress >= 100 &&
-                                                    ['ready', 'served'].includes(o.status) && (
+                                                    [
+                                                        'ready',
+                                                        'served',
+                                                    ].includes(o.status) && (
                                                         <p className="mt-2 text-sm font-bold text-green-600">
-                                                            ✅ Your order is ready!
+                                                            ✅ Your order is
+                                                            ready!
                                                         </p>
                                                     )}
 
-                                                {displayPrepTime && expectedReadyTime && (
+                                                {expectedReadyTime && (
                                                     <p className="mt-2 text-sm text-gray-500">
                                                         Expected Ready:{' '}
                                                         <strong className="text-gray-700">
-                                                            {formatTimeOnly(expectedReadyTime)}
+                                                            {formatTimeOnly(
+                                                                expectedReadyTime,
+                                                            )}
                                                         </strong>
                                                     </p>
                                                 )}
@@ -707,19 +775,23 @@ return;
                                             {/* Order Info Grid */}
                                             <div className="grid gap-4 sm:grid-cols-2">
                                                 <div>
-                                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                                    <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
                                                         Order Date/Time
                                                     </p>
                                                     <p className="mt-1 font-semibold">
-                                                        {formatDateTime(o.created_at)}
+                                                        {formatDateTime(
+                                                            o.created_at,
+                                                        )}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+                                                    <p className="text-xs font-semibold tracking-widest text-gray-400 uppercase">
                                                         Payment Status
                                                     </p>
                                                     <div className="mt-1">
-                                                        {renderPaymentStatus(o.payment_status)}
+                                                        {renderPaymentStatus(
+                                                            o.payment_status,
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -730,30 +802,47 @@ return;
                                                     Order Items
                                                 </h3>
                                                 <div className="mt-3 space-y-2">
-                                                    {o.order_items.map((item) => (
-                                                        <div
-                                                            key={item.id}
-                                                            className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3"
-                                                        >
-                                                            <div>
-                                                                <p className="font-bold">
-                                                                    {item.menu_item.name}
-                                                                </p>
-                                                                <p className="text-sm text-gray-500">
-                                                                    {item.quantity} ×{' '}
-                                                                    {Number(item.price).toFixed(2)}{' '}
+                                                    {o.order_items.map(
+                                                        (item) => (
+                                                            <div
+                                                                key={item.id}
+                                                                className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3"
+                                                            >
+                                                                <div>
+                                                                    <p className="font-bold">
+                                                                        {
+                                                                            item
+                                                                                .menu_item
+                                                                                .name
+                                                                        }
+                                                                    </p>
+                                                                    <p className="text-sm text-gray-500">
+                                                                        {
+                                                                            item.quantity
+                                                                        }{' '}
+                                                                        ×{' '}
+                                                                        {Number(
+                                                                            item.price,
+                                                                        ).toFixed(
+                                                                            2,
+                                                                        )}{' '}
+                                                                        ETB
+                                                                    </p>
+                                                                </div>
+                                                                <p className="font-black whitespace-nowrap">
+                                                                    {(
+                                                                        Number(
+                                                                            item.price,
+                                                                        ) *
+                                                                        item.quantity
+                                                                    ).toFixed(
+                                                                        2,
+                                                                    )}{' '}
                                                                     ETB
                                                                 </p>
                                                             </div>
-                                                            <p className="whitespace-nowrap font-black">
-                                                                {(
-                                                                    Number(item.price) *
-                                                                    item.quantity
-                                                                ).toFixed(2)}{' '}
-                                                                ETB
-                                                            </p>
-                                                        </div>
-                                                    ))}
+                                                        ),
+                                                    )}
                                                 </div>
                                             </div>
 
@@ -764,13 +853,17 @@ return;
                                                         Subtotal
                                                     </span>
                                                     <span className="font-semibold">
-                                                        {subtotal.toFixed(2)} ETB
+                                                        {subtotal.toFixed(2)}{' '}
+                                                        ETB
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between text-lg font-black">
                                                     <span>Total</span>
                                                     <span className="text-orange-500">
-                                                        {totalAmount(o).toFixed(2)} ETB
+                                                        {totalAmount(o).toFixed(
+                                                            2,
+                                                        )}{' '}
+                                                        ETB
                                                     </span>
                                                 </div>
                                             </div>
@@ -782,7 +875,7 @@ return;
                                                         <span>📝</span>
                                                         Additional Instructions
                                                     </h3>
-                                                    <p className="mt-2 whitespace-pre-line text-sm text-amber-900">
+                                                    <p className="mt-2 text-sm whitespace-pre-line text-amber-900">
                                                         {o.special_instructions}
                                                     </p>
                                                 </div>
@@ -795,62 +888,94 @@ return;
                                                         Payment
                                                     </h3>
 
-                                                    {o.payment_status === 'unpaid' && (
+                                                    {o.payment_status ===
+                                                        'unpaid' && (
                                                         <>
                                                             <p className="mt-2 text-sm text-gray-600">
-                                                                Your order is completed.
-                                                                Please choose a payment method to proceed.
+                                                                Your order is
+                                                                completed.
+                                                                Please choose a
+                                                                payment method
+                                                                to proceed.
                                                             </p>
                                                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                                 {Object.entries(
-                                                                    paymentAccounts
-                                                                ).map(([key, account]) => (
-                                                                    <button
-                                                                        key={key}
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            openPaymentModal(o, key)
-                                                                        }
-                                                                        className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
-                                                                    >
-                                                                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
-                                                                            {account.icon}
-                                                                        </span>
-                                                                        <div>
-                                                                            <p className="font-black text-stone-800">
-                                                                                {account.label}
-                                                                            </p>
-                                                                            <p className="text-xs text-gray-500">
-                                                                                Pay with{' '}
-                                                                                {account.label}
-                                                                            </p>
-                                                                        </div>
-                                                                    </button>
-                                                                ))}
+                                                                    paymentAccounts,
+                                                                ).map(
+                                                                    ([
+                                                                        key,
+                                                                        account,
+                                                                    ]) => (
+                                                                        <button
+                                                                            key={
+                                                                                key
+                                                                            }
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                openPaymentModal(
+                                                                                    o,
+                                                                                    key,
+                                                                                )
+                                                                            }
+                                                                            className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
+                                                                        >
+                                                                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+                                                                                {
+                                                                                    account.icon
+                                                                                }
+                                                                            </span>
+                                                                            <div>
+                                                                                <p className="font-black text-stone-800">
+                                                                                    {
+                                                                                        account.label
+                                                                                    }
+                                                                                </p>
+                                                                                <p className="text-xs text-gray-500">
+                                                                                    Pay
+                                                                                    with{' '}
+                                                                                    {
+                                                                                        account.label
+                                                                                    }
+                                                                                </p>
+                                                                            </div>
+                                                                        </button>
+                                                                    ),
+                                                                )}
                                                             </div>
                                                         </>
                                                     )}
 
-                                                    {o.payment_status === 'pending' && (
+                                                    {o.payment_status ===
+                                                        'pending' && (
                                                         <div className="mt-4 rounded-2xl bg-yellow-100 p-4">
                                                             <p className="font-bold text-yellow-800">
-                                                                Payment Pending Verification
+                                                                Payment Pending
+                                                                Verification
                                                             </p>
                                                             <p className="mt-1 text-sm text-yellow-700">
-                                                                Your payment verification
-                                                                request has been sent. Please wait for the
-                                                                restaurant to verify your payment.
+                                                                Your payment
+                                                                verification
+                                                                request has been
+                                                                sent. Please
+                                                                wait for the
+                                                                restaurant to
+                                                                verify your
+                                                                payment.
                                                             </p>
                                                         </div>
                                                     )}
 
-                                                    {o.payment_status === 'paid' && (
+                                                    {o.payment_status ===
+                                                        'paid' && (
                                                         <div className="mt-4 rounded-2xl bg-green-100 p-4">
                                                             <p className="font-bold text-green-800">
-                                                                Payment Confirmed ✓
+                                                                Payment
+                                                                Confirmed ✓
                                                             </p>
                                                             <p className="mt-1 text-sm text-green-700">
-                                                                Your payment has been successfully
+                                                                Your payment has
+                                                                been
+                                                                successfully
                                                                 verified.
                                                             </p>
 
@@ -858,8 +983,12 @@ return;
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
-                                                                        setPaymentOrder(o);
-                                                                        setShowReceipt(true);
+                                                                        setPaymentOrder(
+                                                                            o,
+                                                                        );
+                                                                        setShowReceipt(
+                                                                            true,
+                                                                        );
                                                                     }}
                                                                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-6 py-3 font-black text-white shadow-lg shadow-green-600/25 transition hover:bg-green-700 active:scale-[0.98]"
                                                                 >
@@ -872,13 +1001,18 @@ return;
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
-                                                                        setPaymentOrder(o);
-                                                                        setShowFeedbackModal(true);
+                                                                        setPaymentOrder(
+                                                                            o,
+                                                                        );
+                                                                        setShowFeedbackModal(
+                                                                            true,
+                                                                        );
                                                                     }}
                                                                     className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
                                                                 >
                                                                     <Star className="size-4 fill-amber-200" />
-                                                                    Rate Overall Service
+                                                                    Rate Overall
+                                                                    Service
                                                                 </button>
                                                             )}
 
@@ -886,7 +1020,11 @@ return;
                                                                 <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-white/70 px-4 py-3">
                                                                     <CheckCircle2 className="size-4 text-green-600" />
                                                                     <p className="text-sm font-bold text-green-700">
-                                                                        You have already rated this order.
+                                                                        You have
+                                                                        already
+                                                                        rated
+                                                                        this
+                                                                        order.
                                                                     </p>
                                                                 </div>
                                                             )}
@@ -898,15 +1036,27 @@ return;
                                             <div className="mt-6 flex flex-row gap-2 sm:gap-3">
                                                 {/* Cancel button — only for active orders that aren't locked */}
                                                 {!isCompleted &&
-                                                    !['cancelled', 'served'].includes(o.status) &&
-                                                    !['preparing', 'ready'].includes(o.status) && (
+                                                    ![
+                                                        'cancelled',
+                                                        'served',
+                                                    ].includes(o.status) &&
+                                                    ![
+                                                        'preparing',
+                                                        'ready',
+                                                    ].includes(o.status) && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => cancelOrder(o)}
-                                                            disabled={cancellingOrderId === o.id}
+                                                            onClick={() =>
+                                                                cancelOrder(o)
+                                                            }
+                                                            disabled={
+                                                                cancellingOrderId ===
+                                                                o.id
+                                                            }
                                                             className="flex-1 rounded-xl border-2 border-red-200 bg-white px-4 py-2 text-center text-sm font-bold text-red-500 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-60"
                                                         >
-                                                            {cancellingOrderId === o.id
+                                                            {cancellingOrderId ===
+                                                            o.id
                                                                 ? 'Cancelling...'
                                                                 : 'Cancel Order'}
                                                         </button>
@@ -916,9 +1066,13 @@ return;
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        setExpandedOrderId(isExpanded ? null : o.id)
+                                                        setExpandedOrderId(
+                                                            isExpanded
+                                                                ? null
+                                                                : o.id,
+                                                        )
                                                     }
-                                                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border-2 border-orange-200 bg-white px-4 py-2 text-sm font-bold text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-orange-200 bg-white px-4 py-2 text-sm font-bold text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
                                                 >
                                                     <ChevronUp className="h-3.5 w-3.5" />
                                                     Hide Details
@@ -940,7 +1094,7 @@ return;
                             <Link
                                 key={orderActionLabel}
                                 href={orderActionHref}
-                                className="block w-full rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2 fill-mode-both"
+                                className="block w-full animate-in rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 fill-mode-both fade-in slide-in-from-bottom-2 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
                             >
                                 {orderActionLabel}
                             </Link>
@@ -960,7 +1114,8 @@ return;
                                 : ''}
                         </DialogTitle>
                         <DialogDescription>
-                            Copy the account number below and complete your payment.
+                            Copy the account number below and complete your
+                            payment.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -969,20 +1124,29 @@ return;
                             {/* Payment Method Icon & Name */}
                             <div className="flex flex-col items-center justify-center gap-2">
                                 <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-3xl">
-                                    {paymentAccounts[selectedPaymentMethod].icon}
+                                    {
+                                        paymentAccounts[selectedPaymentMethod]
+                                            .icon
+                                    }
                                 </span>
                                 <p className="text-base font-black text-stone-800">
-                                    {paymentAccounts[selectedPaymentMethod].label}
+                                    {
+                                        paymentAccounts[selectedPaymentMethod]
+                                            .label
+                                    }
                                 </p>
                             </div>
 
                             {/* Account Number */}
                             <div className="rounded-2xl border-2 border-dashed border-orange-200 bg-orange-50 p-4 text-center">
-                                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
+                                <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">
                                     Account Number
                                 </p>
-                                <p className="mt-2 select-all font-mono text-xl font-black tracking-wider text-stone-900">
-                                    {paymentAccounts[selectedPaymentMethod].number}
+                                <p className="mt-2 font-mono text-xl font-black tracking-wider text-stone-900 select-all">
+                                    {
+                                        paymentAccounts[selectedPaymentMethod]
+                                            .number
+                                    }
                                 </p>
                             </div>
 
@@ -992,7 +1156,10 @@ return;
                                     Amount
                                 </p>
                                 <p className="text-lg font-black text-orange-500">
-                                    {totalAmount(paymentOrder ?? ({} as Order)).toFixed(2)} ETB
+                                    {totalAmount(
+                                        paymentOrder ?? ({} as Order),
+                                    ).toFixed(2)}{' '}
+                                    ETB
                                 </p>
                             </div>
 
@@ -1013,8 +1180,8 @@ return;
                                     </>
                                 ) : hasVerificationBeenSent ? (
                                     <>
-                                        <CheckCircle2 className="size-4" />
-                                        ✓ Verification Requested
+                                        <CheckCircle2 className="size-4" />✓
+                                        Verification Requested
                                     </>
                                 ) : (
                                     <>
@@ -1025,7 +1192,8 @@ return;
                             </button>
 
                             <p className="text-center text-xs text-gray-400">
-                                After copying, make your payment using the selected method.
+                                After copying, make your payment using the
+                                selected method.
                             </p>
                         </div>
                     )}

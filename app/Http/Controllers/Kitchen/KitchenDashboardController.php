@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Kitchen;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\RestaurantTable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class KitchenDashboardController extends Controller
@@ -58,28 +56,6 @@ class KitchenDashboardController extends Controller
         return back()->with('success', 'Order accepted. Set preparation time to start cooking.');
     }
 
-    /**
-     * Update the estimated preparation time for customer synchronization.
-     * This allows the customer to see the kitchen's selected time in real-time
-     * before the timer actually starts.
-     */
-    public function updateEstimatedTime(Request $request, Order $order)
-    {
-        if ($order->status !== 'preparing') {
-            return back()->with('error', 'Order is not in preparing status.');
-        }
-
-        $validated = $request->validate([
-            'estimated_minutes' => ['required', 'integer', 'min:5', 'max:60', 'multiple_of:5'],
-        ]);
-
-        $order->update([
-            'estimated_minutes' => $validated['estimated_minutes'],
-        ]);
-
-        return back()->with('success', 'Estimated time updated.');
-    }
-
     public function startPreparation(Request $request, Order $order)
     {
         if ($order->status !== 'preparing') {
@@ -87,7 +63,7 @@ class KitchenDashboardController extends Controller
         }
 
         $validated = $request->validate([
-            'preparation_time' => ['required', 'integer', 'min:5', 'max:60', 'multiple_of:5'],
+            'preparation_time' => ['required', 'integer', 'min:1', 'max:1440'],
         ]);
 
         $order->update([
@@ -99,31 +75,6 @@ class KitchenDashboardController extends Controller
         ]);
 
         return back()->with('success', 'Preparation started. Timer is now running.');
-    }
-
-    /**
-     * Add additional preparation time to an order that is currently being prepared.
-     * The total preparation_time is increased so the customer's countdown and
-     * progress bar recalculate automatically.
-     */
-    public function addTime(Request $request, Order $order)
-    {
-        if ($order->status !== 'preparing') {
-            return back()->with('error', 'Order is not in preparing status.');
-        }
-
-        $validated = $request->validate([
-            'additional_minutes' => ['required', 'integer', 'min:1', 'max:120'],
-        ]);
-
-        $newTotal = ($order->preparation_time ?? 0) + $validated['additional_minutes'];
-
-        $order->update([
-            'preparation_time' => $newTotal,
-            'estimated_minutes' => $newTotal,
-        ]);
-
-        return back()->with('success', 'Additional preparation time added successfully.');
     }
 
     public function markReady(Order $order)
