@@ -14,9 +14,11 @@ class TableBooking extends Model
         'branch_id',
         'customer_id',
         'status',
+        'payment_status',
         'booked_at',
         'expires_at',
         'cancelled_at',
+        'paid_at',
     ];
 
     protected function casts(): array
@@ -25,6 +27,7 @@ class TableBooking extends Model
             'booked_at' => 'datetime',
             'expires_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'paid_at' => 'datetime',
         ];
     }
 

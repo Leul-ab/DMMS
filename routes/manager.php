@@ -8,6 +8,7 @@ use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\ReportController;
 use App\Http\Controllers\Manager\PaymentVerificationController;
 use App\Http\Controllers\Manager\DiscountController;
+use App\Http\Controllers\Manager\TableSectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])
@@ -142,6 +143,35 @@ Route::middleware(['auth'])
             'payment-verification/{order}/reject',
             [PaymentVerificationController::class, 'reject']
         )->name('payment-verification.reject')->middleware('permission:status payments');
+
+        // =========================
+        // Table Sections
+        // =========================
+        Route::get(
+            'table-sections',
+            [TableSectionController::class, 'index']
+        )->name('table-sections.index')->middleware('permission:view tables');
+
+        Route::post(
+            'table-sections',
+            [TableSectionController::class, 'store']
+        )->name('table-sections.store')->middleware('permission:create tables');
+
+        Route::get(
+            'table-sections/{section}/edit',
+            [TableSectionController::class, 'edit']
+        )->name('table-sections.edit')->middleware('permission:update tables');
+
+        Route::put(
+            'table-sections/{section}',
+            [TableSectionController::class, 'update']
+        )->name('table-sections.update')->middleware('permission:update tables');
+
+        Route::delete(
+            'table-sections/{section}',
+            [TableSectionController::class, 'destroy']
+        )->name('table-sections.destroy')->middleware('permission:delete tables');
+
 
         // =========================
         // Restaurant Tables

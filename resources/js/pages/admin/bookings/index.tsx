@@ -57,6 +57,7 @@ type Booking = {
     customer_email?: string;
     tables: BookingTable[];
     status: string;
+    payment_status: string;
     booked_at: string;
     expires_at: string | null;
     cancelled_at: string | null;
@@ -528,6 +529,9 @@ export default function BookingManagementIndex({
                                     <th className="px-4 py-3 font-medium whitespace-nowrap">
                                         Status
                                     </th>
+                                    <th className="px-4 py-3 font-medium whitespace-nowrap">
+                                        Payment
+                                    </th>
                                     <th className="px-4 py-3 text-right font-medium whitespace-nowrap">
                                         Actions
                                     </th>
@@ -537,7 +541,7 @@ export default function BookingManagementIndex({
                                 {bookings.data.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan={8}
+                                            colSpan={9}
                                             className="px-4 py-12 text-center"
                                         >
                                             <div className="flex flex-col items-center gap-2">
@@ -621,6 +625,23 @@ export default function BookingManagementIndex({
                                                     {getStatusBadge(
                                                         booking.status,
                                                         booking.is_expired,
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {booking.payment_status === 'paid' ? (
+                                                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                                            <CheckCircle2 className="mr-1 h-3 w-3" />
+                                                            Paid
+                                                        </Badge>
+                                                    ) : booking.payment_status === 'expired' || booking.is_expired ? (
+                                                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+                                                            <XCircle className="mr-1 h-3 w-3" />
+                                                            Expired
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                                                            Unpaid
+                                                        </Badge>
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
@@ -809,6 +830,29 @@ export default function BookingManagementIndex({
                                             {formatDateTime(
                                                 viewingBooking.cancelled_at,
                                             )}
+                                        </span>
+                                    </div>
+                                )}
+                                {viewingBooking.payment_status && (
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-gray-400" />
+                                        <span className="text-muted-foreground">
+                                            Payment:
+                                        </span>
+                                        <span
+                                            className={`font-medium ${
+                                                viewingBooking.payment_status === 'paid'
+                                                    ? 'text-green-600'
+                                                    : viewingBooking.payment_status === 'expired'
+                                                      ? 'text-red-600'
+                                                      : 'text-yellow-600'
+                                            }`}
+                                        >
+                                            {viewingBooking.payment_status === 'paid'
+                                                ? 'Paid'
+                                                : viewingBooking.payment_status === 'expired'
+                                                  ? 'Expired'
+                                                  : 'Unpaid'}
                                         </span>
                                     </div>
                                 )}

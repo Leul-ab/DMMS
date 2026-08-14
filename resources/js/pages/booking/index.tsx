@@ -1,15 +1,33 @@
 import BookingView from '@/pages/booking/booking-view';
 
-type RestaurantTable = {
-    id: number;
-    table_number: number;
-    status: string;
-};
-
 type Props = {
-    availableTables: RestaurantTable[];
+    availableTables: {
+        id: number;
+        table_number: number;
+        status: string;
+        table_section_id: number | null;
+    }[];
+    sections: {
+        id: number;
+        name: string;
+        description: string | null;
+        sort_order: number;
+        available_tables: {
+            id: number;
+            table_number: number;
+            status: string;
+            table_section_id: number | null;
+        }[];
+    }[];
 };
 
-export default function BookingIndex({ availableTables }: Props) {
-    return <BookingView availableTables={availableTables} basePath="/booking" menuPath="/menu" />;
+export default function BookingIndex({ availableTables, sections }: Props) {
+    return (
+        <BookingView
+            availableTables={availableTables}
+            sections={sections}
+            basePath="/booking"
+            menuPath="/menu"
+        />
+    );
 }

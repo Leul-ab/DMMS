@@ -24,16 +24,27 @@ type RestaurantTable = {
     id: number;
     table_number: number;
     status: string;
+    table_section_id: number | null;
+};
+
+type Section = {
+    id: number;
+    name: string;
+    description: string | null;
+    sort_order: number;
+    available_tables: RestaurantTable[];
 };
 
 type Props = {
     availableTables: RestaurantTable[];
+    sections: Section[];
     basePath: string;
     menuPath: string;
 };
 
 export default function BookingView({
     availableTables,
+    sections,
     basePath,
     menuPath,
 }: Props) {
@@ -53,6 +64,9 @@ export default function BookingView({
         null,
     );
     const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+    const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
+        null,
+    );
 
     const toggleTableSelection = (tableId: string) => {
         setSelectedTables((prev) => {
@@ -312,86 +326,115 @@ export default function BookingView({
                             <div className="mb-6">
                                 <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
                                     <Table2 className="h-5 w-5 text-red-500" />
-                                    Select Tables
+                                    Select Section
                                 </h2>
                                 <p className="mt-1 text-red-600">
-                                    Choose one or more tables to book.
+                                    Choose a section to view available tables.
                                 </p>
                             </div>
 
-                            {availableTables.length === 0 ? (
-                                <div className="rounded-2xl border border-red-100/80 bg-red-50/50 p-10 text-center">
-                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
-                                        <Table2 className="h-8 w-8 text-red-400" />
-                                    </div>
-                                    <p className="mt-4 text-lg font-bold text-stone-800">
-                                        No tables available
-                                    </p>
-                                    <p className="mt-1 text-sm text-red-600">
-                                        All tables are currently occupied or
-                                        booked.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {availableTables.map((table) => {
-                                        const tableId = String(table.id);
-                                        const isChecked =
-                                            selectedTables.has(tableId);
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                {sections.map((section) => {
+                                    const isSelected =
+                                        selectedSectionId === section.id;
+
+                                    return (
+                                        <button
+                                            key={section.id}
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedSectionId(
+                                                    section.id,
+                                                )
+                                            }
+                                            className={`rounded-2xl border-2 p-5 text-left transition-all duration-200 active:scale-[0.98] ${
+                                                isSelected
+                                                    ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
+                                                    : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50 hover:shadow-sm'
+                                            }`}
+                                        >
+                                            <p className="text-lg font-bold text-stone-800">
+                                                {section.name}
+                                            </p>
+                                            <p className="mt-1 text-xs text-red-500">
+                                                {section.available_tables.length}{' '}
+                                                available
+                                            </p>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {selectedSectionId && (
+                                <div className="mt-8">
+                                    <h3 className="mb-4 text-xl font-black text-stone-800">
+                                        Available Tables
+                                    </h3>
+
+                                    {(() => {
+                                        const section = sections.find(
+                                            (s) =>
+                                                s.id === selectedSectionId,
+                                        );
+                                        const tables =
+                                            section?.available_tables || [];
+
+                                        if (tables.length === 0) {
+                                            return (
+                                                <div className="rounded-2xl border border-red-100/80 bg-red-50/50 p-10 text-center">
+                                                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
+                                                        <Table2 className="h-8 w-8 text-red-400" />
+                                                    </div>
+                                                    <p className="mt-4 text-lg font-bold text-stone-800">
+                                                        No available tables in
+                                                        this section.
+                                                    </p>
+                                                </div>
+                                            );
+                                        }
 
                                         return (
-                                            <label
-                                                key={table.id}
-                                                className={`flex cursor-pointer items-center gap-4 rounded-2xl border-2 p-5 transition-all duration-200 active:scale-[0.98] ${
-                                                    isChecked
-                                                        ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
-                                                        : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50 hover:shadow-sm'
-                                                }`}
-                                            >
-                                                <Checkbox
-                                                    checked={isChecked}
-                                                    onCheckedChange={() =>
-                                                        toggleTableSelection(
+                                            <div className="space-y-2">
+                                                {tables.map((table) => {
+                                                    const tableId =
+                                                        String(table.id);
+                                                    const isChecked =
+                                                        selectedTables.has(
                                                             tableId,
-                                                        )
-                                                    }
-                                                    className="h-5 w-5 border-red-300 text-red-600 data-[state=checked]:border-red-500 data-[state=checked]:bg-red-500"
-                                                />
-                                                <div className="flex w-full items-center justify-between">
-                                                    <div>
-                                                        <span className="text-lg font-bold text-stone-800">
-                                                            Table{' '}
-                                                            {table.table_number}
-                                                        </span>
-                                                        <p className="mt-0.5 text-xs text-red-500">
-                                                            {table.status ===
-                                                            'available'
-                                                                ? 'Available'
-                                                                : table.status}
-                                                        </p>
-                                                    </div>
-                                                    <Badge
-                                                        variant={
-                                                            table.status ===
-                                                            'available'
-                                                                ? 'default'
-                                                                : 'secondary'
-                                                        }
-                                                        className={
-                                                            table.status ===
-                                                            'available'
-                                                                ? 'bg-red-100 text-red-700 hover:bg-red-100'
-                                                                : ''
-                                                        }
-                                                    >
-                                                        <span className="capitalize">
-                                                            {table.status}
-                                                        </span>
-                                                    </Badge>
-                                                </div>
-                                            </label>
+                                                        );
+
+                                                    return (
+                                                        <label
+                                                            key={table.id}
+                                                            className={`flex cursor-pointer items-center gap-3 rounded-xl border-2 p-4 transition-all duration-200 active:scale-[0.98] ${
+                                                                isChecked
+                                                                    ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
+                                                                    : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50 hover:shadow-sm'
+                                                            }`}
+                                                        >
+                                                            <Checkbox
+                                                                checked={
+                                                                    isChecked
+                                                                }
+                                                                onCheckedChange={() =>
+                                                                    toggleTableSelection(
+                                                                        tableId,
+                                                                    )
+                                                                }
+                                                                className="h-5 w-5 border-red-300 text-red-600 data-[state=checked]:border-red-500 data-[state=checked]:bg-red-500"
+                                                            />
+                                                            <span className="text-base font-bold text-stone-800">
+                                                                Table{' '}
+                                                                {
+                                                                    table.table_number
+                                                                }
+                                                            </span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
                                         );
-                                    })}
+                                    })()}
                                 </div>
                             )}
 
@@ -552,7 +595,7 @@ export default function BookingView({
                                         <p className="text-sm text-red-600">
                                             Your booking will expire in{' '}
                                             <strong className="text-red-600">
-                                                10 minutes
+                                                5 minutes
                                             </strong>{' '}
                                             if not confirmed.
                                         </p>

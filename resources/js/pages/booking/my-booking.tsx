@@ -28,9 +28,11 @@ type BookingData = {
     customer_id: number;
     tables: BookingTable[];
     status: string;
+    payment_status: string;
     booked_at: string;
     expires_at: string | null;
     cancelled_at: string | null;
+    paid_at: string | null;
     time_remaining_seconds: number | null;
     is_expired: boolean;
 };
@@ -50,6 +52,7 @@ export default function MyBooking({ onClose }: Props) {
     const [isExpired, setIsExpired] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [isPaying, setIsPaying] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -313,6 +316,83 @@ export default function MyBooking({ onClose }: Props) {
         );
     };
 
+    const getPaymentBadge = () => {
+        if (!booking) {
+            return null;
+        }
+
+        if (booking.payment_status === 'paid') {
+            return (
+                <Badge
+                    variant="default"
+                    className="bg-green-100 px-3 py-1.5 text-sm text-green-700 hover:bg-green-100"
+                >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    Paid
+                </Badge>
+            );
+        }
+
+        if (booking.payment_status === 'expired' || isExpired) {
+            return (
+                <Badge
+                    variant="destructive"
+                    className="bg-red-100 px-3 py-1.5 text-sm text-red-700 hover:bg-red-100"
+                >
+                    <XCircle className="mr-1.5 h-4 w-4" />
+                    Expired
+                </Badge>
+            );
+        }
+
+        return (
+            <Badge
+                variant="secondary"
+                className="bg-yellow-100 px-3 py-1.5 text-sm text-yellow-700 hover:bg-yellow-100"
+            >
+                Unpaid
+            </Badge>
+        );
+    };
+
+    const handlePay = async () => {
+        if (!booking) {
+            return;
+        }
+
+        setIsPaying(true);
+
+        try {
+            const csrfToken =
+                (
+                    document.querySelector(
+                        'meta[name="csrf-token"]',
+                    ) as HTMLMetaElement
+                )?.content || '';
+
+            const response = await fetch(`/booking/${booking.id}/pay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Payment confirmed successfully!');
+                setBooking({ ...booking, payment_status: 'paid', paid_at: data.booking?.paid_at || new Date().toISOString() });
+            } else {
+                toast.error(data.message || 'Payment failed.');
+            }
+        } catch {
+            toast.error('Payment failed. Please try again.');
+        } finally {
+            setIsPaying(false);
+        }
+    };
+
     const formatTime = (dateStr: string) => {
         return new Date(dateStr).toLocaleTimeString([], {
             hour: '2-digit',
@@ -330,7 +410,7 @@ export default function MyBooking({ onClose }: Props) {
 
     const progressPercent =
         booking?.time_remaining_seconds && booking?.time_remaining_seconds > 0
-            ? (booking.time_remaining_seconds / 600) * 100
+            ? (booking.time_remaining_seconds / 300) * 100
             : 0;
 
     const showCancelButton =
@@ -507,6 +587,14 @@ export default function MyBooking({ onClose }: Props) {
                                     {getStatusBadge()}
                                 </div>
 
+                                {/* Payment Status */}
+                                <div className="flex items-center justify-between rounded-2xl bg-stone-50 p-4">
+                                    <p className="text-sm font-semibold text-gray-500">
+                                        Payment Status
+                                    </p>
+                                    {getPaymentBadge()}
+                                </div>
+
                                 {/* Customer Info */}
                                 <div className="rounded-2xl bg-stone-50 p-4">
                                     <p className="mb-2 text-xs font-semibold tracking-wider text-gray-500 uppercase">
@@ -605,6 +693,25 @@ export default function MyBooking({ onClose }: Props) {
                                                 <span className="flex items-center justify-center gap-2">
                                                     <XCircle className="h-4 w-4" />
                                                     Cancel Booking
+                                                </span>
+                                            )}
+                                        </Button>
+                                    )}
+                                    {booking && !isExpired && booking.status === 'active' && booking.payment_status !== 'paid' && (
+                                        <Button
+                                            onClick={handlePay}
+                                            disabled={isPaying}
+                                            className="w-full rounded-xl bg-green-600 py-3.5 text-white hover:bg-green-700"
+                                        >
+                                            {isPaying ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Processing...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                    Pay Now
                                                 </span>
                                             )}
                                         </Button>

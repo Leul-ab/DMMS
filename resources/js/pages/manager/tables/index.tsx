@@ -4,13 +4,12 @@ import {
     Pencil,
     Plus,
     Printer,
-    QrCode,
     RefreshCw,
     Search,
     Table2,
     Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 
 import Heading from '@/components/heading';
 import { QrPreviewModal } from '@/components/qr-preview-modal';
@@ -20,7 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Card,
-    CardContent,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -46,6 +44,12 @@ import {
 import { useCan } from '@/hooks/use-can';
 
 import {
+    store as sectionsStore,
+    update as sectionsUpdate,
+    destroy as sectionsDestroy,
+} from '@/routes/manager/table-sections';
+
+import {
     index as tablesIndex,
     store as tablesStore,
     update as tablesUpdate,
@@ -62,6 +66,7 @@ type TableStatus =
 
 type RestaurantTable = {
     id: number;
+    table_section_id: number | null;
     table_number: number;
     qr_code: string;
     status: TableStatus;
@@ -70,8 +75,18 @@ type RestaurantTable = {
     updated_at: string;
 };
 
-type Props = {
+type TableSection = {
+    id: number;
+    name: string;
+    description: string | null;
+    tables_count: number;
     tables: RestaurantTable[];
+};
+
+type Props = {
+    sections: TableSection[];
+    tables: RestaurantTable[];
+    editingSection?: TableSection | null;
 };
 
 const statusLabels: Record<TableStatus, string> = {
@@ -81,7 +96,11 @@ const statusLabels: Record<TableStatus, string> = {
     unavailable: 'Unavailable',
 };
 
-export default function TablesIndex({ tables }: Props) {
+export default function TablesIndex({
+    sections,
+    tables,
+    editingSection,
+}: Props) {
     const can = useCan();
     const [search, setSearch] = useState('');
 
@@ -89,23 +108,53 @@ export default function TablesIndex({ tables }: Props) {
         'all' | TableStatus
     >('all');
 
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isAddTableOpen, setIsAddTableOpen] = useState(false);
+    const [isEditTableOpen, setIsEditTableOpen] = useState(false);
     const [isQrPreviewOpen, setIsQrPreviewOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
-    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [isDeleteTableOpen, setIsDeleteTableOpen] = useState(false);
 
     const [selectedTable, setSelectedTable] =
         useState<RestaurantTable | null>(null);
 
     const [tableNumber, setTableNumber] = useState('');
+    const [tableSectionId, setTableSectionId] = useState<
+        number | null
+    >(null);
 
-    // Validation errors from the server
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // -----------------------------------------
-    // Filter Tables
-    // -----------------------------------------
+    const [isAddSectionOpen, setIsAddSectionOpen] =
+        useState(false);
+    const [isEditSectionOpen, setIsEditSectionOpen] =
+        useState(false);
+    const [isDeleteSectionOpen, setIsDeleteSectionOpen] =
+        useState(false);
+
+    const [sectionName, setSectionName] = useState('');
+    const [sectionDescription, setSectionDescription] =
+        useState('');
+    const [sectionErrors, setSectionErrors] = useState<
+        Record<string, string>
+    >({});
+
+    const [editingSectionData, setEditingSectionData] =
+        useState<TableSection | null>(null);
+
+    const [deletingSectionData, setDeletingSectionData] =
+        useState<TableSection | null>(null);
+
+    useEffect(() => {
+        if (editingSection) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setEditingSectionData(editingSection);
+            setSectionName(editingSection.name);
+            setSectionDescription(
+                editingSection.description || '',
+            );
+            setIsEditSectionOpen(true);
+        }
+    }, [editingSection]);
 
     const filteredTables = useMemo(() => {
         return tables.filter((table) => {
@@ -127,35 +176,134 @@ export default function TablesIndex({ tables }: Props) {
         });
     }, [tables, search, statusFilter]);
 
-    // -----------------------------------------
-    // Open Add Modal
-    // -----------------------------------------
-
-    const openAddModal = () => {
-        setTableNumber('');
-        setErrors({});
-        setIsAddOpen(true);
+    const openAddSectionModal = () => {
+        setSectionName('');
+        setSectionDescription('');
+        setSectionErrors({});
+        setIsAddSectionOpen(true);
     };
 
-    // -----------------------------------------
-    // Open Edit Modal
-    // -----------------------------------------
+    const openEditSectionModal = (
+        section: TableSection,
+    ) => {
+        setEditingSectionData(section);
+        setSectionName(section.name);
+        setSectionDescription(section.description || '');
+        setSectionErrors({});
+        setIsEditSectionOpen(true);
+    };
 
-    const openEditModal = (
+    const openDeleteSectionModal = (
+        section: TableSection,
+    ) => {
+        setDeletingSectionData(section);
+        setSectionErrors({});
+        setIsDeleteSectionOpen(true);
+    };
+
+    const handleAddSection = () => {
+        if (!sectionName.trim()) {
+            setSectionErrors({
+                name: 'Section name is required.',
+            });
+
+            return;
+        }
+
+        setSectionErrors({});
+
+        router.post(
+            sectionsStore.url(),
+            {
+                name: sectionName.trim(),
+                description: sectionDescription.trim() || null,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setIsAddSectionOpen(false);
+                    setSectionName('');
+                    setSectionDescription('');
+                    setSectionErrors({});
+                },
+                onError: (serverErrors) => {
+                    setSectionErrors(serverErrors);
+                },
+            },
+        );
+    };
+
+    const handleUpdateSection = () => {
+        if (!editingSectionData || !sectionName.trim()) {
+            setSectionErrors({
+                name: 'Section name is required.',
+            });
+
+            return;
+        }
+
+        setSectionErrors({});
+
+        router.put(
+            sectionsUpdate(
+                editingSectionData.id,
+            ).url,
+            {
+                name: sectionName.trim(),
+                description: sectionDescription.trim() || null,
+            },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    setIsEditSectionOpen(false);
+                    setEditingSectionData(null);
+                    setSectionName('');
+                    setSectionDescription('');
+                    setSectionErrors({});
+                },
+                onError: (serverErrors) => {
+                    setSectionErrors(serverErrors);
+                },
+            },
+        );
+    };
+
+    const handleDeleteSection = () => {
+        if (!deletingSectionData) {
+            return;
+        }
+
+        router.delete(
+            sectionsDestroy(
+                deletingSectionData.id,
+            ).url,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setIsDeleteSectionOpen(false);
+                    setDeletingSectionData(null);
+                },
+            },
+        );
+    };
+
+    const openAddTableModal = () => {
+        setTableNumber('');
+        setTableSectionId(null);
+        setErrors({});
+        setIsAddTableOpen(true);
+    };
+
+    const openEditTableModal = (
         table: RestaurantTable,
     ) => {
         setSelectedTable(table);
-
-        setTableNumber(
-            table.table_number.toString(),
-        );
-
-        setIsEditOpen(true);
+        setTableNumber(table.table_number.toString());
+        setTableSectionId(table.table_section_id);
+        setIsEditTableOpen(true);
     };
-
-    // -----------------------------------------
-    // Open QR Preview Modal
-    // -----------------------------------------
 
     const openQrPreview = (
         table: RestaurantTable,
@@ -164,10 +312,6 @@ export default function TablesIndex({ tables }: Props) {
         setIsQrPreviewOpen(true);
     };
 
-    // -----------------------------------------
-    // Open View Modal
-    // -----------------------------------------
-
     const openViewModal = (
         table: RestaurantTable,
     ) => {
@@ -175,22 +319,14 @@ export default function TablesIndex({ tables }: Props) {
         setIsViewOpen(true);
     };
 
-    // -----------------------------------------
-    // Open Delete Modal
-    // -----------------------------------------
-
-    const openDeleteModal = (
+    const openDeleteTableModal = (
         table: RestaurantTable,
     ) => {
         setSelectedTable(table);
-        setIsDeleteOpen(true);
+        setIsDeleteTableOpen(true);
     };
 
-    // -----------------------------------------
-    // Add Table
-    // -----------------------------------------
-
-    const handleAdd = () => {
+    const handleAddTable = () => {
         if (!tableNumber) {
             setErrors({ table_number: 'Please enter a table number.' });
 
@@ -203,13 +339,15 @@ export default function TablesIndex({ tables }: Props) {
             tablesStore.url(),
             {
                 table_number: Number(tableNumber),
+                table_section_id: tableSectionId,
             },
             {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
-                    setIsAddOpen(false);
+                    setIsAddTableOpen(false);
                     setTableNumber('');
+                    setTableSectionId(null);
                     setErrors({});
                 },
                 onError: (serverErrors) => {
@@ -219,11 +357,7 @@ export default function TablesIndex({ tables }: Props) {
         );
     };
 
-    // -----------------------------------------
-    // Update Table
-    // -----------------------------------------
-
-    const handleUpdate = () => {
+    const handleUpdateTable = () => {
         if (!selectedTable || !tableNumber) {
             return;
         }
@@ -233,15 +367,14 @@ export default function TablesIndex({ tables }: Props) {
                 selectedTable.id,
             ).url,
             {
-                table_number: Number(
-                    tableNumber,
-                ),
+                table_number: Number(tableNumber),
+                table_section_id: tableSectionId,
             },
             {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
-                    setIsEditOpen(false);
+                    setIsEditTableOpen(false);
                     setSelectedTable(null);
                 },
                 onError: (serverErrors) => {
@@ -250,14 +383,6 @@ export default function TablesIndex({ tables }: Props) {
             },
         );
     };
-
-    // -----------------------------------------
-    // Toggle Table Status
-    //
-    // Available  → Toggle ON
-    // Occupied   → Toggle OFF
-    // Reserved / Unavailable → Disabled
-    // -----------------------------------------
 
     const handleToggleStatus = (
         table: RestaurantTable,
@@ -270,19 +395,13 @@ export default function TablesIndex({ tables }: Props) {
         }
 
         router.patch(
-            toggleStatus.url(
-                table.id,
-            ),
+            toggleStatus.url(table.id),
             {},
             {
                 preserveScroll: true,
             },
         );
     };
-
-    // -----------------------------------------
-    // Regenerate QR Code
-    // -----------------------------------------
 
     const handleRegenerateQr = (
         table: RestaurantTable,
@@ -296,9 +415,7 @@ export default function TablesIndex({ tables }: Props) {
         }
 
         router.post(
-            regenerateQr.url(
-                table.id,
-            ),
+            regenerateQr.url(table.id),
             {},
             {
                 preserveScroll: true,
@@ -307,43 +424,29 @@ export default function TablesIndex({ tables }: Props) {
         );
     };
 
-    // -----------------------------------------
-    // Delete Table
-    // -----------------------------------------
-
-    const handleDelete = () => {
+    const handleDeleteTable = () => {
         if (!selectedTable) {
             return;
         }
 
         router.delete(
-            tablesDestroy(
-                selectedTable.id,
-            ).url,
+            tablesDestroy(selectedTable.id).url,
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    setIsDeleteOpen(false);
+                    setIsDeleteTableOpen(false);
                     setSelectedTable(null);
                 },
             },
         );
     };
 
-    // -----------------------------------------
-    // Print QR Code
-    // -----------------------------------------
-
     const handlePrintQr = () => {
         if (!selectedTable?.qr_code) {
             return;
         }
 
-        const printWindow =
-            window.open(
-                '',
-                '_blank',
-            );
+        const printWindow = window.open('', '_blank');
 
         if (printWindow) {
             printWindow.document.write(`
@@ -406,6 +509,232 @@ export default function TablesIndex({ tables }: Props) {
         }
     };
 
+    const getSectionTables = (sectionId: number | null) => {
+        return filteredTables.filter(
+            (table) => table.table_section_id === sectionId,
+        );
+    };
+
+    const renderTableActions = (table: RestaurantTable) => (
+        <div className="flex items-center justify-end gap-2">
+            {can('status tables') && (
+                <StatusToggle
+                    checked={
+                        table.status === 'available'
+                    }
+                    onCheckedChange={() =>
+                        handleToggleStatus(table)
+                    }
+                    onLabel="Mark occupied"
+                    offLabel="Mark available"
+                    ariaLabel={
+                        table.status === 'available'
+                            ? 'Mark table occupied'
+                            : 'Mark table available'
+                    }
+                    disabled={
+                        table.status === 'reserved' ||
+                        table.status === 'unavailable'
+                    }
+                />
+            )}
+
+            {can('view tables') && (
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                        openViewModal(table)
+                    }
+                    title="View table"
+                >
+                    <Eye className="h-4 w-4" />
+                </Button>
+            )}
+
+            {can('update tables') && (
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                        openEditTableModal(table)
+                    }
+                    title="Edit table"
+                >
+                    <Pencil className="h-4 w-4" />
+                </Button>
+            )}
+
+            {can('update tables') && (
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                        handleRegenerateQr(table)
+                    }
+                    title="Regenerate QR code (points to customer menu)"
+                >
+                    <RefreshCw className="h-4 w-4" />
+                </Button>
+            )}
+
+            {can('delete tables') && (
+                <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() =>
+                        openDeleteTableModal(table)
+                    }
+                    title="Delete table"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            )}
+        </div>
+    );
+
+    const renderQrCell = (table: RestaurantTable) => {
+        if (
+            table.qr_code?.endsWith('.png') ||
+            table.qr_code?.endsWith('.jpg') ||
+            table.qr_code?.endsWith('.svg')
+        ) {
+            return (
+                <button
+                    type="button"
+                    onClick={() => openQrPreview(table)}
+                    title="Click to preview QR code"
+                    className="cursor-pointer transition hover:opacity-80"
+                >
+                    <img
+                        src={`/storage/${table.qr_code}`}
+                        alt="QR"
+                        className="h-10 w-10 rounded-md border bg-white object-contain"
+                    />
+                </button>
+            );
+        }
+
+        return (
+            <button
+                type="button"
+                onClick={() => openQrPreview(table)}
+                title="Click to preview QR code"
+                className="cursor-pointer text-sm text-blue-600 hover:underline"
+            >
+                {table.qr_code}
+            </button>
+        );
+    };
+
+    const renderStatusBadge = (table: RestaurantTable) => (
+        <Badge
+            variant="outline"
+            className={
+                table.status === 'available'
+                    ? 'border-green-600 bg-white text-green-600'
+                    : table.status === 'occupied'
+                      ? 'border-red-600 bg-white text-red-600'
+                      : table.status === 'reserved'
+                        ? 'border-blue-600 bg-white text-blue-600'
+                        : 'border-gray-400 bg-white text-gray-500'
+            }
+        >
+            {statusLabels[table.status]}
+        </Badge>
+    );
+
+    const renderSectionTable = (sectionTables: RestaurantTable[]) => {
+        if (sectionTables.length === 0) {
+            return (
+                <div className="rounded-lg border border-dashed py-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                        No tables assigned to this section.
+                    </p>
+
+                    {can('create tables') && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-3"
+                            onClick={openAddTableModal}
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Table
+                        </Button>
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-sm">
+                    <thead>
+                        <tr className="border-b bg-muted/50 text-left">
+                            <th className="p-3 font-medium">
+                                Table Number
+                            </th>
+
+                            <th className="p-3 font-medium">
+                                Section
+                            </th>
+
+                            <th className="p-3 font-medium">
+                                QR Code
+                            </th>
+
+                            <th className="p-3 font-medium">
+                                Status
+                            </th>
+
+                            <th className="p-3 font-medium text-right">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {sectionTables.map((table) => (
+                            <tr
+                                key={table.id}
+                                className="border-b last:border-0 hover:bg-muted/50"
+                            >
+                                <td className="p-3 font-medium">
+                                    Table{' '}
+                                    {table.table_number}
+                                </td>
+
+                                <td className="p-3">
+                                    {sections.find(
+                                        (s) =>
+                                            s.id ===
+                                            table.table_section_id,
+                                    )?.name ||
+                                        '—'}
+                                </td>
+
+                                <td className="p-3">
+                                    {renderQrCell(table)}
+                                </td>
+
+                                <td className="p-3">
+                                    {renderStatusBadge(table)}
+                                </td>
+
+                                <td className="p-3">
+                                    {renderTableActions(
+                                        table,
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+
     return (
         <>
             <Head title="Table Management" />
@@ -416,33 +745,40 @@ export default function TablesIndex({ tables }: Props) {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Table Management"
-                        description="Manage your restaurant tables and QR codes."
+                        description="Manage your restaurant tables and sections."
                         icon={Table2}
                     />
 
-                    {can('create tables') && (
-                        <Button
-                            onClick={
-                                openAddModal
-                            }
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Table
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {can('create tables') && (
+                            <Button
+                                variant="outline"
+                                onClick={openAddSectionModal}
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Section
+                            </Button>
+                        )}
+
+                        {can('create tables') && (
+                            <Button
+                                onClick={openAddTableModal}
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Table
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
-                {/* Tables Card */}
+                {/* Search and Filter */}
                 <Card>
                     <CardHeader>
                         <CardTitle>
-                            Restaurant Tables
+                            Search and Filter
                         </CardTitle>
 
-                        {/* Search and Filter */}
                         <div className="flex flex-col gap-3 pt-4 sm:flex-row">
-
-                            {/* Search */}
                             <div className="relative flex-1">
                                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 
@@ -462,7 +798,6 @@ export default function TablesIndex({ tables }: Props) {
                                 />
                             </div>
 
-                            {/* Status Filter */}
                             <Select
                                 value={
                                     statusFilter
@@ -505,229 +840,381 @@ export default function TablesIndex({ tables }: Props) {
                             </Select>
                         </div>
                     </CardHeader>
-
-                    <CardContent>
-                        {filteredTables.length ===
-                        0 ? (
-                            <div className="flex flex-col items-center justify-center py-12 text-center">
-                                <p className="text-lg font-medium">
-                                    No tables found
-                                </p>
-
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Try changing your search or add a new table.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b text-left">
-                                            <th className="p-3">
-                                                Table Number
-                                            </th>
-
-                                            <th className="p-3">
-                                                QR Code
-                                            </th>
-
-                                            <th className="p-3">
-                                                Status
-                                            </th>
-
-                                            <th className="p-3 text-right">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        {filteredTables.map(
-                                            (
-                                                table,
-                                            ) => (
-                                                <tr
-                                                    key={
-                                                        table.id
-                                                    }
-                                                    className="border-b last:border-0 hover:bg-muted/50"
-                                                >
-                                                    {/* Table Number */}
-                                                    <td className="p-3 font-medium">
-                                                        Table{' '}
-                                                        {
-                                                            table.table_number
-                                                        }
-                                                    </td>
-
-                                                    {/* QR Code */}
-                                                    <td className="p-3">
-                                                        {table.qr_code?.endsWith(
-                                                            '.png',
-                                                        ) ||
-                                                        table.qr_code?.endsWith(
-                                                            '.jpg',
-                                                        ) ||
-                                                        table.qr_code?.endsWith(
-                                                            '.svg',
-                                                        ) ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openQrPreview(table)}
-                                                                title="Click to preview QR code"
-                                                                className="cursor-pointer transition hover:opacity-80"
-                                                            >
-                                                                <img
-                                                                    src={`/storage/${table.qr_code}`}
-                                                                    alt="QR"
-                                                                    className="h-10 w-10 rounded-md border bg-white object-contain"
-                                                                />
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => openQrPreview(table)}
-                                                                title="Click to preview QR code"
-                                                                className="cursor-pointer text-sm text-blue-600 hover:underline"
-                                                            >
-                                                                {table.qr_code}
-                                                            </button>
-                                                        )}
-                                                    </td>
-
-                                                    {/* Status */}
-                                                    <td className="p-3">
-                                                        <Badge
-                                                            variant="outline"
-                                                            className={
-                                                                table.status === 'available'
-                                                                    ? 'border-green-600 bg-white text-green-600'
-                                                                    : table.status === 'occupied'
-                                                                      ? 'border-red-600 bg-white text-red-600'
-                                                                      : table.status === 'reserved'
-                                                                        ? 'border-blue-600 bg-white text-blue-600'
-                                                                        : 'border-gray-400 bg-white text-gray-500'
-                                                            }
-                                                        >
-                                                            {statusLabels[table.status]}
-                                                        </Badge>
-                                                    </td>
-
-                                                    {/* Actions */}
-                                                    <td className="p-3">
-                                                        <div className="flex items-center justify-end gap-2">
-
-                                                            {/* Status Toggle */}
-                                                            {can('status tables') && (
-                                                                <StatusToggle
-                                                                    checked={
-                                                                        table.status ===
-                                                                        'available'
-                                                                    }
-                                                                    onCheckedChange={() =>
-                                                                        handleToggleStatus(
-                                                                            table,
-                                                                        )
-                                                                    }
-                                                                    onLabel="Mark occupied"
-                                                                    offLabel="Mark available"
-                                                                    ariaLabel={
-                                                                        table.status ===
-                                                                        'available'
-                                                                            ? 'Mark table occupied'
-                                                                            : 'Mark table available'
-                                                                    }
-                                                                    disabled={
-                                                                        table.status === 'reserved' ||
-                                                                        table.status === 'unavailable'
-                                                                    }
-                                                                />
-                                                            )}
-
-                                                            {/* View */}
-                                                            {can('view tables') && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openViewModal(
-                                                                            table,
-                                                                        )
-                                                                    }
-                                                                    title="View table"
-                                                                >
-                                                                    <Eye className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-
-                                                            {/* Edit */}
-                                                            {can('update tables') && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openEditModal(
-                                                                            table,
-                                                                        )
-                                                                    }
-                                                                    title="Edit table"
-                                                                >
-                                                                    <Pencil className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-
-                                                            {/* Regenerate QR */}
-                                                            {can('update tables') && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        handleRegenerateQr(
-                                                                            table,
-                                                                        )
-                                                                    }
-                                                                    title="Regenerate QR code (points to customer menu)"
-                                                                >
-                                                                    <RefreshCw className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-
-                                                            {/* Delete */}
-                                                            {can('delete tables') && (
-                                                                <Button
-                                                                    variant="destructive"
-                                                                    size="icon"
-                                                                    onClick={() =>
-                                                                        openDeleteModal(
-                                                                            table,
-                                                                        )
-                                                                    }
-                                                                    title="Delete table"
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ),
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </CardContent>
                 </Card>
+
+                {/* Sections - Vertical Layout */}
+                <div className="flex flex-col gap-8">
+                    {sections.map((section) => {
+                        const sectionTables = getSectionTables(section.id);
+                        const totalTables = section.tables_count;
+
+                        return (
+                            <div key={section.id} className="space-y-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold uppercase tracking-wide">
+                                            {section.name}
+                                        </h3>
+
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {totalTables} Table
+                                            {totalTables !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        {can('update tables') && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() =>
+                                                    openEditSectionModal(
+                                                        section,
+                                                    )
+                                                }
+                                            >
+                                                <Pencil className="mr-2 h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                        )}
+
+                                        {can('delete tables') && (
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() =>
+                                                    openDeleteSectionModal(
+                                                        section,
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {renderSectionTable(sectionTables)}
+                            </div>
+                        );
+                    })}
+
+                    {(() => {
+                        const unassignedTables = getSectionTables(null);
+                        const totalUnassigned = tables.filter(
+                            (t) => t.table_section_id === null,
+                        ).length;
+
+                        return (
+                            <div className="space-y-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold uppercase tracking-wide">
+                                            Unassigned
+                                        </h3>
+
+                                        <p className="mt-1 text-sm text-muted-foreground">
+                                            {totalUnassigned} Table
+                                            {totalUnassigned !== 1 ? 's' : ''}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {renderSectionTable(unassignedTables)}
+                            </div>
+                        );
+                    })()}
+                </div>
+
             </div>
+
+            {/* =========================================
+                ADD SECTION MODAL
+            ========================================= */}
+
+            <Dialog
+                open={isAddSectionOpen}
+                onOpenChange={(open) => {
+                    setIsAddSectionOpen(open);
+
+                    if (!open) {
+                        setSectionErrors({});
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Add Section
+                        </DialogTitle>
+
+                        <DialogDescription>
+                            Create a new table section.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section Name
+                            </label>
+
+                            <Input
+                                value={sectionName}
+                                onChange={(
+                                    event,
+                                ) => {
+                                    setSectionName(
+                                        event
+                                            .target
+                                            .value,
+                                    );
+
+                                    if (sectionErrors.name) {
+                                        setSectionErrors(
+                                            (prev) => {
+                                                const next = {
+                                                    ...prev,
+                                                };
+
+                                                delete next.name;
+
+                                                return next;
+                                            },
+                                        );
+                                    }
+                                }}
+                                placeholder="Example: Main Dining"
+                            />
+
+                            {sectionErrors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {sectionErrors.name}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description (optional)
+                            </label>
+
+                            <Input
+                                value={sectionDescription}
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setSectionDescription(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                                placeholder="Brief description"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsAddSectionOpen(
+                                    false,
+                                );
+                                setSectionErrors(
+                                    {},
+                                );
+                            }}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            onClick={
+                                handleAddSection
+                            }
+                        >
+                            Add Section
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* =========================================
+                EDIT SECTION MODAL
+            ========================================= */}
+
+            <Dialog
+                open={isEditSectionOpen}
+                onOpenChange={
+                    setIsEditSectionOpen
+                }
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Edit Section
+                        </DialogTitle>
+
+                        <DialogDescription>
+                            Update the section name and description.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section Name
+                            </label>
+
+                            <Input
+                                value={sectionName}
+                                onChange={(
+                                    event,
+                                ) => {
+                                    setSectionName(
+                                        event
+                                            .target
+                                            .value,
+                                    );
+
+                                    if (sectionErrors.name) {
+                                        setSectionErrors(
+                                            (prev) => {
+                                                const next = {
+                                                    ...prev,
+                                                };
+
+                                                delete next.name;
+
+                                                return next;
+                                            },
+                                        );
+                                    }
+                                }}
+                                placeholder="Example: Main Dining"
+                            />
+
+                            {sectionErrors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {sectionErrors.name}
+                                </p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description (optional)
+                            </label>
+
+                            <Input
+                                value={sectionDescription}
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setSectionDescription(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                                placeholder="Brief description"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsEditSectionOpen(
+                                    false,
+                                );
+                                setEditingSectionData(
+                                    null,
+                                );
+                            }}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            onClick={
+                                handleUpdateSection
+                            }
+                        >
+                            Update Section
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* =========================================
+                DELETE SECTION MODAL
+            ========================================= */}
+
+            <Dialog
+                open={isDeleteSectionOpen}
+                onOpenChange={
+                    setIsDeleteSectionOpen
+                }
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            Delete Section?
+                        </DialogTitle>
+
+                        <DialogDescription>
+                            Are you sure you want to delete{' '}
+                            <strong>
+                                {
+                                    deletingSectionData?.name
+                                }
+                            </strong>
+                            ? Tables in this section will become
+                            unassigned. This action cannot be
+                            undone.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setIsDeleteSectionOpen(
+                                    false,
+                                );
+                                setDeletingSectionData(
+                                    null,
+                                );
+                            }}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            variant="destructive"
+                            onClick={
+                                handleDeleteSection
+                            }
+                        >
+                            Delete Section
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* =========================================
                 ADD TABLE MODAL
             ========================================= */}
 
             <Dialog
-                open={isAddOpen}
+                open={isAddTableOpen}
                 onOpenChange={(open) => {
-                    setIsAddOpen(open);
+                    setIsAddTableOpen(open);
 
                     if (!open) {
                         setErrors({});
@@ -754,9 +1241,7 @@ export default function TablesIndex({ tables }: Props) {
                             <Input
                                 type="number"
                                 min="1"
-                                value={
-                                    tableNumber
-                                }
+                                value={tableNumber}
                                 onChange={(
                                     event,
                                 ) => {
@@ -766,25 +1251,85 @@ export default function TablesIndex({ tables }: Props) {
                                             .value,
                                     );
 
-                                    // Clear error when user starts typing
-                                    if (errors.table_number) {
-                                        setErrors((prev) => {
-                                            const next = { ...prev };
-                                            delete next.table_number;
+                                    if (
+                                        errors.table_number
+                                    ) {
+                                        setErrors(
+                                            (prev) => {
+                                                const next = {
+                                                    ...prev,
+                                                };
 
-                                            return next;
-                                        });
+                                                delete next.table_number;
+
+                                                return next;
+                                            },
+                                        );
                                     }
                                 }}
                                 placeholder="Example: 1"
                             />
 
-                            {/* Display validation error */}
                             {errors.table_number && (
                                 <p className="mt-1 text-sm text-red-500">
                                     {errors.table_number}
                                 </p>
                             )}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section (optional)
+                            </label>
+
+                            <Select
+                                value={
+                                    tableSectionId
+                                        ? String(
+                                              tableSectionId,
+                                          )
+                                        : undefined
+                                }
+                                onValueChange={(
+                                    value,
+                                ) =>
+                                    setTableSectionId(
+                                        value
+                                            ? Number(
+                                                  value,
+                                              )
+                                            : null,
+                                    )
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="none">
+                                        No section
+                                    </SelectItem>
+
+                                    {sections.map(
+                                        (section) => (
+                                            <SelectItem
+                                                key={
+                                                    section.id
+                                                }
+                                                value={String(
+                                                    section
+                                                        .id,
+                                                )}
+                                            >
+                                                {
+                                                    section.name
+                                                }
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
@@ -792,7 +1337,7 @@ export default function TablesIndex({ tables }: Props) {
                         <Button
                             variant="outline"
                             onClick={() => {
-                                setIsAddOpen(
+                                setIsAddTableOpen(
                                     false,
                                 );
                                 setErrors({});
@@ -803,7 +1348,7 @@ export default function TablesIndex({ tables }: Props) {
 
                         <Button
                             onClick={
-                                handleAdd
+                                handleAddTable
                             }
                         >
                             Add Table
@@ -817,10 +1362,8 @@ export default function TablesIndex({ tables }: Props) {
             ========================================= */}
 
             <Dialog
-                open={isEditOpen}
-                onOpenChange={
-                    setIsEditOpen
-                }
+                open={isEditTableOpen}
+                onOpenChange={setIsEditTableOpen}
             >
                 <DialogContent>
                     <DialogHeader>
@@ -842,9 +1385,7 @@ export default function TablesIndex({ tables }: Props) {
                             <Input
                                 type="number"
                                 min="1"
-                                value={
-                                    tableNumber
-                                }
+                                value={tableNumber}
                                 onChange={(
                                     event,
                                 ) =>
@@ -856,13 +1397,68 @@ export default function TablesIndex({ tables }: Props) {
                                 }
                             />
                         </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section
+                            </label>
+
+                            <Select
+                                value={
+                                    tableSectionId
+                                        ? String(
+                                              tableSectionId,
+                                          )
+                                        : undefined
+                                }
+                                onValueChange={(
+                                    value,
+                                ) =>
+                                    setTableSectionId(
+                                        value
+                                            ? Number(
+                                                  value,
+                                              )
+                                            : null,
+                                    )
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="none">
+                                        No section
+                                    </SelectItem>
+
+                                    {sections.map(
+                                        (section) => (
+                                            <SelectItem
+                                                key={
+                                                    section.id
+                                                }
+                                                value={String(
+                                                    section
+                                                        .id,
+                                                )}
+                                            >
+                                                {
+                                                    section.name
+                                                }
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
                             onClick={() =>
-                                setIsEditOpen(
+                                setIsEditTableOpen(
                                     false,
                                 )
                             }
@@ -872,7 +1468,7 @@ export default function TablesIndex({ tables }: Props) {
 
                         <Button
                             onClick={
-                                handleUpdate
+                                handleUpdateTable
                             }
                         >
                             Update Table
@@ -887,17 +1483,13 @@ export default function TablesIndex({ tables }: Props) {
 
             <Dialog
                 open={isViewOpen}
-                onOpenChange={
-                    setIsViewOpen
-                }
+                onOpenChange={setIsViewOpen}
             >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
                             Table{' '}
-                            {
-                                selectedTable?.table_number
-                            }
+                            {selectedTable?.table_number}
                         </DialogTitle>
 
                         <DialogDescription>
@@ -923,17 +1515,13 @@ export default function TablesIndex({ tables }: Props) {
                                 />
                             ) : (
                                 <p className="break-all text-sm text-muted-foreground">
-                                    {
-                                        selectedTable?.qr_code
-                                    }
+                                    {selectedTable?.qr_code}
                                 </p>
                             )}
                         </div>
 
                         <Button
-                            onClick={
-                                handlePrintQr
-                            }
+                            onClick={handlePrintQr}
                         >
                             <Printer className="mr-2 h-4 w-4" />
                             Print
@@ -947,10 +1535,8 @@ export default function TablesIndex({ tables }: Props) {
             ========================================= */}
 
             <Dialog
-                open={isDeleteOpen}
-                onOpenChange={
-                    setIsDeleteOpen
-                }
+                open={isDeleteTableOpen}
+                onOpenChange={setIsDeleteTableOpen}
             >
                 <DialogContent>
                     <DialogHeader>
@@ -960,9 +1546,7 @@ export default function TablesIndex({ tables }: Props) {
 
                         <DialogDescription>
                             Are you sure you want to delete Table{' '}
-                            {
-                                selectedTable?.table_number
-                            }
+                            {selectedTable?.table_number}
                             ? This action cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
@@ -971,7 +1555,7 @@ export default function TablesIndex({ tables }: Props) {
                         <Button
                             variant="outline"
                             onClick={() =>
-                                setIsDeleteOpen(
+                                setIsDeleteTableOpen(
                                     false,
                                 )
                             }
@@ -981,9 +1565,7 @@ export default function TablesIndex({ tables }: Props) {
 
                         <Button
                             variant="destructive"
-                            onClick={
-                                handleDelete
-                            }
+                            onClick={handleDeleteTable}
                         >
                             Delete Table
                         </Button>

@@ -18,6 +18,9 @@ Route::post('/booking', [BookingController::class, 'store'])
 Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])
     ->name('booking.cancel');
 
+Route::post('/booking/{booking}/pay', [BookingController::class, 'pay'])
+    ->name('booking.pay');
+
 // API route for booking sidebar
 Route::get('/api/active-booking', [BookingController::class, 'getActiveBooking']);
 
