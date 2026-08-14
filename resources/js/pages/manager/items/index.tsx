@@ -152,8 +152,14 @@ export default function ItemsIndex({
     };
 
     const validateName = (value: string): string => {
-        if (!value.trim()) {
+        const trimmed = value.trim();
+
+        if (!trimmed) {
             return 'Item Name is required.';
+        }
+
+        if (!/^[a-zA-Z\s]+$/.test(trimmed)) {
+            return 'Item Name must contain letters only.';
         }
 
         return '';
@@ -338,21 +344,25 @@ export default function ItemsIndex({
         const newErrors: FormErrors = {};
 
         const categoryError = validateCategory(categoryId);
+
         if (categoryError) {
             newErrors.categoryId = categoryError;
         }
 
         const nameError = validateName(name);
+
         if (nameError) {
             newErrors.name = nameError;
         }
 
         const priceError = validatePrice(price);
+
         if (priceError) {
             newErrors.price = priceError;
         }
 
         const prepTimeError = validatePreparationTime(preparationTime);
+
         if (prepTimeError) {
             newErrors.preparationTime = prepTimeError;
         }
@@ -431,21 +441,25 @@ export default function ItemsIndex({
         const newErrors: FormErrors = {};
 
         const categoryError = validateCategory(categoryId);
+
         if (categoryError) {
             newErrors.categoryId = categoryError;
         }
 
         const nameError = validateName(name);
+
         if (nameError) {
             newErrors.name = nameError;
         }
 
         const priceError = validatePrice(price);
+
         if (priceError) {
             newErrors.price = priceError;
         }
 
         const prepTimeError = validatePreparationTime(preparationTime);
+
         if (prepTimeError) {
             newErrors.preparationTime = prepTimeError;
         }
@@ -981,6 +995,7 @@ export default function ItemsIndex({
                                 value={categoryId}
                                 onValueChange={(value) => {
                                     setCategoryId(value);
+
                                     if (errors.categoryId) {
                                         const error = validateCategory(value);
                                         setErrors((prev) => ({
@@ -992,6 +1007,7 @@ export default function ItemsIndex({
                                 onOpenChange={(open) => {
                                     if (!open && !errors.categoryId) {
                                         const error = validateCategory(categoryId);
+
                                         if (error) {
                                             setErrors((prev) => ({
                                                 ...prev,
@@ -1055,6 +1071,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setName(value);
+
                                     if (errors.name) {
                                         const error = validateName(value);
                                         setErrors((prev) => ({
@@ -1103,6 +1120,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setPrice(value);
+
                                     if (errors.price) {
                                         const error = validatePrice(value);
                                         setErrors((prev) => ({
@@ -1153,6 +1171,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setPreparationTime(value);
+
                                     if (errors.preparationTime) {
                                         const error = validatePreparationTime(value);
                                         setErrors((prev) => ({
@@ -1185,57 +1204,54 @@ export default function ItemsIndex({
                             )}
                         </div>
 
-                        {/* Image + Description */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            {/* Image */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Item Image
-                                </label>
+                        {/* Item Image */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Item Image
+                            </label>
 
-                                <Input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setImage(
-                                            event.target
-                                                .files?.[0] ||
-                                            null,
-                                        )
-                                    }
-                                />
-                            </div>
+                            <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setImage(
+                                        event.target
+                                            .files?.[0] ||
+                                        null,
+                                    )
+                                }
+                            />
+                        </div>
 
-                            {/* Description */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Description
-                                </label>
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
 
-                                <textarea
-                                    value={
-                                        description
-                                    }
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setDescription(
-                                            event
-                                                .target
-                                                .value,
-                                        )
-                                    }
-                                    placeholder="Describe this menu item..."
-                                    rows={4}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
+                            <textarea
+                                value={
+                                    description
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setDescription(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                                placeholder="Describe this menu item..."
+                                rows={4}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
                         </div>
 
                         {/* Available */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={
                                     isAvailable
@@ -1251,9 +1267,7 @@ export default function ItemsIndex({
                             />
 
                             <label className="text-sm font-medium">
-                                {isAvailable
-                                    ? 'Available'
-                                    : 'Unavailable'}
+                                Available
                             </label>
                         </div>
                     </div>
@@ -1453,6 +1467,7 @@ export default function ItemsIndex({
                                 }
                                 onValueChange={(value) => {
                                     setCategoryId(value);
+
                                     if (errors.categoryId) {
                                         const error = validateCategory(value);
                                         setErrors((prev) => ({
@@ -1464,6 +1479,7 @@ export default function ItemsIndex({
                                 onOpenChange={(open) => {
                                     if (!open && !errors.categoryId) {
                                         const error = validateCategory(categoryId);
+
                                         if (error) {
                                             setErrors((prev) => ({
                                                 ...prev,
@@ -1527,6 +1543,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setName(value);
+
                                     if (errors.name) {
                                         const error = validateName(value);
                                         setErrors((prev) => ({
@@ -1574,6 +1591,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setPrice(value);
+
                                     if (errors.price) {
                                         const error = validatePrice(value);
                                         setErrors((prev) => ({
@@ -1623,6 +1641,7 @@ export default function ItemsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setPreparationTime(value);
+
                                     if (errors.preparationTime) {
                                         const error = validatePreparationTime(value);
                                         setErrors((prev) => ({
@@ -1654,64 +1673,61 @@ export default function ItemsIndex({
                             )}
                         </div>
 
-                        {/* Replace Image + Description */}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            {/* Replace Image */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Replace Image
-                                </label>
+                        {/* Replace Image */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Replace Image
+                            </label>
 
-                                <Input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setImage(
-                                            event.target
-                                                .files?.[0] ||
-                                            null,
-                                        )
-                                    }
-                                />
+                            <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setImage(
+                                        event.target
+                                            .files?.[0] ||
+                                        null,
+                                    )
+                                }
+                            />
 
-                                {/* Current Image */}
-                                {selectedItem?.image &&
-                                    !image && (
-                                        <p className="mt-1 text-sm text-muted-foreground">
-                                            Current image will remain unless you upload a new one.
-                                        </p>
-                                    )}
-                            </div>
+                            {/* Current Image */}
+                            {selectedItem?.image &&
+                                !image && (
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Current image will remain unless you upload a new one.
+                                    </p>
+                                )}
+                        </div>
 
-                            {/* Description */}
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">
-                                    Description
-                                </label>
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
 
-                                <textarea
-                                    value={
-                                        description
-                                    }
-                                    onChange={(
-                                        event,
-                                    ) =>
-                                        setDescription(
-                                            event
-                                                .target
-                                                .value,
-                                        )
-                                    }
-                                    rows={4}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
+                            <textarea
+                                value={
+                                    description
+                                }
+                                onChange={(
+                                    event,
+                                ) =>
+                                    setDescription(
+                                        event
+                                            .target
+                                            .value,
+                                    )
+                                }
+                                rows={4}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
                         </div>
 
                         {/* Available */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={
                                     isAvailable
@@ -1727,9 +1743,7 @@ export default function ItemsIndex({
                             />
 
                             <label className="text-sm font-medium">
-                                {isAvailable
-                                    ? 'Available'
-                                    : 'Unavailable'}
+                                Available
                             </label>
                         </div>
                     </div>

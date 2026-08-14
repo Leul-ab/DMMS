@@ -70,10 +70,7 @@ export default function CategoryEdit({ category }: Props) {
                                 <InputError message={errors.sort_order} />
                             </div>
 
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium">
-                                    Active Category
-                                </label>
+                            <div className="flex items-center gap-2">
                                 <StatusToggle
                                     checked={data.is_active}
                                     onCheckedChange={() =>
@@ -83,6 +80,9 @@ export default function CategoryEdit({ category }: Props) {
                                     offLabel="Inactive"
                                     ariaLabel="Toggle active category status"
                                 />
+                                <label className="text-sm font-medium">
+                                    Active Category
+                                </label>
                             </div>
 
                             <div className="flex items-center gap-4">

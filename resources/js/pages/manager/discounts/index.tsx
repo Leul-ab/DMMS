@@ -142,8 +142,14 @@ export default function DiscountsIndex({
     // -----------------------------------------
 
     const validateName = (value: string): string => {
-        if (!value.trim()) {
+        const trimmed = value.trim();
+
+        if (!trimmed) {
             return 'Discount Name is required.';
+        }
+
+        if (!/^[a-zA-Z\s]+$/.test(trimmed)) {
+            return 'Discount Name must contain letters only.';
         }
 
         return '';
@@ -430,43 +436,51 @@ export default function DiscountsIndex({
         const newErrors: FormErrors = {};
 
         const nameError = validateName(name);
+
         if (nameError) {
             newErrors.name = nameError;
         }
 
         const discountTypeError = validateDiscountType(discountType);
+
         if (discountTypeError) {
             newErrors.discountType = discountTypeError;
         }
 
         const appliesToError = validateAppliesTo(appliesTo);
+
         if (appliesToError) {
             newErrors.appliesTo = appliesToError;
         }
 
         if (discountType === 'percentage') {
             const percentageError = validatePercentage(percentage);
+
             if (percentageError) {
                 newErrors.percentage = percentageError;
             }
         }
 
         const menuItemsError = validateMenuItems(selectedMenuItems);
+
         if (menuItemsError) {
             newErrors.menuItems = menuItemsError;
         }
 
         const startDateError = validateStartDate(startDate);
+
         if (startDateError) {
             newErrors.startDate = startDateError;
         }
 
         const startTimeError = validateStartTime(startDate, startTime);
+
         if (startTimeError) {
             newErrors.startTime = startTimeError;
         }
 
         const endDateError = validateEndDate(endDate, startDate);
+
         if (endDateError) {
             newErrors.endDate = endDateError;
         }
@@ -477,6 +491,7 @@ export default function DiscountsIndex({
             startDate,
             startTime,
         );
+
         if (endTimeError) {
             newErrors.endTime = endTimeError;
         }
@@ -1064,6 +1079,7 @@ export default function DiscountsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setName(value);
+
                                     if (errors.name) {
                                         const error = validateName(value);
                                         setErrors((prev) => ({
@@ -1211,6 +1227,7 @@ export default function DiscountsIndex({
                                     ) => {
                                         const value = event.target.value;
                                         setPercentage(value);
+
                                         if (errors.percentage) {
                                             const error = validatePercentage(value);
                                             setErrors((prev) => ({
@@ -1332,6 +1349,7 @@ export default function DiscountsIndex({
                                                                         menuItems:
                                                                             validateMenuItems(next) || undefined,
                                                                     }));
+
                                                                     return next;
                                                                 },
                                                             );
@@ -1533,6 +1551,7 @@ export default function DiscountsIndex({
                                 ) => {
                                     const value = event.target.value;
                                     setEndTime(value);
+
                                     if (errors.endTime) {
                                         const error = validateEndTime(
                                             endDate,
@@ -1752,8 +1771,40 @@ export default function DiscountsIndex({
                                 value={name}
                                 onChange={(
                                     event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setName(event.target.value)}
+                                ) => {
+                                    const value = event.target.value;
+                                    setName(value);
+
+                                    if (errors.name) {
+                                        const error = validateName(value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            name: error || undefined,
+                                        }));
+                                    }
+                                }}
+                                onBlur={() => {
+                                    const error = validateName(name);
+                                    setErrors((prev) => ({
+                                        ...prev,
+                                        name: error || undefined,
+                                    }));
+                                }}
+                                placeholder="Example: Summer Sale"
+                                className={
+                                    errors.name
+                                        ? 'border-red-500'
+                                        : name.trim() && !errors.name
+                                            ? 'border-green-500'
+                                            : ''
+                                }
                             />
+
+                            {errors.name && (
+                                <p className="mt-1 text-sm text-red-500">
+                                    {errors.name}
+                                </p>
+                            )}
                         </div>
 
                         {/* Description */}
