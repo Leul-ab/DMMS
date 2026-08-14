@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\RestaurantTable;
+use App\Models\TableSection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -22,11 +23,15 @@ class RestaurantTableController extends Controller
     public function index()
     {
         $tables = RestaurantTable::query()
+            ->with('section')
             ->latest()
             ->get();
 
+        $sections = TableSection::where('status', 'active')->get();
+
         return Inertia::render('manager/tables/index', [
             'tables' => $tables,
+            'sections' => $sections,
         ]);
     }
 
@@ -61,6 +66,10 @@ class RestaurantTableController extends Controller
                 'max:255',
                 'unique:restaurant_tables,qr_code',
             ],
+            'table_section_id' => [
+                'nullable',
+                'exists:table_sections,id',
+            ],
         ]);
 
         $qrPath = null;
@@ -86,6 +95,8 @@ class RestaurantTableController extends Controller
         }
 
         RestaurantTable::create([
+            'branch_id' => Branch::current()?->id,
+            'table_section_id' => $validated['table_section_id'] ?? null,
             'table_number' => $validated['table_number'],
             'qr_code' => $qrPath,
             'status' => 'available',
@@ -222,9 +233,15 @@ class RestaurantTableController extends Controller
                 'max:255',
                 'unique:restaurant_tables,qr_code,' . $table->id,
             ],
+            'table_section_id' => [
+                'nullable',
+                'exists:table_sections,id',
+            ],
         ]);
 
         $table->update([
+            'branch_id' => Branch::current()?->id,
+            'table_section_id' => $validated['table_section_id'] ?? null,
             'table_number' => $validated['table_number'],
             'qr_code' => $validated['qr_code']
                 ?? $table->qr_code,

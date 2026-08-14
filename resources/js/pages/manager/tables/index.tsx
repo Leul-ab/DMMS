@@ -4,7 +4,6 @@ import {
     Pencil,
     Plus,
     Printer,
-    QrCode,
     RefreshCw,
     Search,
     Table2,
@@ -68,10 +67,22 @@ type RestaurantTable = {
     current_order_id: number | null;
     created_at: string;
     updated_at: string;
+    section: {
+        id: number;
+        name: string;
+        description: string | null;
+        status: string;
+    } | null;
 };
 
 type Props = {
     tables: RestaurantTable[];
+    sections: {
+        id: number;
+        name: string;
+        description: string | null;
+        status: string;
+    }[];
 };
 
 const statusLabels: Record<TableStatus, string> = {
@@ -81,13 +92,15 @@ const statusLabels: Record<TableStatus, string> = {
     unavailable: 'Unavailable',
 };
 
-export default function TablesIndex({ tables }: Props) {
+export default function TablesIndex({ tables, sections }: Props) {
     const can = useCan();
     const [search, setSearch] = useState('');
 
     const [statusFilter, setStatusFilter] = useState<
         'all' | TableStatus
     >('all');
+
+    const [sectionFilter, setSectionFilter] = useState<string>('all');
 
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
@@ -99,6 +112,7 @@ export default function TablesIndex({ tables }: Props) {
         useState<RestaurantTable | null>(null);
 
     const [tableNumber, setTableNumber] = useState('');
+    const [tableSectionId, setTableSectionId] = useState<string>('');
 
     // Validation errors from the server
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -123,9 +137,13 @@ export default function TablesIndex({ tables }: Props) {
                 statusFilter === 'all' ||
                 table.status === statusFilter;
 
-            return matchesSearch && matchesStatus;
+            const matchesSection =
+                sectionFilter === 'all' ||
+                table.section?.id.toString() === sectionFilter;
+
+            return matchesSearch && matchesStatus && matchesSection;
         });
-    }, [tables, search, statusFilter]);
+    }, [tables, search, statusFilter, sectionFilter]);
 
     // -----------------------------------------
     // Open Add Modal
@@ -133,6 +151,7 @@ export default function TablesIndex({ tables }: Props) {
 
     const openAddModal = () => {
         setTableNumber('');
+        setTableSectionId('');
         setErrors({});
         setIsAddOpen(true);
     };
@@ -148,6 +167,10 @@ export default function TablesIndex({ tables }: Props) {
 
         setTableNumber(
             table.table_number.toString(),
+        );
+
+        setTableSectionId(
+            table.section?.id.toString() || '',
         );
 
         setIsEditOpen(true);
@@ -203,6 +226,9 @@ export default function TablesIndex({ tables }: Props) {
             tablesStore.url(),
             {
                 table_number: Number(tableNumber),
+                table_section_id: tableSectionId
+                    ? Number(tableSectionId)
+                    : null,
             },
             {
                 preserveScroll: true,
@@ -210,6 +236,7 @@ export default function TablesIndex({ tables }: Props) {
                 onSuccess: () => {
                     setIsAddOpen(false);
                     setTableNumber('');
+                    setTableSectionId('');
                     setErrors({});
                 },
                 onError: (serverErrors) => {
@@ -236,6 +263,9 @@ export default function TablesIndex({ tables }: Props) {
                 table_number: Number(
                     tableNumber,
                 ),
+                table_section_id: tableSectionId
+                    ? Number(tableSectionId)
+                    : null,
             },
             {
                 preserveScroll: true,
@@ -243,6 +273,7 @@ export default function TablesIndex({ tables }: Props) {
                 onSuccess: () => {
                     setIsEditOpen(false);
                     setSelectedTable(null);
+                    setTableSectionId('');
                 },
                 onError: (serverErrors) => {
                     setErrors(serverErrors);
@@ -503,6 +534,31 @@ export default function TablesIndex({ tables }: Props) {
                                     </SelectItem>
                                 </SelectContent>
                             </Select>
+
+                            {/* Section Filter */}
+                            <Select
+                                value={sectionFilter}
+                                onValueChange={setSectionFilter}
+                            >
+                                <SelectTrigger className="w-full sm:w-[200px]">
+                                    <SelectValue placeholder="Filter by section" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All Sections
+                                    </SelectItem>
+
+                                    {sections.map((section) => (
+                                        <SelectItem
+                                            key={section.id}
+                                            value={section.id.toString()}
+                                        >
+                                            {section.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardHeader>
 
@@ -525,6 +581,10 @@ export default function TablesIndex({ tables }: Props) {
                                         <tr className="border-b text-left">
                                             <th className="p-3">
                                                 Table Number
+                                            </th>
+
+                                            <th className="p-3">
+                                                Section
                                             </th>
 
                                             <th className="p-3">
@@ -558,6 +618,28 @@ export default function TablesIndex({ tables }: Props) {
                                                         {
                                                             table.table_number
                                                         }
+                                                    </td>
+
+                                                    {/* Section */}
+                                                    <td className="p-3">
+                                                        {table.section ? (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className={
+                                                                    table.section.status === 'active'
+                                                                        ? 'border-green-600 bg-white text-green-600'
+                                                                        : 'border-gray-400 bg-white text-gray-500'
+                                                                }
+                                                            >
+                                                                {
+                                                                    table.section.name
+                                                                }
+                                                            </Badge>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">
+                                                                —
+                                                            </span>
+                                                        )}
                                                     </td>
 
                                                     {/* QR Code */}
@@ -786,6 +868,37 @@ export default function TablesIndex({ tables }: Props) {
                                 </p>
                             )}
                         </div>
+
+                        {/* Section */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section
+                            </label>
+
+                            <Select
+                                value={tableSectionId}
+                                onValueChange={setTableSectionId}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="">
+                                        No section
+                                    </SelectItem>
+
+                                    {sections.map((section) => (
+                                        <SelectItem
+                                            key={section.id}
+                                            value={section.id.toString()}
+                                        >
+                                            {section.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
 
                     <DialogFooter>
@@ -855,6 +968,37 @@ export default function TablesIndex({ tables }: Props) {
                                     )
                                 }
                             />
+                        </div>
+
+                        {/* Section */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Section
+                            </label>
+
+                            <Select
+                                value={tableSectionId}
+                                onValueChange={setTableSectionId}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+
+                                <SelectContent>
+                                    <SelectItem value="">
+                                        No section
+                                    </SelectItem>
+
+                                    {sections.map((section) => (
+                                        <SelectItem
+                                            key={section.id}
+                                            value={section.id.toString()}
+                                        >
+                                            {section.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 

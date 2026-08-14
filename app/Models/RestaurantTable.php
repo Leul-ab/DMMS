@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RestaurantTable extends Model
@@ -12,6 +13,7 @@ class RestaurantTable extends Model
 
     protected $fillable = [
         'branch_id',
+        'table_section_id',
         'table_number',
         'qr_code',
         'status',
@@ -24,6 +26,11 @@ class RestaurantTable extends Model
             'table_number' => 'integer',
             'current_order_id' => 'integer',
         ];
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(TableSection::class, 'table_section_id');
     }
 
     public function orders(): HasMany
