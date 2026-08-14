@@ -665,8 +665,8 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                                     {/* Header */}
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-orange-100">
-                                                <ShieldCheck className="h-5 w-5 text-orange-600" />
+                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-100">
+                                                <ShieldCheck className="h-5 w-5 text-red-600" />
                                             </div>
 
                                             <div>
@@ -681,8 +681,6 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                                                 </p>
                                             </div>
                                         </div>
-
-                                        
                                     </div>
 
                                     {/* Description */}
@@ -714,50 +712,49 @@ export default function RolesIndex({ roles, permissionGroups }: Props) {
                                                 ? 'permission'
                                                 : 'permissions'}
                                         </Badge>
-                                        <div className="flex items-center gap-1 ml-auto">
+                                        <div className="ml-auto flex items-center gap-1">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => openShowModal(role)}
+                                                onClick={() =>
+                                                    openShowModal(role)
+                                                }
                                             >
                                                 <Eye className="h-4 w-4" />
-
                                             </Button>
-                                                {can('update roles') &&
-                                                    role.slug !== 'super_admin' && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openEditModal(role)
-                                                            }
-                                                            title="Edit role"
-                                                        >
-                                                            <Pencil className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
+                                            {can('update roles') &&
+                                                role.slug !== 'super_admin' && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openEditModal(role)
+                                                        }
+                                                        title="Edit role"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                )}
 
-                                                {can('delete roles') &&
-                                                    role.slug !== 'super_admin' && (
-                                                        <Button
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                openDeleteModal(
-                                                                    role,
-                                                                )
-                                                            }
-                                                            title="Delete role"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    )}
-                                            </div>
-
+                                            {can('delete roles') &&
+                                                role.slug !== 'super_admin' && (
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                role,
+                                                            )
+                                                        }
+                                                        title="Delete role"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                        </div>
                                     </div>
 
                                     {/* Footer */}
-                                    
                                 </CardContent>
                             </Card>
                         ))}

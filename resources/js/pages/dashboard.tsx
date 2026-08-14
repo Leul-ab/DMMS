@@ -116,9 +116,9 @@ type Props = {
 };
 
 const CATEGORY_COLORS = [
-    '#f97316',
-    '#fb923c',
-    '#fbbf24',
+    '#ef4444',
+    '#f87171',
+    '#fca5a5',
     '#a3e635',
     '#22c55e',
     '#38bdf8',
@@ -129,7 +129,7 @@ const CATEGORY_COLORS = [
 
 const PAYMENT_COLORS: Record<string, string> = {
     paid: '#10b981',
-    pending: '#f59e0b',
+    pending: '#f87171',
     unpaid: '#ef4444',
 };
 
@@ -156,10 +156,10 @@ const ORDER_STATUS_STYLES: Record<
     },
     preparing: {
         icon: ChefHat,
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
+        color: 'text-red-600',
+        bg: 'bg-red-50',
     },
-    ready: { icon: BellRing, color: 'text-amber-600', bg: 'bg-amber-50' },
+    ready: { icon: BellRing, color: 'text-red-600', bg: 'bg-red-50' },
     served: {
         icon: Utensils,
         color: 'text-purple-600',
@@ -231,14 +231,14 @@ export default function Dashboard({
         <>
             <Head title="Dashboard" />
 
-            <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-orange-50 via-amber-50/30 to-white text-stone-800 selection:bg-orange-200 selection:text-orange-900">
+            <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-red-50 via-red-50/30 to-white text-stone-800 selection:bg-red-200 selection:text-red-900">
                 {/* ================= DECORATIVE BACKGROUND ================= */}
-                <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 animate-pulse rounded-full bg-orange-200 opacity-30 mix-blend-multiply blur-3xl" />
+                <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 animate-pulse rounded-full bg-red-200 opacity-30 mix-blend-multiply blur-3xl" />
                 <div
-                    className="pointer-events-none absolute top-1/3 -left-40 h-96 w-96 animate-pulse rounded-full bg-amber-200 opacity-30 mix-blend-multiply blur-3xl"
+                    className="pointer-events-none absolute top-1/3 -left-40 h-96 w-96 animate-pulse rounded-full bg-red-200 opacity-30 mix-blend-multiply blur-3xl"
                     style={{ animationDelay: '1s' }}
                 />
-                <div className="pointer-events-none absolute right-1/4 bottom-0 h-72 w-72 animate-pulse rounded-full bg-orange-100 opacity-40 mix-blend-multiply blur-3xl" />
+                <div className="pointer-events-none absolute right-1/4 bottom-0 h-72 w-72 animate-pulse rounded-full bg-red-100 opacity-40 mix-blend-multiply blur-3xl" />
 
                 <div className="relative flex flex-col gap-8 p-5 lg:p-8">
                     {/* ================================================= */}
@@ -248,8 +248,8 @@ export default function Dashboard({
                     <Reveal>
                         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <div className="inline-flex items-center gap-2 rounded-full bg-orange-100 px-4 py-1.5 text-sm font-semibold text-orange-700">
-                                    <span className="h-2 w-2 animate-pulse rounded-full bg-orange-500" />
+                                <div className="inline-flex items-center gap-2 rounded-full bg-red-100 px-4 py-1.5 text-sm font-semibold text-red-700">
+                                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
                                     Restaurant Management
                                 </div>
 
@@ -257,7 +257,7 @@ export default function Dashboard({
                                     Dashboard
                                 </h1>
 
-                                <p className="mt-1 text-amber-600/90">
+                                <p className="mt-1 text-red-600/90">
                                     Overview of your restaurant's performance
                                     and finances.
                                 </p>
@@ -268,7 +268,7 @@ export default function Dashboard({
                                 {/* BRANCH INDICATOR */}
                                 {currentBranch && (
                                     <span
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-orange-700 shadow-sm backdrop-blur"
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm backdrop-blur"
                                         title={`Working on ${currentBranch.name}`}
                                     >
                                         <Building2 className="h-3.5 w-3.5" />
@@ -281,7 +281,7 @@ export default function Dashboard({
                                 {/* BRANCH SCOPE TOGGLE */}
                                 {can('view all branches dashboard') && (
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center rounded-full border border-orange-200 bg-white/70 p-1 shadow-sm backdrop-blur">
+                                        <div className="flex items-center rounded-full border border-red-200 bg-white/70 p-1 shadow-sm backdrop-blur">
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -299,8 +299,8 @@ export default function Dashboard({
                                                 }}
                                                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                                                     !allBranchesScope
-                                                        ? 'bg-orange-500 text-white shadow'
-                                                        : 'text-orange-600 hover:bg-orange-50'
+                                                        ? 'bg-red-500 text-white shadow'
+                                                        : 'text-red-600 hover:bg-red-50'
                                                 }`}
                                             >
                                                 My Branch
@@ -325,8 +325,8 @@ export default function Dashboard({
                                                 }}
                                                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                                                     allBranchesScope
-                                                        ? 'bg-orange-500 text-white shadow'
-                                                        : 'text-orange-600 hover:bg-orange-50'
+                                                        ? 'bg-red-500 text-white shadow'
+                                                        : 'text-red-600 hover:bg-red-50'
                                                 }`}
                                             >
                                                 All Branches
@@ -423,20 +423,20 @@ export default function Dashboard({
                         {/* Revenue Trend */}
 
                         <Reveal className="lg:col-span-2">
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Revenue Trend
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Daily revenue for the last 14 days
                                         </p>
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
                                             <TrendingUp className="h-3.5 w-3.5" />
                                             {formatCurrency(
                                                 revenueTrend.reduce(
@@ -447,8 +447,8 @@ export default function Dashboard({
                                             )}
                                         </span>
 
-                                        <div className="rounded-xl bg-orange-50 p-2.5">
-                                            <Wallet className="h-5 w-5 text-orange-600" />
+                                        <div className="rounded-xl bg-red-50 p-2.5">
+                                            <Wallet className="h-5 w-5 text-red-600" />
                                         </div>
                                     </div>
                                 </div>
@@ -460,20 +460,20 @@ export default function Dashboard({
                         {/* Sales by Category Donut */}
 
                         <Reveal delay={100}>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Sales by Category
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Completed order sales
                                         </p>
                                     </div>
 
-                                    <div className="rounded-xl bg-orange-50 p-2.5">
-                                        <PieChartIcon className="h-5 w-5 text-orange-600" />
+                                    <div className="rounded-xl bg-red-50 p-2.5">
+                                        <PieChartIcon className="h-5 w-5 text-red-600" />
                                     </div>
                                 </div>
 
@@ -487,7 +487,7 @@ export default function Dashboard({
                                         )}
                                     />
                                 ) : (
-                                    <div className="flex h-72 items-center justify-center text-sm text-amber-600">
+                                    <div className="flex h-72 items-center justify-center text-sm text-red-600">
                                         No sales data available.
                                     </div>
                                 )}
@@ -503,20 +503,20 @@ export default function Dashboard({
                         {/* Payment Status Donut */}
 
                         <Reveal>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Payment Status
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Orders by payment status
                                         </p>
                                     </div>
 
-                                    <div className="rounded-xl bg-orange-50 p-2.5">
-                                        <DollarSign className="h-5 w-5 text-orange-600" />
+                                    <div className="rounded-xl bg-red-50 p-2.5">
+                                        <DollarSign className="h-5 w-5 text-red-600" />
                                     </div>
                                 </div>
 
@@ -533,7 +533,7 @@ export default function Dashboard({
                                         }
                                     />
                                 ) : (
-                                    <div className="flex h-72 items-center justify-center text-sm text-amber-600">
+                                    <div className="flex h-72 items-center justify-center text-sm text-red-600">
                                         No payment data available.
                                     </div>
                                 )}
@@ -543,25 +543,25 @@ export default function Dashboard({
                         {/* Order Status */}
 
                         <Reveal delay={100}>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Order Status
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Live breakdown by status
                                         </p>
                                     </div>
 
-                                    <div className="rounded-xl bg-orange-50 p-2.5">
-                                        <ClipboardList className="h-5 w-5 text-orange-600" />
+                                    <div className="rounded-xl bg-red-50 p-2.5">
+                                        <ClipboardList className="h-5 w-5 text-red-600" />
                                     </div>
                                 </div>
 
                                 {orderStatusOverview.length === 0 ? (
-                                    <div className="py-10 text-center text-sm text-amber-600">
+                                    <div className="py-10 text-center text-sm text-red-600">
                                         No order data available.
                                     </div>
                                 ) : (
@@ -571,8 +571,8 @@ export default function Dashboard({
                                                 item.status
                                             ] ?? {
                                                 icon: ClipboardList,
-                                                color: 'text-amber-600',
-                                                bg: 'bg-amber-50',
+                                                color: 'text-red-600',
+                                                bg: 'bg-red-50',
                                             };
 
                                             const Icon = style.icon;
@@ -580,7 +580,7 @@ export default function Dashboard({
                                             return (
                                                 <div
                                                     key={item.status}
-                                                    className="flex items-center justify-between rounded-xl border border-orange-100/80 p-4 transition hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
+                                                    className="flex items-center justify-between rounded-xl border border-red-100/80 p-4 transition hover:border-red-300 hover:shadow-md hover:shadow-red-100"
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <div
@@ -597,7 +597,7 @@ export default function Dashboard({
                                                     </div>
 
                                                     <Badge
-                                                        className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                        className="rounded-full bg-red-50 px-3 py-1 font-bold text-red-700"
                                                         variant="secondary"
                                                     >
                                                         {item.count}
@@ -613,25 +613,25 @@ export default function Dashboard({
                         {/* Popular Menu Items */}
 
                         <Reveal delay={200}>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Popular Menu Items
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Top sellers right now
                                         </p>
                                     </div>
 
-                                    <div className="rounded-xl bg-orange-50 p-2.5">
-                                        <Star className="h-5 w-5 text-orange-600" />
+                                    <div className="rounded-xl bg-red-50 p-2.5">
+                                        <Star className="h-5 w-5 text-red-600" />
                                     </div>
                                 </div>
 
                                 {popularMenuItems.length === 0 ? (
-                                    <div className="py-10 text-center text-sm text-amber-600">
+                                    <div className="py-10 text-center text-sm text-red-600">
                                         No menu item data available.
                                     </div>
                                 ) : (
@@ -639,14 +639,14 @@ export default function Dashboard({
                                         {popularMenuItems.map((item, index) => (
                                             <div
                                                 key={item.id}
-                                                className="group flex items-center justify-between rounded-xl border border-orange-100/80 p-4 transition hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
+                                                className="group flex items-center justify-between rounded-xl border border-red-100/80 p-4 transition hover:border-red-300 hover:shadow-md hover:shadow-red-100"
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <div
                                                         className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-black ${
                                                             index === 0
-                                                                ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-500/30'
-                                                                : 'bg-orange-50 text-orange-600'
+                                                                ? 'bg-gradient-to-br from-red-400 to-red-600 text-white shadow-lg shadow-red-500/30'
+                                                                : 'bg-red-50 text-red-600'
                                                         }`}
                                                     >
                                                         {index + 1}
@@ -658,7 +658,7 @@ export default function Dashboard({
                                                 </div>
 
                                                 <Badge
-                                                    className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                    className="rounded-full bg-red-50 px-3 py-1 font-bold text-red-700"
                                                     variant="secondary"
                                                 >
                                                     {item.total_quantity} sold
@@ -679,14 +679,14 @@ export default function Dashboard({
                         {/* Restaurant Tables */}
 
                         <Reveal>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Restaurant Tables
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Current table availability
                                         </p>
                                     </div>
@@ -702,9 +702,9 @@ export default function Dashboard({
                                 <div className="grid grid-cols-2 gap-4">
                                     <Link
                                         href="/manager/tables"
-                                        className="rounded-2xl border border-orange-100/80 p-5 text-center transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
+                                        className="rounded-2xl border border-red-100/80 p-5 text-center transition hover:-translate-y-1 hover:border-red-300 hover:shadow-lg hover:shadow-red-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Total
                                         </p>
                                         <p className="mt-2 text-3xl font-black text-stone-800">
@@ -716,7 +716,7 @@ export default function Dashboard({
                                         href="/manager/tables"
                                         className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-green-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Available
                                         </p>
                                         <p className="mt-2 text-3xl font-black text-green-600">
@@ -728,7 +728,7 @@ export default function Dashboard({
                                         href="/manager/tables"
                                         className="rounded-2xl border border-red-100 bg-red-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-red-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Occupied
                                         </p>
                                         <p className="mt-2 text-3xl font-black text-red-600">
@@ -740,7 +740,7 @@ export default function Dashboard({
                                         href="/manager/tables"
                                         className="rounded-2xl border border-blue-100 bg-blue-50/40 p-5 text-center transition hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Reserved
                                         </p>
                                         <p className="mt-2 text-3xl font-black text-blue-600">
@@ -754,14 +754,14 @@ export default function Dashboard({
                         {/* Customer + Menu Overview */}
 
                         <Reveal delay={100}>
-                            <div className="h-full rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                            <div className="h-full rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                                 <div className="mb-6 flex items-center justify-between">
                                     <div>
                                         <h2 className="text-lg font-black text-stone-800">
                                             Customers &amp; Menu
                                         </h2>
 
-                                        <p className="text-sm text-amber-600">
+                                        <p className="text-sm text-red-600">
                                             Quick overview of your data
                                         </p>
                                     </div>
@@ -777,14 +777,14 @@ export default function Dashboard({
                                 <div className="grid grid-cols-2 gap-4">
                                     <Link
                                         href="/manager/customers"
-                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
+                                        className="rounded-2xl border border-red-100/80 p-5 transition hover:-translate-y-1 hover:border-red-300 hover:shadow-lg hover:shadow-red-200/30"
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="rounded-xl bg-purple-50 p-2.5">
                                                 <Users className="h-5 w-5 text-purple-600" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-amber-600">
+                                                <p className="text-sm font-semibold text-red-600">
                                                     Total Customers
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-stone-800">
@@ -803,7 +803,7 @@ export default function Dashboard({
                                                 <UserCheck className="h-5 w-5 text-green-600" />
                                             </div>
                                             <div>
-                                                <p className="text-sm font-semibold text-amber-600">
+                                                <p className="text-sm font-semibold text-red-600">
                                                     Members
                                                 </p>
                                                 <p className="mt-1 text-2xl font-black text-green-600">
@@ -815,9 +815,9 @@ export default function Dashboard({
 
                                     <Link
                                         href="/manager/items"
-                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
+                                        className="rounded-2xl border border-red-100/80 p-5 transition hover:-translate-y-1 hover:border-red-300 hover:shadow-lg hover:shadow-red-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Menu Items
                                         </p>
                                         <p className="mt-1 text-3xl font-black text-stone-800">
@@ -830,9 +830,9 @@ export default function Dashboard({
 
                                     <Link
                                         href="/manager/categories"
-                                        className="rounded-2xl border border-orange-100/80 p-5 transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-lg hover:shadow-orange-200/30"
+                                        className="rounded-2xl border border-red-100/80 p-5 transition hover:-translate-y-1 hover:border-red-300 hover:shadow-lg hover:shadow-red-200/30"
                                     >
-                                        <p className="text-sm font-semibold text-amber-600">
+                                        <p className="text-sm font-semibold text-red-600">
                                             Categories
                                         </p>
                                         <p className="mt-1 text-3xl font-black text-stone-800">
@@ -849,19 +849,19 @@ export default function Dashboard({
 
                     {/* ================= CUSTOMER FEEDBACK ANALYTICS ================= */}
                     <Reveal>
-                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                        <div className="rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                             <div className="mb-6">
                                 <h2 className="text-lg font-black text-stone-800">
                                     Customer Feedback Analytics
                                 </h2>
-                                <p className="text-sm text-amber-600">
+                                <p className="text-sm text-red-600">
                                     Average ratings from customer reviews
                                 </p>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <div className="rounded-2xl border border-green-100 bg-green-50/40 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">
+                                    <p className="text-sm font-semibold text-red-600">
                                         Overall Service Rating
                                     </p>
                                     <p className="mt-2 text-3xl font-black text-green-600">
@@ -873,8 +873,8 @@ export default function Dashboard({
                                         avg rating
                                     </p>
                                 </div>
-                                <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">
+                                <div className="rounded-2xl border border-red-100/80 p-5 text-center">
+                                    <p className="text-sm font-semibold text-red-600">
                                         Average Rating
                                     </p>
                                     <p className="mt-2 text-3xl font-black text-stone-800">
@@ -886,11 +886,11 @@ export default function Dashboard({
                                         avg rating
                                     </p>
                                 </div>
-                                <div className="rounded-2xl border border-orange-100/80 p-5 text-center">
-                                    <p className="text-sm font-semibold text-amber-600">
+                                <div className="rounded-2xl border border-red-100/80 p-5 text-center">
+                                    <p className="text-sm font-semibold text-red-600">
                                         Total Reviews
                                     </p>
-                                    <p className="mt-2 text-3xl font-black text-orange-600">
+                                    <p className="mt-2 text-3xl font-black text-red-600">
                                         {feedbackAnalytics.totalReviews}
                                     </p>
                                     <p className="mt-1 text-xs font-semibold text-stone-400">
@@ -899,11 +899,11 @@ export default function Dashboard({
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex items-center justify-between rounded-xl bg-orange-50 p-4">
+                            <div className="mt-4 flex items-center justify-between rounded-xl bg-red-50 p-4">
                                 <p className="text-sm font-semibold text-stone-700">
                                     Total Reviews
                                 </p>
-                                <p className="text-lg font-black text-orange-600">
+                                <p className="text-lg font-black text-red-600">
                                     {feedbackAnalytics.totalReviews}
                                 </p>
                             </div>
@@ -912,25 +912,25 @@ export default function Dashboard({
 
                     {/* ================= RECENT CUSTOMER REVIEWS ================= */}
                     <Reveal>
-                        <div className="rounded-2xl border border-orange-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-orange-200/40">
+                        <div className="rounded-2xl border border-red-100/80 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-red-200/40">
                             <div className="mb-6">
                                 <h2 className="text-lg font-black text-stone-800">
                                     Recent Customer Reviews
                                 </h2>
-                                <p className="text-sm text-amber-600">
+                                <p className="text-sm text-red-600">
                                     Latest feedback from your customers
                                 </p>
                             </div>
 
                             {recentFeedback.length === 0 ? (
-                                <div className="py-10 text-center text-sm text-amber-600">
+                                <div className="py-10 text-center text-sm text-red-600">
                                     No customer reviews yet.
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-sm">
                                         <thead>
-                                            <tr className="border-b border-orange-100/80 text-xs font-bold tracking-wider text-amber-600 uppercase">
+                                            <tr className="border-b border-red-100/80 text-xs font-bold tracking-wider text-red-600 uppercase">
                                                 <th className="px-4 py-3">
                                                     Customer
                                                 </th>
@@ -951,18 +951,18 @@ export default function Dashboard({
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-orange-50">
+                                        <tbody className="divide-y divide-red-50">
                                             {recentFeedback.map((review) => (
                                                 <tr
                                                     key={review.id}
-                                                    className="transition-colors hover:bg-orange-50/40"
+                                                    className="transition-colors hover:bg-red-50/40"
                                                 >
                                                     <td className="px-4 py-3 font-semibold text-stone-700">
                                                         {review.customer_name}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Badge
-                                                            className="rounded-full bg-orange-50 px-3 py-1 font-bold text-orange-700"
+                                                            className="rounded-full bg-red-50 px-3 py-1 font-bold text-red-700"
                                                             variant="secondary"
                                                         >
                                                             {

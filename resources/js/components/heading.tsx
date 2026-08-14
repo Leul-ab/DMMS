@@ -20,7 +20,7 @@ export default function Heading({
                         : 'flex items-center gap-2 text-2xl font-bold tracking-tight'
                 }
             >
-                {Icon && <Icon className="h-7 w-7 shrink-0 text-orange-500" />}
+                {Icon && <Icon className="h-7 w-7 shrink-0 text-red-500" />}
                 {title}
             </h2>
             {description && (

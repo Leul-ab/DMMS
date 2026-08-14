@@ -16,8 +16,8 @@ export default function StatCard({
     title,
     value,
     icon: Icon,
-    iconClassName = 'text-orange-600',
-    iconBgClassName = 'bg-orange-50',
+    iconClassName = 'text-red-600',
+    iconBgClassName = 'bg-red-50',
     href,
 }: StatCardProps) {
     const content = (
@@ -25,7 +25,7 @@ export default function StatCard({
             className={cn('flex h-full items-center justify-between gap-4 p-6')}
         >
             <div>
-                <p className={cn('text-sm font-semibold', 'text-amber-600/80')}>
+                <p className={cn('text-sm font-semibold', 'text-red-600/80')}>
                     {title}
                 </p>
 
@@ -66,12 +66,12 @@ export default function StatCard({
         return (
             <Link
                 href={href}
-                className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                className="group block h-full outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
             >
                 <div
                     className={cn(
                         'h-full rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
-                        'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40',
+                        'border-red-100/80 bg-white shadow-sm hover:border-red-200 hover:shadow-red-200/40',
                     )}
                 >
                     {content}
@@ -84,7 +84,7 @@ export default function StatCard({
         <div
             className={cn(
                 'h-full rounded-2xl border transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl',
-                'border-orange-100/80 bg-white shadow-sm hover:border-orange-200 hover:shadow-orange-200/40',
+                'border-red-100/80 bg-white shadow-sm hover:border-red-200 hover:shadow-red-200/40',
             )}
         >
             {content}

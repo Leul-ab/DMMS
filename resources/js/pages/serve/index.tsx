@@ -66,18 +66,24 @@ export default function ServeOrders({ orders }: Props) {
 
     const completeOrder = (order: Order) => {
         setIsProcessing(order.id);
-        router.patch(`/serve/orders/${order.id}/complete`, {}, {
-            preserveScroll: true,
-            preserveState: false,
-            onSuccess: () => {
-                toast.success(`Order ${order.order_number} served successfully!`);
-                setIsProcessing(null);
+        router.patch(
+            `/serve/orders/${order.id}/complete`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: false,
+                onSuccess: () => {
+                    toast.success(
+                        `Order ${order.order_number} served successfully!`,
+                    );
+                    setIsProcessing(null);
+                },
+                onError: () => {
+                    toast.error('Failed to complete order');
+                    setIsProcessing(null);
+                },
             },
-            onError: () => {
-                toast.error('Failed to complete order');
-                setIsProcessing(null);
-            },
-        });
+        );
     };
 
     const readyCount = orders.length;
@@ -87,10 +93,7 @@ export default function ServeOrders({ orders }: Props) {
     const itemCount = orders.reduce(
         (total, order) =>
             total +
-            order.order_items.reduce(
-                (sum, item) => sum + item.quantity,
-                0,
-            ),
+            order.order_items.reduce((sum, item) => sum + item.quantity, 0),
         0,
     );
 
@@ -100,24 +103,21 @@ export default function ServeOrders({ orders }: Props) {
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
-                        <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                            <Utensils className="h-7 w-7 text-orange-500" />
+                        <h1 className="flex items-center gap-2 text-2xl font-black text-gray-900">
+                            <Utensils className="h-7 w-7 text-red-500" />
                             Serve Orders
                         </h1>
                         <p className="text-sm text-gray-500">
-                            Deliver ready orders to tables and mark them complete.
+                            Deliver ready orders to tables and mark them
+                            complete.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                        >
+                        <Button variant="outline" size="sm" asChild>
                             <Link href="/serve/history">
-                                <History className="h-4 w-4 mr-1" />
+                                <History className="mr-1 h-4 w-4" />
                                 History
                             </Link>
                         </Button>
@@ -127,30 +127,51 @@ export default function ServeOrders({ orders }: Props) {
                             size="sm"
                             onClick={() => router.reload({ only: ['orders'] })}
                         >
-                            <RefreshCw className="h-4 w-4 mr-1" />
+                            <RefreshCw className="mr-1 h-4 w-4" />
                             Refresh
                         </Button>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {[
-                        { label: 'Ready to Serve', value: readyCount, color: 'bg-green-600', icon: CheckCircle2 },
-                        { label: 'Tables Awaiting', value: tableCount, color: 'bg-orange-500', icon: Table2 },
-                        { label: 'Items to Deliver', value: itemCount, color: 'bg-blue-500', icon: Utensils },
+                        {
+                            label: 'Ready to Serve',
+                            value: readyCount,
+                            color: 'bg-green-600',
+                            icon: CheckCircle2,
+                        },
+                        {
+                            label: 'Tables Awaiting',
+                            value: tableCount,
+                            color: 'bg-red-500',
+                            icon: Table2,
+                        },
+                        {
+                            label: 'Items to Deliver',
+                            value: itemCount,
+                            color: 'bg-blue-500',
+                            icon: Utensils,
+                        },
                     ].map((stat) => {
                         const Icon = stat.icon;
 
                         return (
                             <Card key={stat.label} className="overflow-hidden">
-                                <CardContent className="p-4 flex items-center gap-3">
-                                    <div className={`rounded-lg ${stat.color} p-2.5`}>
+                                <CardContent className="flex items-center gap-3 p-4">
+                                    <div
+                                        className={`rounded-lg ${stat.color} p-2.5`}
+                                    >
                                         <Icon className="h-5 w-5 text-white" />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-medium text-gray-500">{stat.label}</p>
-                                        <p className="text-xl font-black">{stat.value}</p>
+                                        <p className="text-xs font-medium text-gray-500">
+                                            {stat.label}
+                                        </p>
+                                        <p className="text-xl font-black">
+                                            {stat.value}
+                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -167,7 +188,8 @@ export default function ServeOrders({ orders }: Props) {
                                 No orders ready to serve
                             </p>
                             <p className="text-sm text-gray-500">
-                                New orders will appear here once the kitchen marks them ready.
+                                New orders will appear here once the kitchen
+                                marks them ready.
                             </p>
                         </CardContent>
                     </Card>
@@ -178,7 +200,7 @@ export default function ServeOrders({ orders }: Props) {
                                 key={order.id}
                                 className="border-l-4 border-l-green-500 bg-green-50/40"
                             >
-                                <CardContent className="p-4 space-y-3">
+                                <CardContent className="space-y-3 p-4">
                                     {/* Header */}
                                     <div className="flex items-center justify-between gap-2">
                                         <div>
@@ -187,10 +209,11 @@ export default function ServeOrders({ orders }: Props) {
                                                     ? `Order #${order.order_number}`
                                                     : `Order #${order.id}`}
                                             </p>
-                                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                                            <p className="flex items-center gap-1 text-xs text-gray-500">
                                                 <Table2 className="h-3 w-3" />
                                                 Table{' '}
-                                                {order.table?.table_number ?? 'Unknown'}
+                                                {order.table?.table_number ??
+                                                    'Unknown'}
                                             </p>
                                         </div>
                                         <Badge className="bg-green-600 text-white">
@@ -218,7 +241,8 @@ export default function ServeOrders({ orders }: Props) {
                                                 className="flex items-center justify-between rounded-md border border-green-100 bg-white px-3 py-2"
                                             >
                                                 <span className="text-sm font-medium">
-                                                    {item.menu_item?.name ?? 'Item'}
+                                                    {item.menu_item?.name ??
+                                                        'Item'}
                                                 </span>
                                                 <Badge variant="secondary">
                                                     x{item.quantity}
@@ -229,18 +253,18 @@ export default function ServeOrders({ orders }: Props) {
 
                                     {/* Special Instructions */}
                                     {order.special_instructions && (
-                                        <div className="rounded-lg bg-amber-50 border border-amber-300 p-3">
-                                            <p className="text-xs font-bold text-amber-800">
+                                        <div className="rounded-lg border border-red-300 bg-red-50 p-3">
+                                            <p className="text-xs font-bold text-red-800">
                                                 📝 Instructions
                                             </p>
-                                            <p className="mt-1 text-xs text-amber-900 whitespace-pre-line">
+                                            <p className="mt-1 text-xs whitespace-pre-line text-red-900">
                                                 {order.special_instructions}
                                             </p>
                                         </div>
                                     )}
 
                                     {order.notes && (
-                                        <div className="rounded bg-yellow-50 p-2 text-xs text-yellow-800 border border-yellow-200">
+                                        <div className="rounded border border-yellow-200 bg-yellow-50 p-2 text-xs text-yellow-800">
                                             📝 {order.notes}
                                         </div>
                                     )}
@@ -248,31 +272,48 @@ export default function ServeOrders({ orders }: Props) {
                                     {/* Total + Complete */}
                                     <div className="flex items-center justify-between border-t pt-3">
                                         <div>
-                                            <p className="text-xs text-gray-500">Total</p>
+                                            <p className="text-xs text-gray-500">
+                                                Total
+                                            </p>
                                             <p className="font-black text-gray-900">
-                                                {Number(order.total_amount ?? 0).toFixed(2)} ETB
+                                                {Number(
+                                                    order.total_amount ?? 0,
+                                                ).toFixed(2)}{' '}
+                                                ETB
                                             </p>
                                         </div>
 
                                         {can('update serve') && (
                                             <Button
                                                 className="bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/25 hover:from-green-700 hover:to-emerald-700"
-                                                onClick={() => completeOrder(order)}
-                                                disabled={isProcessing === order.id}
+                                                onClick={() =>
+                                                    completeOrder(order)
+                                                }
+                                                disabled={
+                                                    isProcessing === order.id
+                                                }
                                             >
                                                 {isProcessing === order.id ? (
-                                                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Serving...</>
+                                                    <>
+                                                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />{' '}
+                                                        Serving...
+                                                    </>
                                                 ) : (
-                                                    <><Check className="h-4 w-4 mr-1" /> Serve</>
+                                                    <>
+                                                        <Check className="mr-1 h-4 w-4" />{' '}
+                                                        Serve
+                                                    </>
                                                 )}
                                             </Button>
                                         )}
                                     </div>
 
-                                    <p className="text-[10px] text-gray-400 flex items-center gap-1">
+                                    <p className="flex items-center gap-1 text-[10px] text-gray-400">
                                         <Clock className="h-3 w-3" />
                                         Ready since{' '}
-                                        {new Date(order.created_at).toLocaleTimeString('en-US', {
+                                        {new Date(
+                                            order.created_at,
+                                        ).toLocaleTimeString('en-US', {
                                             hour: 'numeric',
                                             minute: '2-digit',
                                         })}
@@ -288,7 +329,5 @@ export default function ServeOrders({ orders }: Props) {
 }
 
 ServeOrders.layout = {
-    breadcrumbs: [
-        { title: 'Serve Orders', href: '/serve' },
-    ],
+    breadcrumbs: [{ title: 'Serve Orders', href: '/serve' }],
 };

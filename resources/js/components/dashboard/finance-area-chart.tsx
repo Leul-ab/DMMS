@@ -35,12 +35,12 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
                     >
                         <stop
                             offset="5%"
-                            stopColor="#f97316"
+                            stopColor="#ef4444"
                             stopOpacity={0.35}
                         />
                         <stop
                             offset="95%"
-                            stopColor="#f97316"
+                            stopColor="#ef4444"
                             stopOpacity={0}
                         />
                     </linearGradient>
@@ -48,7 +48,7 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
 
                 <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#fed7aa"
+                    stroke="#fecaca"
                     vertical={false}
                 />
 
@@ -78,7 +78,7 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
                     labelStyle={{ fontWeight: 700, color: '#44403c' }}
                     contentStyle={{
                         borderRadius: 12,
-                        border: '1px solid #fed7aa',
+                        border: '1px solid #fecaca',
                         boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                     }}
                 />
@@ -86,10 +86,10 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
                 <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#f97316"
+                    stroke="#ef4444"
                     strokeWidth={2.5}
                     fill="url(#revenueGradient)"
-                    activeDot={{ r: 5, fill: '#f97316' }}
+                    activeDot={{ r: 5, fill: '#ef4444' }}
                 />
             </AreaChart>
         </ResponsiveContainer>

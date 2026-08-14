@@ -96,7 +96,7 @@ const statusLabels: Record<string, string> = {
 
 const paymentColors: Record<string, string> = {
     unpaid: 'bg-yellow-100 text-yellow-800',
-    pending: 'bg-orange-100 text-orange-800',
+    pending: 'bg-red-100 text-red-800',
     paid: 'bg-green-100 text-green-800',
 };
 
@@ -358,7 +358,7 @@ export default function OrdersIndex({ orders, tables, menuItems }: Props) {
                                             null && (
                                             <Badge
                                                 variant="outline"
-                                                className="bg-orange-50 text-orange-800"
+                                                className="bg-red-50 text-red-800"
                                             >
                                                 <Clock className="mr-1 size-3" />
                                                 Queue:{' '}
@@ -439,16 +439,16 @@ export default function OrdersIndex({ orders, tables, menuItems }: Props) {
 
                                     {/* Special Instructions */}
                                     {order.special_instructions && (
-                                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                                             <div className="flex gap-2">
-                                                <FileText className="size-4 text-amber-700" />
+                                                <FileText className="size-4 text-red-700" />
 
                                                 <div>
-                                                    <p className="text-sm font-semibold text-amber-900">
+                                                    <p className="text-sm font-semibold text-red-900">
                                                         Additional Instructions
                                                     </p>
 
-                                                    <p className="mt-1 text-sm whitespace-pre-line text-amber-800">
+                                                    <p className="mt-1 text-sm whitespace-pre-line text-red-800">
                                                         {
                                                             order.special_instructions
                                                         }

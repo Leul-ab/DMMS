@@ -165,7 +165,7 @@ function getStatusColor(status: string): string {
         case 'confirmed':
             return 'bg-blue-500';
         case 'preparing':
-            return 'bg-orange-500';
+            return 'bg-red-500';
         case 'ready':
             return 'bg-purple-500';
         case 'served':
@@ -220,8 +220,8 @@ function formatTimeOnly(date: Date): string {
 
 // Single consistent progress-bar colour used for *every* order.
 // Only the width changes — never the colour.
-const PROGRESS_COLOR = 'bg-orange-500';
-const PROGRESS_BG = 'bg-orange-100';
+const PROGRESS_COLOR = 'bg-red-500';
+const PROGRESS_BG = 'bg-red-100';
 
 function ProgressBar({ percentage }: { percentage: number }) {
     return (
@@ -544,8 +544,8 @@ export default function MyOrderView({
                 <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-4">
                     {/* Restaurant Logo */}
                     <Link href={menuPath} className="group">
-                        <h1 className="text-2xl font-black tracking-tight transition group-hover:text-orange-600">
-                            DINE<span className="text-orange-500">.</span>
+                        <h1 className="text-2xl font-black tracking-tight transition group-hover:text-red-600">
+                            DINE<span className="text-red-500">.</span>
                         </h1>
                         <p className="text-xs font-medium tracking-widest text-gray-500 uppercase">
                             Digital Menu
@@ -555,8 +555,8 @@ export default function MyOrderView({
                     {/* Table Information + Menu Button */}
                     <div className="flex items-center gap-3">
                         <div className="flex items-center">
-                            <div className="flex items-center gap-3 rounded-full bg-orange-50 px-4 py-2">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
+                            <div className="flex items-center gap-3 rounded-full bg-red-50 px-4 py-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white">
                                     {table.table_number}
                                 </div>
                                 <div className="hidden sm:block">
@@ -581,7 +581,7 @@ export default function MyOrderView({
             <main className="mx-auto max-w-3xl px-5 py-12">
                 {/* Page Header */}
                 <div className="mb-10 text-center">
-                    <p className="font-semibold tracking-widest text-orange-500 uppercase">
+                    <p className="font-semibold tracking-widest text-red-500 uppercase">
                         Order Tracking
                     </p>
                     <h1 className="mt-2 text-4xl font-black sm:text-5xl">
@@ -595,7 +595,7 @@ export default function MyOrderView({
                 {/* ================= NO ORDER ================= */}
                 {orders.length === 0 && (
                     <div className="rounded-3xl border border-gray-100 bg-white p-10 text-center shadow-sm">
-                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-4xl">
                             🍽️
                         </div>
                         <h2 className="mt-6 text-2xl font-black">
@@ -606,7 +606,7 @@ export default function MyOrderView({
                         </p>
                         <Link
                             href={`${menuPath}?table=${table.table_number}`}
-                            className="mt-7 inline-block rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-7 py-4 font-bold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                            className="mt-7 inline-block rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-7 py-4 font-bold text-white shadow-lg shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98]"
                         >
                             Browse Menu →
                         </Link>
@@ -680,7 +680,7 @@ export default function MyOrderView({
                                                 <span
                                                     className={`h-3 w-3 rounded-full ${getStatusColor(o.status)}`}
                                                 ></span>
-                                                <span className="rounded-full bg-orange-500 px-4 py-1.5 text-sm font-black text-white capitalize">
+                                                <span className="rounded-full bg-red-500 px-4 py-1.5 text-sm font-black text-white capitalize">
                                                     {o.status}{' '}
                                                     {getStatusEmoji(o.status)}
                                                 </span>
@@ -702,7 +702,7 @@ export default function MyOrderView({
                                         {/* Estimated Preparation Time - queue-based cumulative time */}
                                         {queuePrepTime && (
                                             <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                                                <Clock className="h-4 w-4 text-orange-500" />
+                                                <Clock className="h-4 w-4 text-red-500" />
                                                 <span>
                                                     <strong className="text-gray-700">
                                                         Estimated Wait:
@@ -761,7 +761,7 @@ export default function MyOrderView({
                                                 onClick={() =>
                                                     setExpandedOrderId(o.id)
                                                 }
-                                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-orange-200 bg-white px-6 py-3 font-black text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-200 bg-white px-6 py-3 font-black text-red-600 transition hover:bg-red-50 active:scale-[0.98]"
                                             >
                                                 <ChevronDown className="h-4 w-4" />
                                                 View Details
@@ -859,7 +859,7 @@ export default function MyOrderView({
                                                 </div>
                                                 <div className="flex items-center justify-between text-lg font-black">
                                                     <span>Total</span>
-                                                    <span className="text-orange-500">
+                                                    <span className="text-red-500">
                                                         {totalAmount(o).toFixed(
                                                             2,
                                                         )}{' '}
@@ -870,12 +870,12 @@ export default function MyOrderView({
 
                                             {/* Special Instructions */}
                                             {o.special_instructions && (
-                                                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                                                    <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800">
+                                                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+                                                    <h3 className="flex items-center gap-2 text-sm font-bold text-red-800">
                                                         <span>📝</span>
                                                         Additional Instructions
                                                     </h3>
-                                                    <p className="mt-2 text-sm whitespace-pre-line text-amber-900">
+                                                    <p className="mt-2 text-sm whitespace-pre-line text-red-900">
                                                         {o.special_instructions}
                                                     </p>
                                                 </div>
@@ -883,7 +883,7 @@ export default function MyOrderView({
 
                                             {/* Payment section for completed orders */}
                                             {isCompleted && (
-                                                <div className="mt-6 rounded-3xl border border-orange-100 bg-orange-50 p-5">
+                                                <div className="mt-6 rounded-3xl border border-red-100 bg-red-50 p-5">
                                                     <h3 className="text-lg font-black">
                                                         Payment
                                                     </h3>
@@ -917,9 +917,9 @@ export default function MyOrderView({
                                                                                     key,
                                                                                 )
                                                                             }
-                                                                            className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/50 active:scale-[0.98]"
+                                                                            className="flex items-center gap-3 rounded-2xl border-2 border-gray-200 bg-white p-4 text-left transition-all duration-200 hover:border-red-300 hover:bg-red-50/50 active:scale-[0.98]"
                                                                         >
-                                                                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-2xl">
+                                                                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 text-2xl">
                                                                                 {
                                                                                     account.icon
                                                                                 }
@@ -1008,9 +1008,9 @@ export default function MyOrderView({
                                                                             true,
                                                                         );
                                                                     }}
-                                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-orange-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
+                                                                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-400 to-red-500 px-6 py-3 font-black text-white shadow-lg shadow-red-500/25 transition hover:from-red-500 hover:to-red-600 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98]"
                                                                 >
-                                                                    <Star className="size-4 fill-amber-200" />
+                                                                    <Star className="size-4 fill-red-200" />
                                                                     Rate Overall
                                                                     Service
                                                                 </button>
@@ -1072,7 +1072,7 @@ export default function MyOrderView({
                                                                 : o.id,
                                                         )
                                                     }
-                                                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-orange-200 bg-white px-4 py-2 text-sm font-bold text-orange-600 transition hover:bg-orange-50 active:scale-[0.98]"
+                                                    className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50 active:scale-[0.98]"
                                                 >
                                                     <ChevronUp className="h-3.5 w-3.5" />
                                                     Hide Details
@@ -1094,7 +1094,7 @@ export default function MyOrderView({
                             <Link
                                 key={orderActionLabel}
                                 href={orderActionHref}
-                                className="block w-full animate-in rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-orange-500/25 transition-all duration-300 fill-mode-both fade-in slide-in-from-bottom-2 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"
+                                className="block w-full animate-in rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 text-center font-black text-white shadow-lg shadow-red-500/25 transition-all duration-300 fill-mode-both fade-in slide-in-from-bottom-2 hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98]"
                             >
                                 {orderActionLabel}
                             </Link>
@@ -1123,7 +1123,7 @@ export default function MyOrderView({
                         <div className="space-y-5">
                             {/* Payment Method Icon & Name */}
                             <div className="flex flex-col items-center justify-center gap-2">
-                                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-3xl">
+                                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-3xl">
                                     {
                                         paymentAccounts[selectedPaymentMethod]
                                             .icon
@@ -1138,7 +1138,7 @@ export default function MyOrderView({
                             </div>
 
                             {/* Account Number */}
-                            <div className="rounded-2xl border-2 border-dashed border-orange-200 bg-orange-50 p-4 text-center">
+                            <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50 p-4 text-center">
                                 <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">
                                     Account Number
                                 </p>
@@ -1155,7 +1155,7 @@ export default function MyOrderView({
                                 <p className="text-sm font-semibold text-gray-500">
                                     Amount
                                 </p>
-                                <p className="text-lg font-black text-orange-500">
+                                <p className="text-lg font-black text-red-500">
                                     {totalAmount(
                                         paymentOrder ?? ({} as Order),
                                     ).toFixed(2)}{' '}
@@ -1171,7 +1171,7 @@ export default function MyOrderView({
                                     isSendingVerification ||
                                     hasVerificationBeenSent
                                 }
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-3.5 font-black text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98] disabled:opacity-60"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-3.5 font-black text-white shadow-lg shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98] disabled:opacity-60"
                             >
                                 {isSendingVerification ? (
                                     <>
@@ -1223,7 +1223,7 @@ export default function MyOrderView({
             <footer className="mt-12 border-t border-gray-200 bg-white">
                 <div className="mx-auto max-w-5xl px-5 py-8 text-center">
                     <p className="font-black">
-                        DINE<span className="text-orange-500">.</span>
+                        DINE<span className="text-red-500">.</span>
                     </p>
                     <p className="mt-2 text-sm text-gray-500">
                         Thank you for dining with us.

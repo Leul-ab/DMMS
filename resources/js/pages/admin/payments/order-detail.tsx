@@ -1,5 +1,16 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Printer, CheckCircle2, Clock, Hash, User, Table2, CreditCard, Wallet, Receipt } from 'lucide-react';
+import {
+    ArrowLeft,
+    Printer,
+    CheckCircle2,
+    Clock,
+    Hash,
+    User,
+    Table2,
+    CreditCard,
+    Wallet,
+    Receipt,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -84,18 +95,18 @@ export default function PaymentOrderDetail({ order }: Props) {
         const diffMins = Math.floor(diffMs / 60000);
 
         if (diffMins < 1) {
-return 'Just now';
-}
+            return 'Just now';
+        }
 
         if (diffMins < 60) {
-return `${diffMins} min ago`;
-}
+            return `${diffMins} min ago`;
+        }
 
         const diffHours = Math.floor(diffMins / 60);
 
         if (diffHours < 24) {
-return `${diffHours}h ago`;
-}
+            return `${diffHours}h ago`;
+        }
 
         return date.toLocaleDateString();
     };
@@ -113,112 +124,170 @@ return `${diffHours}h ago`;
                 <div className="flex items-center justify-between">
                     <Link
                         href="/admin/payments/orders"
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                        className="flex items-center gap-2 text-sm text-gray-600 transition-colors hover:text-gray-900"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Back to Orders
                     </Link>
                     {order.payment?.payment_method && (
-                        <Button variant="outline" size="sm" onClick={handlePrint}>
-                            <Printer className="h-4 w-4 mr-2" />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handlePrint}
+                        >
+                            <Printer className="mr-2 h-4 w-4" />
                             Print Receipt
                         </Button>
                     )}
                 </div>
 
                 {/* Order Detail Card */}
-                <div className="max-w-2xl mx-auto w-full">
+                <div className="mx-auto w-full max-w-2xl">
                     <Card className="shadow-lg">
                         <CardContent className="p-0">
                             {/* Receipt Header */}
-                            <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-center py-8 px-6 rounded-t-xl">
-                                <Receipt className="h-10 w-10 mx-auto mb-3 opacity-80" />
-                                <p className="text-2xl font-black tracking-wider font-mono">
+                            <div className="rounded-t-xl bg-gradient-to-r from-red-500 to-red-600 px-6 py-8 text-center text-white">
+                                <Receipt className="mx-auto mb-3 h-10 w-10 opacity-80" />
+                                <p className="font-mono text-2xl font-black tracking-wider">
                                     {order.order_number}
                                 </p>
-                                <p className="text-orange-100 text-sm mt-1">
-                                    {new Date(order.created_at).toLocaleString()}
+                                <p className="mt-1 text-sm text-red-100">
+                                    {new Date(
+                                        order.created_at,
+                                    ).toLocaleString()}
                                 </p>
                             </div>
 
-                            <div className="p-6 space-y-6">
+                            <div className="space-y-6 p-6">
                                 {/* Order Info Grid */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="rounded-lg bg-gray-50 p-4">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                        <div className="mb-1 flex items-center gap-2 text-gray-500">
                                             <Table2 className="h-4 w-4" />
-                                            <span className="text-xs font-semibold uppercase tracking-wider">Table</span>
+                                            <span className="text-xs font-semibold tracking-wider uppercase">
+                                                Table
+                                            </span>
                                         </div>
                                         <p className="text-lg font-bold">
-                                            {order.table ? `Table ${order.table.table_number}` : '—'}
+                                            {order.table
+                                                ? `Table ${order.table.table_number}`
+                                                : '—'}
                                         </p>
                                     </div>
                                     <div className="rounded-lg bg-gray-50 p-4">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                        <div className="mb-1 flex items-center gap-2 text-gray-500">
                                             <Clock className="h-4 w-4" />
-                                            <span className="text-xs font-semibold uppercase tracking-wider">Time</span>
+                                            <span className="text-xs font-semibold tracking-wider uppercase">
+                                                Time
+                                            </span>
                                         </div>
-                                        <p className="text-lg font-bold">{timeAgo(order.created_at)}</p>
+                                        <p className="text-lg font-bold">
+                                            {timeAgo(order.created_at)}
+                                        </p>
                                     </div>
                                     <div className="rounded-lg bg-gray-50 p-4">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                        <div className="mb-1 flex items-center gap-2 text-gray-500">
                                             <Hash className="h-4 w-4" />
-                                            <span className="text-xs font-semibold uppercase tracking-wider">Order Status</span>
+                                            <span className="text-xs font-semibold tracking-wider uppercase">
+                                                Order Status
+                                            </span>
                                         </div>
-                                        <Badge className={`${orderStatusColors[order.status] || 'bg-gray-500'} mt-1`}>
+                                        <Badge
+                                            className={`${orderStatusColors[order.status] || 'bg-gray-500'} mt-1`}
+                                        >
                                             {order.status}
                                         </Badge>
                                     </div>
                                     <div className="rounded-lg bg-gray-50 p-4">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-1">
+                                        <div className="mb-1 flex items-center gap-2 text-gray-500">
                                             <CreditCard className="h-4 w-4" />
-                                            <span className="text-xs font-semibold uppercase tracking-wider">Payment Status</span>
+                                            <span className="text-xs font-semibold tracking-wider uppercase">
+                                                Payment Status
+                                            </span>
                                         </div>
-                                        <Badge className={`${paymentStatusColors[order.payment_status || 'pending'] || 'bg-gray-500'} mt-1`}>
-                                            {paymentStatusLabels[order.payment_status || 'pending'] || 'Pending'}
+                                        <Badge
+                                            className={`${paymentStatusColors[order.payment_status || 'pending'] || 'bg-gray-500'} mt-1`}
+                                        >
+                                            {paymentStatusLabels[
+                                                order.payment_status ||
+                                                    'pending'
+                                            ] || 'Pending'}
                                         </Badge>
                                     </div>
                                 </div>
 
                                 {/* Customer Info */}
-                                {(order.customer?.name || order.customer_name) && (
+                                {(order.customer?.name ||
+                                    order.customer_name) && (
                                     <div className="rounded-lg bg-gray-50 p-4">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-2">
+                                        <div className="mb-2 flex items-center gap-2 text-gray-500">
                                             <User className="h-4 w-4" />
-                                            <span className="text-xs font-semibold uppercase tracking-wider">Customer</span>
+                                            <span className="text-xs font-semibold tracking-wider uppercase">
+                                                Customer
+                                            </span>
                                         </div>
-                                        <p className="font-bold">{order.customer?.name || order.customer_name}</p>
+                                        <p className="font-bold">
+                                            {order.customer?.name ||
+                                                order.customer_name}
+                                        </p>
                                         {order.customer?.customer_code && (
-                                            <p className="text-sm text-gray-500">Code: {order.customer.customer_code}</p>
+                                            <p className="text-sm text-gray-500">
+                                                Code:{' '}
+                                                {order.customer.customer_code}
+                                            </p>
                                         )}
                                         {order.customer_phone && (
-                                            <p className="text-sm text-gray-500">{order.customer_phone}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {order.customer_phone}
+                                            </p>
                                         )}
                                     </div>
                                 )}
 
                                 {/* Order Items */}
                                 <div>
-                                    <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                        <Receipt className="h-4 w-4 text-orange-500" />
+                                    <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-gray-900">
+                                        <Receipt className="h-4 w-4 text-red-500" />
                                         Order Items
                                     </h3>
                                     <div className="space-y-2">
                                         {order.order_items?.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between rounded-lg border border-gray-100 p-3 hover:bg-gray-50 transition-colors">
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     {item.menu_item?.image ? (
-                                                        <img src={`/storage/${item.menu_item.image}`} alt={item.menu_item.name} className="h-10 w-10 rounded-lg object-cover" />
+                                                        <img
+                                                            src={`/storage/${item.menu_item.image}`}
+                                                            alt={
+                                                                item.menu_item
+                                                                    .name
+                                                            }
+                                                            className="h-10 w-10 rounded-lg object-cover"
+                                                        />
                                                     ) : (
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-50 text-lg">🍽️</div>
+                                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-lg">
+                                                            🍽️
+                                                        </div>
                                                     )}
                                                     <div>
-                                                        <p className="font-medium text-sm text-gray-900">{item.menu_item?.name || 'Item'}</p>
-                                                        <p className="text-xs text-gray-500">× {item.quantity}</p>
+                                                        <p className="text-sm font-medium text-gray-900">
+                                                            {item.menu_item
+                                                                ?.name ||
+                                                                'Item'}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            × {item.quantity}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <p className="font-bold text-sm">
-                                                    {(Number(item.price) * item.quantity).toFixed(2)} ETB
+                                                <p className="text-sm font-bold">
+                                                    {(
+                                                        Number(item.price) *
+                                                        item.quantity
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
                                                 </p>
                                             </div>
                                         ))}
@@ -227,12 +296,12 @@ return `${diffHours}h ago`;
 
                                 {/* Special Instructions */}
                                 {order.special_instructions && (
-                                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                                        <p className="text-sm font-bold text-amber-800 flex items-center gap-2">
+                                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                                        <p className="flex items-center gap-2 text-sm font-bold text-red-800">
                                             <span>📝</span>
                                             Additional Instructions
                                         </p>
-                                        <p className="mt-1 whitespace-pre-line text-sm text-amber-900">
+                                        <p className="mt-1 text-sm whitespace-pre-line text-red-900">
                                             {order.special_instructions}
                                         </p>
                                     </div>
@@ -244,34 +313,77 @@ return `${diffHours}h ago`;
                                 {/* Totals */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-500">Subtotal</span>
+                                        <span className="text-gray-500">
+                                            Subtotal
+                                        </span>
                                         <span className="font-medium">
-                                            {order.payment ? Number(order.payment.subtotal).toFixed(2) : Number(order.total_amount).toFixed(2)} ETB
+                                            {order.payment
+                                                ? Number(
+                                                      order.payment.subtotal,
+                                                  ).toFixed(2)
+                                                : Number(
+                                                      order.total_amount,
+                                                  ).toFixed(2)}{' '}
+                                            ETB
                                         </span>
                                     </div>
                                     {order.payment && (
                                         <>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">Tax</span>
-                                                <span className="font-medium">{Number(order.payment.tax).toFixed(2)} ETB</span>
+                                                <span className="text-gray-500">
+                                                    Tax
+                                                </span>
+                                                <span className="font-medium">
+                                                    {Number(
+                                                        order.payment.tax,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </span>
                                             </div>
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-gray-500">Service Charge</span>
-                                                <span className="font-medium">{Number(order.payment.service_charge).toFixed(2)} ETB</span>
+                                                <span className="text-gray-500">
+                                                    Service Charge
+                                                </span>
+                                                <span className="font-medium">
+                                                    {Number(
+                                                        order.payment
+                                                            .service_charge,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </span>
                                             </div>
-                                            {Number(order.payment.discount) > 0 && (
+                                            {Number(order.payment.discount) >
+                                                0 && (
                                                 <div className="flex justify-between text-sm">
-                                                    <span className="text-gray-500">Discount</span>
-                                                    <span className="font-medium text-green-600">-{Number(order.payment.discount).toFixed(2)} ETB</span>
+                                                    <span className="text-gray-500">
+                                                        Discount
+                                                    </span>
+                                                    <span className="font-medium text-green-600">
+                                                        -
+                                                        {Number(
+                                                            order.payment
+                                                                .discount,
+                                                        ).toFixed(2)}{' '}
+                                                        ETB
+                                                    </span>
                                                 </div>
                                             )}
                                         </>
                                     )}
                                     <div className="border-t border-gray-200 pt-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-base font-bold text-gray-900">Total</span>
-                                            <span className="text-2xl font-black text-orange-600">
-                                                {order.payment ? Number(order.payment.amount).toFixed(2) : Number(order.total_amount).toFixed(2)} ETB
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-base font-bold text-gray-900">
+                                                Total
+                                            </span>
+                                            <span className="text-2xl font-black text-red-600">
+                                                {order.payment
+                                                    ? Number(
+                                                          order.payment.amount,
+                                                      ).toFixed(2)
+                                                    : Number(
+                                                          order.total_amount,
+                                                      ).toFixed(2)}{' '}
+                                                ETB
                                             </span>
                                         </div>
                                     </div>
@@ -283,19 +395,42 @@ return `${diffHours}h ago`;
                                         <div className="border-t border-dashed border-gray-200" />
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="rounded-lg bg-gray-50 p-3">
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Payment Method</p>
+                                                <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                                    Payment Method
+                                                </p>
                                                 <p className="mt-1 font-bold capitalize">
-                                                    {order.payment.payment_method ? (paymentMethods[order.payment.payment_method] || order.payment.payment_method) : '—'}
+                                                    {order.payment
+                                                        .payment_method
+                                                        ? paymentMethods[
+                                                              order.payment
+                                                                  .payment_method
+                                                          ] ||
+                                                          order.payment
+                                                              .payment_method
+                                                        : '—'}
                                                 </p>
                                             </div>
                                             <div className="rounded-lg bg-gray-50 p-3">
-                                                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cashier</p>
-                                                <p className="mt-1 font-bold">{order.payment.cashier?.name || '—'}</p>
+                                                <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                                    Cashier
+                                                </p>
+                                                <p className="mt-1 font-bold">
+                                                    {order.payment.cashier
+                                                        ?.name || '—'}
+                                                </p>
                                             </div>
-                                            {order.payment.transaction_reference && (
-                                                <div className="rounded-lg bg-gray-50 p-3 col-span-2">
-                                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Transaction Reference</p>
-                                                    <p className="mt-1 font-mono text-sm font-bold">{order.payment.transaction_reference}</p>
+                                            {order.payment
+                                                .transaction_reference && (
+                                                <div className="col-span-2 rounded-lg bg-gray-50 p-3">
+                                                    <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                                        Transaction Reference
+                                                    </p>
+                                                    <p className="mt-1 font-mono text-sm font-bold">
+                                                        {
+                                                            order.payment
+                                                                .transaction_reference
+                                                        }
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>

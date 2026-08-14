@@ -67,9 +67,9 @@ export default function BranchSwitcher() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="group rounded-xl border border-orange-200/50 bg-orange-50/40 text-sidebar-accent-foreground data-[state=open]:bg-orange-100 data-[state=open]:text-black dark:data-[state=open]:text-white"
+                            className="group rounded-xl border border-red-200/50 bg-red-50/40 text-sidebar-accent-foreground data-[state=open]:bg-red-100 data-[state=open]:text-black dark:data-[state=open]:text-white"
                         >
-                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-orange-500 text-white">
+                            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-red-500 text-white">
                                 <Building2 className="size-4" />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
@@ -104,12 +104,12 @@ export default function BranchSwitcher() {
                                 onClick={() => handleSwitch(branch.id)}
                                 className="gap-2 p-2"
                             >
-                                <div className="flex size-6 items-center justify-center rounded-sm border border-orange-200 bg-orange-50">
-                                    <Building2 className="size-3.5 text-orange-500" />
+                                <div className="flex size-6 items-center justify-center rounded-sm border border-red-200 bg-red-50">
+                                    <Building2 className="size-3.5 text-red-500" />
                                 </div>
                                 {branch.name}
                                 {branch.id === activeBranch.id && (
-                                    <Check className="ml-auto size-4 text-orange-500" />
+                                    <Check className="ml-auto size-4 text-red-500" />
                                 )}
                             </DropdownMenuItem>
                         ))}

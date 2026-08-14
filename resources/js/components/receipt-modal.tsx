@@ -74,8 +74,8 @@ export function ReceiptModal({ open, onOpenChange, order }: Props) {
     const printRef = useRef<HTMLDivElement>(null);
 
     if (!order || !order.receipt) {
-return null;
-}
+        return null;
+    }
 
     const receipt = order.receipt;
     const subtotal = Number(receipt.subtotal || order.total_amount);
@@ -86,14 +86,14 @@ return null;
 
     const handlePrint = () => {
         if (!printRef.current) {
-return;
-}
+            return;
+        }
 
         const printWindow = window.open('', '_blank', 'width=800,height=600');
 
         if (!printWindow) {
-return;
-}
+            return;
+        }
 
         const content = printRef.current.innerHTML;
         printWindow.document.write(`
@@ -103,11 +103,11 @@ return;
                     <style>
                         body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #1a1a1a; }
                         .receipt { max-width: 500px; margin: 0 auto; }
-                        .header { text-align: center; border-bottom: 2px solid #f97316; padding-bottom: 20px; margin-bottom: 20px; }
+                        .header { text-align: center; border-bottom: 2px solid #e62727; padding-bottom: 20px; margin-bottom: 20px; }
                         .restaurant-name { font-size: 28px; font-weight: 900; margin: 0; }
-                        .restaurant-name span { color: #f97316; }
+                        .restaurant-name span { color: #e62727; }
                         .tagline { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: #666; margin-top: 4px; }
-                        .receipt-number { font-size: 14px; font-weight: 700; color: #f97316; margin-top: 8px; }
+                        .receipt-number { font-size: 14px; font-weight: 700; color: #e62727; margin-top: 8px; }
                         .section { margin-bottom: 20px; }
                         .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #666; margin-bottom: 8px; }
                         .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
@@ -134,13 +134,15 @@ return;
 
     const handleDownload = () => {
         if (!printRef.current) {
-return;
-}
+            return;
+        }
 
         const content = printRef.current.innerHTML;
         const blob = new Blob(
-            [`<html><head><title>Receipt ${receipt.receipt_number}</title></head><body>${content}</body></html>`],
-            { type: 'text/html' }
+            [
+                `<html><head><title>Receipt ${receipt.receipt_number}</title></head><body>${content}</body></html>`,
+            ],
+            { type: 'text/html' },
         );
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -165,46 +167,65 @@ return;
                     </DialogDescription>
                 </DialogHeader>
 
-                <div ref={printRef} className="rounded-xl border border-gray-200 bg-white p-6">
+                <div
+                    ref={printRef}
+                    className="rounded-xl border border-gray-200 bg-white p-6"
+                >
                     {/* Restaurant Header */}
                     <div className="text-center">
                         <h2 className="text-2xl font-black">
-                            DINE<span className="text-orange-500">.</span>
+                            DINE<span className="text-red-500">.</span>
                         </h2>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+                        <p className="text-[10px] font-semibold tracking-[0.2em] text-gray-500 uppercase">
                             Digital Menu Restaurant
                         </p>
-                        <p className="mt-1 text-xs text-gray-500">Addis Ababa, Ethiopia</p>
-                        <p className="mt-1 text-xs text-gray-500">+251 9X XXX XXXX</p>
-                        <p className="mt-3 inline-block rounded-full bg-orange-100 px-3 py-1 text-xs font-bold text-orange-700">
+                        <p className="mt-1 text-xs text-gray-500">
+                            Addis Ababa, Ethiopia
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                            +251 9X XXX XXXX
+                        </p>
+                        <p className="mt-3 inline-block rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
                             {receipt.receipt_number}
                         </p>
                     </div>
 
                     {/* Order Info */}
                     <div className="mt-5 border-t border-dashed border-gray-200 pt-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Order Information</p>
+                        <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                            Order Information
+                        </p>
                         <div className="mt-2 space-y-1.5">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Order ID</span>
-                                <span className="font-semibold">{order.order_number}</span>
+                                <span className="font-semibold">
+                                    {order.order_number}
+                                </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Customer</span>
-                                <span className="font-semibold">{order.customer_name || 'Walk-in'}</span>
+                                <span className="font-semibold">
+                                    {order.customer_name || 'Walk-in'}
+                                </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Table</span>
                                 <span className="font-semibold">
-                                    {order.table ? `Table ${order.table.table_number}` : '—'}
+                                    {order.table
+                                        ? `Table ${order.table.table_number}`
+                                        : '—'}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Date</span>
                                 <span className="font-semibold">
                                     {receipt.generated_at
-                                        ? new Date(receipt.generated_at).toLocaleString()
-                                        : new Date(order.created_at).toLocaleString()}
+                                        ? new Date(
+                                              receipt.generated_at,
+                                          ).toLocaleString()
+                                        : new Date(
+                                              order.created_at,
+                                          ).toLocaleString()}
                                 </span>
                             </div>
                         </div>
@@ -212,18 +233,24 @@ return;
 
                     {/* Payment Info */}
                     <div className="mt-4 border-t border-dashed border-gray-200 pt-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Payment Information</p>
+                        <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                            Payment Information
+                        </p>
                         <div className="mt-2 space-y-1.5">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-500">Method</span>
                                 <span className="font-semibold capitalize">
                                     {receipt.payment_method
-                                        ? (paymentMethodLabels[receipt.payment_method] || receipt.payment_method)
+                                        ? paymentMethodLabels[
+                                              receipt.payment_method
+                                          ] || receipt.payment_method
                                         : '—'}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Transaction No.</span>
+                                <span className="text-gray-500">
+                                    Transaction No.
+                                </span>
                                 <span className="font-mono text-xs font-semibold">
                                     {receipt.transaction_number || '—'}
                                 </span>
@@ -236,16 +263,22 @@ return;
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Verified By</span>
+                                <span className="text-gray-500">
+                                    Verified By
+                                </span>
                                 <span className="font-semibold">
                                     {order.payment?.verifier?.name || '—'}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Verified At</span>
+                                <span className="text-gray-500">
+                                    Verified At
+                                </span>
                                 <span className="font-semibold">
                                     {order.payment?.verified_at
-                                        ? new Date(order.payment.verified_at).toLocaleString()
+                                        ? new Date(
+                                              order.payment.verified_at,
+                                          ).toLocaleString()
                                         : '—'}
                                 </span>
                             </div>
@@ -254,26 +287,46 @@ return;
 
                     {/* Order Items */}
                     <div className="mt-4 border-t border-dashed border-gray-200 pt-4">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Order Items</p>
+                        <p className="text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                            Order Items
+                        </p>
                         <table className="mt-2 w-full text-sm">
                             <thead>
-                                <tr className="border-b border-gray-200 text-left text-[10px] uppercase tracking-wider text-gray-400">
-                                    <th className="py-1.5 pr-2 font-semibold">Item</th>
-                                    <th className="py-1.5 px-2 text-center font-semibold">Qty</th>
-                                    <th className="py-1.5 px-2 text-right font-semibold">Price</th>
-                                    <th className="py-1.5 pl-2 text-right font-semibold">Total</th>
+                                <tr className="border-b border-gray-200 text-left text-[10px] tracking-wider text-gray-400 uppercase">
+                                    <th className="py-1.5 pr-2 font-semibold">
+                                        Item
+                                    </th>
+                                    <th className="px-2 py-1.5 text-center font-semibold">
+                                        Qty
+                                    </th>
+                                    <th className="px-2 py-1.5 text-right font-semibold">
+                                        Price
+                                    </th>
+                                    <th className="py-1.5 pl-2 text-right font-semibold">
+                                        Total
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {order.order_items.map((item) => (
-                                    <tr key={item.id} className="border-b border-gray-100">
-                                        <td className="py-2 pr-2 font-medium">{item.menu_item.name}</td>
-                                        <td className="py-2 px-2 text-center text-gray-500">{item.quantity}</td>
-                                        <td className="py-2 px-2 text-right text-gray-500">
+                                    <tr
+                                        key={item.id}
+                                        className="border-b border-gray-100"
+                                    >
+                                        <td className="py-2 pr-2 font-medium">
+                                            {item.menu_item.name}
+                                        </td>
+                                        <td className="px-2 py-2 text-center text-gray-500">
+                                            {item.quantity}
+                                        </td>
+                                        <td className="px-2 py-2 text-right text-gray-500">
                                             {Number(item.price).toFixed(2)}
                                         </td>
                                         <td className="py-2 pl-2 text-right font-semibold">
-                                            {(Number(item.price) * item.quantity).toFixed(2)}
+                                            {(
+                                                Number(item.price) *
+                                                item.quantity
+                                            ).toFixed(2)}
                                         </td>
                                     </tr>
                                 ))}
@@ -285,43 +338,61 @@ return;
                     <div className="mt-4 space-y-1.5 border-t border-dashed border-gray-200 pt-4 text-sm">
                         <div className="flex justify-between">
                             <span className="text-gray-500">Subtotal</span>
-                            <span className="font-semibold">{subtotal.toFixed(2)} ETB</span>
+                            <span className="font-semibold">
+                                {subtotal.toFixed(2)} ETB
+                            </span>
                         </div>
                         {tax > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Tax</span>
-                                <span className="font-semibold">{tax.toFixed(2)} ETB</span>
+                                <span className="font-semibold">
+                                    {tax.toFixed(2)} ETB
+                                </span>
                             </div>
                         )}
                         {serviceCharge > 0 && (
                             <div className="flex justify-between">
-                                <span className="text-gray-500">Service Charge</span>
-                                <span className="font-semibold">{serviceCharge.toFixed(2)} ETB</span>
+                                <span className="text-gray-500">
+                                    Service Charge
+                                </span>
+                                <span className="font-semibold">
+                                    {serviceCharge.toFixed(2)} ETB
+                                </span>
                             </div>
                         )}
                         {discount > 0 && (
                             <div className="flex justify-between">
                                 <span className="text-gray-500">Discount</span>
-                                <span className="font-semibold text-green-600">-{discount.toFixed(2)} ETB</span>
+                                <span className="font-semibold text-green-600">
+                                    -{discount.toFixed(2)} ETB
+                                </span>
                             </div>
                         )}
                         <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-black">
                             <span>Total</span>
-                            <span className="text-orange-500">{total.toFixed(2)} ETB</span>
+                            <span className="text-red-500">
+                                {total.toFixed(2)} ETB
+                            </span>
                         </div>
                     </div>
 
                     {/* Footer */}
                     <div className="mt-5 border-t border-dashed border-gray-200 pt-4 text-center">
-                        <p className="text-xs text-gray-500">Thank you for dining with us!</p>
+                        <p className="text-xs text-gray-500">
+                            Thank you for dining with us!
+                        </p>
                         <p className="mt-1 text-[10px] text-gray-400">
-                            This receipt was generated automatically after payment verification.
+                            This receipt was generated automatically after
+                            payment verification.
                         </p>
                     </div>
                 </div>
 
                 <DialogFooter className="gap-2 sm:justify-between">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         <X className="mr-2 size-4" />
                         Close
                     </Button>

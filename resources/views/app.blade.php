@@ -30,8 +30,8 @@
             }
         </style>
 
-        <link rel="icon" href="/maedlogo.png" type="image/png">
-        <link rel="apple-touch-icon" href="/maedlogo.png">
+        <link rel="icon" href="/mamaskitchen-logo.png" type="image/png">
+        <link rel="apple-touch-icon" href="/mamaskitchen-logo.png">
 
         @fonts
 

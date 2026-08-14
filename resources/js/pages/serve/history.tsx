@@ -54,7 +54,7 @@ export default function ServeHistory({ orders }: Props) {
         }
 
         return (
-            <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="mt-4 flex items-center justify-center gap-2">
                 {data.links.map((link, i) => (
                     <Button
                         key={i}
@@ -63,7 +63,9 @@ export default function ServeHistory({ orders }: Props) {
                         disabled={!link.url}
                         onClick={() => handlePageChange(link.url)}
                     >
-                        <span dangerouslySetInnerHTML={{ __html: link.label }} />
+                        <span
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
                     </Button>
                 ))}
             </div>
@@ -78,7 +80,7 @@ export default function ServeHistory({ orders }: Props) {
 
             <div className="flex h-full flex-1 flex-col gap-4 p-4">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div className="flex items-center gap-3">
                         <Button variant="outline" size="icon" asChild>
                             <Link href="/serve" title="Back to Serve">
@@ -87,8 +89,8 @@ export default function ServeHistory({ orders }: Props) {
                         </Button>
 
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                                <History className="h-7 w-7 text-orange-500" />
+                            <h1 className="flex items-center gap-2 text-2xl font-black text-gray-900">
+                                <History className="h-7 w-7 text-red-500" />
                                 Served History
                             </h1>
                             <p className="text-sm text-gray-500">
@@ -99,15 +101,19 @@ export default function ServeHistory({ orders }: Props) {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     <Card className="overflow-hidden">
-                        <CardContent className="p-4 flex items-center gap-3">
+                        <CardContent className="flex items-center gap-3 p-4">
                             <div className="rounded-lg bg-green-600 p-2.5">
                                 <CheckCircle2 className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-gray-500">Total Served</p>
-                                <p className="text-xl font-black">{totalServed}</p>
+                                <p className="text-xs font-medium text-gray-500">
+                                    Total Served
+                                </p>
+                                <p className="text-xl font-black">
+                                    {totalServed}
+                                </p>
                             </div>
                         </CardContent>
                     </Card>
@@ -131,14 +137,20 @@ export default function ServeHistory({ orders }: Props) {
                                 <tbody>
                                     {orders.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-4 py-16 text-center text-gray-500">
+                                            <td
+                                                colSpan={6}
+                                                className="px-4 py-16 text-center text-gray-500"
+                                            >
                                                 <Utensils className="mx-auto mb-2 h-8 w-8 text-gray-300" />
                                                 No served orders yet.
                                             </td>
                                         </tr>
                                     ) : (
                                         orders.data.map((order) => (
-                                            <tr key={order.id} className="border-b last:border-0 hover:bg-muted/40">
+                                            <tr
+                                                key={order.id}
+                                                className="border-b last:border-0 hover:bg-muted/40"
+                                            >
                                                 <td className="px-4 py-3 font-semibold">
                                                     {order.order_number
                                                         ? `#${order.order_number}`
@@ -147,35 +159,63 @@ export default function ServeHistory({ orders }: Props) {
                                                 <td className="px-4 py-3">
                                                     <span className="flex items-center gap-1.5">
                                                         <Table2 className="h-3.5 w-3.5 text-gray-400" />
-                                                        {order.table?.table_number ?? 'Unknown'}
+                                                        {order.table
+                                                            ?.table_number ??
+                                                            'Unknown'}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {order.customer_name ?? order.customer?.name ?? (
-                                                        <span className="text-gray-400">Walk-in</span>
-                                                    )}
+                                                    {order.customer_name ??
+                                                        order.customer
+                                                            ?.name ?? (
+                                                            <span className="text-gray-400">
+                                                                Walk-in
+                                                            </span>
+                                                        )}
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex flex-wrap gap-1">
-                                                        {order.order_items.map((item) => (
-                                                            <Badge key={item.id} variant="secondary">
-                                                                {item.menu_item?.name ?? 'Item'} ×{item.quantity}
-                                                            </Badge>
-                                                        ))}
+                                                        {order.order_items.map(
+                                                            (item) => (
+                                                                <Badge
+                                                                    key={
+                                                                        item.id
+                                                                    }
+                                                                    variant="secondary"
+                                                                >
+                                                                    {item
+                                                                        .menu_item
+                                                                        ?.name ??
+                                                                        'Item'}{' '}
+                                                                    ×
+                                                                    {
+                                                                        item.quantity
+                                                                    }
+                                                                </Badge>
+                                                            ),
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 font-bold">
-                                                    {Number(order.total_amount ?? 0).toFixed(2)} ETB
+                                                    {Number(
+                                                        order.total_amount ?? 0,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
                                                 </td>
                                                 <td className="px-4 py-3 text-gray-500">
                                                     {order.updated_at
-                                                        ? new Date(order.updated_at).toLocaleString('en-US', {
-                                                              month: 'short',
-                                                              day: 'numeric',
-                                                              year: 'numeric',
-                                                              hour: 'numeric',
-                                                              minute: '2-digit',
-                                                          })
+                                                        ? new Date(
+                                                              order.updated_at,
+                                                          ).toLocaleString(
+                                                              'en-US',
+                                                              {
+                                                                  month: 'short',
+                                                                  day: 'numeric',
+                                                                  year: 'numeric',
+                                                                  hour: 'numeric',
+                                                                  minute: '2-digit',
+                                                              },
+                                                          )
                                                         : '—'}
                                                 </td>
                                             </tr>

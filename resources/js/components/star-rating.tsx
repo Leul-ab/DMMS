@@ -28,8 +28,8 @@ export function StarRating({
 
     const handleClick = (rating: number) => {
         if (readOnly || !onChange) {
-return;
-}
+            return;
+        }
 
         onChange(rating);
     };
@@ -61,7 +61,7 @@ return;
                         <Star
                             className={`${sizeClasses[size]} transition-colors duration-150 ${
                                 isFilled
-                                    ? 'fill-amber-400 text-amber-400'
+                                    ? 'fill-red-400 text-red-400'
                                     : 'fill-stone-200 text-stone-200'
                             }`}
                         />

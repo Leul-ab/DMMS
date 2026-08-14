@@ -62,7 +62,7 @@ function DetailItem({
     return (
         <div className="flex items-start gap-3">
             <div className="rounded-lg bg-muted p-2">
-                <Icon className="h-4 w-4 text-orange-500" />
+                <Icon className="h-4 w-4 text-red-500" />
             </div>
 
             <div className="min-w-0">
@@ -196,7 +196,7 @@ export default function BranchShow({ branch }: Props) {
                     {stats.map((stat) => (
                         <Card key={stat.label}>
                             <CardContent className="flex items-center gap-4 p-6">
-                                <div className="rounded-lg bg-orange-100 p-3 text-orange-600">
+                                <div className="rounded-lg bg-red-100 p-3 text-red-600">
                                     <stat.icon className="h-5 w-5" />
                                 </div>
 

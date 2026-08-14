@@ -118,7 +118,8 @@ export default function AdminFeedbackIndex({
     const [menuItem, setMenuItem] = useState(filters.menu_item ?? 'all');
     const [sort, setSort] = useState(filters.sort ?? 'newest');
     const [perPage, setPerPage] = useState(filters.per_page ?? '10');
-    const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
+    const [selectedFeedback, setSelectedFeedback] =
+        useState<FeedbackItem | null>(null);
     const [loading, setLoading] = useState(false);
 
     const getQueryParams = () => ({
@@ -145,8 +146,8 @@ export default function AdminFeedbackIndex({
         const params = new URLSearchParams();
         Object.entries(getQueryParams()).forEach(([key, value]) => {
             if (value && value !== 'all') {
-params.append(key, value);
-}
+                params.append(key, value);
+            }
         });
         window.open(`/admin/feedback/export?${params.toString()}`, '_blank');
     };
@@ -173,45 +174,47 @@ params.append(key, value);
     };
 
     const timeAgo = (dateString: string) => {
-        const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000);
+        const seconds = Math.floor(
+            (Date.now() - new Date(dateString).getTime()) / 1000,
+        );
 
         if (seconds < 60) {
-return 'just now';
-}
+            return 'just now';
+        }
 
         const minutes = Math.floor(seconds / 60);
 
         if (minutes < 60) {
-return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-}
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        }
 
         const hours = Math.floor(minutes / 60);
 
         if (hours < 24) {
-return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-}
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        }
 
         const days = Math.floor(hours / 24);
 
         if (days < 7) {
-return `${days} day${days > 1 ? 's' : ''} ago`;
-}
+            return `${days} day${days > 1 ? 's' : ''} ago`;
+        }
 
         return formatDate(dateString);
     };
 
     const getCustomerName = (feedback: FeedbackItem) => {
         if (feedback.anonymous) {
-return 'Anonymous Customer';
-}
+            return 'Anonymous Customer';
+        }
 
         return feedback.customer?.name ?? 'Customer';
     };
 
     const getCustomerCode = (feedback: FeedbackItem) => {
         if (feedback.anonymous) {
-return '—';
-}
+            return '—';
+        }
 
         return feedback.customer?.customer_code ?? '—';
     };
@@ -226,8 +229,12 @@ return '—';
             .map((item) => item.menu_item.name)
             .join(', ');
 
-    const totalDistribution = distribution.reduce((sum, item) => sum + item.count, 0);
-    const fiveStarReviews = distribution.find((item) => item.stars === 5)?.count ?? 0;
+    const totalDistribution = distribution.reduce(
+        (sum, item) => sum + item.count,
+        0,
+    );
+    const fiveStarReviews =
+        distribution.find((item) => item.stars === 5)?.count ?? 0;
 
     return (
         <>
@@ -254,9 +261,13 @@ return '—';
                 {/* ================= ERROR BANNER ================= */}
                 {error && (
                     <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-                        <span className="text-xl" aria-hidden="true">⚠️</span>
+                        <span className="text-xl" aria-hidden="true">
+                            ⚠️
+                        </span>
                         <div>
-                            <p className="text-sm font-semibold text-red-700">Something went wrong</p>
+                            <p className="text-sm font-semibold text-red-700">
+                                Something went wrong
+                            </p>
                             <p className="mt-1 text-sm text-red-600">{error}</p>
                         </div>
                     </div>
@@ -272,21 +283,31 @@ return '—';
                             </p>
                         </CardHeader>
                         <CardContent className="p-4">
-                            <p className="text-3xl font-black">{analytics.totalReviews}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Reviews</p>
+                            <p className="text-3xl font-black">
+                                {analytics.totalReviews}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Reviews
+                            </p>
                         </CardContent>
                     </Card>
 
                     <Card className="overflow-hidden">
                         <CardHeader className="border-b bg-muted/30 pb-3">
                             <p className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-                                <Star className="h-4 w-4 text-amber-500" />
+                                <Star className="h-4 w-4 text-red-500" />
                                 Avg Overall Rating
                             </p>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center gap-2 p-4">
-                            <StarRating value={Math.round(analytics.overallRating)} readOnly size="sm" />
-                            <p className="text-3xl font-black">{analytics.overallRating.toFixed(1)} / 5</p>
+                            <StarRating
+                                value={Math.round(analytics.overallRating)}
+                                readOnly
+                                size="sm"
+                            />
+                            <p className="text-3xl font-black">
+                                {analytics.overallRating.toFixed(1)} / 5
+                            </p>
                         </CardContent>
                     </Card>
 
@@ -298,8 +319,12 @@ return '—';
                             </p>
                         </CardHeader>
                         <CardContent className="p-4">
-                            <p className="text-3xl font-black text-yellow-600">{fiveStarReviews}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Perfect ratings</p>
+                            <p className="text-3xl font-black text-yellow-600">
+                                {fiveStarReviews}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Perfect ratings
+                            </p>
                         </CardContent>
                     </Card>
 
@@ -311,8 +336,12 @@ return '—';
                             </p>
                         </CardHeader>
                         <CardContent className="p-4">
-                            <p className="text-3xl font-black text-purple-600">{analytics.todayReviews}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">Submitted today</p>
+                            <p className="text-3xl font-black text-purple-600">
+                                {analytics.todayReviews}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Submitted today
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -320,23 +349,34 @@ return '—';
                 {/* ================= RATING DISTRIBUTION ================= */}
                 <Card>
                     <CardHeader className="border-b">
-                        <h2 className="text-lg font-bold">Rating Distribution</h2>
+                        <h2 className="text-lg font-bold">
+                            Rating Distribution
+                        </h2>
                     </CardHeader>
                     <CardContent className="space-y-3 p-5">
                         {distribution.map((item) => (
-                            <div key={item.stars} className="flex items-center gap-3">
+                            <div
+                                key={item.stars}
+                                className="flex items-center gap-3"
+                            >
                                 <div className="flex w-24 items-center gap-1">
-                                    <span className="text-sm font-bold">{item.stars}</span>
-                                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                                    <span className="text-sm font-bold">
+                                        {item.stars}
+                                    </span>
+                                    <Star className="h-4 w-4 fill-red-400 text-red-400" />
                                 </div>
                                 <div className="h-6 flex-1 overflow-hidden rounded-full bg-muted">
                                     <div
-                                        className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+                                        className="h-full rounded-full bg-gradient-to-r from-red-400 to-red-500"
                                         style={{ width: `${item.percentage}%` }}
                                     />
                                 </div>
-                                <span className="w-16 text-right text-sm font-bold">{item.count}</span>
-                                <span className="w-14 text-right text-xs text-muted-foreground">{item.percentage}%</span>
+                                <span className="w-16 text-right text-sm font-bold">
+                                    {item.count}
+                                </span>
+                                <span className="w-14 text-right text-xs text-muted-foreground">
+                                    {item.percentage}%
+                                </span>
                             </div>
                         ))}
                         {totalDistribution === 0 && (
@@ -356,14 +396,16 @@ return '—';
 
                     <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                         <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                                onKeyDown={(e) =>
+                                    e.key === 'Enter' && applyFilters()
+                                }
                                 placeholder="Search customer, code, order, comment..."
-                                className="w-full rounded-md border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                                className="w-full rounded-md border bg-background py-2 pr-3 pl-9 text-sm outline-none focus:ring-2 focus:ring-primary"
                             />
                         </div>
 
@@ -398,7 +440,9 @@ return '—';
                         >
                             <option value="all">All Tables</option>
                             {tables.map((t) => (
-                                <option key={t.id} value={t.id}>Table {t.table_number}</option>
+                                <option key={t.id} value={t.id}>
+                                    Table {t.table_number}
+                                </option>
                             ))}
                         </select>
 
@@ -409,7 +453,9 @@ return '—';
                         >
                             <option value="all">All Waiters</option>
                             {waiters.map((w) => (
-                                <option key={w.id} value={w.id}>{w.name}</option>
+                                <option key={w.id} value={w.id}>
+                                    {w.name}
+                                </option>
                             ))}
                         </select>
 
@@ -420,7 +466,9 @@ return '—';
                         >
                             <option value="all">All Menu Items</option>
                             {menuItems.map((item) => (
-                                <option key={item.id} value={item.id}>{item.name}</option>
+                                <option key={item.id} value={item.id}>
+                                    {item.name}
+                                </option>
                             ))}
                         </select>
 
@@ -466,10 +514,15 @@ return '—';
                 ) : feedbacks.data.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
-                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-4xl">⭐</div>
-                            <h3 className="mt-5 text-lg font-semibold">No Customer Feedback Yet</h3>
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted text-4xl">
+                                ⭐
+                            </div>
+                            <h3 className="mt-5 text-lg font-semibold">
+                                No Customer Feedback Yet
+                            </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Customer reviews will appear here after completed orders are rated.
+                                Customer reviews will appear here after
+                                completed orders are rated.
                             </p>
                         </CardContent>
                     </Card>
@@ -479,42 +532,91 @@ return '—';
                             <table className="w-full text-left text-sm">
                                 <thead className="border-b bg-muted/40">
                                     <tr>
-                                        <th className="px-4 py-3 font-semibold">Customer</th>
-                                        <th className="px-4 py-3 font-semibold">Code</th>
-                                        <th className="px-4 py-3 font-semibold">Order ID</th>
-                                        <th className="px-4 py-3 font-semibold">Table</th>
-                                        <th className="px-4 py-3 font-semibold">Items</th>
-                                        <th className="px-4 py-3 font-semibold">Overall</th>
-                                        <th className="px-4 py-3 font-semibold">Comment</th>
-                                        <th className="px-4 py-3 font-semibold">Date</th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Customer
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Code
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Order ID
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Table
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Items
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Overall
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Comment
+                                        </th>
+                                        <th className="px-4 py-3 font-semibold">
+                                            Date
+                                        </th>
                                         <th className="px-4 py-3 font-semibold"></th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y">
                                     {feedbacks.data.map((feedback) => (
-                                        <tr key={feedback.id} className="transition-colors hover:bg-muted/30">
-                                            <td className="px-4 py-3 font-medium">{getCustomerName(feedback)}</td>
-                                            <td className="px-4 py-3 text-muted-foreground">{getCustomerCode(feedback)}</td>
+                                        <tr
+                                            key={feedback.id}
+                                            className="transition-colors hover:bg-muted/30"
+                                        >
+                                            <td className="px-4 py-3 font-medium">
+                                                {getCustomerName(feedback)}
+                                            </td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {getCustomerCode(feedback)}
+                                            </td>
                                             <td className="px-4 py-3">
-                                                <Badge variant="secondary">{feedback.order.order_number}</Badge>
+                                                <Badge variant="secondary">
+                                                    {
+                                                        feedback.order
+                                                            .order_number
+                                                    }
+                                                </Badge>
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
-                                                {feedback.order.table ? `Table ${feedback.order.table.table_number}` : 'N/A'}
+                                                {feedback.order.table
+                                                    ? `Table ${feedback.order.table.table_number}`
+                                                    : 'N/A'}
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground">
-                                                {feedback.order.order_items.length > 0
+                                                {feedback.order.order_items
+                                                    .length > 0
                                                     ? `${primaryItems(feedback)}${feedback.order.order_items.length > 2 ? ` +${feedback.order.order_items.length - 2}` : ''}`
                                                     : 'N/A'}
                                             </td>
-                                            <td className="px-4 py-3"><StarRating value={feedback.overall_rating} readOnly size="sm" /></td>
-                                            <td className="max-w-xs px-4 py-3 text-muted-foreground">
-                                                <span className="line-clamp-2">{feedback.comment ?? '—'}</span>
+                                            <td className="px-4 py-3">
+                                                <StarRating
+                                                    value={
+                                                        feedback.overall_rating
+                                                    }
+                                                    readOnly
+                                                    size="sm"
+                                                />
                                             </td>
-                                            <td className="px-4 py-3 text-muted-foreground">{formatDate(feedback.created_at)}</td>
+                                            <td className="max-w-xs px-4 py-3 text-muted-foreground">
+                                                <span className="line-clamp-2">
+                                                    {feedback.comment ?? '—'}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-muted-foreground">
+                                                {formatDate(
+                                                    feedback.created_at,
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3">
                                                 <button
                                                     type="button"
-                                                    onClick={() => setSelectedFeedback(feedback)}
+                                                    onClick={() =>
+                                                        setSelectedFeedback(
+                                                            feedback,
+                                                        )
+                                                    }
                                                     className="rounded-md p-2 text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
                                                 >
                                                     <Eye className="h-4 w-4" />
@@ -536,7 +638,14 @@ return '—';
                                 key={index}
                                 type="button"
                                 disabled={!link.url}
-                                onClick={() => link.url && router.get(link.url, {}, { preserveState: true })}
+                                onClick={() =>
+                                    link.url &&
+                                    router.get(
+                                        link.url,
+                                        {},
+                                        { preserveState: true },
+                                    )
+                                }
                                 className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
                                     link.active
                                         ? 'bg-primary text-primary-foreground'
@@ -549,33 +658,56 @@ return '—';
                 )}
 
                 {/* ================= FEEDBACK DETAIL DRAWER ================= */}
-                <Dialog open={!!selectedFeedback} onOpenChange={(open) => !open && setSelectedFeedback(null)}>
+                <Dialog
+                    open={!!selectedFeedback}
+                    onOpenChange={(open) => !open && setSelectedFeedback(null)}
+                >
                     <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                         {selectedFeedback && (
                             <>
                                 <DialogHeader>
-                                    <DialogTitle className="text-xl font-black">Feedback Details</DialogTitle>
+                                    <DialogTitle className="text-xl font-black">
+                                        Feedback Details
+                                    </DialogTitle>
                                     <DialogDescription>
-                                        Submitted {formatDateTime(selectedFeedback.created_at)} ({timeAgo(selectedFeedback.created_at)})
+                                        Submitted{' '}
+                                        {formatDateTime(
+                                            selectedFeedback.created_at,
+                                        )}{' '}
+                                        ({timeAgo(selectedFeedback.created_at)})
                                     </DialogDescription>
                                 </DialogHeader>
 
                                 <div className="space-y-5 py-4">
                                     {/* Customer Info */}
                                     <div className="rounded-xl border bg-muted/30 p-4">
-                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">Customer Information</h3>
+                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">
+                                            Customer Information
+                                        </h3>
                                         <div className="space-y-2">
                                             <p className="flex items-center gap-2 text-sm">
                                                 <User className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-semibold">{getCustomerName(selectedFeedback)}</span>
+                                                <span className="font-semibold">
+                                                    {getCustomerName(
+                                                        selectedFeedback,
+                                                    )}
+                                                </span>
                                             </p>
                                             <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Badge variant="outline">{getCustomerCode(selectedFeedback)}</Badge>
+                                                <Badge variant="outline">
+                                                    {getCustomerCode(
+                                                        selectedFeedback,
+                                                    )}
+                                                </Badge>
                                             </p>
-                                            {selectedFeedback.customer?.phone && (
+                                            {selectedFeedback.customer
+                                                ?.phone && (
                                                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                                     <Phone className="h-4 w-4" />
-                                                    {selectedFeedback.customer.phone}
+                                                    {
+                                                        selectedFeedback
+                                                            .customer.phone
+                                                    }
                                                 </p>
                                             )}
                                         </div>
@@ -583,20 +715,39 @@ return '—';
 
                                     {/* Order Info */}
                                     <div className="rounded-xl border bg-muted/30 p-4">
-                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">Order Information</h3>
+                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">
+                                            Order Information
+                                        </h3>
                                         <div className="space-y-2">
                                             <p className="flex items-center gap-2 text-sm">
-                                                <Badge variant="secondary">{selectedFeedback.order.order_number}</Badge>
+                                                <Badge variant="secondary">
+                                                    {
+                                                        selectedFeedback.order
+                                                            .order_number
+                                                    }
+                                                </Badge>
                                             </p>
                                             <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Table2 className="h-4 w-4" />
-                                                Table {selectedFeedback.order.table?.table_number ?? 'N/A'}
+                                                Table{' '}
+                                                {selectedFeedback.order.table
+                                                    ?.table_number ?? 'N/A'}
                                             </p>
                                             <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <Wallet className="h-4 w-4" />
-                                                {Number(selectedFeedback.order.total_amount).toFixed(2)} ETB
-                                                <Badge variant="outline" className="ml-2 capitalize">
-                                                    {selectedFeedback.order.payment_status}
+                                                {Number(
+                                                    selectedFeedback.order
+                                                        .total_amount,
+                                                ).toFixed(2)}{' '}
+                                                ETB
+                                                <Badge
+                                                    variant="outline"
+                                                    className="ml-2 capitalize"
+                                                >
+                                                    {
+                                                        selectedFeedback.order
+                                                            .payment_status
+                                                    }
                                                 </Badge>
                                             </p>
                                             <div className="mt-2">
@@ -605,41 +756,70 @@ return '—';
                                                     Ordered Items
                                                 </p>
                                                 <div className="flex flex-wrap gap-1">
-                                                    {selectedFeedback.order.order_items.map((item) => (
-                                                        <Badge key={item.id} variant="outline">
-                                                            {item.quantity} × {item.menu_item.name}
-                                                        </Badge>
-                                                    ))}
+                                                    {selectedFeedback.order.order_items.map(
+                                                        (item) => (
+                                                            <Badge
+                                                                key={item.id}
+                                                                variant="outline"
+                                                            >
+                                                                {item.quantity}{' '}
+                                                                ×{' '}
+                                                                {
+                                                                    item
+                                                                        .menu_item
+                                                                        .name
+                                                                }
+                                                            </Badge>
+                                                        ),
+                                                    )}
                                                 </div>
                                             </div>
                                             <p className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <User className="h-4 w-4" />
-                                                Waiter: {getWaiterName(selectedFeedback)}
+                                                Waiter:{' '}
+                                                {getWaiterName(
+                                                    selectedFeedback,
+                                                )}
                                             </p>
                                         </div>
                                     </div>
 
                                     {/* Rating */}
                                     <div className="rounded-xl border bg-muted/30 p-4">
-                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">Rating</h3>
+                                        <h3 className="mb-3 text-sm font-bold text-muted-foreground">
+                                            Rating
+                                        </h3>
                                         <div className="flex items-center justify-between">
-                                            <span className="text-sm font-semibold">Overall Rating</span>
-                                            <StarRating value={selectedFeedback.overall_rating} readOnly size="sm" />
+                                            <span className="text-sm font-semibold">
+                                                Overall Rating
+                                            </span>
+                                            <StarRating
+                                                value={
+                                                    selectedFeedback.overall_rating
+                                                }
+                                                readOnly
+                                                size="sm"
+                                            />
                                         </div>
                                     </div>
 
                                     {/* Review */}
                                     {selectedFeedback.comment && (
-                                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                                            <h3 className="mb-2 text-sm font-bold text-amber-800">Customer Review</h3>
-                                            <p className="text-sm text-amber-900">"{selectedFeedback.comment}"</p>
+                                        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                                            <h3 className="mb-2 text-sm font-bold text-red-800">
+                                                Customer Review
+                                            </h3>
+                                            <p className="text-sm text-red-900">
+                                                "{selectedFeedback.comment}"
+                                            </p>
                                         </div>
                                     )}
 
                                     {/* Submission Time */}
                                     <div className="flex items-center gap-2 rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
                                         <Clock className="h-4 w-4" />
-                                        Submitted {timeAgo(selectedFeedback.created_at)}
+                                        Submitted{' '}
+                                        {timeAgo(selectedFeedback.created_at)}
                                     </div>
                                 </div>
                             </>

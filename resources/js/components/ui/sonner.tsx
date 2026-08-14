@@ -15,21 +15,21 @@ function Toaster({ ...props }: ToasterProps) {
             richColors
             style={
                 {
-                    '--normal-bg': '#ea580c',
+                    '--normal-bg': '#dc2626',
                     '--normal-text': '#ffffff',
-                    '--normal-border': '#c2410c',
-                    '--success-bg': '#f97316',
+                    '--normal-border': '#b91c1c',
+                    '--success-bg': '#f87171',
                     '--success-text': '#ffffff',
-                    '--success-border': '#ea580c',
+                    '--success-border': '#ef4444',
                     '--error-bg': '#ef4444',
                     '--error-text': '#ffffff',
                     '--error-border': '#dc2626',
-                    '--info-bg': '#f59e0b',
+                    '--info-bg': '#f87171',
                     '--info-text': '#ffffff',
-                    '--info-border': '#d97706',
-                    '--warning-bg': '#d97706',
+                    '--info-border': '#ef4444',
+                    '--warning-bg': '#dc2626',
                     '--warning-text': '#ffffff',
-                    '--warning-border': '#b45309',
+                    '--warning-border': '#b91c1c',
                     '--toast-close-bg': 'rgba(255,255,255,0.15)',
                 } as React.CSSProperties
             }

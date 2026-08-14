@@ -19,14 +19,12 @@ type FeedbackDisplayProps = {
 export function FeedbackDisplay({ feedback, orderId }: FeedbackDisplayProps) {
     const customerName = feedback.anonymous
         ? 'Anonymous Customer'
-        : feedback.customer?.name ?? 'Customer';
+        : (feedback.customer?.name ?? 'Customer');
 
     return (
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/50 p-5">
+        <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
             <div className="flex items-center justify-between">
-                <p className="text-sm font-bold text-amber-800">
-                    Your Rating
-                </p>
+                <p className="text-sm font-bold text-red-800">Your Rating</p>
                 <StarRating
                     value={feedback.overall_rating}
                     readOnly
@@ -52,7 +50,7 @@ export function FeedbackDisplay({ feedback, orderId }: FeedbackDisplayProps) {
             {orderId && (
                 <Link
                     href={`/customer/orders/${orderId}/feedback/view`}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-amber-500/25 transition hover:from-amber-500 hover:to-amber-600 hover:shadow-xl hover:shadow-amber-500/40 active:scale-[0.98]"
+                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-400 to-red-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-red-500/25 transition hover:from-red-500 hover:to-red-600 hover:shadow-xl hover:shadow-red-500/40 active:scale-[0.98]"
                 >
                     <Eye className="h-4 w-4" />
                     View Feedback

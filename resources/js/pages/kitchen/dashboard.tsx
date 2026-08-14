@@ -72,14 +72,14 @@ type Props = {
 
 const statusColors: Record<string, string> = {
     pending: 'border-l-blue-500 bg-blue-50',
-    preparing: 'border-l-orange-500 bg-orange-50',
+    preparing: 'border-l-red-500 bg-red-50',
     ready: 'border-l-green-500 bg-green-50',
     completed: 'border-l-gray-400 bg-gray-50',
 };
 
 const statusBadgeColors: Record<string, string> = {
     pending: 'bg-blue-500 text-white',
-    preparing: 'bg-orange-500 text-white',
+    preparing: 'bg-red-500 text-white',
     ready: 'bg-green-600 text-white',
     completed: 'bg-gray-500 text-white',
 };
@@ -419,7 +419,7 @@ export default function KitchenDashboard({
                     {order.queue_estimated_minutes ? (
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                             <Timer className="h-3 w-3" />
-                            <span className="font-semibold text-orange-600">
+                            <span className="font-semibold text-red-600">
                                 Est. {order.queue_estimated_minutes} min total
                             </span>
                         </div>
@@ -431,7 +431,7 @@ export default function KitchenDashboard({
                             className={`rounded-lg p-2 text-center font-mono text-lg font-bold ${
                                 timer < 120
                                     ? 'animate-pulse bg-red-100 text-red-600'
-                                    : 'bg-orange-100 text-orange-600'
+                                    : 'bg-red-100 text-red-600'
                             }`}
                         >
                             <Timer className="mr-1 inline h-4 w-4" />
@@ -447,12 +447,12 @@ export default function KitchenDashboard({
 
                     {/* Special Instructions */}
                     {order.special_instructions && (
-                        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
-                            <p className="flex items-center gap-1 text-xs font-bold text-amber-800">
+                        <div className="rounded-lg border border-red-300 bg-red-50 p-3">
+                            <p className="flex items-center gap-1 text-xs font-bold text-red-800">
                                 <span>📝</span>
                                 Additional Instructions
                             </p>
-                            <p className="mt-1 text-xs whitespace-pre-line text-amber-900">
+                            <p className="mt-1 text-xs whitespace-pre-line text-red-900">
                                 {order.special_instructions}
                             </p>
                         </div>
@@ -470,7 +470,7 @@ export default function KitchenDashboard({
                         {can('update kitchen') && column === 'new' && (
                             <Button
                                 size="sm"
-                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                                className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40"
                                 onClick={() =>
                                     acceptOrderAndStartPreparation(order)
                                 }
@@ -485,7 +485,7 @@ export default function KitchenDashboard({
                             order.preparation_status === 'waiting' && (
                                 <Button
                                     size="sm"
-                                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                                    className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40"
                                     onClick={() =>
                                         startPreparationForOrder(order)
                                     }
@@ -500,7 +500,7 @@ export default function KitchenDashboard({
                             order.preparation_status === 'preparing' && (
                                 <Button
                                     size="sm"
-                                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                                    className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40"
                                     onClick={() => markReady(order)}
                                     disabled={isProcessing}
                                 >
@@ -537,7 +537,7 @@ export default function KitchenDashboard({
             title: 'Preparing',
             key: 'preparing',
             orders: filteredPreparing,
-            color: 'orange',
+            color: 'red',
             icon: ChefHat,
         },
         {
@@ -573,7 +573,7 @@ export default function KitchenDashboard({
                 <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <div>
                         <h1 className="flex items-center gap-2 text-2xl font-black text-gray-900">
-                            <ChefHat className="h-7 w-7 text-orange-500" />
+                            <ChefHat className="h-7 w-7 text-red-500" />
                             Kitchen Dashboard
                         </h1>
                         <p className="text-sm text-gray-500">
@@ -604,7 +604,7 @@ export default function KitchenDashboard({
                         {
                             label: 'Preparing',
                             value: stats.preparing,
-                            color: 'bg-orange-500',
+                            color: 'bg-red-500',
                             icon: ChefHat,
                         },
                         {
@@ -697,7 +697,7 @@ export default function KitchenDashboard({
                                 <div className="flex items-center justify-between px-1">
                                     <div className="flex items-center gap-2">
                                         <Icon
-                                            className={`h-4 w-4 ${col.color === 'blue' ? 'text-blue-500' : col.color === 'orange' ? 'text-orange-500' : col.color === 'green' ? 'text-green-600' : 'text-gray-500'}`}
+                                            className={`h-4 w-4 ${col.color === 'blue' ? 'text-blue-500' : col.color === 'red' ? 'text-red-500' : col.color === 'green' ? 'text-green-600' : 'text-gray-500'}`}
                                         />
                                         <h3 className="text-sm font-bold text-gray-900">
                                             {col.title}

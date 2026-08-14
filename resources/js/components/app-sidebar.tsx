@@ -56,7 +56,13 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { state, toggleSidebar } = useSidebar();
     const can = useCan();
-    const { notifications } = usePage<{ notifications?: { kitchen: number; serve: number; paymentVerification: number } }>().props;
+    const { notifications } = usePage<{
+        notifications?: {
+            kitchen: number;
+            serve: number;
+            paymentVerification: number;
+        };
+    }>().props;
 
     const mainNavItems: NavItem[] = [
         ...(can('view dashboard')
@@ -118,7 +124,6 @@ export function AppSidebar() {
                   },
               ]
             : []),
-
 
         ...(can('view menu')
             ? [
@@ -292,7 +297,7 @@ export function AppSidebar() {
                         {/* <SidebarMenuButton
                             size="sm"
                             onClick={toggleSidebar}
-                            className="text-sidebar-foreground hover:bg-orange-100/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
+                            className="text-sidebar-foreground hover:bg-red-100/80 dark:hover:bg-white/10 hover:text-black dark:hover:text-white"
                             tooltip={{
                                 children:
                                     state === 'collapsed'

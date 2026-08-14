@@ -1,5 +1,19 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Search, CreditCard, AlertCircle, CheckCircle2, XCircle, Ban, DollarSign, Wallet, Eye, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+    ArrowLeft,
+    Search,
+    CreditCard,
+    AlertCircle,
+    CheckCircle2,
+    XCircle,
+    Ban,
+    DollarSign,
+    Wallet,
+    Eye,
+    Clock,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -92,24 +106,24 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
         const os = filters.order_status;
 
         if (ps === 'pending') {
-return 'Pending Orders';
-}
+            return 'Pending Orders';
+        }
 
         if (ps === 'paid' && os === 'completed') {
-return 'Revenue Orders';
-}
+            return 'Revenue Orders';
+        }
 
         if (ps === 'paid') {
-return 'Paid Orders';
-}
+            return 'Paid Orders';
+        }
 
         if (ps === 'unpaid') {
-return 'Unpaid Orders';
-}
+            return 'Unpaid Orders';
+        }
 
         if (ps === 'cancelled') {
-return 'Cancelled Orders';
-}
+            return 'Cancelled Orders';
+        }
 
         return 'All Orders';
     };
@@ -118,20 +132,20 @@ return 'Cancelled Orders';
         const ps = filters.payment_status;
 
         if (ps === 'pending') {
-return <AlertCircle className="h-5 w-5 text-yellow-600" />;
-}
+            return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+        }
 
         if (ps === 'paid') {
-return <CheckCircle2 className="h-5 w-5 text-green-600" />;
-}
+            return <CheckCircle2 className="h-5 w-5 text-green-600" />;
+        }
 
         if (ps === 'unpaid') {
-return <XCircle className="h-5 w-5 text-red-600" />;
-}
+            return <XCircle className="h-5 w-5 text-red-600" />;
+        }
 
         if (ps === 'cancelled') {
-return <Ban className="h-5 w-5 text-gray-600" />;
-}
+            return <Ban className="h-5 w-5 text-gray-600" />;
+        }
 
         return <CreditCard className="h-5 w-5 text-blue-600" />;
     };
@@ -143,18 +157,18 @@ return <Ban className="h-5 w-5 text-gray-600" />;
         const diffMins = Math.floor(diffMs / 60000);
 
         if (diffMins < 1) {
-return 'Just now';
-}
+            return 'Just now';
+        }
 
         if (diffMins < 60) {
-return `${diffMins} min ago`;
-}
+            return `${diffMins} min ago`;
+        }
 
         const diffHours = Math.floor(diffMins / 60);
 
         if (diffHours < 24) {
-return `${diffHours}h ago`;
-}
+            return `${diffHours}h ago`;
+        }
 
         return date.toLocaleDateString();
     };
@@ -169,7 +183,7 @@ return `${diffHours}h ago`;
                     <div className="flex items-center gap-4">
                         <Link
                             href="/admin/payments"
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                            className="flex items-center gap-2 text-sm text-gray-600 transition-colors hover:text-gray-900"
                         >
                             <ArrowLeft className="h-4 w-4" />
                             Back to Dashboard
@@ -180,8 +194,12 @@ return `${diffHours}h ago`;
                             {getFilterIcon()}
                         </div>
                         <div>
-                            <p className="text-lg font-bold">{getFilterLabel()}</p>
-                            <p className="text-xs text-gray-500">{orders.total} orders found</p>
+                            <p className="text-lg font-bold">
+                                {getFilterLabel()}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                                {orders.total} orders found
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -190,13 +208,19 @@ return `${diffHours}h ago`;
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {orders.data.length === 0 ? (
                         <div className="col-span-full flex flex-col items-center justify-center py-20 text-center">
-                            <div className="rounded-full bg-gray-100 p-6 mb-4">
+                            <div className="mb-4 rounded-full bg-gray-100 p-6">
                                 <Search className="h-8 w-8 text-gray-400" />
                             </div>
-                            <p className="text-lg font-semibold text-gray-900">No orders found</p>
-                            <p className="text-sm text-gray-500 mt-1">No orders match the current filter criteria.</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                                No orders found
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500">
+                                No orders match the current filter criteria.
+                            </p>
                             <Link href="/admin/payments" className="mt-4">
-                                <Button variant="outline">Back to Dashboard</Button>
+                                <Button variant="outline">
+                                    Back to Dashboard
+                                </Button>
                             </Link>
                         </div>
                     ) : (
@@ -204,76 +228,127 @@ return `${diffHours}h ago`;
                             <Link
                                 key={order.id}
                                 href={`/admin/payments/orders/${order.id}/detail`}
-                                className="block group"
+                                className="group block"
                             >
-                                <Card className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1 h-full">
+                                <Card className="h-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
                                     <CardContent className="p-5">
                                         {/* Order Header */}
-                                        <div className="flex items-start justify-between mb-4">
+                                        <div className="mb-4 flex items-start justify-between">
                                             <div>
                                                 <p className="font-mono text-xs font-bold text-gray-900">
                                                     {order.order_number}
                                                 </p>
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    {order.table ? `Table ${order.table.table_number}` : '—'}
+                                                <p className="mt-1 text-sm text-gray-500">
+                                                    {order.table
+                                                        ? `Table ${order.table.table_number}`
+                                                        : '—'}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Clock className="h-3 w-3 text-gray-400" />
-                                                <span className="text-xs text-gray-500">{timeAgo(order.created_at)}</span>
+                                                <span className="text-xs text-gray-500">
+                                                    {timeAgo(order.created_at)}
+                                                </span>
                                             </div>
                                         </div>
 
                                         {/* Status Badges */}
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            <Badge className={orderStatusColors[order.status] || 'bg-gray-500'}>
+                                        <div className="mb-4 flex flex-wrap gap-2">
+                                            <Badge
+                                                className={
+                                                    orderStatusColors[
+                                                        order.status
+                                                    ] || 'bg-gray-500'
+                                                }
+                                            >
                                                 {order.status}
                                             </Badge>
-                                            <Badge className={paymentStatusColors[order.payment_status || 'pending'] || 'bg-gray-500'}>
-                                                {paymentStatusLabels[order.payment_status || 'pending'] || 'Pending'}
+                                            <Badge
+                                                className={
+                                                    paymentStatusColors[
+                                                        order.payment_status ||
+                                                            'pending'
+                                                    ] || 'bg-gray-500'
+                                                }
+                                            >
+                                                {paymentStatusLabels[
+                                                    order.payment_status ||
+                                                        'pending'
+                                                ] || 'Pending'}
                                             </Badge>
                                         </div>
 
                                         {/* Customer */}
                                         {order.customer?.name && (
-                                            <p className="text-xs text-gray-500 mb-3">
+                                            <p className="mb-3 text-xs text-gray-500">
                                                 {order.customer.name}
-                                                {order.customer.customer_code && (
-                                                    <> · {order.customer.customer_code}</>
+                                                {order.customer
+                                                    .customer_code && (
+                                                    <>
+                                                        {' '}
+                                                        ·{' '}
+                                                        {
+                                                            order.customer
+                                                                .customer_code
+                                                        }
+                                                    </>
                                                 )}
                                             </p>
                                         )}
 
                                         {/* Order Items Preview */}
-                                        <div className="space-y-1.5 mb-4">
-                                            {order.order_items?.slice(0, 3).map((item) => (
-                                                <div key={item.id} className="flex items-center justify-between text-xs">
-                                                    <span className="text-gray-700 truncate">
-                                                        {item.menu_item?.name || 'Item'} × {item.quantity}
-                                                    </span>
-                                                    <span className="text-gray-900 font-medium">
-                                                        {Number(item.price).toFixed(2)} ETB
-                                                    </span>
-                                                </div>
-                                            ))}
-                                            {order.order_items && order.order_items.length > 3 && (
-                                                <p className="text-xs text-gray-400">+{order.order_items.length - 3} more items</p>
-                                            )}
+                                        <div className="mb-4 space-y-1.5">
+                                            {order.order_items
+                                                ?.slice(0, 3)
+                                                .map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="flex items-center justify-between text-xs"
+                                                    >
+                                                        <span className="truncate text-gray-700">
+                                                            {item.menu_item
+                                                                ?.name ||
+                                                                'Item'}{' '}
+                                                            × {item.quantity}
+                                                        </span>
+                                                        <span className="font-medium text-gray-900">
+                                                            {Number(
+                                                                item.price,
+                                                            ).toFixed(2)}{' '}
+                                                            ETB
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            {order.order_items &&
+                                                order.order_items.length >
+                                                    3 && (
+                                                    <p className="text-xs text-gray-400">
+                                                        +
+                                                        {order.order_items
+                                                            .length - 3}{' '}
+                                                        more items
+                                                    </p>
+                                                )}
                                         </div>
 
                                         {/* Divider */}
                                         <div className="border-t border-gray-100 pt-3">
                                             <div className="flex items-center justify-between">
-                                                <span className="text-xs font-semibold text-gray-500">Total</span>
+                                                <span className="text-xs font-semibold text-gray-500">
+                                                    Total
+                                                </span>
                                                 <span className="text-lg font-black text-gray-900">
-                                                    {Number(order.total_amount).toFixed(2)} ETB
+                                                    {Number(
+                                                        order.total_amount,
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* View Details */}
-                                        <div className="mt-3 flex items-center justify-end text-xs text-orange-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Eye className="h-3 w-3 mr-1" />
+                                        <div className="mt-3 flex items-center justify-end text-xs font-semibold text-red-600 opacity-0 transition-opacity group-hover:opacity-100">
+                                            <Eye className="mr-1 h-3 w-3" />
                                             View Details
                                         </div>
                                     </CardContent>
@@ -294,11 +369,15 @@ return `${diffHours}h ago`;
                                 const prevUrl = orders.links[0]?.url;
 
                                 if (prevUrl) {
-router.get(prevUrl, {}, { preserveState: true });
-}
+                                    router.get(
+                                        prevUrl,
+                                        {},
+                                        { preserveState: true },
+                                    );
+                                }
                             }}
                         >
-                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            <ChevronLeft className="mr-1 h-4 w-4" />
                             Previous
                         </Button>
                         <span className="text-sm text-gray-500">
@@ -309,15 +388,20 @@ router.get(prevUrl, {}, { preserveState: true });
                             size="sm"
                             disabled={orders.current_page >= orders.last_page}
                             onClick={() => {
-                                const nextUrl = orders.links[orders.links.length - 1]?.url;
+                                const nextUrl =
+                                    orders.links[orders.links.length - 1]?.url;
 
                                 if (nextUrl) {
-router.get(nextUrl, {}, { preserveState: true });
-}
+                                    router.get(
+                                        nextUrl,
+                                        {},
+                                        { preserveState: true },
+                                    );
+                                }
                             }}
                         >
                             Next
-                            <ChevronRight className="h-4 w-4 ml-1" />
+                            <ChevronRight className="ml-1 h-4 w-4" />
                         </Button>
                     </div>
                 )}

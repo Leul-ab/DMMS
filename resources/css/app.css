@@ -9,12 +9,10 @@
 
 @theme {
     --font-sans:
-        'Outfit', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Outfit', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-    --font-display:
-        'Playfair Display', 'Outfit', ui-serif, Georgia, serif;
+    --font-display: 'Playfair Display', 'Outfit', ui-serif, Georgia, serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -90,14 +88,14 @@
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0.02 70);
+    --sidebar: oklch(0.971 0.013 17.38);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.62 0.19 45);
+    --sidebar-primary: oklch(0.577 0.245 27.325);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.93 0.06 65);
+    --sidebar-accent: oklch(0.936 0.032 17.717);
     --sidebar-accent-foreground: oklch(0.145 0 0);
-    --sidebar-border: oklch(0.9 0.05 70);
-    --sidebar-ring: oklch(0.7 0.16 45);
+    --sidebar-border: oklch(0.885 0.062 18.334);
+    --sidebar-ring: oklch(0.704 0.191 22.216);
 }
 
 .dark {
@@ -125,14 +123,14 @@
     --chart-3: oklch(0.769 0.188 70.08);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.22 0.04 45);
+    --sidebar: oklch(0.258 0.092 26.042);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.72 0.17 45);
+    --sidebar-primary: oklch(0.704 0.191 22.216);
     --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.3 0.05 45);
+    --sidebar-accent: oklch(0.396 0.141 25.723);
     --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.3 0.05 45);
-    --sidebar-ring: oklch(0.55 0.14 45);
+    --sidebar-border: oklch(0.396 0.141 25.723);
+    --sidebar-ring: oklch(0.637 0.237 25.331);
 }
 
 @layer base {
@@ -153,7 +151,8 @@
 }
 
 @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
         transform: translateY(0px);
     }
     50% {
@@ -165,38 +164,46 @@
     animation: float 3s ease-in-out infinite;
 }
 
-/* ====================== Orange Glassmorphism Sidebar ====================== */
+/* ====================== Red Glassmorphism Sidebar ====================== */
 
-/* Warm orange-tinted page backdrop behind the floating glass panels */
+/* Warm red-tinted page backdrop behind the floating glass panels */
 [data-slot='sidebar-wrapper'] {
     background:
-        radial-gradient(1200px 800px at 0% 0%, rgba(251, 146, 60, 0.16), transparent 60%),
-        radial-gradient(1000px 700px at 100% 100%, rgba(234, 88, 12, 0.12), transparent 55%),
-        linear-gradient(180deg, #fff7ed 0%, #fef3c7 100%);
+        radial-gradient(
+            1200px 800px at 0% 0%,
+            rgba(248, 113, 113, 0.16),
+            transparent 60%
+        ),
+        radial-gradient(
+            1000px 700px at 100% 100%,
+            rgba(220, 38, 38, 0.12),
+            transparent 55%
+        ),
+        linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
 }
 
 /* Frosted glass sidebar panel */
 [data-sidebar='sidebar'] {
     background: linear-gradient(
         180deg,
-        rgba(255, 247, 237, 0.4),
-        rgba(255, 237, 213, 0.3)
+        rgba(254, 242, 242, 0.4),
+        rgba(254, 226, 226, 0.3)
     );
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid rgba(254, 215, 170, 0.45);
+    border: 1px solid rgba(254, 202, 202, 0.45);
     box-shadow:
-        0 10px 40px -12px rgba(194, 65, 12, 0.35),
+        0 10px 40px -12px rgba(185, 28, 28, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .dark [data-sidebar='sidebar'] {
     background: linear-gradient(
         180deg,
-        rgba(69, 26, 3, 0.5),
-        rgba(124, 45, 18, 0.38)
+        rgba(69, 10, 10, 0.5),
+        rgba(127, 29, 29, 0.38)
     );
-    border: 1px solid rgba(251, 146, 60, 0.18);
+    border: 1px solid rgba(248, 113, 113, 0.18);
     box-shadow:
         0 10px 40px -12px rgba(0, 0, 0, 0.6),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -207,18 +214,17 @@
     background: rgba(255, 255, 255, 0.72);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     backdrop-filter: blur(18px) saturate(150%);
-    border: 1px solid rgba(254, 215, 170, 0.45);
-    box-shadow: 0 8px 30px -12px rgba(194, 65, 12, 0.2);
+    border: 1px solid rgba(254, 202, 202, 0.45);
+    box-shadow: 0 8px 30px -12px rgba(185, 28, 28, 0.2);
 }
 
 .dark [data-slot='sidebar-inset'] {
     background: rgba(28, 25, 23, 0.72);
-    border: 1px solid rgba(251, 146, 60, 0.14);
+    border: 1px solid rgba(248, 113, 113, 0.14);
 }
 
-/* Soft orange hover glow on nav buttons inside the sidebar */
+/* Soft red hover glow on nav buttons inside the sidebar */
 [data-sidebar='sidebar'] [data-sidebar='menu-button']:hover,
 [data-sidebar='sidebar'] [data-sidebar='menu-button'][data-active='true'] {
-    box-shadow: 0 4px 14px -6px rgba(234, 88, 12, 0.45);
+    box-shadow: 0 4px 14px -6px rgba(220, 38, 38, 0.45);
 }
-

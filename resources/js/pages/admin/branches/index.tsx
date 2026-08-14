@@ -572,7 +572,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                                         href={branchesShow.url(
                                                             branch.id,
                                                         )}
-                                                        className="font-medium hover:text-orange-600"
+                                                        className="font-medium hover:text-red-600"
                                                     >
                                                         {branch.name}
                                                     </Link>
@@ -610,7 +610,9 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                                 {/* Categories */}
 
                                                 <td className="p-3">
-                                                    {branch.menu_categories_count}
+                                                    {
+                                                        branch.menu_categories_count
+                                                    }
                                                 </td>
 
                                                 {/* Items */}
@@ -817,7 +819,10 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                 )}
                             />
 
-                            <InputError message={addErrors.name} className="mt-1" />
+                            <InputError
+                                message={addErrors.name}
+                                className="mt-1"
+                            />
                         </div>
 
                         {/* Address */}
@@ -954,7 +959,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                                         ),
                                     )}
                                 />
-                                
+
                                 <InputError
                                     message={addErrors.country}
                                     className="mt-1"
@@ -967,9 +972,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                         <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={isActive}
-                                onCheckedChange={() =>
-                                    setIsActive(!isActive)
-                                }
+                                onCheckedChange={() => setIsActive(!isActive)}
                                 onLabel="Active"
                                 offLabel="Inactive"
                                 ariaLabel="Toggle active branch status"
@@ -1090,9 +1093,7 @@ export default function BranchesIndex({ branches, filters }: Props) {
                         <div className="flex items-center gap-2">
                             <StatusToggle
                                 checked={isActive}
-                                onCheckedChange={() =>
-                                    setIsActive(!isActive)
-                                }
+                                onCheckedChange={() => setIsActive(!isActive)}
                                 onLabel="Active"
                                 offLabel="Inactive"
                                 ariaLabel="Toggle active branch status"

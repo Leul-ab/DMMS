@@ -1,5 +1,13 @@
 import { Link, router } from '@inertiajs/react';
-import { Clock, Table2, X, ChevronRight, ChevronLeft, User, Calendar } from 'lucide-react';
+import {
+    Clock,
+    Table2,
+    X,
+    ChevronRight,
+    ChevronLeft,
+    User,
+    Calendar,
+} from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
@@ -60,8 +68,8 @@ export default function BookingSidebar() {
 
     useEffect(() => {
         if (!booking) {
-return;
-}
+            return;
+        }
 
         const calculateTime = () => {
             const expiresAt = new Date(booking.expires_at).getTime();
@@ -77,7 +85,9 @@ return;
 
             const minutes = Math.floor(diff / 60);
             const seconds = diff % 60;
-            setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+            setTimeRemaining(
+                `${minutes}:${seconds.toString().padStart(2, '0')}`,
+            );
         };
 
         calculateTime();
@@ -87,15 +97,23 @@ return;
     }, [booking]);
 
     const handleCancel = async () => {
-        if (!booking || !confirm('Are you sure you want to cancel this booking?')) {
-return;
-}
+        if (
+            !booking ||
+            !confirm('Are you sure you want to cancel this booking?')
+        ) {
+            return;
+        }
 
         try {
             await fetch(`/booking/${booking.id}/cancel`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content || '',
+                    'X-CSRF-TOKEN':
+                        (
+                            document.querySelector(
+                                'meta[name="csrf-token"]',
+                            ) as HTMLMetaElement
+                        )?.content || '',
                 },
             });
             toast.success('Booking cancelled.');
@@ -107,12 +125,13 @@ return;
     };
 
     if (isLoading || !booking) {
-return null;
-}
+        return null;
+    }
 
-    const progressPercent = booking.time_remaining_seconds > 0
-        ? (booking.time_remaining_seconds / 600) * 100
-        : 0;
+    const progressPercent =
+        booking.time_remaining_seconds > 0
+            ? (booking.time_remaining_seconds / 600) * 100
+            : 0;
 
     return (
         <>
@@ -126,12 +145,12 @@ return null;
 
             {/* Sidebar - Top Right */}
             <div
-                className={`fixed right-0 top-0 z-50 h-full w-full max-w-sm transform border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ${
+                className={`fixed top-0 right-0 z-50 h-full w-full max-w-sm transform border-l border-gray-200 bg-white shadow-2xl transition-transform duration-300 ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 }`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-4 text-white">
+                <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-red-500 to-red-600 px-5 py-4 text-white">
                     <div className="flex items-center gap-2">
                         <Calendar className="h-5 w-5" />
                         <h2 className="text-lg font-black">Active Booking</h2>
@@ -147,29 +166,39 @@ return null;
                 {/* Content */}
                 <div className="flex h-[calc(100%-64px)] flex-col overflow-y-auto p-5">
                     {/* Timer Section */}
-                    <div className={`rounded-2xl p-5 text-center ${
-                        isExpired ? 'bg-red-50' : 'bg-orange-50'
-                    }`}>
-                        <Clock className={`mx-auto h-8 w-8 ${
-                            isExpired ? 'text-red-500' : 'text-orange-500'
-                        }`} />
-                        <p className={`mt-2 text-sm font-semibold ${
-                            isExpired ? 'text-red-600' : 'text-orange-600'
-                        }`}>
+                    <div
+                        className={`rounded-2xl p-5 text-center ${
+                            isExpired ? 'bg-red-50' : 'bg-red-50'
+                        }`}
+                    >
+                        <Clock
+                            className={`mx-auto h-8 w-8 ${
+                                isExpired ? 'text-red-500' : 'text-red-500'
+                            }`}
+                        />
+                        <p
+                            className={`mt-2 text-sm font-semibold ${
+                                isExpired ? 'text-red-600' : 'text-red-600'
+                            }`}
+                        >
                             {isExpired ? 'Booking Expired' : 'Time Remaining'}
                         </p>
-                        <p className={`mt-1 text-3xl font-black ${
-                            isExpired ? 'text-red-500' : 'text-orange-500'
-                        }`}>
+                        <p
+                            className={`mt-1 text-3xl font-black ${
+                                isExpired ? 'text-red-500' : 'text-red-500'
+                            }`}
+                        >
                             {isExpired ? '00:00' : timeRemaining}
                         </p>
 
                         {/* Progress Bar */}
                         {!isExpired && (
-                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-orange-200">
+                            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-red-200">
                                 <div
-                                    className="h-full rounded-full bg-orange-500 transition-all duration-1000"
-                                    style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }}
+                                    className="h-full rounded-full bg-red-500 transition-all duration-1000"
+                                    style={{
+                                        width: `${Math.max(0, Math.min(100, progressPercent))}%`,
+                                    }}
                                 />
                             </div>
                         )}
@@ -178,19 +207,23 @@ return null;
                     {/* Customer Info */}
                     <div className="mt-4 rounded-2xl bg-stone-50 p-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-                                <User className="h-5 w-5 text-orange-500" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                                <User className="h-5 w-5 text-red-500" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-gray-500">Customer</p>
-                                <p className="font-bold text-gray-900">{booking.customer_name}</p>
+                                <p className="text-xs font-semibold text-gray-500">
+                                    Customer
+                                </p>
+                                <p className="font-bold text-gray-900">
+                                    {booking.customer_name}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     {/* Booked Tables */}
                     <div className="mt-4">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                        <h3 className="mb-3 text-sm font-semibold tracking-wider text-gray-500 uppercase">
                             Booked Tables
                         </h3>
                         <div className="space-y-2">
@@ -199,14 +232,21 @@ return null;
                                     key={table.id}
                                     className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm"
                                 >
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-100">
-                                        <Table2 className="h-5 w-5 text-orange-500" />
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
+                                        <Table2 className="h-5 w-5 text-red-500" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-gray-900">Table {table.table_number}</p>
-                                        <p className="text-xs text-gray-400">Booked & reserved</p>
+                                        <p className="font-bold text-gray-900">
+                                            Table {table.table_number}
+                                        </p>
+                                        <p className="text-xs text-gray-400">
+                                            Booked & reserved
+                                        </p>
                                     </div>
-                                    <Badge variant="default" className="ml-auto bg-orange-500">
+                                    <Badge
+                                        variant="default"
+                                        className="ml-auto bg-red-500"
+                                    >
                                         Reserved
                                     </Badge>
                                 </div>
@@ -216,9 +256,14 @@ return null;
 
                     {/* Booking Time */}
                     <div className="mt-4 rounded-2xl bg-stone-50 p-4">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Booking Time</p>
+                        <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                            Booking Time
+                        </p>
                         <p className="mt-1 font-medium text-gray-900">
-                            {new Date(booking.booked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(booking.booked_at).toLocaleTimeString(
+                                [],
+                                { hour: '2-digit', minute: '2-digit' },
+                            )}
                         </p>
                         <p className="text-xs text-gray-400">
                             {new Date(booking.booked_at).toLocaleDateString()}
@@ -226,10 +271,10 @@ return null;
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-auto pt-6 space-y-3">
+                    <div className="mt-auto space-y-3 pt-6">
                         <Link
                             href={`/booking/${booking.id}`}
-                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-orange-500/25 transition hover:from-orange-600 hover:to-orange-700 hover:shadow-xl hover:shadow-orange-500/40"
+                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40"
                         >
                             View Full Details
                             <ChevronRight className="h-4 w-4" />
