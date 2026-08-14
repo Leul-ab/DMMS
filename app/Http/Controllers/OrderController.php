@@ -43,10 +43,11 @@ class OrderController extends Controller
                 'min:1',
             ],
 
-            'customer_code' => [
+            'customer_phone' => [
                 'nullable',
                 'string',
-                'exists:customers,customer_code',
+                'max:20',
+                'exists:customers,phone',
             ],
 
             'special_instructions' => [
@@ -127,10 +128,10 @@ class OrderController extends Controller
             $totalAmount = 0;
             $estimatedMinutes = 0;
 
-            // Find customer by customer_code if provided
+            // Find customer by phone if provided
             $customerId = null;
-            if (!empty($validated['customer_code'])) {
-                $customer = Customer::where('customer_code', $validated['customer_code'])->first();
+            if (!empty($validated['customer_phone'])) {
+                $customer = Customer::where('phone', $validated['customer_phone'])->first();
                 $customerId = $customer?->id;
             }
 
@@ -238,22 +239,22 @@ class OrderController extends Controller
     }
 
     /**
-     * Get the active order count for a customer (by customer_code or session).
+     * Get the active order count for a customer (by phone or session).
      */
     public function getOrderCount(Request $request)
     {
         $validated = $request->validate([
             'table_id' => ['nullable', 'exists:restaurant_tables,id'],
-            'customer_code' => ['nullable', 'string', 'exists:customers,customer_code'],
+            'customer_phone' => ['nullable', 'string', 'max:20', 'exists:customers,phone'],
         ]);
 
         $query = Order::whereIn('status', [
             'pending', 'received', 'confirmed', 'preparing', 'ready', 'served'
         ]);
 
-        // If customer code provided, count orders for that customer
-        if (!empty($validated['customer_code'])) {
-            $customer = Customer::where('customer_code', $validated['customer_code'])->first();
+        // If customer phone provided, count orders for that customer
+        if (!empty($validated['customer_phone'])) {
+            $customer = Customer::where('phone', $validated['customer_phone'])->first();
             if ($customer) {
                 $query->where('customer_id', $customer->id);
             } else {

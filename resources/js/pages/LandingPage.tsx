@@ -9,7 +9,7 @@ export default function LandingPage() {
     const [scrolled, setScrolled] = useState(false);
     const [showMemberForm, setShowMemberForm] = useState(false);
     const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
-    const [registeredCustomerCode, setRegisteredCustomerCode] = useState('');
+    const [registeredCustomerPhone, setRegisteredCustomerPhone] = useState('');
     const [copied, setCopied] = useState(false);
 
     const [memberData, setMemberData] = useState({
@@ -70,7 +70,7 @@ export default function LandingPage() {
             if (data.success) {
                 setShowMemberForm(false);
                 resetMemberForm();
-                setRegisteredCustomerCode(data.customer_code);
+                setRegisteredCustomerPhone(data.customer.phone);
                 setShowRegistrationSuccess(true);
                 setCopied(false);
             } else {
@@ -84,14 +84,14 @@ export default function LandingPage() {
         }
     };
 
-    const handleCopyCode = async () => {
+    const handleCopyPhone = async () => {
         try {
-            await navigator.clipboard.writeText(registeredCustomerCode);
+            await navigator.clipboard.writeText(registeredCustomerPhone);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
             const textArea = document.createElement('textarea');
-            textArea.value = registeredCustomerCode;
+            textArea.value = registeredCustomerPhone;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
@@ -309,28 +309,28 @@ export default function LandingPage() {
                         </p>
 
                         <p className="mt-1 text-sm text-gray-500">
-                            Your Customer Code is:
+                            Your Phone Number is:
                         </p>
 
-                        {/* Customer Code Box */}
+                        {/* Phone Number Box */}
                         <div className="mt-4 mx-auto max-w-[220px] rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 px-6 py-4">
                             <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider mb-1">
-                                Customer Code
+                                Phone Number
                             </p>
                             <p className="text-2xl font-black tracking-wider text-orange-600 font-mono">
-                                {registeredCustomerCode}
+                                {registeredCustomerPhone}
                             </p>
                         </div>
 
                         <p className="mt-4 text-xs text-gray-400 leading-relaxed">
-                            Please save this code. You will need it for future bookings, orders, and member verification.
+                            Please save this phone number. You will need it for future bookings, orders, and member verification.
                         </p>
 
                         {/* Buttons */}
                         <div className="mt-6 flex gap-3">
                             <button
                                 type="button"
-                                onClick={handleCopyCode}
+                                onClick={handleCopyPhone}
                                 className="flex-1 rounded-xl border-2 border-orange-500 bg-white px-5 py-3.5 font-bold text-orange-600 transition hover:bg-orange-50 flex items-center justify-center gap-2"
                             >
                                 {copied ? (
@@ -341,7 +341,7 @@ export default function LandingPage() {
                                 ) : (
                                     <>
                                         <Copy className="h-4 w-4" />
-                                        Copy Code
+                                        Copy Phone
                                     </>
                                 )}
                             </button>

@@ -51,11 +51,11 @@ class HandleInertiaRequests extends Middleware
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'booking_success' => session('booking_success', false),
             'booking_data' => session('booking_data'),
-            'customer_code' => session('customer_code', ''),
+            'customer_phone' => session('customer_phone', ''),
             'order_count' => function () use ($request) {
-                if ($request->session()->has('customer_code')) {
-                    $customerCode = $request->session()->get('customer_code');
-                    $customer = \App\Models\Customer::where('customer_code', $customerCode)->first();
+                if ($request->session()->has('customer_phone')) {
+                    $customerPhone = $request->session()->get('customer_phone');
+                    $customer = \App\Models\Customer::where('phone', $customerPhone)->first();
                     if ($customer) {
                         return \App\Models\Order::where('customer_id', $customer->id)
                             ->whereIn('status', ['pending', 'received', 'confirmed', 'preparing', 'ready', 'served'])

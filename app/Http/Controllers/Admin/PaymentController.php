@@ -26,8 +26,8 @@ class PaymentController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
                   ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function ($cq) use ($search) {
-                      $cq->where('customer_code', 'like', "%{$search}%")
+                   ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('phone', 'like', "%{$search}%")
                          ->orWhere('name', 'like', "%{$search}%");
                   });
             });

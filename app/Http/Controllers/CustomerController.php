@@ -34,25 +34,20 @@ class CustomerController extends Controller
             ],
         ]);
 
-        // Generate a unique random customer code
-        $code = Customer::generateUniqueCode();
-
         $customer = Customer::create([
-            'customer_code' => $code,
             'name' => $validated['name'],
             'phone' => $validated['phone'],
             'email' => $validated['email'] ?? null,
             'is_member' => true,
         ]);
 
-        // Store in session for order tracking
-        session(['customer_code' => $customer->customer_code]);
+        // Store phone in session for order tracking
+        session(['customer_phone' => $customer->phone]);
 
         // Return JSON response for modal display
         return response()->json([
             'success' => true,
             'message' => 'Registration successful!',
-            'customer_code' => $customer->customer_code,
             'customer' => [
                 'id' => $customer->id,
                 'name' => $customer->name,
@@ -65,15 +60,15 @@ class CustomerController extends Controller
     public function verifyMember(Request $request)
     {
         $request->validate([
-            'customer_code' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
         ]);
 
-        $customer = Customer::where('customer_code', $request->input('customer_code'))->first();
+        $customer = Customer::where('phone', $request->input('phone'))->first();
 
         if (!$customer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Customer code not found',
+                'message' => 'Customer not found. Please register first.',
             ]);
         }
 
@@ -84,14 +79,15 @@ class CustomerController extends Controller
             ]);
         }
 
-        session(['customer_code' => $customer->customer_code]);
+        session(['customer_phone' => $customer->phone]);
 
         return response()->json([
             'success' => true,
             'customer' => [
                 'id' => $customer->id,
                 'name' => $customer->name,
-                'customer_code' => $customer->customer_code,
+                'phone' => $customer->phone,
+                'email' => $customer->email,
                 'is_member' => $customer->is_member,
             ],
         ]);

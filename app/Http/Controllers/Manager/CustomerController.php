@@ -58,21 +58,21 @@ class CustomerController extends Controller
             ],
         ]);
 
-        // Generate the next customer code automatically
-        $lastCustomer = Customer::latest('id')->first();
-
-        $nextNumber = $lastCustomer
-            ? $lastCustomer->id + 1
-            : 1;
-
-        $validated['customer_code'] =
-            'CUS-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-
         Customer::create($validated);
 
         return redirect()
             ->route('manager.customers.index')
             ->with('success', 'Customer created successfully.');
+    }
+
+    /**
+     * Show the edit customer form.
+     */
+    public function edit(Customer $customer): Response
+    {
+        return Inertia::render('manager/customers/edit', [
+            'customer' => $customer,
+        ]);
     }
 
     /**

@@ -112,8 +112,8 @@ class FeedbackController extends Controller
         return response()->streamDownload(function () use ($feedbacks) {
             $handle = fopen('php://output', 'w');
 
-            fputcsv($handle, [
-                'Customer', 'Customer Code', 'Order ID', 'Table', 'Menu Items',
+             fputcsv($handle, [
+                'Customer', 'Phone', 'Order ID', 'Table', 'Menu Items',
                 'Overall Rating', 'Comment', 'Waiter', 'Date',
             ]);
 
@@ -127,7 +127,7 @@ class FeedbackController extends Controller
 
                 fputcsv($handle, [
                     $feedback->anonymous ? 'Anonymous Customer' : ($feedback->customer?->name ?? 'N/A'),
-                    $feedback->customer?->customer_code ?? 'N/A',
+                    $feedback->customer?->phone ?? 'N/A',
                     $feedback->order->order_number ?? 'N/A',
                     $feedback->order->table?->table_number ?? 'N/A',
                     $menuItems,
@@ -154,13 +154,13 @@ class FeedbackController extends Controller
             'order.waiterAssignments.waiter',
         ]);
 
-        // Search by comment, customer name, customer code, or order number
+        // Search by comment, customer name, customer phone, or order number
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('comment', 'like', "%{$search}%")
                     ->orWhereHas('customer', function ($cq) use ($search) {
                         $cq->where('name', 'like', "%{$search}%")
-                            ->orWhere('customer_code', 'like', "%{$search}%");
+                            ->orWhere('phone', 'like', "%{$search}%");
                     })
                     ->orWhereHas('order', function ($oq) use ($search) {
                         $oq->where('order_number', 'like', "%{$search}%");
