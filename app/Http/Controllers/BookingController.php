@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
+use App\Models\TableSection;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,9 +41,18 @@ class BookingController extends Controller
             Branch::setCurrent((int) $requestedBranchId);
         }
 
+        $sections = TableSection::where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'description', 'status']);
+
         $availableTables = RestaurantTable::where('status', 'available')
+            ->with('section:id,name,description,status')
             ->orderBy('table_number')
-            ->get(['id', 'table_number', 'status']);
+            ->get(['id', 'table_number', 'status', 'table_section_id']);
+
+        $allTables = RestaurantTable::with('section:id,name,description,status')
+            ->orderBy('table_number')
+            ->get(['id', 'table_number', 'status', 'table_section_id']);
 
         // Get the scanned table from session if available
         $scannedTable = null;
@@ -58,7 +68,30 @@ class BookingController extends Controller
 
         return inertia($view, [
             'availableTables' => $availableTables,
+            'allTables' => $allTables,
             'scannedTable' => $scannedTable,
+            'sections' => $sections,
+        ]);
+    }
+
+    /**
+     * Get available tables for a specific section.
+     */
+    public function getAvailableTablesBySection(Request $request, TableSection $section): JsonResponse
+    {
+        $request->validate([
+            'status' => ['nullable', 'string', 'in:available'],
+        ]);
+
+        $status = $request->query('status', 'available');
+
+        $tables = $section->tables()
+            ->where('status', $status)
+            ->orderBy('table_number')
+            ->get(['id', 'table_number', 'status']);
+
+        return response()->json([
+            'tables' => $tables,
         ]);
     }
 

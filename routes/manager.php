@@ -8,6 +8,7 @@ use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\ReportController;
 use App\Http\Controllers\Manager\PaymentVerificationController;
 use App\Http\Controllers\Manager\DiscountController;
+use App\Http\Controllers\Manager\TableSectionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])
@@ -142,6 +143,39 @@ Route::middleware(['auth'])
             'payment-verification/{order}/reject',
             [PaymentVerificationController::class, 'reject']
         )->name('payment-verification.reject')->middleware('permission:status payments');
+
+        // =========================
+        // Table Sections
+        // =========================
+        Route::get(
+            'tables/sections',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'index']
+        )->name('tables.sections.index')->middleware('permission:view tables');
+
+        Route::get(
+            'tables/sections/create',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'create']
+        )->name('tables.sections.create')->middleware('permission:create tables');
+
+        Route::post(
+            'tables/sections',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'store']
+        )->name('tables.sections.store')->middleware('permission:create tables');
+
+        Route::get(
+            'tables/sections/{tableSection}/edit',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'edit']
+        )->name('tables.sections.edit')->middleware('permission:update tables');
+
+        Route::put(
+            'tables/sections/{tableSection}',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'update']
+        )->name('tables.sections.update')->middleware('permission:update tables');
+
+        Route::delete(
+            'tables/sections/{tableSection}',
+            [\App\Http\Controllers\Manager\TableSectionController::class, 'destroy']
+        )->name('tables.sections.destroy')->middleware('permission:delete tables');
 
         // =========================
         // Restaurant Tables

@@ -27,7 +27,9 @@ class RestaurantTableController extends Controller
             ->latest()
             ->get();
 
-        $sections = TableSection::where('status', 'active')->get();
+        $sections = TableSection::withCount('tables')
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('manager/tables/index', [
             'tables' => $tables,
@@ -47,64 +49,78 @@ class RestaurantTableController extends Controller
     }
 
     /**
-     * Store a newly created table.
+     * Store one or more newly created tables.
+     *
+     * The number of tables to create and the target section are
+     * supplied by the administrator via the Add Table form. Table
+     * numbers are assigned automatically, continuing from the
+     * highest existing table number for the current branch.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'table_number' => [
+            'number_of_tables' => [
                 'required',
                 'integer',
                 'min:1',
                 'max:65535',
-                Rule::unique('restaurant_tables', 'table_number')
-                    ->where(fn ($query) => $query->where('branch_id', Branch::current()?->id)),
-            ],
-            'qr_code' => [
-                'nullable',
-                'string',
-                'max:255',
-                'unique:restaurant_tables,qr_code',
             ],
             'table_section_id' => [
-                'nullable',
+                'required',
                 'exists:table_sections,id',
             ],
         ]);
 
-        $qrPath = null;
-        if (!empty($validated['qr_code'])) {
-            $qrPath = $validated['qr_code'];
-        } else {
+        $branchId = Branch::current()?->id;
+        $numberOfTables = (int) $validated['number_of_tables'];
+        $tableSectionId = (int) $validated['table_section_id'];
+
+        // Determine the next available table number, continuing from
+        // the highest existing table number for this branch.
+        $maxTableNumber = RestaurantTable::where('branch_id', $branchId)
+            ->max('table_number');
+
+        $nextNumber = $maxTableNumber !== null
+            ? (int) $maxTableNumber + 1
+            : 1;
+
+        for ($i = 0; $i < $numberOfTables; $i++) {
+            $tableNumber = $nextNumber + $i;
+
             try {
-                $qrPath = $this->generateQrCode((int) $validated['table_number'], Branch::current()?->id);
+                $qrPath = $this->generateQrCode($tableNumber, $branchId);
             } catch (\Exception $e) {
-                Log::error('QR code generation failed for table #' . $validated['table_number'], [
-                    'error' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                    'table_number' => $validated['table_number'],
-                    'menu_url' => route('menu.customer', ['table' => $validated['table_number']]),
-                ]);
+                Log::error(
+                    'QR code generation failed for table #' . $tableNumber,
+                    [
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => $e->getTraceAsString(),
+                        'table_number' => $tableNumber,
+                        'menu_url' => route('menu.customer', [
+                            'table' => $tableNumber,
+                        ]),
+                    ]
+                );
 
                 return back()->withErrors([
-                    'table_number' => 'Failed to generate QR code for this table. Please check server configuration and try again.',
+                    'number_of_tables' => 'Failed to generate QR code for table #' . $tableNumber . '. Please check server configuration and try again.',
                 ])->withInput();
             }
-        }
 
-        RestaurantTable::create([
-            'branch_id' => Branch::current()?->id,
-            'table_section_id' => $validated['table_section_id'] ?? null,
-            'table_number' => $validated['table_number'],
-            'qr_code' => $qrPath,
-            'status' => 'available',
-        ]);
+            RestaurantTable::create([
+                'branch_id' => $branchId,
+                'table_section_id' => $tableSectionId,
+                'table_number' => $tableNumber,
+                'qr_code' => $qrPath,
+                'status' => 'available',
+            ]);
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => 'Restaurant table created successfully.',
+            'message' => $numberOfTables . ' restaurant table(s) created successfully.',
         ]);
 
         return back();

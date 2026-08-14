@@ -32,3 +32,8 @@ Route::middleware(['auth'])->group(function () {
         [App\Http\Controllers\Api\TableController::class, 'index']
     );
 });
+
+Route::get(
+    '/api/sections/{section}/tables',
+    [App\Http\Controllers\BookingController::class, 'getAvailableTablesBySection']
+)->name('api.sections.tables');

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Kitchen\KitchenDashboardController;
+use App\Http\Controllers\Kitchen\KitchenOrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('kitchen')->name('kitchen.')->middleware(['auth'])->group(function () {
@@ -33,5 +34,18 @@ Route::prefix('kitchen')->name('kitchen.')->middleware(['auth'])->group(function
     // Mark as Ready (Preparing → Ready)
     Route::patch('/orders/{order}/mark-ready', [KitchenDashboardController::class, 'markReady'])
         ->name('orders.mark-ready')
+        ->middleware('permission:update kitchen');
+
+    // Kitchen Orders
+    Route::get('/orders/new', [KitchenOrderController::class, 'newOrders'])
+        ->name('orders.new')
+        ->middleware('permission:view kitchen');
+
+    Route::get('/orders/history', [KitchenOrderController::class, 'history'])
+        ->name('orders.history')
+        ->middleware('permission:view kitchen');
+
+    Route::patch('/orders/{order}/status', [KitchenOrderController::class, 'updateStatus'])
+        ->name('orders.update-status')
         ->middleware('permission:update kitchen');
 });
