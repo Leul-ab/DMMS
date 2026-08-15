@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2, Percent } from 'lucide-react';
 import { useState } from 'react';
 
+import { DateTimePicker } from '@/components/date-time-picker';
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
 
@@ -73,10 +74,8 @@ type FormErrors = {
     appliesTo?: string;
     percentage?: string;
     menuItems?: string;
-    startDate?: string;
-    startTime?: string;
-    endDate?: string;
-    endTime?: string;
+    startDateTime?: string;
+    endDateTime?: string;
 };
 
 export default function DiscountsIndex({
@@ -119,10 +118,8 @@ export default function DiscountsIndex({
     const [percentage, setPercentage] = useState('');
     const [fixedAmount, setFixedAmount] = useState('');
     const [status, setStatus] = useState('active');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [startDateTime, setStartDateTime] = useState('');
+    const [endDateTime, setEndDateTime] = useState('');
     const [appliesTo, setAppliesTo] = useState(filters.applies_to || 'all');
     const [selectedMenuItems, setSelectedMenuItems] = useState<number[]>([]);
     const [editSelectedMenuItems, setEditSelectedMenuItems] = useState<
@@ -193,79 +190,38 @@ export default function DiscountsIndex({
         return '';
     };
 
-    const validateStartDate = (value: string): string => {
+    const validateStartDateTime = (value: string): string => {
         if (!value) {
-            return 'Start Date is required.';
+            return 'Start Date & Time is required.';
         }
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const selected = new Date(value + 'T00:00:00');
-
-        if (selected < today) {
-            return 'Start Date cannot be in the past.';
-        }
-
-        return '';
-    };
-
-    const validateStartTime = (date: string, time: string): string => {
-        if (!time) {
-            return 'Start Time is required.';
-        }
-
-        if (!date) {
-            return '';
-        }
-
+        const selected = new Date(value);
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const selectedDate = new Date(date + 'T00:00:00');
 
-        if (selectedDate.getTime() === today.getTime()) {
-            const [hours, minutes] = time.split(':').map(Number);
-            const selectedDateTime = new Date(selectedDate);
-            selectedDateTime.setHours(hours, minutes, 0, 0);
-
-            if (selectedDateTime < now) {
-                return 'Start Time cannot be in the past.';
-            }
+        if (selected < now) {
+            return 'Start Date & Time cannot be in the past.';
         }
 
         return '';
     };
 
-    const validateEndDate = (value: string, startDateValue: string): string => {
-        if (!value) {
-            return 'End Date is required.';
-        }
-
-        if (startDateValue && value < startDateValue) {
-            return 'End Date must be on or after Start Date.';
-        }
-
-        return '';
-    };
-
-    const validateEndTime = (
-        endDateValue: string,
-        endTimeValue: string,
-        startDateValue: string,
-        startTimeValue: string,
+    const validateEndDateTime = (
+        endValue: string,
+        startValue: string,
     ): string => {
-        if (!endTimeValue) {
-            return 'End Time is required.';
+        if (!endValue) {
+            return 'End Date & Time is required.';
         }
 
-        if (!endDateValue || !startDateValue || !startTimeValue) {
+        if (!startValue) {
             return '';
         }
 
-        const startDateTime = new Date(`${startDateValue}T${startTimeValue}`);
-        const endDateTime = new Date(`${endDateValue}T${endTimeValue}`);
+        const start = new Date(startValue);
+        const end = new Date(endValue);
 
-        if (endDateTime <= startDateTime) {
-            return 'End Time must be later than Start Time.';
+        if (end <= start) {
+            return 'End Date & Time must be later than Start Date & Time.';
         }
 
         return '';
@@ -375,10 +331,8 @@ export default function DiscountsIndex({
         setPercentage('');
         setFixedAmount('');
         setStatus('active');
-        setStartDate('');
-        setEndDate('');
-        setStartTime('');
-        setEndTime('');
+        setStartDateTime('');
+        setEndDateTime('');
         setSelectedMenuItems([]);
         setAddMenuItemSearch('');
         setErrors({});
@@ -409,10 +363,20 @@ export default function DiscountsIndex({
         setPercentage(discount.percentage || '');
         setFixedAmount(discount.fixed_amount || '');
         setStatus(discount.status);
-        setStartDate(discount.start_date);
-        setEndDate(discount.end_date);
-        setStartTime(discount.start_time || '');
-        setEndTime(discount.end_time || '');
+        setStartDateTime(
+            discount.start_date && discount.start_time
+                ? `${discount.start_date}T${discount.start_time.slice(0, 5)}`
+                : discount.start_date
+                  ? `${discount.start_date}T00:00`
+                  : '',
+        );
+        setEndDateTime(
+            discount.end_date && discount.end_time
+                ? `${discount.end_date}T${discount.end_time.slice(0, 5)}`
+                : discount.end_date
+                  ? `${discount.end_date}T00:00`
+                  : '',
+        );
         setEditSelectedMenuItems(discount.menu_items || []);
         setEditMenuItemSearch('');
 
@@ -467,33 +431,19 @@ export default function DiscountsIndex({
             newErrors.menuItems = menuItemsError;
         }
 
-        const startDateError = validateStartDate(startDate);
+        const startDateTimeError = validateStartDateTime(startDateTime);
 
-        if (startDateError) {
-            newErrors.startDate = startDateError;
+        if (startDateTimeError) {
+            newErrors.startDateTime = startDateTimeError;
         }
 
-        const startTimeError = validateStartTime(startDate, startTime);
-
-        if (startTimeError) {
-            newErrors.startTime = startTimeError;
-        }
-
-        const endDateError = validateEndDate(endDate, startDate);
-
-        if (endDateError) {
-            newErrors.endDate = endDateError;
-        }
-
-        const endTimeError = validateEndTime(
-            endDate,
-            endTime,
-            startDate,
-            startTime,
+        const endDateTimeError = validateEndDateTime(
+            endDateTime,
+            startDateTime,
         );
 
-        if (endTimeError) {
-            newErrors.endTime = endTimeError;
+        if (endDateTimeError) {
+            newErrors.endDateTime = endDateTimeError;
         }
 
         setErrors(newErrors);
@@ -509,10 +459,8 @@ export default function DiscountsIndex({
         formData.append('discount_type', discountType);
         formData.append('applies_to', appliesTo);
         formData.append('status', status);
-        formData.append('start_date', startDate);
-        formData.append('end_date', endDate);
-        formData.append('start_time', startTime);
-        formData.append('end_time', endTime);
+        formData.append('start_date_time', startDateTime);
+        formData.append('end_date_time', endDateTime);
 
         selectedMenuItems.forEach((id) => {
             formData.append('menu_items[]', String(id));
@@ -539,10 +487,8 @@ export default function DiscountsIndex({
                 setPercentage('');
                 setFixedAmount('');
                 setStatus('active');
-                setStartDate('');
-                setEndDate('');
-                setStartTime('');
-                setEndTime('');
+                setStartDateTime('');
+                setEndDateTime('');
                 setSelectedMenuItems([]);
                 setAddMenuItemSearch('');
             },
@@ -554,7 +500,7 @@ export default function DiscountsIndex({
     // -----------------------------------------
 
     const handleUpdate = () => {
-        if (!selectedDiscount || !name.trim() || !startDate || !endDate) {
+        if (!selectedDiscount || !name.trim() || !startDateTime || !endDateTime) {
             return;
         }
 
@@ -573,10 +519,8 @@ export default function DiscountsIndex({
         formData.append('discount_type', discountType);
         formData.append('applies_to', appliesTo);
         formData.append('status', status);
-        formData.append('start_date', startDate);
-        formData.append('end_date', endDate);
-        formData.append('start_time', startTime);
-        formData.append('end_time', endTime);
+        formData.append('start_date_time', startDateTime);
+        formData.append('end_date_time', endDateTime);
 
         editSelectedMenuItems.forEach((id) => {
             formData.append('menu_items[]', String(id));
@@ -828,9 +772,9 @@ export default function DiscountsIndex({
 
                                             <th className="p-3">Applies To</th>
 
-                                            <th className="p-3">Start Date</th>
+                                            <th className="p-3">Start Date &amp; Time</th>
 
-                                            <th className="p-3">End Date</th>
+                                            <th className="p-3">End Date &amp; Time</th>
 
                                             <th className="p-3">Status</th>
 
@@ -895,14 +839,20 @@ export default function DiscountsIndex({
                                                     </Badge>
                                                 </td>
 
-                                                {/* Start Date */}
+                                                {/* Start Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.start_date}
+                                                    {discount.start_date &&
+                                                    discount.start_time
+                                                        ? `${discount.start_date} ${discount.start_time.slice(0, 5)}`
+                                                        : discount.start_date}
                                                 </td>
 
-                                                {/* End Date */}
+                                                {/* End Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.end_date}
+                                                    {discount.end_date &&
+                                                    discount.end_time
+                                                        ? `${discount.end_date} ${discount.end_time.slice(0, 5)}`
+                                                        : discount.end_date}
                                                 </td>
 
                                                 {/* Status */}
@@ -1406,191 +1356,57 @@ export default function DiscountsIndex({
                             </Select>
                         </div>
 
-                        {/* Start Date */}
+                        {/* Date & Time Range */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Start Date
+                                Date &amp; Time Range
                             </label>
-
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setStartDate(value);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        startDate: validateStartDate(value) || undefined,
-                                        startTime: validateStartTime(value, startTime) || undefined,
-                                        endDate: validateEndDate(endDate, value) || undefined,
-                                        endTime: validateEndTime(endDate, endTime, value, startTime) || undefined,
-                                    }));
-                                }}
-                                onBlur={() => {
-                                    const error = validateStartDate(startDate);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        startDate: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.startDate
-                                        ? 'border-red-500'
-                                        : startDate && !errors.startDate
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
-
-                            {errors.startDate && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.startDate}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* End Date */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                End Date
-                            </label>
-
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setEndDate(value);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        endDate: validateEndDate(value, startDate) || undefined,
-                                        endTime: validateEndTime(value, endTime, startDate, startTime) || undefined,
-                                    }));
-                                }}
-                                onBlur={() => {
-                                    const error = validateEndDate(endDate, startDate);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        endDate: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.endDate
-                                        ? 'border-red-500'
-                                        : endDate && !errors.endDate
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
-
-                            {errors.endDate && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.endDate}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Start Time */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Start Time
-                            </label>
-
-                            <Input
-                                type="time"
-                                value={startTime}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setStartTime(value);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        startTime: validateStartTime(startDate, value) || undefined,
-                                        endTime: validateEndTime(endDate, endTime, startDate, value) || undefined,
-                                    }));
-                                }}
-                                onBlur={() => {
-                                    const error = validateStartTime(startDate, startTime);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        startTime: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.startTime
-                                        ? 'border-red-500'
-                                        : startTime && !errors.startTime
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
-
-                            {errors.startTime && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.startTime}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* End Time */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                End Time
-                            </label>
-
-                            <Input
-                                type="time"
-                                value={endTime}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setEndTime(value);
-
-                                    if (errors.endTime) {
-                                        const error = validateEndTime(
-                                            endDate,
-                                            value,
-                                            startDate,
-                                            startTime,
-                                        );
-                                        setErrors((prev) => ({
-                                            ...prev,
-                                            endTime: error || undefined,
-                                        }));
-                                    }
-                                }}
-                                onBlur={() => {
-                                    const error = validateEndTime(
-                                        endDate,
-                                        endTime,
-                                        startDate,
-                                        startTime,
-                                    );
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        endTime: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.endTime
-                                        ? 'border-red-500'
-                                        : endTime && !errors.endTime
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
-
-                            {errors.endTime && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.endTime}
-                                </p>
-                            )}
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="block text-sm text-gray-600">
+                                        Start Date &amp; Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={startDateTime}
+                                        onChange={(val) => {
+                                            setStartDateTime(val);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                startDateTime:
+                                                    validateStartDateTime(
+                                                        val,
+                                                    ) || undefined,
+                                                endDateTime:
+                                                    validateEndDateTime(
+                                                        endDateTime,
+                                                        val,
+                                                    ) || undefined,
+                                            }));
+                                        }}
+                                        error={errors.startDateTime}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm text-gray-600">
+                                        End Date &amp; Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={endDateTime}
+                                        onChange={(val) => {
+                                            setEndDateTime(val);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                endDateTime:
+                                                    validateEndDateTime(
+                                                        val,
+                                                        startDateTime,
+                                                    ) || undefined,
+                                            }));
+                                        }}
+                                        error={errors.endDateTime}
+                                    />
+                                </div>
+                            </div>
                         </div>
 
                         {/* Description */}
@@ -1705,21 +1521,27 @@ export default function DiscountsIndex({
 
                                 <div>
                                     <p className="text-sm text-muted-foreground">
-                                        Start Date
+                                        Start Date &amp; Time
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.start_date}
+                                        {selectedDiscount.start_date &&
+                                        selectedDiscount.start_time
+                                            ? `${selectedDiscount.start_date} ${selectedDiscount.start_time.slice(0, 5)}`
+                                            : selectedDiscount.start_date}
                                     </p>
                                 </div>
 
                                 <div>
                                     <p className="text-sm text-muted-foreground">
-                                        End Date
+                                        End Date &amp; Time
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.end_date}
+                                        {selectedDiscount.end_date &&
+                                        selectedDiscount.end_time
+                                            ? `${selectedDiscount.end_date} ${selectedDiscount.end_time.slice(0, 5)}`
+                                            : selectedDiscount.end_date}
                                     </p>
                                 </div>
                             </div>
@@ -2001,34 +1823,35 @@ export default function DiscountsIndex({
                             </Select>
                         </div>
 
-                        {/* Start Date */}
+                        {/* Date & Time Range */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
-                                Start Date
+                                Date &amp; Time Range
                             </label>
-
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setStartDate(event.target.value)}
-                            />
-                        </div>
-
-                        {/* End Date */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                End Date
-                            </label>
-
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => setEndDate(event.target.value)}
-                            />
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="block text-sm text-gray-600">
+                                        Start Date &amp; Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={startDateTime}
+                                        onChange={(val) =>
+                                            setStartDateTime(val)
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm text-gray-600">
+                                        End Date &amp; Time
+                                    </label>
+                                    <DateTimePicker
+                                        value={endDateTime}
+                                        onChange={(val) =>
+                                            setEndDateTime(val)
+                                        }
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 

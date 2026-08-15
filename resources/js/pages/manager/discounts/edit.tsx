@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Percent } from 'lucide-react';
 import { useState } from 'react';
+import { DateTimePicker } from '@/components/date-time-picker';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -31,12 +32,27 @@ type Discount = {
     status: string;
     start_date: string;
     end_date: string;
+    start_time: string | null;
+    end_time: string | null;
     menu_items: number[];
 };
 
 type Props = {
     discount: Discount;
     menuItems: { id: number; name: string }[];
+};
+
+const combineDateTime = (
+    dateStr: string | null,
+    timeStr: string | null,
+): string => {
+    if (!dateStr) {
+        return '';
+    }
+
+    const timePart = timeStr ? timeStr.slice(0, 5) : '00:00';
+
+    return `${dateStr}T${timePart}`;
 };
 
 export default function DiscountEdit({ discount, menuItems }: Props) {
@@ -48,10 +64,11 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
         percentage: discount.percentage || '',
         fixed_amount: discount.fixed_amount || '',
         status: discount.status,
-        start_date: discount.start_date,
-        end_date: discount.end_date,
-        start_time: discount.start_time || '',
-        end_time: discount.end_time || '',
+        start_date_time: combineDateTime(
+            discount.start_date,
+            discount.start_time,
+        ),
+        end_date_time: combineDateTime(discount.end_date, discount.end_time),
         menu_items: discount.menu_items || [],
     });
 
@@ -101,10 +118,8 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
         formData.append('discount_type', data.discount_type);
         formData.append('applies_to', data.applies_to);
         formData.append('status', data.status);
-        formData.append('start_date', data.start_date);
-        formData.append('end_date', data.end_date);
-        formData.append('start_time', data.start_time);
-        formData.append('end_time', data.end_time);
+        formData.append('start_date_time', data.start_date_time);
+        formData.append('end_date_time', data.end_date_time);
 
         if (data.discount_type === 'percentage') {
             formData.append('percentage', data.percentage);
@@ -144,11 +159,14 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setData('name', value);
-                                        const error = validateDiscountName(value);
+                                        const error =
+                                            validateDiscountName(value);
                                         setNameError(error);
                                     }}
                                     onBlur={() => {
-                                        const error = validateDiscountName(data.name);
+                                        const error = validateDiscountName(
+                                            data.name,
+                                        );
                                         setNameError(error);
                                     }}
                                     required
@@ -156,8 +174,8 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
                                         nameError
                                             ? 'border-red-500'
                                             : data.name.trim() && !nameError
-                                                ? 'border-green-500'
-                                                : ''
+                                              ? 'border-green-500'
+                                              : ''
                                     }
                                 />
                                 {nameError && (
@@ -360,62 +378,48 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="start_date">Start Date</Label>
-                                <Input
-                                    id="start_date"
-                                    type="date"
-                                    value={data.start_date}
-                                    onChange={(e) =>
-                                        setData('start_date', e.target.value)
-                                    }
-                                    required
-                                />
-                                <InputError message={errors.start_date} />
+                            <Label>Date &amp; Time Range</Label>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="start_date_time"
+                                        className="text-sm text-gray-600"
+                                    >
+                                        Start Date &amp; Time
+                                    </Label>
+                                    <DateTimePicker
+                                        id="start_date_time"
+                                        value={data.start_date_time || ''}
+                                        onChange={(val) =>
+                                            setData(
+                                                'start_date_time',
+                                                val,
+                                            )
+                                        }
+                                        error={errors.start_date_time}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label
+                                        htmlFor="end_date_time"
+                                        className="text-sm text-gray-600"
+                                    >
+                                        End Date &amp; Time
+                                    </Label>
+                                    <DateTimePicker
+                                        id="end_date_time"
+                                        value={data.end_date_time || ''}
+                                        onChange={(val) =>
+                                            setData(
+                                                'end_date_time',
+                                                val,
+                                            )
+                                        }
+                                        error={errors.end_date_time}
+                                    />
+                                </div>
                             </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="start_time">
-                                    Start Time (optional)
-                                </Label>
-                                <Input
-                                    id="start_time"
-                                    type="time"
-                                    value={data.start_time}
-                                    onChange={(e) =>
-                                        setData('start_time', e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.start_time} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="end_date">End Date</Label>
-                                <Input
-                                    id="end_date"
-                                    type="date"
-                                    value={data.end_date}
-                                    onChange={(e) =>
-                                        setData('end_date', e.target.value)
-                                    }
-                                    required
-                                />
-                                <InputError message={errors.end_date} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="end_time">
-                                    End Time (optional)
-                                </Label>
-                                <Input
-                                    id="end_time"
-                                    type="time"
-                                    value={data.end_time}
-                                    onChange={(e) =>
-                                        setData('end_time', e.target.value)
-                                    }
-                                />
-                                <InputError message={errors.end_time} />
-                            </div>
+                        </div>
 
                             <div className="flex items-center gap-4">
                                 <Button disabled={processing}>

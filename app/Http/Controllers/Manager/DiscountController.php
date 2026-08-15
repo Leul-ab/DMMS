@@ -56,17 +56,24 @@ class DiscountController extends Controller
             'percentage' => ['required_if:discount_type,percentage', 'nullable', 'numeric', 'min:0', 'max:100'],
             'fixed_amount' => ['required_if:discount_type,fixed', 'nullable', 'numeric', 'min:0', 'max:999999.99'],
             'status' => ['required', Rule::in(['active', 'inactive', 'expired', 'scheduled'])],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'start_time' => ['nullable', 'date_format:H:i'],
-            'end_time' => ['nullable', 'date_format:H:i'],
+            'start_date_time' => ['required', 'date_format:Y-m-d\TH:i'],
+            'end_date_time' => ['required', 'date_format:Y-m-d\TH:i', 'after:start_date_time'],
             'menu_items' => ['nullable', 'array'],
             'menu_items.*' => ['exists:menu_items,id'],
         ]);
 
+        [$start_date, $start_time] = explode('T', $validated['start_date_time']);
+        [$end_date, $end_time] = explode('T', $validated['end_date_time']);
+
+        $validated['start_date'] = $start_date;
+        $validated['end_date'] = $end_date;
+        $validated['start_time'] = $start_time;
+        $validated['end_time'] = $end_time;
+        unset($validated['start_date_time'], $validated['end_date_time']);
+
         $discount = Discount::create($validated);
 
-        if (!empty($validated['menu_items'])) {
+        if (! empty($validated['menu_items'])) {
             $discount->menuItems()->sync($validated['menu_items']);
         }
 
@@ -93,13 +100,20 @@ class DiscountController extends Controller
             'percentage' => ['required_if:discount_type,percentage', 'nullable', 'numeric', 'min:0', 'max:100'],
             'fixed_amount' => ['required_if:discount_type,fixed', 'nullable', 'numeric', 'min:0', 'max:999999.99'],
             'status' => ['required', Rule::in(['active', 'inactive', 'expired', 'scheduled'])],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'start_time' => ['nullable', 'date_format:H:i'],
-            'end_time' => ['nullable', 'date_format:H:i'],
+            'start_date_time' => ['required', 'date_format:Y-m-d\TH:i'],
+            'end_date_time' => ['required', 'date_format:Y-m-d\TH:i', 'after:start_date_time'],
             'menu_items' => ['nullable', 'array'],
             'menu_items.*' => ['exists:menu_items,id'],
         ]);
+
+        [$start_date, $start_time] = explode('T', $validated['start_date_time']);
+        [$end_date, $end_time] = explode('T', $validated['end_date_time']);
+
+        $validated['start_date'] = $start_date;
+        $validated['end_date'] = $end_date;
+        $validated['start_time'] = $start_time;
+        $validated['end_time'] = $end_time;
+        unset($validated['start_date_time'], $validated['end_date_time']);
 
         $discount->update($validated);
 
