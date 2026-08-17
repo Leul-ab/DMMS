@@ -23,13 +23,13 @@ class BookingManagementController extends Controller
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'like', "%{$search}%")
-                  ->orWhereHas('customer', function ($cq) use ($search) {
-                      $cq->where('name', 'like', "%{$search}%")
-                         ->orWhere('phone', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('tables', function ($tq) use ($search) {
-                      $tq->where('table_number', 'like', "%{$search}%");
-                  });
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('tables', function ($tq) use ($search) {
+                        $tq->where('table_number', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -37,10 +37,10 @@ class BookingManagementController extends Controller
         if ($status = $request->get('status')) {
             if ($status === 'expired') {
                 $query->where('status', 'active')
-                      ->where('expires_at', '<', Carbon::now());
+                    ->where('expires_at', '<', Carbon::now());
             } elseif ($status === 'active') {
                 $query->where('status', 'active')
-                      ->where('expires_at', '>', Carbon::now());
+                    ->where('expires_at', '>', Carbon::now());
             } else {
                 $query->where('status', $status);
             }
@@ -60,7 +60,7 @@ class BookingManagementController extends Controller
                     'customer_name' => $booking->customer?->name ?? 'Unknown',
                     'customer_phone' => $booking->customer?->phone ?? 'N/A',
                     'customer_email' => $booking->customer?->email ?? null,
-                    'tables' => $booking->tables->map(fn($t) => [
+                    'tables' => $booking->tables->map(fn ($t) => [
                         'id' => $t->id,
                         'table_number' => $t->table_number,
                     ]),
@@ -69,7 +69,7 @@ class BookingManagementController extends Controller
                     'expires_at' => $booking->expires_at,
                     'cancelled_at' => $booking->cancelled_at,
                     'is_expired' => $isExpired,
-                    'time_remaining_seconds' => !$isExpired && $booking->status === 'active' && $booking->expires_at
+                    'time_remaining_seconds' => ! $isExpired && $booking->status === 'active' && $booking->expires_at
                         ? max(0, Carbon::now()->diffInSeconds($booking->expires_at, false))
                         : null,
                 ];
@@ -105,7 +105,7 @@ class BookingManagementController extends Controller
     public function cancel(TableBooking $booking): RedirectResponse
     {
         if ($booking->status !== 'active') {
-            return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
+            return back()->withErrors(['booking' => 'This booking is already '.$booking->status.'.']);
         }
 
         $booking->update([
@@ -177,7 +177,7 @@ class BookingManagementController extends Controller
                 'customer_name' => $booking->customer?->name ?? 'Unknown',
                 'customer_phone' => $booking->customer?->phone ?? 'N/A',
                 'customer_email' => $booking->customer?->email ?? 'N/A',
-                'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
+                'tables' => $booking->tables->map(fn ($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,

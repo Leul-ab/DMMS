@@ -5,6 +5,7 @@ import {
     Minus,
     Trash2,
     Copy,
+    Check,
     CheckCircle2,
     Clock,
     ChefHat,
@@ -98,8 +99,12 @@ type BookingData = {
     tables: number[];
     booked_at: string;
     expires_at: string;
-    expires_in_seconds: number;
+    expires_in_seconds?: number | null;
     payment_status: string;
+    payment_method?: string | null;
+    transaction_number?: string | null;
+    amount?: string | number | null;
+    paid_at?: string | null;
 };
 
 type Props = {
@@ -211,6 +216,17 @@ export function MenuView({
         bookingConfirm?.expires_in_seconds ?? 300,
     );
 
+    const [paymentStep, setPaymentStep] = useState<'idle' | 'select' | 'account' | 'verification' | 'success'>('idle');
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+    const [transactionNumber, setTransactionNumber] = useState('');
+    const [isSubmittingVerification, setIsSubmittingVerification] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const bookingPaymentAccounts: Record<string, { label: string; number: string }> = {
+        telebirr: { label: 'Telebirr', number: '0912345678' },
+        cbe_birr: { label: 'CBE', number: '100012345678' },
+    };
+
     useEffect(() => {
         if (booking_success && customer_phone && booking_data) {
             setBookingConfirm(booking_data);
@@ -224,12 +240,16 @@ export function MenuView({
             return;
         }
 
+        if (bookingConfirm?.payment_status === 'paid') {
+            return;
+        }
+
         const interval = setInterval(() => {
             setCountdown((prev) => Math.max(0, prev - 1));
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [showBookingSuccess]);
+    }, [showBookingSuccess, bookingConfirm?.payment_status]);
 
     useEffect(() => {
         const checkActiveBooking = async () => {
@@ -516,6 +536,93 @@ export function MenuView({
             toast.success('Phone number copied!');
             setTimeout(() => setCopied(false), 2000);
         }
+    };
+
+    const handlePayNow = () => {
+        setPaymentStep('select');
+    };
+
+    const handleSelectMethod = (method: string) => {
+        setSelectedPaymentMethod(method);
+        setPaymentStep('account');
+    };
+
+    const handleCopyAccount = async () => {
+        if (!selectedPaymentMethod) {
+            return;
+        }
+
+        const accountNumber = bookingPaymentAccounts[selectedPaymentMethod].number;
+
+        try {
+            await navigator.clipboard.writeText(accountNumber);
+            setCopySuccess(true);
+            toast.success('Account number copied.');
+
+            setTimeout(() => {
+                setPaymentStep('verification');
+                setCopySuccess(false);
+            }, 800);
+        } catch {
+            toast.error('Failed to copy account number.');
+        }
+    };
+
+    const handleSubmitVerification = async () => {
+        if (!bookingConfirm || !selectedPaymentMethod || !transactionNumber.trim()) {
+            return;
+        }
+
+        setIsSubmittingVerification(true);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch(`/booking/${bookingConfirm.id}/submit-payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({
+                    payment_method: selectedPaymentMethod,
+                    transaction_number: transactionNumber,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Payment verified successfully!');
+                setBookingConfirm({
+                    ...bookingConfirm,
+                    payment_status: 'paid',
+                    payment_method: data.booking?.payment_method || selectedPaymentMethod,
+                    transaction_number: data.booking?.transaction_number || transactionNumber,
+                    paid_at: data.booking?.paid_at || new Date().toISOString(),
+                });
+                setPaymentStep('success');
+            } else {
+                toast.error(data.message || 'Payment verification failed.');
+            }
+        } catch {
+            toast.error('Payment verification failed. Please try again.');
+        } finally {
+            setIsSubmittingVerification(false);
+        }
+    };
+
+    const handleClosePayment = () => {
+        setPaymentStep('idle');
+        setSelectedPaymentMethod(null);
+        setTransactionNumber('');
+        setCopySuccess(false);
     };
 
     const handleMyOrderClick = () => {
@@ -849,8 +956,12 @@ export function MenuView({
                                 <span className="text-sm text-red-600">
                                     Expires In
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">
-                                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${bookingConfirm?.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {bookingConfirm?.payment_status === 'paid' ? (
+                                        <CheckCircle2 className="h-4 w-4" />
+                                    ) : (
+                                        <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                                    )}
                                     {formatCountdown(countdown)}
                                 </span>
                             </div>
@@ -874,39 +985,9 @@ export function MenuView({
                         </div>
                     </div>
 
-                    {bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && (
+                    {paymentStep === 'idle' && bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && (
                         <Button
-                            onClick={async () => {
-                                try {
-                                    const getXsrfToken = () => {
-                                        const match = document.cookie.match(
-                                            new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
-                                        );
-
-                                        return match ? decodeURIComponent(match[3]) : '';
-                                    };
-                                    const response = await fetch(`/booking/${bookingConfirm.id}/pay`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'X-XSRF-TOKEN': getXsrfToken(),
-                                        },
-                                    });
-                                    const data = await response.json();
-
-                                    if (data.success) {
-                                        toast.success('Payment confirmed successfully!');
-                                        setBookingConfirm({
-                                            ...bookingConfirm,
-                                            payment_status: 'paid',
-                                        });
-                                    } else {
-                                        toast.error(data.message || 'Payment failed.');
-                                    }
-                                } catch {
-                                    toast.error('Payment failed. Please try again.');
-                                }
-                            }}
+                            onClick={handlePayNow}
                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -914,7 +995,174 @@ export function MenuView({
                         </Button>
                     )}
 
-                    {bookingConfirm && bookingConfirm.payment_status === 'paid' && (
+                    {/* Payment Flow UI */}
+                    {paymentStep === 'select' && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">Make Payment</h3>
+                            <p className="text-sm text-gray-500">Select Payment Method</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {Object.entries(bookingPaymentAccounts).map(([key, account]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => handleSelectMethod(key)}
+                                        className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-red-100 p-4 transition hover:border-red-300 hover:bg-red-50"
+                                    >
+                                        <span className="text-2xl">
+                                            {key === 'telebirr' ? '📱' : '🏦'}
+                                        </span>
+                                        <span className="text-sm font-bold text-gray-900">
+                                            {account.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <Button
+                                variant="ghost"
+                                onClick={handleClosePayment}
+                                className="w-full text-gray-500"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'account' && selectedPaymentMethod && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">
+                                {bookingPaymentAccounts[selectedPaymentMethod].label} Payment
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                {bookingPaymentAccounts[selectedPaymentMethod].label} Account Number
+                            </p>
+                            <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50 p-4 text-center">
+                                <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">
+                                    Account Number
+                                </p>
+                                <p className="mt-2 font-mono text-xl font-black tracking-wider text-stone-900 select-all">
+                                    {bookingPaymentAccounts[selectedPaymentMethod].number}
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleCopyAccount}
+                                disabled={copySuccess}
+                                className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 py-3.5 font-bold text-white hover:from-red-600 hover:to-red-700"
+                            >
+                                {copySuccess ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Check className="h-4 w-4" />
+                                        Copied
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Copy className="h-4 w-4" />
+                                        Copy
+                                    </span>
+                                )}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleClosePayment}
+                                className="w-full text-gray-500"
+                            >
+                                Back
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'verification' && selectedPaymentMethod && bookingConfirm && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">
+                                Payment Verification
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Booking</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        #{String(bookingConfirm.id).padStart(6, '0')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Table</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        Table {bookingConfirm.tables?.join(', ') || 'N/A'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Payment Method</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        {bookingPaymentAccounts[selectedPaymentMethod].label}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Amount</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        0.00 ETB
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Transaction Number
+                                </label>
+                                <input
+                                    type="text"
+                                    value={transactionNumber}
+                                    onChange={(e) => setTransactionNumber(e.target.value)}
+                                    placeholder="Enter transaction number"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-red-500"
+                                />
+                            </div>
+                            <Button
+                                onClick={handleSubmitVerification}
+                                disabled={isSubmittingVerification || !transactionNumber.trim()}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                {isSubmittingVerification ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Verifying...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Submit Payment Verification
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'success' && bookingConfirm && (
+                        <div className="text-center space-y-3">
+                            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+                            <h3 className="text-lg font-black text-gray-900">Payment Successful</h3>
+                            <div className="space-y-2 text-left">
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Booking</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        #{String(bookingConfirm.id).padStart(6, '0')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Table</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        Table {bookingConfirm.tables?.join(', ') || 'N/A'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Payment Status</span>
+                                    <span className="text-sm font-bold text-green-600">Paid</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Time Remaining</span>
+                                    <span className="text-sm font-bold text-gray-900">{formatCountdown(countdown)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {bookingConfirm && bookingConfirm.payment_status === 'paid' && paymentStep !== 'success' && (
                         <div className="rounded-xl bg-green-50 p-4 text-center">
                             <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
                             <p className="mt-2 text-sm font-bold text-green-700">
@@ -1131,7 +1379,7 @@ export function MenuView({
                     setShowMemberVerify(open);
 
                     if (!open) {
-                        setMemberVerifyCode('');
+                        setMemberVerifyPhone('');
                         setMemberVerifyError('');
                     }
                 }}

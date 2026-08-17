@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 // Customer order route
@@ -10,7 +11,7 @@ Route::post('/orders', [OrderController::class, 'store'])
 
 Route::post(
     '/orders/{order}/payment',
-    [App\Http\Controllers\PaymentController::class, 'submit']
+    [PaymentController::class, 'submit']
 )->name('orders.payment.submit');
 
 Route::post(

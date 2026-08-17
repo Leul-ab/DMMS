@@ -61,6 +61,7 @@ export function AppSidebar() {
             kitchen: number;
             serve: number;
             paymentVerification: number;
+            bookingPayment: number;
         };
     }>().props;
 
@@ -180,10 +181,10 @@ export function AppSidebar() {
         ...(can('view payments')
             ? [
                   {
-                      title: 'Payment Verification',
+                      title: 'Verification',
                       href: '/manager/payment-verification',
                       icon: ShieldCheck,
-                      badge: notifications?.paymentVerification ?? 0,
+                      badge: (notifications?.paymentVerification ?? 0) + (notifications?.bookingPayment ?? 0),
                   },
               ]
             : []),

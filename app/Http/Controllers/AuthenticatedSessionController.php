@@ -3,24 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Auth\LoginRequest;
-use App\Models\User;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\LoginViewResponse;
 use Laravel\Fortify\Contracts\LogoutResponse;
-use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class AuthenticatedSessionController extends Controller
 {
     /**
      * The guard implementation.
      *
-     * @var \Illuminate\Contracts\Auth\StatefulGuard
+     * @var StatefulGuard
      */
     protected $guard;
 
@@ -48,7 +46,7 @@ class AuthenticatedSessionController extends Controller
         $user = $request->authenticate();
 
         $hasTwoFactor = optional($user)->two_factor_secret &&
-            in_array(\Laravel\Fortify\TwoFactorAuthenticatable::class, class_uses_recursive($user)) &&
+            in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user)) &&
             (! Fortify::confirmsTwoFactorAuthentication() || ! is_null(optional($user)->two_factor_confirmed_at));
 
         if (Features::enabled(Features::twoFactorAuthentication()) && $hasTwoFactor) {
@@ -81,4 +79,3 @@ class AuthenticatedSessionController extends Controller
         return app(LogoutResponse::class);
     }
 }
-

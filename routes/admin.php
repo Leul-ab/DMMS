@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\BranchController;
+use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\UserController;
@@ -33,18 +35,18 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('staff/assign-table', [StaffController::class, 'assignTable'])->name('staff.assign-table')->middleware('permission:update staff');
 
     // Payment Management
-    Route::get('payments', [\App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index')->middleware('permission:view payments');
-    Route::get('payments/today', [\App\Http\Controllers\Admin\PaymentController::class, 'todayRevenue'])->name('payments.today')->middleware('permission:view payments');
-    Route::get('payments/revenue', [\App\Http\Controllers\Admin\PaymentController::class, 'revenue'])->name('payments.revenue')->middleware('permission:view payments');
-    Route::get('payments/orders', [\App\Http\Controllers\Admin\PaymentController::class, 'orders'])->name('payments.orders')->middleware('permission:view payments');
-    Route::get('payments/orders/{order}/detail', [\App\Http\Controllers\Admin\PaymentController::class, 'orderDetail'])->name('payments.orders.detail')->middleware('permission:view payments');
-    Route::get('payments/{order}', [\App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show')->middleware('permission:show payments');
-    Route::patch('payments/{order}/status', [\App\Http\Controllers\Admin\PaymentController::class, 'updateStatus'])->name('payments.update-status')->middleware('permission:status payments');
-    Route::get('payments/{order}/receipt', [\App\Http\Controllers\Admin\PaymentController::class, 'printReceipt'])->name('payments.receipt')->middleware('permission:view payments');
+    Route::get('payments', [PaymentController::class, 'index'])->name('payments.index')->middleware('permission:view payments');
+    Route::get('payments/today', [PaymentController::class, 'todayRevenue'])->name('payments.today')->middleware('permission:view payments');
+    Route::get('payments/revenue', [PaymentController::class, 'revenue'])->name('payments.revenue')->middleware('permission:view payments');
+    Route::get('payments/orders', [PaymentController::class, 'orders'])->name('payments.orders')->middleware('permission:view payments');
+    Route::get('payments/orders/{order}/detail', [PaymentController::class, 'orderDetail'])->name('payments.orders.detail')->middleware('permission:view payments');
+    Route::get('payments/{order}', [PaymentController::class, 'show'])->name('payments.show')->middleware('permission:show payments');
+    Route::patch('payments/{order}/status', [PaymentController::class, 'updateStatus'])->name('payments.update-status')->middleware('permission:status payments');
+    Route::get('payments/{order}/receipt', [PaymentController::class, 'printReceipt'])->name('payments.receipt')->middleware('permission:view payments');
 
     // Customer Feedback Management
-    Route::get('feedback', [\App\Http\Controllers\Admin\FeedbackController::class, 'index'])->name('feedback.index')->middleware('permission:view feedback');
-    Route::get('feedback/export', [\App\Http\Controllers\Admin\FeedbackController::class, 'export'])->name('feedback.export')->middleware('permission:view feedback');
+    Route::get('feedback', [FeedbackController::class, 'index'])->name('feedback.index')->middleware('permission:view feedback');
+    Route::get('feedback/export', [FeedbackController::class, 'export'])->name('feedback.export')->middleware('permission:view feedback');
 
     // Role Management
     Route::get('roles', [RoleController::class, 'index'])->name('roles.index')->middleware('permission:view roles');

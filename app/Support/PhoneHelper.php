@@ -22,17 +22,17 @@ class PhoneHelper
         }
 
         if ($hasPlus) {
-            return '+' . $digits;
+            return '+'.$digits;
         }
 
         if (str_starts_with($digits, '0')) {
-            return '+251' . substr($digits, 1);
+            return '+251'.substr($digits, 1);
         }
 
         if (str_starts_with($digits, '251')) {
-            return '+' . $digits;
+            return '+'.$digits;
         }
 
-        return '+251' . $digits;
+        return '+251'.$digits;
     }
 }

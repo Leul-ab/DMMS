@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Feedback;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -270,11 +271,11 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $feedbackAvg = \App\Models\Feedback::selectRaw(
+        $feedbackAvg = Feedback::selectRaw(
             'AVG(overall_rating) as overall_rating'
         )->first();
 
-        $totalReviews = \App\Models\Feedback::count();
+        $totalReviews = Feedback::count();
 
         $feedbackAnalytics = [
             'totalReviews' => $totalReviews,
@@ -292,7 +293,7 @@ class DashboardController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $recentFeedback = \App\Models\Feedback::with(['customer', 'order'])
+        $recentFeedback = Feedback::with(['customer', 'order'])
             ->latest()
             ->take(5)
             ->get()

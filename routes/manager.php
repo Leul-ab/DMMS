@@ -1,13 +1,14 @@
 <?php
 
+use App\Http\Controllers\Manager\BookingManagementController;
+use App\Http\Controllers\Manager\CustomerController;
+use App\Http\Controllers\Manager\DiscountController;
 use App\Http\Controllers\Manager\MenuCategoryController;
 use App\Http\Controllers\Manager\MenuItemController;
 use App\Http\Controllers\Manager\OrderController;
-use App\Http\Controllers\Manager\CustomerController;
-use App\Http\Controllers\Manager\RestaurantTableController;
-use App\Http\Controllers\Manager\ReportController;
 use App\Http\Controllers\Manager\PaymentVerificationController;
-use App\Http\Controllers\Manager\DiscountController;
+use App\Http\Controllers\Manager\ReportController;
+use App\Http\Controllers\Manager\RestaurantTableController;
 use App\Http\Controllers\Manager\TableSectionController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,7 +54,6 @@ Route::middleware(['auth'])
             'categories/{category}/toggle-status',
             [MenuCategoryController::class, 'toggleStatus']
         )->name('categories.toggle-status')->middleware('permission:status menu categories');
-
 
         // =========================
         // Menu Items
@@ -103,7 +103,6 @@ Route::middleware(['auth'])
             [MenuItemController::class, 'uploadImage']
         )->name('items.upload-image')->middleware('permission:update menu items');
 
-
         // =========================
         // Customer Orders
         // Manager can VIEW, EDIT,
@@ -144,6 +143,45 @@ Route::middleware(['auth'])
             [PaymentVerificationController::class, 'reject']
         )->name('payment-verification.reject')->middleware('permission:status payments');
 
+        Route::patch(
+            'payment-verification/extensions/{payment}/verify',
+            [PaymentVerificationController::class, 'verifyExtension']
+        )->name('payment-verification.extension.verify')->middleware('permission:status payments');
+
+        Route::patch(
+            'payment-verification/extensions/{payment}/reject',
+            [PaymentVerificationController::class, 'rejectExtension']
+        )->name('payment-verification.extension.reject')->middleware('permission:status payments');
+
+        // =========================
+        // Booking Payment
+        // =========================
+
+        Route::get(
+            'booking-payment',
+            [PaymentVerificationController::class, 'bookingPayment']
+        )->name('booking-payment.index')->middleware('permission:view payments');
+
+        Route::get(
+            'booking-payment/{notification}',
+            [PaymentVerificationController::class, 'showBookingPayment']
+        )->name('booking-payment.show')->middleware('permission:view payments');
+
+        Route::patch(
+            'booking-payment/{notification}/approve',
+            [PaymentVerificationController::class, 'approveBookingPayment']
+        )->name('booking-payment.approve')->middleware('permission:status payments');
+
+        Route::patch(
+            'booking-payment/{notification}/reject',
+            [PaymentVerificationController::class, 'rejectBookingPayment']
+        )->name('booking-payment.reject')->middleware('permission:status payments');
+
+        Route::patch(
+            'booking-payment/notifications/{notification}/read',
+            [PaymentVerificationController::class, 'markNotificationRead']
+        )->name('booking-payment.notifications.read')->middleware('permission:status payments');
+
         // =========================
         // Table Sections
         // =========================
@@ -171,7 +209,6 @@ Route::middleware(['auth'])
             'table-sections/{section}',
             [TableSectionController::class, 'destroy']
         )->name('table-sections.destroy')->middleware('permission:delete tables');
-
 
         // =========================
         // Restaurant Tables
@@ -215,7 +252,6 @@ Route::middleware(['auth'])
             'tables/{table}/regenerate-qr',
             [RestaurantTableController::class, 'regenerateQr']
         )->name('tables.regenerate-qr')->middleware('permission:update tables');
-
 
         // =========================
         // Customers CRUD
@@ -269,35 +305,34 @@ Route::middleware(['auth'])
         Route::get(
             'bookings',
             [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'index'
+                BookingManagementController::class,
+                'index',
             ]
         )->name('bookings.index')->middleware('permission:view bookings');
 
         Route::post(
             'bookings/{booking}/cancel',
             [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'cancel'
+                BookingManagementController::class,
+                'cancel',
             ]
         )->name('bookings.cancel')->middleware('permission:status bookings');
 
         Route::post(
             'bookings/{booking}/complete',
             [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'complete'
+                BookingManagementController::class,
+                'complete',
             ]
         )->name('bookings.complete')->middleware('permission:status bookings');
 
         Route::delete(
             'bookings/{booking}',
             [
-                \App\Http\Controllers\Manager\BookingManagementController::class,
-                'destroy'
+                BookingManagementController::class,
+                'destroy',
             ]
         )->name('bookings.destroy')->middleware('permission:delete bookings');
-
 
         // =========================
         // Discounts

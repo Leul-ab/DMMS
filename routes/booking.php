@@ -21,6 +21,9 @@ Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])
 Route::post('/booking/{booking}/pay', [BookingController::class, 'pay'])
     ->name('booking.pay');
 
+Route::post('/booking/{booking}/submit-payment', [BookingController::class, 'submitPaymentVerification'])
+    ->name('booking.submit-payment');
+
 // API route for booking sidebar
 Route::get('/api/active-booking', [BookingController::class, 'getActiveBooking']);
 
@@ -32,3 +35,17 @@ Route::get('/api/bookings/{booking}', [BookingController::class, 'getBookingDeta
 
 // API route to find booking by customer phone
 Route::post('/api/bookings/lookup', [BookingController::class, 'lookupByCustomerCode']);
+
+// Customer copy account number and create booking payment notification
+Route::post('/customer/bookings/{booking}/copy-account', [BookingController::class, 'copyAccount'])
+    ->name('customer.bookings.copy-account');
+
+// Booking extension routes
+Route::post('/api/booking/{booking}/request-extension', [BookingController::class, 'requestExtension'])
+    ->name('booking.request-extension');
+
+Route::post('/api/booking/{booking}/extend', [BookingController::class, 'extendBooking'])
+    ->name('booking.extend');
+
+Route::get('/api/booking/{booking}/extension-status', [BookingController::class, 'checkExtensionStatus'])
+    ->name('booking.extension-status');

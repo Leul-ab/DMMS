@@ -46,8 +46,8 @@ class PaymentController extends Controller
         // Create or update the payment record with the selected method.
         $payment = $order->payment;
 
-        if (!$payment) {
-            $payment = new Payment();
+        if (! $payment) {
+            $payment = new Payment;
             $payment->order_id = $order->id;
             $payment->table_id = $order->table_id;
             $payment->subtotal = $order->total_amount;

@@ -1,16 +1,22 @@
 <?php
+
+use App\Models\Order;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 require 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+$kernel = $app->make(Kernel::class);
 $response = $kernel->handle(
-    $request = Illuminate\Http\Request::capture()
+    $request = Request::capture()
 );
 $dateFormat = '%Y-%m-%d';
-$sql = App\Models\Order::query()
+$sql = Order::query()
     ->select(
-        Illuminate\Support\Facades\DB::raw("DATE_FORMAT(created_at, '{$dateFormat}') as period"),
-        Illuminate\Support\Facades\DB::raw('COUNT(*) as total_orders'),
-        Illuminate\Support\Facades\DB::raw('SUM(total_amount) as revenue')
+        DB::raw("DATE_FORMAT(created_at, '{$dateFormat}') as period"),
+        DB::raw('COUNT(*) as total_orders'),
+        DB::raw('SUM(total_amount) as revenue')
     )
     ->groupBy('period')
     ->orderByDesc('period')

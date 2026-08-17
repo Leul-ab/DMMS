@@ -7,18 +7,20 @@ import {
     CheckCircle2,
     XCircle,
     Loader2,
-    FileText,
     Hash,
     Phone,
     Smartphone,
     Landmark,
     Ban,
-    Receipt,
+    Calendar,
+    Table2,
+    User,
+    Eye,
+    Bell,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { ReceiptModal } from '@/components/receipt-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,60 +45,36 @@ import {
 } from '@/components/ui/select';
 import { useCan } from '@/hooks/use-can';
 
-type Payment = {
+type Booking = {
     id: number;
+    customer_name: string;
+    customer_phone: string;
+    tables: { id: number; table_number: number; section: string | null }[];
+    booked_at: string;
+    expires_at: string | null;
     payment_method: string | null;
+    booking_amount: string;
     payment_status: string;
-    amount: string;
-    transaction_number: string | null;
     transaction_reference: string | null;
-    verified_at: string | null;
     paid_at: string | null;
-    cashier: { id: number; name: string } | null;
-    verifier: { id: number; name: string } | null;
-};
-
-type ReceiptData = {
-    id: number;
-    receipt_number: string;
-    transaction_number: string | null;
-    payment_method: string | null;
-    amount: string;
-    subtotal: string;
-    tax: string;
-    service_charge: string;
-    discount: string;
-    generated_at: string | null;
-};
-
-type ReceiptItem = {
-    id: number;
-    quantity: number;
-    price: string;
-    menu_item: {
-        id: number;
-        name: string;
-    };
-};
-
-type Order = {
-    id: number;
-    order_number: string;
+    cancelled_at: string | null;
     status: string;
-    payment_status: string;
-    total_amount: string;
-    customer_name: string | null;
-    customer_phone: string | null;
-    created_at: string;
-    table: { id: number; table_number: number } | null;
-    customer: { id: number; name: string } | null;
-    payment: Payment | null;
-    receipt: ReceiptData | null;
-    order_items: ReceiptItem[];
+    payment: {
+        id: number;
+        payment_method: string | null;
+        payment_status: string;
+        amount: string;
+        transaction_number: string | null;
+        transaction_reference: string | null;
+        verified_at: string | null;
+        paid_at: string | null;
+        cashier: { id: number; name: string } | null;
+        verifier: { id: number; name: string } | null;
+    } | null;
 };
 
 type PaginatedData = {
-    data: Order[];
+    data: Booking[];
     current_page: number;
     last_page: number;
     per_page: number;
@@ -113,7 +91,7 @@ type Stats = {
 };
 
 type Props = {
-    orders: PaginatedData;
+    bookings: PaginatedData;
     stats: Stats;
     filters: {
         search?: string;
@@ -135,21 +113,17 @@ const paymentStatusLabels: Record<string, string> = {
 };
 
 const paymentMethodLabels: Record<string, string> = {
-    cash: 'Cash',
     telebirr: 'Telebirr',
     cbe_birr: 'CBE Birr',
-    bank_transfer: 'Bank Transfer',
-    card: 'Card',
 };
 
 const paymentMethodIcons: Record<string, React.ReactNode> = {
-    cash: <FileText className="size-4" />,
     telebirr: <Smartphone className="size-4" />,
     cbe_birr: <Landmark className="size-4" />,
 };
 
-export default function PaymentVerificationIndex({
-    orders,
+export default function BookingVerificationTab({
+    bookings,
     stats,
     filters,
 }: Props) {
@@ -159,49 +133,49 @@ export default function PaymentVerificationIndex({
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || 'pending');
     const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || '');
 
-    const [verifyingOrder, setVerifyingOrder] = useState<Order | null>(null);
+    const [verifyingBooking, setVerifyingBooking] = useState<Booking | null>(null);
     const [transactionNumber, setTransactionNumber] = useState('');
     const [transactionError, setTransactionError] = useState('');
     const [processing, setProcessing] = useState(false);
 
-    const [rejectingOrder, setRejectingOrder] = useState<Order | null>(null);
-    const [viewingReceiptOrder, setViewingReceiptOrder] = useState<Order | null>(null);
+    const [rejectingBooking, setRejectingBooking] = useState<Booking | null>(null);
+    const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
 
     const applyFilters = () => {
         const params: Record<string, string> = {};
 
         if (search) {
-params.search = search;
-}
+            params.search = search;
+        }
 
         if (paymentStatus) {
-params.payment_status = paymentStatus;
-}
+            params.payment_status = paymentStatus;
+        }
 
         if (paymentMethod) {
-params.payment_method = paymentMethod;
-}
+            params.payment_method = paymentMethod;
+        }
 
-        router.get('/manager/payment-verification', params, { preserveState: true });
+        router.get('/manager/booking-verification', params, { preserveState: true });
     };
 
     const clearFilters = () => {
         setSearch('');
         setPaymentStatus('pending');
         setPaymentMethod('');
-        router.get('/manager/payment-verification', {}, { preserveState: true });
+        router.get('/manager/booking-verification', {}, { preserveState: true });
     };
 
-    const openVerifyModal = (order: Order) => {
-        setVerifyingOrder(order);
+    const openVerifyModal = (booking: Booking) => {
+        setVerifyingBooking(booking);
         setTransactionNumber('');
         setTransactionError('');
     };
 
     const submitVerification = () => {
-        if (!verifyingOrder) {
-return;
-}
+        if (!verifyingBooking) {
+            return;
+        }
 
         if (!transactionNumber.trim()) {
             setTransactionError('Transaction number is required before verifying the payment.');
@@ -211,13 +185,13 @@ return;
 
         setProcessing(true);
         router.patch(
-            `/manager/payment-verification/${verifyingOrder.id}/verify`,
+            `/manager/booking-verification/${verifyingBooking.id}/verify`,
             { transaction_number: transactionNumber.trim() },
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success('Payment verified successfully!');
-                    setVerifyingOrder(null);
+                    toast.success('Booking verified successfully.');
+                    setVerifyingBooking(null);
                     setTransactionNumber('');
                     setProcessing(false);
                 },
@@ -225,7 +199,7 @@ return;
                     if (errors.transaction_number) {
                         setTransactionError(errors.transaction_number);
                     } else {
-                        toast.error('Failed to verify payment.');
+                        toast.error('Failed to verify booking.');
                     }
 
                     setProcessing(false);
@@ -234,36 +208,78 @@ return;
         );
     };
 
-    const rejectPayment = (order: Order) => {
+    const rejectBooking = (booking: Booking) => {
         setProcessing(true);
         router.patch(
-            `/manager/payment-verification/${order.id}/reject`,
+            `/manager/booking-verification/${booking.id}/reject`,
             {},
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success('Payment rejected.');
-                    setRejectingOrder(null);
+                    toast.success('Booking rejected.');
+                    setRejectingBooking(null);
                     setProcessing(false);
                 },
                 onError: () => {
-                    toast.error('Failed to reject payment.');
+                    toast.error('Failed to reject booking.');
                     setProcessing(false);
                 },
             }
         );
     };
 
+    const formatDateTime = (dateStr: string) => {
+        const d = new Date(dateStr);
+
+        return (
+            d.toLocaleDateString([], {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+            }) +
+            ' ' +
+            d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        );
+    };
+
+    const formatDate = (dateStr: string) => {
+        const d = new Date(dateStr);
+
+        return d.toLocaleDateString([], {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
+    };
+
+    const formatTime = (dateStr: string) => {
+        const d = new Date(dateStr);
+
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
         <>
-            <Head title="Payment Verification" />
+            <Head title="Booking Verification" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4">
                 <Heading
-                    title="Payment Verification"
-                    description="Verify customer payments by confirming their transaction numbers."
-                    icon={ShieldCheck}
+                    title="Booking Verification"
+                    description="Verify customer table bookings by confirming their booking payment and reservation details."
+                    icon={Calendar}
                 />
+
+                {/* Notifications Link */}
+                <div className="flex justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={() => router.get('/manager/booking-verification/notifications', {}, { preserveState: true })}
+                        className="flex items-center gap-2"
+                    >
+                        <Bell className="size-4" />
+                        View Payment Notifications
+                    </Button>
+                </div>
 
                 {/* Stats */}
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -310,13 +326,13 @@ return;
                         <div className="flex flex-wrap gap-3">
                             <div className="min-w-[200px] flex-1">
                                 <Input
-                                    placeholder="Search order ID, customer, transaction number..."
+                                    placeholder="Search booking ID, customer, table number, transaction number..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-applyFilters();
-}
+                                            applyFilters();
+                                        }
                                     }}
                                     className="w-full"
                                 />
@@ -324,7 +340,7 @@ applyFilters();
 
                             <Select value={paymentStatus} onValueChange={setPaymentStatus}>
                                 <SelectTrigger className="w-[190px]">
-                                    <SelectValue placeholder="Payment Status" />
+                                    <SelectValue placeholder="Verification Status" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Statuses</SelectItem>
@@ -358,16 +374,18 @@ applyFilters();
                     </CardContent>
                 </Card>
 
-                {/* Orders Table */}
+                {/* Bookings Table */}
                 <Card>
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-gray-50 text-left">
-                                        <th className="p-3 font-semibold">Order ID</th>
+                                        <th className="p-3 font-semibold">Booking ID</th>
                                         <th className="p-3 font-semibold">Customer</th>
                                         <th className="p-3 font-semibold">Table</th>
+                                        <th className="p-3 font-semibold">Booking Date</th>
+                                        <th className="p-3 font-semibold">Booking Time</th>
                                         <th className="p-3 font-semibold">Payment Method</th>
                                         <th className="p-3 font-semibold">Amount</th>
                                         <th className="p-3 font-semibold">Status</th>
@@ -376,95 +394,111 @@ applyFilters();
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {orders.data.length === 0 ? (
+                                    {bookings.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="p-12 text-center text-gray-500">
-                                                No payments found.
+                                            <td colSpan={10} className="p-12 text-center text-gray-500">
+                                                No bookings found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        orders.data.map((order) => (
-                                            <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
+                                        bookings.data.map((booking) => (
+                                            <tr key={booking.id} className="border-b last:border-0 hover:bg-gray-50">
                                                 <td className="p-3 font-mono text-xs font-bold">
-                                                    {order.order_number}
+                                                    BK-{String(booking.id).padStart(6, '0')}
                                                 </td>
                                                 <td className="p-3">
-                                                    <p className="font-medium">{order.customer?.name || order.customer_name || 'Walk-in'}</p>
-                                                    {order.customer_phone && (
+                                                    <p className="font-medium">{booking.customer_name}</p>
+                                                    {booking.customer_phone && (
                                                         <p className="flex items-center gap-1 text-xs text-gray-500">
                                                             <Phone className="size-3" />
-                                                            {order.customer_phone}
+                                                            {booking.customer_phone}
                                                         </p>
                                                     )}
                                                 </td>
                                                 <td className="p-3">
-                                                    {order.table ? `Table ${order.table.table_number}` : '—'}
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {booking.tables.map((t) => (
+                                                            <span key={t.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+                                                                <Table2 className="size-3" />
+                                                                T-{String(t.table_number).padStart(2, '0')}
+                                                                {t.section && ` (${t.section})`}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-xs whitespace-nowrap">
+                                                    {formatDate(booking.booked_at)}
+                                                </td>
+                                                <td className="p-3 text-xs whitespace-nowrap">
+                                                    {formatTime(booking.booked_at)}
                                                 </td>
                                                 <td className="p-3">
-                                                    {order.payment?.payment_method ? (
+                                                    {booking.payment_method ? (
                                                         <span className="flex items-center gap-1.5 capitalize">
-                                                            {paymentMethodIcons[order.payment.payment_method] || <CreditCard className="size-4" />}
-                                                            {paymentMethodLabels[order.payment.payment_method] || order.payment.payment_method}
+                                                            {paymentMethodIcons[booking.payment_method] || <CreditCard className="size-4" />}
+                                                            {paymentMethodLabels[booking.payment_method] || booking.payment_method}
                                                         </span>
                                                     ) : (
                                                         '—'
                                                     )}
                                                 </td>
                                                 <td className="p-3 font-bold">
-                                                    {Number(order.payment?.amount || order.total_amount).toFixed(2)} ETB
+                                                    {Number(booking.booking_amount || 0).toFixed(2)} ETB
                                                 </td>
                                                 <td className="p-3">
-                                                    <Badge className={`border ${paymentStatusColors[order.payment_status] || ''}`}>
-                                                        {paymentStatusLabels[order.payment_status] || order.payment_status}
+                                                    <Badge className={`border ${paymentStatusColors[booking.payment_status] || ''}`}>
+                                                        {paymentStatusLabels[booking.payment_status] || booking.payment_status}
                                                     </Badge>
                                                 </td>
                                                 <td className="p-3 text-xs text-gray-500">
-                                                    {order.payment?.verified_at
-                                                        ? new Date(order.payment.verified_at).toLocaleString()
-                                                        : new Date(order.created_at).toLocaleDateString()}
+                                                    {booking.payment?.verified_at
+                                                        ? formatDateTime(booking.payment.verified_at)
+                                                        : formatDate(booking.booked_at)}
                                                 </td>
                                                 <td className="p-3">
                                                     <div className="flex items-center justify-end gap-2">
-                                                        {order.payment_status === 'pending' && can('verify payments') && (
+                                                        {can('view bookings') && (
+                                                            <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                onClick={() => setViewingBooking(booking)}
+                                                                title="View Details"
+                                                            >
+                                                                <Eye className="size-4" />
+                                                            </Button>
+                                                        )}
+                                                        {booking.payment_status === 'pending' && (
                                                             <>
                                                                 <Button
                                                                     size="sm"
-                                                                    onClick={() => openVerifyModal(order)}
+                                                                    onClick={() => openVerifyModal(booking)}
                                                                     className="bg-green-600 hover:bg-green-700"
                                                                 >
                                                                     <CheckCircle2 className="mr-1 size-4" />
-                                                                    Verify Payment
+                                                                    Verify
                                                                 </Button>
                                                                 <Button
                                                                     size="sm"
                                                                     variant="outline"
                                                                     className="text-red-600 hover:text-red-700"
-                                                                    onClick={() => setRejectingOrder(order)}
+                                                                    onClick={() => setRejectingBooking(booking)}
                                                                 >
                                                                     <Ban className="mr-1 size-4" />
                                                                     Reject
                                                                 </Button>
                                                             </>
                                                         )}
-                                                        {order.payment_status === 'paid' && (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="flex items-center gap-1 text-xs text-green-700">
-                                                                    <CheckCircle2 className="size-4" />
-                                                                    {order.payment?.verifier?.name
-                                                                        ? `Verified by ${order.payment.verifier.name}`
-                                                                        : 'Verified'}
-                                                                </span>
-                                                                {order.receipt && (
-                                                                    <Button
-                                                                        size="sm"
-                                                                        variant="outline"
-                                                                        onClick={() => setViewingReceiptOrder(order)}
-                                                                    >
-                                                                        <Receipt className="mr-1 size-4" />
-                                                                        Receipt
-                                                                    </Button>
-                                                                )}
-                                                            </div>
+                                                        {booking.payment_status === 'paid' && (
+                                                            <span className="flex items-center gap-1 text-xs text-green-700">
+                                                                <CheckCircle2 className="size-4" />
+                                                                Verified
+                                                            </span>
+                                                        )}
+                                                        {booking.payment_status === 'cancelled' && (
+                                                            <span className="flex items-center gap-1 text-xs text-red-700">
+                                                                <XCircle className="size-4" />
+                                                                Rejected
+                                                            </span>
                                                         )}
                                                     </div>
                                                 </td>
@@ -476,35 +510,35 @@ applyFilters();
                         </div>
 
                         {/* Pagination */}
-                        {orders.last_page > 1 && (
+                        {bookings.last_page > 1 && (
                             <div className="flex items-center justify-center gap-2 border-t p-4">
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={orders.current_page <= 1}
+                                    disabled={bookings.current_page <= 1}
                                     onClick={() => {
-                                        const prevUrl = orders.links[0]?.url;
+                                        const prevUrl = bookings.links[0]?.url;
 
                                         if (prevUrl) {
-router.get(prevUrl, {}, { preserveState: true });
-}
+                                            router.get(prevUrl, {}, { preserveState: true });
+                                        }
                                     }}
                                 >
                                     Previous
                                 </Button>
                                 <span className="text-sm text-gray-500">
-                                    Page {orders.current_page} of {orders.last_page}
+                                    Page {bookings.current_page} of {bookings.last_page}
                                 </span>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={orders.current_page >= orders.last_page}
+                                    disabled={bookings.current_page >= bookings.last_page}
                                     onClick={() => {
-                                        const nextUrl = orders.links[orders.links.length - 1]?.url;
+                                        const nextUrl = bookings.links[bookings.links.length - 1]?.url;
 
                                         if (nextUrl) {
-router.get(nextUrl, {}, { preserveState: true });
-}
+                                            router.get(nextUrl, {}, { preserveState: true });
+                                        }
                                     }}
                                 >
                                     Next
@@ -516,14 +550,14 @@ router.get(nextUrl, {}, { preserveState: true });
             </div>
 
             {/* ========================= */}
-            {/* VERIFY PAYMENT MODAL */}
+            {/* VERIFY BOOKING MODAL */}
             {/* ========================= */}
 
             <Dialog
-                open={!!verifyingOrder}
+                open={!!verifyingBooking}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setVerifyingOrder(null);
+                        setVerifyingBooking(null);
                         setTransactionError('');
                     }
                 }}
@@ -532,37 +566,40 @@ router.get(nextUrl, {}, { preserveState: true });
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-xl font-black">
                             <ShieldCheck className="size-5 text-green-600" />
-                            Verify Payment
+                            Verify Booking
                         </DialogTitle>
                         <DialogDescription>
-                            Enter the transaction number to verify payment for order {verifyingOrder?.order_number}.
+                            Enter the transaction number to verify payment for booking{' '}
+                            BK-{String(verifyingBooking?.id).padStart(6, '0')}.
                         </DialogDescription>
                     </DialogHeader>
 
-                    {verifyingOrder && (
+                    {verifyingBooking && (
                         <div className="space-y-4 py-2">
                             <div className="rounded-lg bg-gray-50 p-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Customer</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.customer?.name || verifyingOrder.customer_name || 'Walk-in'}</p>
+                                        <p className="mt-1 font-bold">{verifyingBooking.customer_name}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Table</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.table ? `Table ${verifyingOrder.table.table_number}` : '—'}</p>
+                                        <p className="mt-1 font-bold">
+                                            {verifyingBooking.tables.map((t) => `T-${String(t.table_number).padStart(2, '0')}`).join(', ') || '—'}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Method</p>
                                         <p className="mt-1 flex items-center gap-1 font-bold capitalize">
-                                            {verifyingOrder.payment?.payment_method
-                                                ? (paymentMethodLabels[verifyingOrder.payment.payment_method] || verifyingOrder.payment.payment_method)
+                                            {verifyingBooking.payment_method
+                                                ? (paymentMethodLabels[verifyingBooking.payment_method] || verifyingBooking.payment_method)
                                                 : '—'}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</p>
                                         <p className="mt-1 font-bold text-green-700">
-                                            {Number(verifyingOrder.payment?.amount || verifyingOrder.total_amount).toFixed(2)} ETB
+                                            {Number(verifyingBooking.booking_amount || 0).toFixed(2)} ETB
                                         </p>
                                     </div>
                                 </div>
@@ -581,13 +618,13 @@ router.get(nextUrl, {}, { preserveState: true });
                                             setTransactionNumber(e.target.value);
 
                                             if (transactionError) {
-setTransactionError('');
-}
+                                                setTransactionError('');
+                                            }
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
-submitVerification();
-}
+                                                submitVerification();
+                                            }
                                         }}
                                         placeholder="e.g. TXNX8F9A2B"
                                         className="pl-9"
@@ -606,7 +643,7 @@ submitVerification();
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setVerifyingOrder(null)}
+                            onClick={() => setVerifyingBooking(null)}
                             disabled={processing}
                         >
                             Cancel
@@ -624,7 +661,7 @@ submitVerification();
                             ) : (
                                 <>
                                     <CheckCircle2 className="mr-2 size-4" />
-                                    Verify Payment
+                                    Verify Booking
                                 </>
                             )}
                         </Button>
@@ -633,54 +670,143 @@ submitVerification();
             </Dialog>
 
             {/* ========================= */}
-            {/* RECEIPT MODAL */}
+            {/* VIEW BOOKING DETAILS MODAL */}
             {/* ========================= */}
 
-            <ReceiptModal
-                open={!!viewingReceiptOrder}
+            <Dialog
+                open={!!viewingBooking}
                 onOpenChange={(open) => {
                     if (!open) {
-setViewingReceiptOrder(null);
-}
+                        setViewingBooking(null);
+                    }
                 }}
-                order={viewingReceiptOrder}
-            />
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-xl font-black">
+                            <User className="size-5 text-blue-600" />
+                            Booking Details
+                        </DialogTitle>
+                    </DialogHeader>
+                    {viewingBooking && (
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                                <span className="text-sm font-semibold text-gray-500">Booking ID</span>
+                                <span className="font-mono text-sm font-bold">
+                                    BK-{String(viewingBooking.id).padStart(6, '0')}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Customer Name</span>
+                                <span className="text-sm font-bold">{viewingBooking.customer_name}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Phone</span>
+                                <span className="text-sm font-bold">{viewingBooking.customer_phone}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Table</span>
+                                <div className="flex flex-wrap gap-1">
+                                    {viewingBooking.tables.map((t) => (
+                                        <span key={t.id} className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+                                            <Table2 className="size-3" />
+                                            T-{String(t.table_number).padStart(2, '0')}
+                                            {t.section && ` (${t.section})`}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Date</span>
+                                <span className="text-sm font-bold">{formatDate(viewingBooking.booked_at)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Time</span>
+                                <span className="text-sm font-bold">{formatTime(viewingBooking.booked_at)}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Duration</span>
+                                <span className="text-sm font-bold">2 Hours</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Payment Method</span>
+                                <span className="text-sm font-bold capitalize">
+                                    {viewingBooking.payment_method || '—'}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Transaction No</span>
+                                <span className="text-sm font-bold">{viewingBooking.transaction_reference || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Amount</span>
+                                <span className="text-sm font-bold text-green-700">
+                                    {Number(viewingBooking.booking_amount || 0).toFixed(2)} ETB
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Payment Status</span>
+                                <Badge className={`border ${paymentStatusColors[viewingBooking.payment_status] || ''}`}>
+                                    {paymentStatusLabels[viewingBooking.payment_status] || viewingBooking.payment_status}
+                                </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Booking Status</span>
+                                <span className="text-sm font-bold capitalize">{viewingBooking.status}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-gray-500">Created</span>
+                                <span className="text-sm font-bold">{formatDateTime(viewingBooking.booked_at)}</span>
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setViewingBooking(null)}
+                        >
+                            Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* ========================= */}
             {/* REJECT CONFIRMATION */}
             {/* ========================= */}
 
             <Dialog
-                open={!!rejectingOrder}
+                open={!!rejectingBooking}
                 onOpenChange={(open) => {
                     if (!open) {
-setRejectingOrder(null);
-}
+                        setRejectingBooking(null);
+                    }
                 }}
             >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black">
-                            Reject Payment?
+                            Reject Booking?
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to reject the payment for order{' '}
-                            <strong>{rejectingOrder?.order_number}</strong>?
-                            This will mark the payment as rejected.
+                            Are you sure you want to reject the payment for booking{' '}
+                            BK-{String(rejectingBooking?.id).padStart(6, '0')}
+                            ?
+                            This will mark the booking payment as rejected and cancel the booking.
                         </DialogDescription>
                     </DialogHeader>
 
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setRejectingOrder(null)}
+                            onClick={() => setRejectingBooking(null)}
                             disabled={processing}
                         >
                             Cancel
                         </Button>
                         <Button
                             variant="destructive"
-                            onClick={() => rejectingOrder && rejectPayment(rejectingOrder)}
+                            onClick={() => rejectingBooking && rejectBooking(rejectingBooking)}
                             disabled={processing}
                         >
                             {processing ? (
@@ -691,7 +817,7 @@ setRejectingOrder(null);
                             ) : (
                                 <>
                                     <Ban className="mr-2 size-4" />
-                                    Reject Payment
+                                    Reject Booking
                                 </>
                             )}
                         </Button>
@@ -701,12 +827,3 @@ setRejectingOrder(null);
         </>
     );
 }
-
-PaymentVerificationIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Payment Verification',
-            href: '/manager/payment-verification',
-        },
-    ],
-};

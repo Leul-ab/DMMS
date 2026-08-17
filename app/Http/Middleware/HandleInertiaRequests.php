@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\BookingVerificationNotification;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -76,6 +77,9 @@ class HandleInertiaRequests extends Middleware
                         : 0,
                     'paymentVerification' => $user?->can('view payments')
                         ? Order::where('payment_status', 'pending')->whereHas('payment')->count()
+                        : 0,
+                    'bookingPayment' => $user?->can('view payments')
+                        ? BookingVerificationNotification::where('status', 'pending')->count()
                         : 0,
                 ];
             },
