@@ -603,24 +603,14 @@ export default function DiscountsIndex({
     };
 
     // -----------------------------------------
-    // Status Badge Variant
+    // Status Badge Colors
     // -----------------------------------------
 
-    const getStatusVariant = (
-        status: string,
-    ): 'default' | 'secondary' | 'destructive' | 'outline' => {
-        switch (status) {
-            case 'active':
-                return 'default';
-            case 'inactive':
-                return 'secondary';
-            case 'expired':
-                return 'destructive';
-            case 'scheduled':
-                return 'outline';
-            default:
-                return 'secondary';
-        }
+    const statusColors: Record<string, string> = {
+        active: 'bg-green-100 text-green-800 border-transparent',
+        inactive: 'bg-gray-100 text-gray-800 border-transparent',
+        scheduled: 'bg-blue-100 text-blue-800 border-transparent',
+        expired: 'bg-red-100 text-red-800 border-transparent',
     };
 
     return (
@@ -858,9 +848,9 @@ export default function DiscountsIndex({
                                                 {/* Status */}
                                                 <td className="p-3">
                                                     <Badge
-                                                        variant={getStatusVariant(
-                                                            discount.status,
-                                                        )}
+                                                        className={`capitalize ${
+                                                            statusColors[discount.status] ?? ''
+                                                        }`}
                                                     >
                                                         {discount.status
                                                             .charAt(0)
@@ -1508,9 +1498,9 @@ export default function DiscountsIndex({
                                     </p>
 
                                     <Badge
-                                        variant={getStatusVariant(
-                                            selectedDiscount.status,
-                                        )}
+                                        className={`capitalize ${
+                                            statusColors[selectedDiscount.status] ?? ''
+                                        }`}
                                     >
                                         {selectedDiscount.status
                                             .charAt(0)
