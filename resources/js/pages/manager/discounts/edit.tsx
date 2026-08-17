@@ -1,7 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Percent } from 'lucide-react';
 import { useState } from 'react';
-import { DateTimePicker } from '@/components/date-time-picker';
+import { DateTimeRangePicker } from '@/components/date-time-picker';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -378,48 +378,24 @@ export default function DiscountEdit({ discount, menuItems }: Props) {
                             </div>
 
                             <div className="grid gap-2">
-                            <Label>Date &amp; Time Range</Label>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="start_date_time"
-                                        className="text-sm text-gray-600"
-                                    >
-                                        Start Date &amp; Time
-                                    </Label>
-                                    <DateTimePicker
-                                        id="start_date_time"
-                                        value={data.start_date_time || ''}
-                                        onChange={(val) =>
-                                            setData(
-                                                'start_date_time',
-                                                val,
-                                            )
-                                        }
-                                        error={errors.start_date_time}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label
-                                        htmlFor="end_date_time"
-                                        className="text-sm text-gray-600"
-                                    >
-                                        End Date &amp; Time
-                                    </Label>
-                                    <DateTimePicker
-                                        id="end_date_time"
-                                        value={data.end_date_time || ''}
-                                        onChange={(val) =>
-                                            setData(
-                                                'end_date_time',
-                                                val,
-                                            )
-                                        }
-                                        error={errors.end_date_time}
-                                    />
-                                </div>
+                                <Label>Date &amp; Time Range</Label>
+                                <DateTimeRangePicker
+                                    startValue={
+                                        data.start_date_time || ''
+                                    }
+                                    endValue={data.end_date_time || ''}
+                                    onStartChange={(val) =>
+                                        setData('start_date_time', val)
+                                    }
+                                    onEndChange={(val) =>
+                                        setData('end_date_time', val)
+                                    }
+                                    startError={errors.start_date_time}
+                                    endError={errors.end_date_time}
+                                    defaultStartTime="09:00"
+                                    defaultEndTime="23:59"
+                                />
                             </div>
-                        </div>
 
                             <div className="flex items-center gap-4">
                                 <Button disabled={processing}>

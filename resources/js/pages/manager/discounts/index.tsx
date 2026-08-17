@@ -2,7 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2, Percent } from 'lucide-react';
 import { useState } from 'react';
 
-import { DateTimePicker } from '@/components/date-time-picker';
+import { DateTimeRangePicker } from '@/components/date-time-picker';
 import Heading from '@/components/heading';
 import StatusToggle from '@/components/status-toggle';
 
@@ -126,7 +126,7 @@ export default function DiscountsIndex({
         number[]
     >([]);
     const [addMenuItemSearch, setAddMenuItemSearch] = useState('');
-    const [editMenuItemSearch, setEditMenuItemSearch] = useState('');
+    const [, setEditMenuItemSearch] = useState('');
 
     // -----------------------------------------
     // Validation Errors
@@ -231,12 +231,6 @@ export default function DiscountsIndex({
         menuItem.name
             .toLowerCase()
             .includes(addMenuItemSearch.toLowerCase()),
-    );
-
-    const filteredEditMenuItems = menuItems.filter((menuItem) =>
-        menuItem.name
-            .toLowerCase()
-            .includes(editMenuItemSearch.toLowerCase()),
     );
 
     // -----------------------------------------
@@ -1356,58 +1350,45 @@ export default function DiscountsIndex({
                             </Select>
                         </div>
 
-                        {/* Date & Time Range */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Date &amp; Time Range
-                            </label>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
-                                        Start Date &amp; Time
-                                    </label>
-                                    <DateTimePicker
-                                        value={startDateTime}
-                                        onChange={(val) => {
-                                            setStartDateTime(val);
-                                            setErrors((prev) => ({
-                                                ...prev,
-                                                startDateTime:
-                                                    validateStartDateTime(
-                                                        val,
-                                                    ) || undefined,
-                                                endDateTime:
-                                                    validateEndDateTime(
-                                                        endDateTime,
-                                                        val,
-                                                    ) || undefined,
-                                            }));
-                                        }}
-                                        error={errors.startDateTime}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
-                                        End Date &amp; Time
-                                    </label>
-                                    <DateTimePicker
-                                        value={endDateTime}
-                                        onChange={(val) => {
-                                            setEndDateTime(val);
-                                            setErrors((prev) => ({
-                                                ...prev,
-                                                endDateTime:
-                                                    validateEndDateTime(
-                                                        val,
-                                                        startDateTime,
-                                                    ) || undefined,
-                                            }));
-                                        }}
-                                        error={errors.endDateTime}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                         {/* Date & Time Range */}
+                         <div>
+                             <label className="mb-2 block text-sm font-medium">
+                                 Date &amp; Time Range
+                             </label>
+                             <DateTimeRangePicker
+                                 startValue={startDateTime}
+                                 endValue={endDateTime}
+                                 onStartChange={(val) => {
+                                     setStartDateTime(val);
+                                     setErrors((prev) => ({
+                                         ...prev,
+                                         startDateTime:
+                                             validateStartDateTime(val) ||
+                                             undefined,
+                                         endDateTime:
+                                             validateEndDateTime(
+                                                 endDateTime,
+                                                 val,
+                                             ) || undefined,
+                                     }));
+                                 }}
+                                 onEndChange={(val) => {
+                                     setEndDateTime(val);
+                                     setErrors((prev) => ({
+                                         ...prev,
+                                         endDateTime:
+                                             validateEndDateTime(
+                                                 val,
+                                                 startDateTime,
+                                             ) || undefined,
+                                     }));
+                                 }}
+                                 startError={errors.startDateTime}
+                                 endError={errors.endDateTime}
+                                 defaultStartTime="09:00"
+                                 defaultEndTime="23:59"
+                             />
+                         </div>
 
                         {/* Description */}
                         <div>
@@ -1828,30 +1809,18 @@ export default function DiscountsIndex({
                             <label className="mb-2 block text-sm font-medium">
                                 Date &amp; Time Range
                             </label>
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
-                                        Start Date &amp; Time
-                                    </label>
-                                    <DateTimePicker
-                                        value={startDateTime}
-                                        onChange={(val) =>
-                                            setStartDateTime(val)
-                                        }
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
-                                        End Date &amp; Time
-                                    </label>
-                                    <DateTimePicker
-                                        value={endDateTime}
-                                        onChange={(val) =>
-                                            setEndDateTime(val)
-                                        }
-                                    />
-                                </div>
-                            </div>
+                            <DateTimeRangePicker
+                                startValue={startDateTime}
+                                endValue={endDateTime}
+                                onStartChange={(val) =>
+                                    setStartDateTime(val)
+                                }
+                                onEndChange={(val) =>
+                                    setEndDateTime(val)
+                                }
+                                defaultStartTime="09:00"
+                                defaultEndTime="23:59"
+                            />
                         </div>
                     </div>
 
