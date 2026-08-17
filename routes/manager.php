@@ -300,6 +300,34 @@ Route::middleware(['auth'])
 
 
         // =========================
+        // Booking Payment Verification
+        // =========================
+        Route::get(
+            'booking-payment-verification',
+            [
+                \App\Http\Controllers\Manager\BookingPaymentVerificationController::class,
+                'index'
+            ]
+        )->name('booking-payment-verification.index')->middleware('permission:view payments');
+
+        Route::patch(
+            'booking-payment-verification/{payment}/verify',
+            [
+                \App\Http\Controllers\Manager\BookingPaymentVerificationController::class,
+                'verify'
+            ]
+        )->name('booking-payment-verification.verify')->middleware('permission:status payments');
+
+        Route::patch(
+            'booking-payment-verification/{payment}/reject',
+            [
+                \App\Http\Controllers\Manager\BookingPaymentVerificationController::class,
+                'reject'
+            ]
+        )->name('booking-payment-verification.reject')->middleware('permission:status payments');
+
+
+        // =========================
         // Discounts
         // =========================
         Route::get(

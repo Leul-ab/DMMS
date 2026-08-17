@@ -179,10 +179,17 @@ class BookingManagementController extends Controller
                 'customer_email' => $booking->customer?->email ?? 'N/A',
                 'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
+                'payment_status' => $booking->payment_status,
+                'extension_payment_status' => $booking->extension_payment_status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,
+                'original_expires_at' => $booking->original_expires_at,
+                'extension_expires_at' => $booking->extension_expires_at,
                 'cancelled_at' => $booking->cancelled_at,
                 'is_expired' => $isExpired,
+                'booking_amount' => $booking->booking_amount,
+                'extension_amount' => $booking->extension_amount,
+                'extension_fee' => $booking->extension_fee,
             ],
         ]);
     }

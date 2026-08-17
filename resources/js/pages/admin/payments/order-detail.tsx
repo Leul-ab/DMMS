@@ -45,6 +45,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     menu_item: { id: number; name: string; image: string | null } | null;
+    special_preferences: string[] | null;
 };
 
 type Order = {
@@ -254,41 +255,62 @@ export default function PaymentOrderDetail({ order }: Props) {
                                         {order.order_items?.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="flex items-center justify-between rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
+                                                className="flex flex-col rounded-lg border border-gray-100 p-3 transition-colors hover:bg-gray-50"
                                             >
-                                                <div className="flex items-center gap-3">
-                                                    {item.menu_item?.image ? (
-                                                        <img
-                                                            src={`/storage/${item.menu_item.image}`}
-                                                            alt={
-                                                                item.menu_item
-                                                                    .name
-                                                            }
-                                                            className="h-10 w-10 rounded-lg object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-lg">
-                                                            🍽️
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {item.menu_item?.image ? (
+                                                            <img
+                                                                src={`/storage/${item.menu_item.image}`}
+                                                                alt={
+                                                                    item.menu_item
+                                                                        .name
+                                                                }
+                                                                className="h-10 w-10 rounded-lg object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-50 text-lg">
+                                                                🍽️
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">
+                                                                {item.menu_item
+                                                                    ?.name ||
+                                                                    'Item'}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500">
+                                                                ×{' '}
+                                                                {item.quantity}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-sm font-bold">
+                                                        {(
+                                                            Number(item.price) *
+                                                            item.quantity
+                                                        ).toFixed(2)}{' '}
+                                                        ETB
+                                                    </p>
+                                                </div>
+                                                {item.special_preferences &&
+                                                    item.special_preferences.length >
+                                                        0 && (
+                                                        <div className="mt-2 flex flex-wrap gap-1">
+                                                            {item.special_preferences.map(
+                                                                (pref) => (
+                                                                    <span
+                                                                        key={
+                                                                            pref
+                                                                        }
+                                                                        className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700"
+                                                                    >
+                                                                        {pref}
+                                                                    </span>
+                                                                ),
+                                                            )}
                                                         </div>
                                                     )}
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {item.menu_item
-                                                                ?.name ||
-                                                                'Item'}
-                                                        </p>
-                                                        <p className="text-xs text-gray-500">
-                                                            × {item.quantity}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <p className="text-sm font-bold">
-                                                    {(
-                                                        Number(item.price) *
-                                                        item.quantity
-                                                    ).toFixed(2)}{' '}
-                                                    ETB
-                                                </p>
                                             </div>
                                         ))}
                                     </div>

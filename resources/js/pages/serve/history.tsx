@@ -20,6 +20,7 @@ type MenuItem = {
 type OrderItem = {
     id: number;
     quantity: number;
+    special_preferences: string[] | null;
     menu_item: MenuItem | null;
 };
 
@@ -174,24 +175,52 @@ export default function ServeHistory({ orders }: Props) {
                                                         )}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <div className="flex flex-wrap gap-1">
+                                                    <div className="flex flex-col gap-1">
                                                         {order.order_items.map(
                                                             (item) => (
-                                                                <Badge
+                                                                <div
                                                                     key={
                                                                         item.id
                                                                     }
-                                                                    variant="secondary"
+                                                                    className="flex flex-wrap items-center gap-1"
                                                                 >
-                                                                    {item
-                                                                        .menu_item
-                                                                        ?.name ??
-                                                                        'Item'}{' '}
-                                                                    ×
-                                                                    {
-                                                                        item.quantity
-                                                                    }
-                                                                </Badge>
+                                                                    <Badge
+                                                                        variant="secondary"
+                                                                    >
+                                                                        {item
+                                                                            .menu_item
+                                                                            ?.name ??
+                                                                            'Item'}{' '}
+                                                                        ×
+                                                                        {
+                                                                            item.quantity
+                                                                        }
+                                                                    </Badge>
+                                                                    {item.special_preferences &&
+                                                                        item.special_preferences.length >
+                                                                            0 &&
+                                                                        item.special_preferences
+                                                                            .slice(
+                                                                                0,
+                                                                                2,
+                                                                            )
+                                                                        .map(
+                                                                            (
+                                                                                pref,
+                                                                            idx,
+                                                                            arr,
+                                                                            ) => (
+                                                                                <span
+                                                                                    key={
+                                                                                        pref
+                                                                                    }
+                                                                                    className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                                                                >
+                                                                                    {pref}
+                                                                                </span>
+                                                                            ),
+                                                                        )}
+                                                                </div>
                                                             ),
                                                         )}
                                                     </div>

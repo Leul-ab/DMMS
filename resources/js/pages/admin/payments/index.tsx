@@ -68,6 +68,7 @@ type OrderItem = {
     menu_item_id: number;
     quantity: number;
     price: string;
+    special_preferences: string[] | null;
     menu_item: {
         id: number;
         name: string;
@@ -978,6 +979,24 @@ export default function PaymentsIndex({
                                                     )}{' '}
                                                     ETB
                                                 </p>
+                                                {item.special_preferences &&
+                                                    item.special_preferences.length >
+                                                        0 && (
+                                                        <div className="mt-1 flex flex-wrap gap-1">
+                                                            {item.special_preferences.map(
+                                                                (pref) => (
+                                                                    <span
+                                                                        key={
+                                                                            pref
+                                                                        }
+                                                                        className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                                                    >
+                                                                        {pref}
+                                                                    </span>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    )}
                                             </div>
                                             <p className="text-sm font-bold">
                                                 {(

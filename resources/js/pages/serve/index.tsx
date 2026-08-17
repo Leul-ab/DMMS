@@ -26,6 +26,7 @@ type OrderItem = {
     id: number;
     quantity: number;
     menu_item: MenuItem | null;
+    special_preferences: string[] | null;
 };
 
 type Order = {
@@ -238,15 +239,35 @@ export default function ServeOrders({ orders }: Props) {
                                         {order.order_items.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="flex items-center justify-between rounded-md border border-green-100 bg-white px-3 py-2"
+                                                className="flex flex-col rounded-md border border-green-100 bg-white px-3 py-2"
                                             >
-                                                <span className="text-sm font-medium">
-                                                    {item.menu_item?.name ??
-                                                        'Item'}
-                                                </span>
-                                                <Badge variant="secondary">
-                                                    x{item.quantity}
-                                                </Badge>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-medium">
+                                                        {item.menu_item?.name ??
+                                                            'Item'}
+                                                    </span>
+                                                    <Badge variant="secondary">
+                                                        x{item.quantity}
+                                                    </Badge>
+                                                </div>
+                                                {item.special_preferences &&
+                                                    item.special_preferences.length >
+                                                        0 && (
+                                                        <div className="mt-1 flex flex-wrap gap-1">
+                                                            {item.special_preferences.map(
+                                                                (pref) => (
+                                                                    <span
+                                                                        key={
+                                                                            pref
+                                                                        }
+                                                                        className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                                                    >
+                                                                        {pref}
+                                                                    </span>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    )}
                                             </div>
                                         ))}
                                     </div>

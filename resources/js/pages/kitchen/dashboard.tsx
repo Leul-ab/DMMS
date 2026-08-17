@@ -31,6 +31,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     menu_item: MenuItem | null;
+    special_preferences: string[] | null;
 };
 
 type Order = {
@@ -394,12 +395,28 @@ export default function KitchenDashboard({
                         {order.order_items?.slice(0, 4).map((item) => (
                             <div
                                 key={item.id}
-                                className="flex items-center justify-between text-xs"
+                                className="text-xs"
                             >
                                 <span className="text-gray-700">
                                     {item.menu_item?.name || 'Item'} ×{' '}
                                     {item.quantity}
                                 </span>
+                                {item.special_preferences &&
+                                    item.special_preferences.length >
+                                        0 && (
+                                        <div className="mt-0.5 flex flex-wrap gap-1">
+                                            {item.special_preferences.map(
+                                                (pref) => (
+                                                    <span
+                                                        key={pref}
+                                                        className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                                    >
+                                                        {pref}
+                                                    </span>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
                             </div>
                         ))}
                         {order.order_items && order.order_items.length > 4 && (

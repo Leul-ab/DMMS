@@ -160,6 +160,16 @@ public function update(
             'integer',
             'min:1',
         ],
+
+        'items.*.special_preferences' => [
+            'nullable',
+            'array',
+        ],
+
+        'items.*.special_preferences.*' => [
+            'string',
+            'max:50',
+        ],
     ]);
 
     DB::transaction(function () use (
@@ -182,6 +192,9 @@ public function update(
             $order->orderItems()->create([
                 'menu_item_id' => $item['menu_item_id'],
                 'quantity' => $item['quantity'],
+                'special_preferences' => ! empty($item['special_preferences'])
+                    ? array_values($item['special_preferences'])
+                    : [],
             ]);
         }
 

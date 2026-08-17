@@ -58,11 +58,17 @@ type Booking = {
     tables: BookingTable[];
     status: string;
     payment_status: string;
+    extension_payment_status?: string | null;
     booked_at: string;
     expires_at: string | null;
+    original_expires_at?: string | null;
+    extension_expires_at?: string | null;
     cancelled_at: string | null;
     is_expired: boolean;
     time_remaining_seconds: number | null;
+    booking_amount?: number | null;
+    extension_amount?: number | null;
+    extension_fee?: number | null;
 };
 
 type Stats = {
@@ -845,14 +851,61 @@ export default function BookingManagementIndex({
                                                     ? 'text-green-600'
                                                     : viewingBooking.payment_status === 'expired'
                                                       ? 'text-red-600'
-                                                      : 'text-yellow-600'
+                                                      : viewingBooking.payment_status === 'pending'
+                                                        ? 'text-orange-600'
+                                                        : 'text-yellow-600'
                                             }`}
                                         >
                                             {viewingBooking.payment_status === 'paid'
                                                 ? 'Paid'
                                                 : viewingBooking.payment_status === 'expired'
                                                   ? 'Expired'
-                                                  : 'Unpaid'}
+                                                  : viewingBooking.payment_status === 'pending'
+                                                    ? 'Pending Verification'
+                                                    : 'Unpaid'}
+                                        </span>
+                                    </div>
+                                )}
+                                {viewingBooking.extension_payment_status && viewingBooking.extension_payment_status !== 'unpaid' && (
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="h-4 w-4 text-gray-400" />
+                                        <span className="text-muted-foreground">
+                                            Extension Payment:
+                                        </span>
+                                        <span
+                                            className={`font-medium ${
+                                                viewingBooking.extension_payment_status === 'paid'
+                                                    ? 'text-green-600'
+                                                    : viewingBooking.extension_payment_status === 'rejected'
+                                                      ? 'text-red-600'
+                                                      : 'text-orange-600'
+                                            }`}
+                                        >
+                                            {viewingBooking.extension_payment_status === 'paid'
+                                                ? 'Paid'
+                                                : viewingBooking.extension_payment_status === 'rejected'
+                                                  ? 'Rejected'
+                                                  : 'Pending'}
+                                        </span>
+                                    </div>
+                                )}
+                                {viewingBooking.booking_amount && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">
+                                            Booking Amount:
+                                        </span>
+                                        <span className="font-medium">
+                                            {viewingBooking.booking_amount.toLocaleString()} ETB
+                                        </span>
+                                    </div>
+                                )}
+                                {viewingBooking.extension_amount && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground">
+                                            Extension Amount:
+                                        </span>
+                                        <span className="font-medium">
+                                            {viewingBooking.extension_amount.toLocaleString()} ETB
                                         </span>
                                     </div>
                                 )}

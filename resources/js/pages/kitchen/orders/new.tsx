@@ -13,6 +13,7 @@ type OrderItem = {
     id: number;
     quantity: number;
     price?: number;
+    special_preferences: string[] | null;
     menu_item: MenuItem;
 };
 
@@ -135,6 +136,24 @@ export default function NewOrders({ orders }: Props) {
                                                         ).toFixed(2)}{' '}
                                                         ETB
                                                     </p>
+                                                    {item.special_preferences &&
+                                                        item.special_preferences.length >
+                                                            0 && (
+                                                            <div className="mt-1 flex flex-wrap gap-1">
+                                                                {item.special_preferences.map(
+                                                                    (pref) => (
+                                                                        <span
+                                                                            key={
+                                                                                pref
+                                                                            }
+                                                                            className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                                                                        >
+                                                                            {pref}
+                                                                        </span>
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
                                                 </div>
 
                                                 <p className="font-semibold">

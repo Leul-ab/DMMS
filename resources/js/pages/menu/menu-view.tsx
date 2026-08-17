@@ -81,8 +81,19 @@ type MenuItem = {
     discounts: Discount[];
 };
 
+const SPECIAL_PREFERENCES = [
+    'No Onion',
+    'No Garlic',
+    'No Spicy',
+    'Extra Spicy',
+    'Extra Cheese',
+    'Less Salt',
+    'No Sauce',
+] as const;
+
 type CartItem = MenuItem & {
     quantity: number;
+    special_preferences: string[];
 };
 
 type RestaurantTable = {
@@ -294,7 +305,7 @@ export function MenuView({
                 );
             }
 
-            return [...currentCart, { ...item, quantity: 1 }];
+            return [...currentCart, { ...item, quantity: 1, special_preferences: [] }];
         });
         toast.success(`${item.name} added to order`, {
             duration: 2000,
@@ -331,6 +342,23 @@ export function MenuView({
         toast.info('Item removed from order');
     };
 
+    const togglePreference = (itemId: number, preference: string) => {
+        setCart((currentCart) =>
+            currentCart.map((item) => {
+                if (item.id !== itemId) {
+                    return item;
+                }
+
+                const current = item.special_preferences ?? [];
+                const next = current.includes(preference)
+                    ? current.filter((p) => p !== preference)
+                    : [...current, preference];
+
+                return { ...item, special_preferences: next };
+            }),
+        );
+    };
+
     const cartTotal = cart.reduce(
         (total, item) => total + Number(item.price) * item.quantity,
         0,
@@ -363,6 +391,7 @@ export function MenuView({
                 items: cart.map((item) => ({
                     id: item.id,
                     quantity: item.quantity,
+                    special_preferences: item.special_preferences ?? [],
                 })),
                 customer_phone: customer_phone || null,
                 special_instructions: specialInstructions.trim() || null,
@@ -608,6 +637,42 @@ export function MenuView({
                                     <p className="text-xs text-red-600">
                                         {Number(item.price).toFixed(2)} ETB
                                     </p>
+                                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                        {SPECIAL_PREFERENCES.map(
+                                            (pref) => {
+                                                const checked =
+                                                    (item.special_preferences ??
+                                                        []).includes(
+                                                        pref,
+                                                    );
+                                                return (
+                                                    <label
+                                                        key={pref}
+                                                        className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition ${
+                                                            checked
+                                                                ? 'border-red-400 bg-red-50 text-red-700'
+                                                                : 'border-red-100 bg-white text-stone-700 hover:border-red-200'
+                                                        }`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={() =>
+                                                                togglePreference(
+                                                                    item.id,
+                                                                    pref,
+                                                                )
+                                                            }
+                                                            className="h-3.5 w-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                                        />
+                                                        <span className="truncate font-medium">
+                                                            {pref}
+                                                        </span>
+                                                    </label>
+                                                );
+                                            },
+                                        )}
+                                    </div>
                                     <div className="mt-2 flex items-center gap-2">
                                         <button
                                             type="button"
@@ -1131,7 +1196,7 @@ export function MenuView({
                     setShowMemberVerify(open);
 
                     if (!open) {
-                        setMemberVerifyCode('');
+                        setMemberVerifyPhone('');
                         setMemberVerifyError('');
                     }
                 }}
@@ -1884,6 +1949,42 @@ export function MenuView({
                                                     )}{' '}
                                                     ETB each
                                                 </p>
+                                                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                                    {SPECIAL_PREFERENCES.map(
+                                                        (pref) => {
+                                                            const checked =
+                                                                (item.special_preferences ??
+                                                                    []).includes(
+                                                                    pref,
+                                                                );
+                                                            return (
+                                                                <label
+                                                                    key={pref}
+                                                                    className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-xs transition ${
+                                                                        checked
+                                                                            ? 'border-red-400 bg-red-50 text-red-700'
+                                                                            : 'border-red-100 bg-white text-stone-700 hover:border-red-200'
+                                                                    }`}
+                                                                >
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={checked}
+                                                                        onChange={() =>
+                                                                            togglePreference(
+                                                                                item.id,
+                                                                                pref,
+                                                                            )
+                                                                        }
+                                                                        className="h-3.5 w-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                                                    />
+                                                                    <span className="truncate font-medium">
+                                                                        {pref}
+                                                                    </span>
+                                                                </label>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
                                                 <div className="mt-3 flex items-center gap-3">
                                                     <button
                                                         type="button"

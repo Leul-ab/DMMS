@@ -37,6 +37,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
+    special_preferences: string[] | null;
     menu_item: MenuItem;
 };
 

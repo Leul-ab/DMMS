@@ -96,6 +96,16 @@ class OrderController extends Controller
                 'integer',
                 'min:1',
             ],
+
+            'items.*.special_preferences' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.special_preferences.*' => [
+                'string',
+                'max:50',
+            ],
         ]);
 
         DB::transaction(function () use (
@@ -143,6 +153,9 @@ class OrderController extends Controller
                     'menu_item_id' => $menuItem->id,
                     'quantity' => $quantity,
                     'price' => $price,
+                    'special_preferences' => ! empty($item['special_preferences'])
+                        ? array_values($item['special_preferences'])
+                        : [],
                     'status' => 'pending',
                 ]);
             }

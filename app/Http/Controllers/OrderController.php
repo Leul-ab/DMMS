@@ -43,6 +43,16 @@ class OrderController extends Controller
                 'min:1',
             ],
 
+            'items.*.special_preferences' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.special_preferences.*' => [
+                'string',
+                'max:50',
+            ],
+
             'customer_phone' => [
                 'nullable',
                 'string',
@@ -172,6 +182,9 @@ class OrderController extends Controller
                     'menu_item_id' => $menuItem->id,
                     'quantity' => $quantity,
                     'price' => $menuItem->price,
+                    'special_preferences' => ! empty($item['special_preferences'])
+                        ? array_values($item['special_preferences'])
+                        : [],
                     'status' => 'pending',
                 ]);
             }
@@ -227,6 +240,9 @@ class OrderController extends Controller
                         'menu_item_id' => $menuItem->id,
                         'quantity' => $quantity,
                         'price' => $menuItem->price,
+                        'special_preferences' => ! empty($item['special_preferences'])
+                            ? array_values($item['special_preferences'])
+                            : [],
                         'status' => 'pending',
                     ]);
                 }
@@ -299,6 +315,8 @@ class OrderController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'exists:menu_items,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.special_preferences' => ['nullable', 'array'],
+            'items.*.special_preferences.*' => ['string', 'max:50'],
         ]);
 
         $this->addItemsToOrder($validated, $order);

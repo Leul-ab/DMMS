@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import {
     Loader2,
     Clock,
@@ -12,13 +12,22 @@ import {
     X,
     Sparkles,
     CheckCircle2,
+    AlertCircle,
+    Wallet,
+    Smartphone,
+    Building2,
+    ShieldCheck,
+    Hourglass,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { store as bookingStore } from '@/routes/booking';
+import { Input } from '@/components/ui/input';
+import {
+    store as bookingStore,
+} from '@/routes/booking';
 
 type RestaurantTable = {
     id: number;
@@ -42,6 +51,11 @@ type Props = {
     menuPath: string;
 };
 
+type PaymentMethod = 'cbe_birr' | 'telebirr' | null;
+
+const CBE_BIRR_NUMBER = '1000976545673';
+const TELEBIRR_NUMBER = '0987574556';
+
 export default function BookingView({
     availableTables,
     sections,
@@ -51,7 +65,7 @@ export default function BookingView({
     const [selectedTables, setSelectedTables] = useState<Set<string>>(
         new Set(),
     );
-    const [step, setStep] = useState<'select' | 'verify' | 'confirm'>('select');
+    const [step, setStep] = useState<'select' | 'verify' | 'confirm' | 'payment' | 'success'>('select');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [customerData, setCustomerData] = useState<{
         name: string;
@@ -67,6 +81,22 @@ export default function BookingView({
     const [selectedSectionId, setSelectedSectionId] = useState<number | null>(
         null,
     );
+
+    // Payment step state
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+    const [transactionNumber, setTransactionNumber] = useState('');
+    const [transactionReference, setTransactionReference] = useState('');
+    const [payerName, setPayerName] = useState('');
+    const [payerPhone, setPayerPhone] = useState('');
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+    const [paymentError, setPaymentError] = useState<string | null>(null);
+    const [paymentSuccess, setPaymentSuccess] = useState(false);
+    const [paymentCountdown, setPaymentCountdown] = useState<string>('');
+    const [bookingData, setBookingData] = useState<{
+        id: number;
+        expires_at: string;
+        booking_amount: number;
+    } | null>(null);
 
     const toggleTableSelection = (tableId: string) => {
         setSelectedTables((prev) => {
@@ -85,7 +115,6 @@ export default function BookingView({
     const handleVerifyCustomer = async () => {
         if (!phoneNumber.trim()) {
             setVerificationError('Please enter your phone number.');
-
             return;
         }
 
@@ -97,7 +126,6 @@ export default function BookingView({
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
-
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -139,35 +167,156 @@ export default function BookingView({
         }
     };
 
-    const handleBooking = () => {
+    const handleBooking = async () => {
         if (!customerId || selectedTables.size === 0) {
             return;
         }
 
         setIsBooking(true);
-        router.post(
-            bookingStore.url(),
-            {
-                customer_id: customerId,
-                table_ids: Array.from(selectedTables),
-                source: basePath.replace(/^\//, ''),
-            },
-            {
-                onSuccess: () => {},
-                onError: (errors) => {
-                    const errorMsg =
-                        errors.tables || 'Failed to create booking.';
-                    toast.error(errorMsg);
-                    setIsBooking(false);
+        setPaymentError(null);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch(bookingStore.url(), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                    Accept: 'application/json',
                 },
-            },
-        );
+                body: JSON.stringify({
+                    customer_id: customerId,
+                    table_ids: Array.from(selectedTables),
+                    source: basePath.replace(/^\//, ''),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setBookingData({
+                    id: data.booking.id,
+                    expires_at: data.booking.expires_at,
+                    booking_amount: data.booking.booking_amount,
+                });
+                setStep('payment');
+                startPaymentCountdown(data.booking.expires_at);
+            } else {
+                toast.error(data.message || 'Failed to create booking.');
+            }
+        } catch {
+            toast.error('Failed to create booking. Please try again.');
+        } finally {
+            setIsBooking(false);
+        }
     };
 
-    const handleBackToSelect = () => {
-        setStep('select');
-        setCustomerId(null);
-        setVerificationError(null);
+    const startPaymentCountdown = (expiresAt: string) => {
+        const calculateTime = () => {
+            const expiresAtDate = new Date(expiresAt).getTime();
+            const now = Date.now();
+            const diff = Math.floor((expiresAtDate - now) / 1000);
+
+            if (diff <= 0) {
+                setPaymentCountdown('00:00');
+                handlePaymentTimeout();
+                return;
+            }
+
+            const minutes = Math.floor(diff / 60);
+            const seconds = diff % 60;
+            setPaymentCountdown(
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`,
+            );
+        };
+
+        calculateTime();
+        const interval = setInterval(calculateTime, 1000);
+
+        return () => clearInterval(interval);
+    };
+
+    const handlePaymentTimeout = useCallback(() => {
+        setPaymentError('Payment time expired. This booking has been cancelled.');
+        setStep('success');
+    }, []);
+
+    useEffect(() => {
+        if (step !== 'payment' || !bookingData?.expires_at) {
+            return;
+        }
+
+        const cleanup = startPaymentCountdown(bookingData.expires_at);
+        return cleanup;
+    }, [step, bookingData]);
+
+    const handleSubmitPayment = async () => {
+        if (!paymentMethod || !transactionNumber.trim() || !payerName.trim() || !payerPhone.trim()) {
+            setPaymentError('Please fill in all required fields.');
+            return;
+        }
+
+        if (!bookingData) {
+            setPaymentError('Booking data missing. Please try again.');
+            return;
+        }
+
+        setIsSubmittingPayment(true);
+        setPaymentError(null);
+
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch(`/booking/${bookingData.id}/submit-payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    payment_method: paymentMethod,
+                    transaction_number: transactionNumber,
+                    transaction_reference: transactionReference || null,
+                    payer_name: payerName,
+                    payer_phone: payerPhone,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setPaymentSuccess(true);
+                setStep('success');
+                toast.success('Payment submitted successfully. Waiting for verification.');
+            } else {
+                setPaymentError(data.message || 'Payment submission failed.');
+            }
+        } catch {
+            setPaymentError('Payment submission failed. Please try again.');
+        } finally {
+            setIsSubmittingPayment(false);
+        }
+    };
+
+    const isPaymentFormValid = paymentMethod
+        && transactionNumber.trim().length > 0
+        && payerName.trim().length > 0
+        && payerPhone.trim().length > 0;
+
+    const handleBackToConfirm = () => {
+        setStep('confirm');
     };
 
     return (
@@ -244,81 +393,84 @@ export default function BookingView({
 
                 {/* ================= MAIN CONTENT ================= */}
                 <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
-                    {/* Page Header */}
-                    <div className="mb-8 text-center">
-                        <Badge
-                            variant="secondary"
-                            className="mb-2 bg-red-100 text-red-700"
-                        >
-                            <Calendar className="mr-1 h-3 w-3" />
-                            Book a Table
-                        </Badge>
-                        <h1 className="text-3xl font-black tracking-tight text-stone-800 sm:text-4xl">
-                            Choose Your Table
-                        </h1>
-                        <p className="mt-2 text-red-600">
-                            Select your tables and verify your identity to book.
-                        </p>
-                    </div>
-
                     {/* Step Indicator */}
-                    <div className="mb-10 flex items-center justify-center gap-3 sm:gap-4">
-                        <div
-                            className={`flex items-center gap-2 ${step === 'select' || step === 'verify' || step === 'confirm' ? 'text-red-600' : 'text-red-400'}`}
-                        >
+                    {(step === 'select' || step === 'verify' || step === 'confirm' || step === 'payment') && (
+                        <div className="mb-10 flex items-center justify-center gap-3 sm:gap-4">
                             <div
-                                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
-                                    step === 'select'
-                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
-                                        : step === 'verify' ||
-                                            step === 'confirm'
-                                          ? 'bg-red-100 text-red-600'
-                                          : 'border border-red-200 bg-white text-red-400'
-                                }`}
+                                className={`flex items-center gap-2 ${['select', 'verify', 'confirm', 'payment'].includes(step) ? 'text-red-600' : 'text-red-400'}`}
                             >
-                                1
+                                <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                        step === 'select'
+                                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+                                            : ['verify', 'confirm', 'payment'].includes(step)
+                                              ? 'bg-red-100 text-red-600'
+                                              : 'border border-red-200 bg-white text-red-400'
+                                    }`}
+                                >
+                                    1
+                                </div>
+                                <span className="text-sm font-semibold">
+                                    Select Tables
+                                </span>
                             </div>
-                            <span className="text-sm font-semibold">
-                                Select Tables
-                            </span>
-                        </div>
-                        <div className="h-px w-10 bg-red-200 sm:w-12" />
-                        <div
-                            className={`flex items-center gap-2 ${step === 'verify' || step === 'confirm' ? 'text-red-600' : 'text-red-400'}`}
-                        >
+                            <div className="h-px w-10 bg-red-200 sm:w-12" />
                             <div
-                                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
-                                    step === 'verify'
-                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
-                                        : step === 'confirm'
-                                          ? 'bg-red-100 text-red-600'
-                                          : 'border border-red-200 bg-white text-red-400'
-                                }`}
+                                className={`flex items-center gap-2 ${['verify', 'confirm', 'payment'].includes(step) ? 'text-red-600' : 'text-red-400'}`}
                             >
-                                2
+                                <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                        step === 'verify'
+                                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+                                            : ['confirm', 'payment'].includes(step)
+                                              ? 'bg-red-100 text-red-600'
+                                              : 'border border-red-200 bg-white text-red-400'
+                                    }`}
+                                >
+                                    2
+                                </div>
+                                <span className="text-sm font-semibold">
+                                    Verify
+                                </span>
                             </div>
-                            <span className="text-sm font-semibold">
-                                Verify
-                            </span>
-                        </div>
-                        <div className="h-px w-10 bg-red-200 sm:w-12" />
-                        <div
-                            className={`flex items-center gap-2 ${step === 'confirm' ? 'text-red-600' : 'text-red-400'}`}
-                        >
+                            <div className="h-px w-10 bg-red-200 sm:w-12" />
                             <div
-                                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
-                                    step === 'confirm'
-                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
-                                        : 'border border-red-200 bg-white text-red-400'
-                                }`}
+                                className={`flex items-center gap-2 ${['confirm', 'payment'].includes(step) ? 'text-red-600' : 'text-red-400'}`}
                             >
-                                3
+                                <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                        step === 'confirm'
+                                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+                                            : step === 'payment'
+                                              ? 'bg-red-100 text-red-600'
+                                              : 'border border-red-200 bg-white text-red-400'
+                                    }`}
+                                >
+                                    3
+                                </div>
+                                <span className="text-sm font-semibold">
+                                    Confirm
+                                </span>
                             </div>
-                            <span className="text-sm font-semibold">
-                                Confirm
-                            </span>
+                            <div className="h-px w-10 bg-red-200 sm:w-12" />
+                            <div
+                                className={`flex items-center gap-2 ${step === 'payment' ? 'text-red-600' : 'text-red-400'}`}
+                            >
+                                <div
+                                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                                        step === 'payment'
+                                            ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+                                            : 'border border-red-200 bg-white text-red-400'
+                                    }`}
+                                >
+                                    4
+                                </div>
+                                <span className="text-sm font-semibold">
+                                    Pay
+                                </span>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Step 1: Select Tables */}
                     {step === 'select' && (
@@ -410,7 +562,7 @@ export default function BookingView({
                                                                 isChecked
                                                                     ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
                                                                     : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50 hover:shadow-sm'
-                                                            }`}
+                                                                }`}
                                                         >
                                                             <Checkbox
                                                                 checked={
@@ -498,7 +650,7 @@ export default function BookingView({
                                 <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button
                                         variant="outline"
-                                        onClick={handleBackToSelect}
+                                        onClick={() => setStep('select')}
                                         className="flex-1 rounded-xl border-red-200 py-6 text-red-700 hover:bg-red-50 hover:text-red-700"
                                     >
                                         <ArrowRight className="h-4 w-4 rotate-180" />
@@ -541,7 +693,6 @@ export default function BookingView({
                             </div>
 
                             <div className="space-y-6">
-                                {/* Customer Info */}
                                 <div className="rounded-2xl border border-red-100/80 bg-red-50/40 p-5">
                                     <p className="text-xs font-semibold tracking-wider text-red-500 uppercase">
                                         Customer
@@ -554,7 +705,6 @@ export default function BookingView({
                                     </p>
                                 </div>
 
-                                {/* Selected Tables */}
                                 <div className="rounded-2xl border border-red-100/80 bg-red-50/40 p-5">
                                     <p className="text-xs font-semibold tracking-wider text-red-500 uppercase">
                                         Selected Tables
@@ -583,21 +733,21 @@ export default function BookingView({
                                     </div>
                                 </div>
 
-                                {/* Timer Info */}
                                 <div className="flex items-center gap-3 rounded-2xl border border-red-200/60 bg-gradient-to-r from-red-50 to-red-50 p-5">
                                     <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-red-100">
                                         <Clock className="h-6 w-6 text-red-500" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-bold text-stone-800">
-                                            Booking Expiration
+                                            Payment Window
                                         </p>
                                         <p className="text-sm text-red-600">
-                                            Your booking will expire in{' '}
+                                            You will have{' '}
                                             <strong className="text-red-600">
                                                 5 minutes
                                             </strong>{' '}
-                                            if not confirmed.
+                                            to complete payment after
+                                            confirming.
                                         </p>
                                     </div>
                                 </div>
@@ -605,11 +755,11 @@ export default function BookingView({
                                 <div className="flex flex-col gap-3 sm:flex-row">
                                     <Button
                                         variant="outline"
-                                        onClick={handleBackToSelect}
+                                        onClick={() => setStep('verify')}
                                         className="flex-1 rounded-xl border-red-200 py-6 text-red-700 hover:bg-red-50 hover:text-red-700"
                                     >
                                         <ArrowRight className="h-4 w-4 rotate-180" />
-                                        Change Tables
+                                        Back
                                     </Button>
                                     <Button
                                         onClick={handleBooking}
@@ -619,7 +769,7 @@ export default function BookingView({
                                         {isBooking ? (
                                             <span className="flex items-center justify-center gap-2">
                                                 <Loader2 className="h-5 w-5 animate-spin" />
-                                                Booking...
+                                                Creating...
                                             </span>
                                         ) : (
                                             <span className="flex items-center justify-center gap-2">
@@ -630,6 +780,245 @@ export default function BookingView({
                                     </Button>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Step 4: Payment */}
+                    {step === 'payment' && bookingData && (
+                        <div className="rounded-3xl border border-red-200/60 bg-white p-6 shadow-sm sm:p-8">
+                            <div className="mb-6">
+                                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-800">
+                                    <Wallet className="h-5 w-5 text-red-500" />
+                                    Complete Payment
+                                </h2>
+                                <p className="mt-1 text-red-600">
+                                    Select your payment method to complete the
+                                    booking.
+                                </p>
+                            </div>
+
+                            {paymentError && (
+                                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-600">
+                                    {paymentError}
+                                </div>
+                            )}
+
+                            {paymentSuccess ? (
+                                <div className="space-y-6">
+                                    <div className="rounded-2xl border border-green-200 bg-green-50 p-6 text-center">
+                                        <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+                                        <h3 className="mt-3 text-xl font-black text-green-700">
+                                            Payment Submitted
+                                        </h3>
+                                        <p className="mt-2 text-sm text-green-600">
+                                            Your payment has been submitted
+                                            successfully and is awaiting
+                                            verification.
+                                        </p>
+                                    </div>
+                                    <div className="rounded-2xl border border-red-100/80 bg-red-50/40 p-5">
+                                        <p className="text-xs font-semibold tracking-wider text-red-500 uppercase">
+                                            Booking Amount
+                                        </p>
+                                        <p className="mt-1 text-2xl font-black text-stone-800">
+                                            {bookingData.booking_amount.toLocaleString()} ETB
+                                        </p>
+                                    </div>
+                                    <Link href={menuPath}>
+                                        <Button className="w-full rounded-xl py-6 text-base font-bold">
+                                            Return to Menu
+                                        </Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Payment Countdown */}
+                                    <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-5">
+                                        <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-orange-100">
+                                            <Hourglass className="h-6 w-6 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-stone-800">
+                                                Payment Time Remaining
+                                            </p>
+                                            <p className="text-2xl font-black text-orange-500">
+                                                {paymentCountdown || '05:00'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Payment Method Selection */}
+                                    <div>
+                                        <label className="mb-3 block text-sm font-bold text-stone-700">
+                                            Payment Method
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setPaymentMethod('cbe_birr')
+                                                }
+                                                className={`flex items-center gap-3 rounded-2xl border-2 p-4 transition-all duration-200 active:scale-[0.98] ${
+                                                    paymentMethod === 'cbe_birr'
+                                                        ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
+                                                        : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50'
+                                                }`}
+                                            >
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${paymentMethod === 'cbe_birr' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                                                    <Building2 className={`h-5 w-5 ${paymentMethod === 'cbe_birr' ? 'text-red-500' : 'text-gray-400'}`} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-sm font-bold text-stone-800">
+                                                        CBE Birr
+                                                    </p>
+                                                    <p className="text-xs text-red-500">
+                                                        Bank Transfer
+                                                    </p>
+                                                </div>
+                                                {paymentMethod === 'cbe_birr' && (
+                                                    <CheckCircle2 className="ml-auto h-5 w-5 text-red-500" />
+                                                )}
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setPaymentMethod('telebirr')
+                                                }
+                                                className={`flex items-center gap-3 rounded-2xl border-2 p-4 transition-all duration-200 active:scale-[0.98] ${
+                                                    paymentMethod === 'telebirr'
+                                                        ? 'border-red-500 bg-red-50 shadow-md shadow-red-200/50'
+                                                        : 'border-red-100/80 hover:border-red-300 hover:bg-red-50/50'
+                                                }`}
+                                            >
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${paymentMethod === 'telebirr' ? 'bg-red-100' : 'bg-gray-100'}`}>
+                                                    <Smartphone className={`h-5 w-5 ${paymentMethod === 'telebirr' ? 'text-red-500' : 'text-gray-400'}`} />
+                                                </div>
+                                                <div className="text-left">
+                                                    <p className="text-sm font-bold text-stone-800">
+                                                        Telebirr
+                                                    </p>
+                                                    <p className="text-xs text-red-500">
+                                                        Mobile Money
+                                                    </p>
+                                                </div>
+                                                {paymentMethod === 'telebirr' && (
+                                                    <CheckCircle2 className="ml-auto h-5 w-5 text-red-500" />
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Payment Info */}
+                                    {paymentMethod && (
+                                        <div className="rounded-2xl border border-red-100/80 bg-red-50/40 p-5">
+                                            <p className="text-xs font-semibold tracking-wider text-red-500 uppercase">
+                                                Send Payment To
+                                            </p>
+                                            <div className="mt-3 flex items-center gap-3">
+                                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
+                                                    {paymentMethod === 'cbe_birr' ? (
+                                                        <Building2 className="h-5 w-5 text-red-500" />
+                                                    ) : (
+                                                        <Smartphone className="h-5 w-5 text-red-500" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-stone-800">
+                                                        {paymentMethod === 'cbe_birr' ? 'CBE Birr' : 'Telebirr'}
+                                                    </p>
+                                                    <p className="text-sm text-red-600">
+                                                        {paymentMethod === 'cbe_birr' ? CBE_BIRR_NUMBER : TELEBIRR_NUMBER}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Payment Form */}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-stone-700">
+                                                Payer Name <span className="text-red-500">*</span>
+                                            </label>
+                                            <Input
+                                                value={payerName}
+                                                onChange={(e) => setPayerName(e.target.value)}
+                                                placeholder="Enter payer full name"
+                                                className="h-11"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-stone-700">
+                                                Payer Phone <span className="text-red-500">*</span>
+                                            </label>
+                                            <Input
+                                                value={payerPhone}
+                                                onChange={(e) => setPayerPhone(e.target.value)}
+                                                placeholder="Enter payer phone number"
+                                                className="h-11"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-stone-700">
+                                                Transaction Number <span className="text-red-500">*</span>
+                                            </label>
+                                            <Input
+                                                value={transactionNumber}
+                                                onChange={(e) => setTransactionNumber(e.target.value)}
+                                                placeholder="Enter transaction/reference number"
+                                                className="h-11"
+                                            />
+                                            <p className="mt-1 text-xs text-gray-500">
+                                                Provide the transaction number from your payment confirmation.
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-stone-700">
+                                                Transaction Reference{' '}
+                                                <span className="text-gray-400">(optional)</span>
+                                            </label>
+                                            <Input
+                                                value={transactionReference}
+                                                onChange={(e) => setTransactionReference(e.target.value)}
+                                                placeholder="Enter reference number if available"
+                                                className="h-11"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 sm:flex-row">
+                                        <Button
+                                            variant="outline"
+                                            onClick={handleBackToConfirm}
+                                            className="flex-1 rounded-xl border-red-200 py-6 text-red-700 hover:bg-red-50 hover:text-red-700"
+                                        >
+                                            <ArrowRight className="h-4 w-4 rotate-180" />
+                                            Back
+                                        </Button>
+                                        <Button
+                                            onClick={handleSubmitPayment}
+                                            disabled={!isPaymentFormValid || isSubmittingPayment}
+                                            className="flex-1 rounded-xl bg-green-600 py-6 text-base font-bold text-white hover:bg-green-700 disabled:opacity-50"
+                                        >
+                                            {isSubmittingPayment ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                                    Processing...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <ShieldCheck className="h-5 w-5" />
+                                                    Pay {bookingData.booking_amount.toLocaleString()} ETB
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

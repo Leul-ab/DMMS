@@ -18,8 +18,14 @@ Route::post('/booking', [BookingController::class, 'store'])
 Route::post('/booking/{booking}/cancel', [BookingController::class, 'cancel'])
     ->name('booking.cancel');
 
-Route::post('/booking/{booking}/pay', [BookingController::class, 'pay'])
-    ->name('booking.pay');
+Route::post('/booking/{booking}/submit-payment', [BookingController::class, 'submitPayment'])
+    ->name('booking.submit-payment');
+
+Route::post('/booking/{booking}/request-extension', [BookingController::class, 'requestExtension'])
+    ->name('booking.request-extension');
+
+Route::post('/booking/{booking}/submit-extension-payment', [BookingController::class, 'submitExtensionPayment'])
+    ->name('booking.submit-extension-payment');
 
 // API route for booking sidebar
 Route::get('/api/active-booking', [BookingController::class, 'getActiveBooking']);

@@ -50,6 +50,7 @@ type Order = {
         quantity: number;
         price: string;
         status: string;
+        special_preferences: string[] | null;
         menu_item: {
             id: number;
             name: string;
