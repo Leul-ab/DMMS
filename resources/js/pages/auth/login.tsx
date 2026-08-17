@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Form, Head } from '@inertiajs/react';
 import {
     ArrowRight,
@@ -11,6 +10,7 @@ import {
     TrendingUp,
     UtensilsCrossed,
 } from 'lucide-react';
+import { useState } from 'react';
 
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -53,6 +53,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
     const isPhone = (value: string): boolean => {
         const trimmed = value.trim();
+
         return trimmed.length > 0 && !trimmed.includes('@');
     };
 

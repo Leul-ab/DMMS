@@ -99,6 +99,7 @@ type BookingData = {
     booked_at: string;
     expires_at: string;
     expires_in_seconds: number;
+    payment_status: string;
 };
 
 type Props = {
@@ -108,7 +109,7 @@ type Props = {
     table: RestaurantTable | null;
     availableTables: RestaurantTable[];
     booking_success?: boolean;
-    bookingConfirm?: BookingData | null;
+    booking_data?: BookingData | null;
     customer_phone?: string;
     tableError?: string | null;
     order_id?: number | null;
@@ -207,14 +208,14 @@ export function MenuView({
         null,
     );
     const [countdown, setCountdown] = useState(
-        bookingConfirm?.expires_in_seconds ?? 600,
+        bookingConfirm?.expires_in_seconds ?? 300,
     );
 
     useEffect(() => {
         if (booking_success && customer_phone && booking_data) {
             setBookingConfirm(booking_data);
             setShowBookingSuccess(true);
-            setCountdown(booking_data.expires_in_seconds ?? 600);
+            setCountdown(booking_data.expires_in_seconds ?? 300);
         }
     }, [booking_success, customer_phone, booking_data]);
 
@@ -750,6 +751,7 @@ export function MenuView({
                 open={showBookingSuccess}
                 onOpenChange={(open) => {
                     setShowBookingSuccess(open);
+
                     if (!open) {
                         setBookingConfirm(null);
                     }
@@ -871,6 +873,58 @@ export function MenuView({
                             </div>
                         </div>
                     </div>
+
+                    {bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && (
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    const getXsrfToken = () => {
+                                        const match = document.cookie.match(
+                                            new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                                        );
+
+                                        return match ? decodeURIComponent(match[3]) : '';
+                                    };
+                                    const response = await fetch(`/booking/${bookingConfirm.id}/pay`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-XSRF-TOKEN': getXsrfToken(),
+                                        },
+                                    });
+                                    const data = await response.json();
+
+                                    if (data.success) {
+                                        toast.success('Payment confirmed successfully!');
+                                        setBookingConfirm({
+                                            ...bookingConfirm,
+                                            payment_status: 'paid',
+                                        });
+                                    } else {
+                                        toast.error(data.message || 'Payment failed.');
+                                    }
+                                } catch {
+                                    toast.error('Payment failed. Please try again.');
+                                }
+                            }}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Pay Now
+                        </Button>
+                    )}
+
+                    {bookingConfirm && bookingConfirm.payment_status === 'paid' && (
+                        <div className="rounded-xl bg-green-50 p-4 text-center">
+                            <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
+                            <p className="mt-2 text-sm font-bold text-green-700">
+                                Payment Confirmed
+                            </p>
+                            <p className="text-xs text-green-600">
+                                Your booking payment has been received.
+                            </p>
+                        </div>
+                    )}
 
                     <DialogFooter className="gap-2">
                         <Button

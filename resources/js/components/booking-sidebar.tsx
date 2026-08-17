@@ -7,6 +7,8 @@ import {
     ChevronLeft,
     User,
     Calendar,
+    CheckCircle2,
+    Loader2,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -20,6 +22,7 @@ type BookingData = {
     booked_at: string;
     expires_at: string;
     time_remaining_seconds: number;
+    payment_status: string;
 };
 
 export default function BookingSidebar() {
@@ -28,6 +31,7 @@ export default function BookingSidebar() {
     const [isExpired, setIsExpired] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isPaying, setIsPaying] = useState(false);
 
     const fetchActiveBooking = useCallback(async () => {
         try {
@@ -124,13 +128,51 @@ export default function BookingSidebar() {
         }
     };
 
+    const handlePay = async () => {
+        if (!booking) {
+            return;
+        }
+
+        setIsPaying(true);
+
+        try {
+            const csrfToken =
+                (
+                    document.querySelector(
+                        'meta[name="csrf-token"]',
+                    ) as HTMLMetaElement
+                )?.content || '';
+
+            const response = await fetch(`/booking/${booking.id}/pay`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Payment confirmed successfully!');
+                setBooking({ ...booking, payment_status: 'paid' });
+            } else {
+                toast.error(data.message || 'Payment failed.');
+            }
+        } catch {
+            toast.error('Payment failed. Please try again.');
+        } finally {
+            setIsPaying(false);
+        }
+    };
+
     if (isLoading || !booking) {
         return null;
     }
 
     const progressPercent =
         booking.time_remaining_seconds > 0
-            ? (booking.time_remaining_seconds / 600) * 100
+            ? (booking.time_remaining_seconds / 300) * 100
             : 0;
 
     return (
@@ -221,6 +263,32 @@ export default function BookingSidebar() {
                         </div>
                     </div>
 
+                    {/* Payment Status */}
+                    {booking.payment_status && (
+                        <div className="mt-4 rounded-2xl bg-stone-50 p-4">
+                            <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                Payment Status
+                            </p>
+                            <div className="mt-1">
+                                {booking.payment_status === 'paid' ? (
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-green-600">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Paid
+                                    </span>
+                                ) : booking.payment_status === 'expired' || isExpired ? (
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-red-600">
+                                        <X className="h-4 w-4" />
+                                        Expired
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1.5 text-sm font-bold text-yellow-600">
+                                        Unpaid
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Booked Tables */}
                     <div className="mt-4">
                         <h3 className="mb-3 text-sm font-semibold tracking-wider text-gray-500 uppercase">
@@ -272,6 +340,25 @@ export default function BookingSidebar() {
 
                     {/* Actions */}
                     <div className="mt-auto space-y-3 pt-6">
+                        {!isExpired && booking.payment_status !== 'paid' && (
+                            <Button
+                                onClick={handlePay}
+                                disabled={isPaying}
+                                className="w-full rounded-xl bg-green-600 py-3.5 text-white hover:bg-green-700"
+                            >
+                                {isPaying ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Processing...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Pay Now
+                                    </span>
+                                )}
+                            </Button>
+                        )}
                         <Link
                             href={`/booking/${booking.id}`}
                             className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-5 py-3.5 font-bold text-white shadow-lg shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 hover:shadow-xl hover:shadow-red-500/40"

@@ -21,11 +21,21 @@ class RestaurantTableController extends Controller
      */
     public function index()
     {
-        $tables = RestaurantTable::query()
+        $sections = \App\Models\TableSection::query()
+            ->withCount('tables')
+            ->with(['tables' => function ($query) {
+                $query->orderBy('table_number');
+            }])
+            ->ordered()
+            ->get();
+
+        $tables = \App\Models\RestaurantTable::query()
+            ->with('section')
             ->latest()
             ->get();
 
         return Inertia::render('manager/tables/index', [
+            'sections' => $sections,
             'tables' => $tables,
         ]);
     }
@@ -54,6 +64,11 @@ class RestaurantTableController extends Controller
                 'max:65535',
                 Rule::unique('restaurant_tables', 'table_number')
                     ->where(fn ($query) => $query->where('branch_id', Branch::current()?->id)),
+            ],
+            'table_section_id' => [
+                'nullable',
+                'integer',
+                'exists:table_sections,id',
             ],
             'qr_code' => [
                 'nullable',
@@ -86,6 +101,8 @@ class RestaurantTableController extends Controller
         }
 
         RestaurantTable::create([
+            'branch_id' => $validated['branch_id'] ?? Branch::current()?->id,
+            'table_section_id' => $validated['table_section_id'] ?? null,
             'table_number' => $validated['table_number'],
             'qr_code' => $qrPath,
             'status' => 'available',
@@ -216,6 +233,11 @@ class RestaurantTableController extends Controller
                     ->where(fn ($query) => $query->where('branch_id', Branch::current()?->id))
                     ->ignore($table->id),
             ],
+            'table_section_id' => [
+                'nullable',
+                'integer',
+                'exists:table_sections,id',
+            ],
             'qr_code' => [
                 'nullable',
                 'string',
@@ -226,6 +248,7 @@ class RestaurantTableController extends Controller
 
         $table->update([
             'table_number' => $validated['table_number'],
+            'table_section_id' => $validated['table_section_id'] ?? $table->table_section_id,
             'qr_code' => $validated['qr_code']
                 ?? $table->qr_code,
         ]);

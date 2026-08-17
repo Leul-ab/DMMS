@@ -44,6 +44,24 @@ class BookingController extends Controller
             ->orderBy('table_number')
             ->get(['id', 'table_number', 'status']);
 
+        $sections = \App\Models\TableSection::ordered()
+            ->get(['id', 'name', 'description', 'sort_order']);
+
+        $sections = $sections->map(function ($section) {
+            $availableInSection = RestaurantTable::where('table_section_id', $section->id)
+                ->where('status', 'available')
+                ->orderBy('table_number')
+                ->get(['id', 'table_number', 'status']);
+
+            return [
+                'id' => $section->id,
+                'name' => $section->name,
+                'description' => $section->description,
+                'sort_order' => $section->sort_order,
+                'available_tables' => $availableInSection,
+            ];
+        })->values()->all();
+
         // Get the scanned table from session if available
         $scannedTable = null;
         if (session()->has('scanned_table_id')) {
@@ -58,6 +76,7 @@ class BookingController extends Controller
 
         return inertia($view, [
             'availableTables' => $availableTables,
+            'sections' => $sections,
             'scannedTable' => $scannedTable,
         ]);
     }
@@ -126,11 +145,12 @@ class BookingController extends Controller
         }
 
         // Start booking session - store in session
-        $expiresAt = Carbon::now()->addMinutes(10);
+        $expiresAt = Carbon::now()->addMinutes(5);
 
         $booking = TableBooking::create([
             'customer_id' => $validated['customer_id'],
             'status' => 'active',
+            'payment_status' => 'unpaid',
             'booked_at' => Carbon::now(),
             'expires_at' => $expiresAt,
         ]);
@@ -159,7 +179,8 @@ class BookingController extends Controller
                     'tables' => $tablesList,
                     'booked_at' => $booking->booked_at,
                     'expires_at' => $booking->expires_at,
-                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 600,
+                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
+                    'payment_status' => $booking->payment_status,
                 ],
                 'customer_phone' => $customer?->phone ?? '',
             ]);
@@ -180,6 +201,10 @@ class BookingController extends Controller
     {
         if ($booking->status !== 'active') {
             return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
+        }
+
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            return back()->withErrors(['booking' => 'The 5-minute cancellation window has expired.']);
         }
 
         $booking->update([
@@ -219,7 +244,8 @@ class BookingController extends Controller
         $isExpired = false;
         if ($booking->status === 'active' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
             $booking->update([
-                'status' => 'cancelled',
+                'status' => 'expired',
+                'payment_status' => 'expired',
                 'cancelled_at' => Carbon::now(),
             ]);
 
@@ -249,11 +275,55 @@ class BookingController extends Controller
                     ];
                 }),
                 'status' => $booking->status,
+                'payment_status' => $booking->payment_status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,
                 'cancelled_at' => $booking->cancelled_at,
+                'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
                 'is_expired' => $isExpired,
+            ],
+        ]);
+    }
+
+    /**
+     * Process payment for a booking within the 5-minute window.
+     */
+    public function pay(TableBooking $booking): JsonResponse
+    {
+        if ($booking->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking is already ' . $booking->status . '.',
+            ], 422);
+        }
+
+        if ($booking->payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking has already been paid.',
+            ], 422);
+        }
+
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The 5-minute payment window has expired.',
+            ], 422);
+        }
+
+        $booking->update([
+            'payment_status' => 'paid',
+            'paid_at' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment confirmed successfully.',
+            'booking' => [
+                'id' => $booking->id,
+                'payment_status' => $booking->payment_status,
+                'paid_at' => $booking->paid_at,
             ],
         ]);
     }
@@ -288,9 +358,11 @@ class BookingController extends Controller
                         ];
                     }),
                     'status' => $booking->status,
+                    'payment_status' => $booking->payment_status,
                     'booked_at' => $booking->booked_at,
                     'expires_at' => $booking->expires_at,
                     'cancelled_at' => $booking->cancelled_at,
+                    'paid_at' => $booking->paid_at,
                     'time_remaining_seconds' => $timeRemaining,
                     'is_expired' => $isExpired,
                 ];
@@ -354,9 +426,11 @@ class BookingController extends Controller
                 'customer_id' => $booking->customer?->id,
                 'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
+                'payment_status' => $booking->payment_status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,
                 'cancelled_at' => $booking->cancelled_at,
+                'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
                 'is_expired' => $isExpired,
             ],
@@ -383,9 +457,11 @@ class BookingController extends Controller
                 'customer_email' => $booking->customer?->email ?? 'N/A',
                 'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
+                'payment_status' => $booking->payment_status,
                 'booked_at' => $booking->booked_at,
                 'expires_at' => $booking->expires_at,
                 'cancelled_at' => $booking->cancelled_at,
+                'paid_at' => $booking->paid_at,
                 'is_expired' => $isExpired,
             ],
         ]);

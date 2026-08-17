@@ -26,6 +26,7 @@ type Booking = {
     customer_phone: string;
     tables: BookingTable[];
     status: string;
+    payment_status: string;
     booked_at: string;
     expires_at: string | null;
     cancelled_at: string | null;
@@ -458,6 +459,29 @@ function BookingCard({
                             >
                                 {formatDate(booking.expires_at)} at{' '}
                                 {formatTime(booking.expires_at)}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Payment Status */}
+                    {booking.payment_status && (
+                        <div className="flex items-center gap-2 text-sm">
+                            <CheckCircle2 className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-500">Payment:</span>
+                            <span
+                                className={`font-medium ${
+                                    booking.payment_status === 'paid'
+                                        ? 'text-green-600'
+                                        : booking.payment_status === 'expired'
+                                          ? 'text-red-600'
+                                          : 'text-yellow-600'
+                                }`}
+                            >
+                                {booking.payment_status === 'paid'
+                                    ? 'Paid'
+                                    : booking.payment_status === 'expired'
+                                      ? 'Expired'
+                                      : 'Unpaid'}
                             </span>
                         </div>
                     )}

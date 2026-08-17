@@ -1,9 +1,9 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { useSidebar } from '@/components/ui/sidebar';
 import type { AppLayoutProps } from '@/types';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 function SidebarFloatingTrigger() {
     const { state, toggleSidebar, isMobile, openMobile } = useSidebar();
