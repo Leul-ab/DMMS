@@ -35,12 +35,12 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
                     >
                         <stop
                             offset="5%"
-                            stopColor="#ef4444"
+                            stopColor="#de1d1d"
                             stopOpacity={0.35}
                         />
                         <stop
                             offset="95%"
-                            stopColor="#ef4444"
+                            stopColor="#de1d1d"
                             stopOpacity={0}
                         />
                     </linearGradient>
@@ -86,10 +86,10 @@ export function FinanceAreaChart({ data }: FinanceAreaChartProps) {
                 <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#ef4444"
+                    stroke="#de1d1d"
                     strokeWidth={2.5}
                     fill="url(#revenueGradient)"
-                    activeDot={{ r: 5, fill: '#ef4444' }}
+                    activeDot={{ r: 5, fill: '#de1d1d' }}
                 />
             </AreaChart>
         </ResponsiveContainer>

@@ -15,7 +15,7 @@ function Toaster({ ...props }: ToasterProps) {
             richColors
             style={
                 {
-                    '--normal-bg': '#dc2626',
+                    '--normal-bg': '#de1d1d',
                     '--normal-text': '#ffffff',
                     '--normal-border': '#b91c1c',
                     '--success-bg': '#f87171',

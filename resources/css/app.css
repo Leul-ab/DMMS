@@ -14,6 +14,9 @@
 
     --font-display: 'Playfair Display', 'Outfit', ui-serif, Georgia, serif;
 
+    --color-red-500: #de1d1d;
+    --color-red-600: #de1d1d;
+
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
@@ -176,7 +179,7 @@
         ),
         radial-gradient(
             1000px 700px at 100% 100%,
-            rgba(220, 38, 38, 0.12),
+            rgba(222, 29, 29, 0.12),
             transparent 55%
         ),
         linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
@@ -226,5 +229,5 @@
 /* Soft red hover glow on nav buttons inside the sidebar */
 [data-sidebar='sidebar'] [data-sidebar='menu-button']:hover,
 [data-sidebar='sidebar'] [data-sidebar='menu-button'][data-active='true'] {
-    box-shadow: 0 4px 14px -6px rgba(220, 38, 38, 0.45);
+    box-shadow: 0 4px 14px -6px rgba(222, 29, 29, 0.45);
 }

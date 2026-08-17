@@ -116,7 +116,7 @@ type Props = {
 };
 
 const CATEGORY_COLORS = [
-    '#ef4444',
+    '#de1d1d',
     '#f87171',
     '#fca5a5',
     '#a3e635',
@@ -130,7 +130,7 @@ const CATEGORY_COLORS = [
 const PAYMENT_COLORS: Record<string, string> = {
     paid: '#10b981',
     pending: '#f87171',
-    unpaid: '#ef4444',
+    unpaid: '#de1d1d',
 };
 
 const ORDER_STATUS_STYLES: Record<
