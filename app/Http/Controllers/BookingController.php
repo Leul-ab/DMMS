@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
+use App\Support\PhoneHelper;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -87,10 +88,12 @@ class BookingController extends Controller
     public function verifyCustomer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', 'regex:' . PhoneHelper::PATTERN],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
-        $phone = trim($validated['phone']);
+        $phone = PhoneHelper::normalize($validated['phone']);
 
         $customer = Customer::where('phone', $phone)->first();
 
@@ -381,10 +384,12 @@ class BookingController extends Controller
     public function lookupByCustomerCode(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', 'regex:' . PhoneHelper::PATTERN],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
-        $phone = trim($validated['phone']);
+        $phone = PhoneHelper::normalize($validated['phone']);
 
         $customer = Customer::where('phone', $phone)->first();
 

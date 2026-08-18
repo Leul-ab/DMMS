@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\MemberDiscountController;
 use App\Http\Controllers\MenuController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,4 +23,11 @@ Route::post('/customer/register', [CustomerController::class, 'store'])
 
 Route::post('/customer/verify-member', [CustomerController::class, 'verifyMember'])
     ->name('customer.verify-member');
+
+// Member-only discount notifications
+Route::get('/customer/member-discounts', [MemberDiscountController::class, 'index'])
+    ->name('customer.member-discounts');
+
+Route::post('/customer/member-notifications/{notification}/read', [MemberDiscountController::class, 'markRead'])
+    ->name('customer.member-notification.read');
 

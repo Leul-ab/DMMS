@@ -1,10 +1,12 @@
 import { Form, Head } from '@inertiajs/react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PhoneInput from '@/components/phone-input';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
@@ -14,6 +16,8 @@ type Props = {
 };
 
 export default function Register({ passwordRules }: Props) {
+    const [phone, setPhone] = useState('');
+
     return (
         <>
             <Head title="Register" />
@@ -60,16 +64,14 @@ export default function Register({ passwordRules }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="phone">Phone number</Label>
-                                <Input
+                                <PhoneInput
                                     id="phone"
-                                    type="tel"
-                                    required
-                                    tabIndex={3}
-                                    autoComplete="tel"
                                     name="phone"
-                                    placeholder="+251 911 234 567"
+                                    required
+                                    value={phone}
+                                    onChange={setPhone}
+                                    error={errors.phone}
                                 />
-                                <InputError message={errors.phone} />
                             </div>
 
                             <div className="grid gap-2">

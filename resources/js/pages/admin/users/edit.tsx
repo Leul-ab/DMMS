@@ -8,6 +8,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PhoneInput, {
+    normalizeEthiopianPhone,
+} from '@/components/phone-input';
 import {
     Select,
     SelectContent,
@@ -39,7 +42,7 @@ export default function UserEdit({ user, roles, branches }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         name: user.name,
         email: user.email,
-        phone: user.phone || '',
+        phone: normalizeEthiopianPhone(user.phone || ''),
         password: '',
         password_confirmation: '',
         role_id: user.role_id ? String(user.role_id) : '',
@@ -97,15 +100,14 @@ export default function UserEdit({ user, roles, branches }: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="phone">Phone (optional)</Label>
-                                <Input
+                                <PhoneInput
                                     id="phone"
                                     value={data.phone}
-                                    onChange={(e) =>
-                                        setData('phone', e.target.value)
+                                    onChange={(value) =>
+                                        setData('phone', value)
                                     }
-                                    placeholder="+1234567890"
+                                    error={errors.phone}
                                 />
-                                <InputError message={errors.phone} />
                             </div>
 
                             <div className="grid gap-2">

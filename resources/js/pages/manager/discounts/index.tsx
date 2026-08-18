@@ -1382,6 +1382,7 @@ export default function DiscountsIndex({
                                     </label>
                                     <DateTimePicker
                                         value={endDateTime}
+                                        minDate={startDateTime}
                                         onChange={(val) => {
                                             setEndDateTime(val);
                                             setErrors((prev) => ({

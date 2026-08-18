@@ -15,6 +15,9 @@ import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import PhoneInput, {
+    isValidEthiopianPhone,
+} from '@/components/phone-input';
 
 type BookingTable = {
     id: number;
@@ -123,10 +126,10 @@ export default function MyBooking({ onClose }: Props) {
     }, []);
 
     const handleVerifyCode = async () => {
-        const trimmedPhone = phoneInput.trim();
-
-        if (!trimmedPhone) {
-            setCodeError('Phone number is required.');
+        if (!isValidEthiopianPhone(phoneInput)) {
+            setCodeError(
+                'Please enter a valid phone number starting with 9 (9 digits).',
+            );
 
             return;
         }
@@ -150,7 +153,7 @@ export default function MyBooking({ onClose }: Props) {
                     Accept: 'application/json',
                     'X-XSRF-TOKEN': getXsrfToken(),
                 },
-                body: JSON.stringify({ phone: trimmedPhone }),
+                body: JSON.stringify({ phone: phoneInput }),
             });
 
             const data = await response.json();
@@ -455,11 +458,10 @@ export default function MyBooking({ onClose }: Props) {
                                 <label className="mb-2 block text-sm font-bold text-gray-700">
                                     Phone Number
                                 </label>
-                                <input
-                                    type="tel"
+                                <PhoneInput
                                     value={phoneInput}
-                                    onChange={(e) => {
-                                        setPhoneInput(e.target.value);
+                                    onChange={(value) => {
+                                        setPhoneInput(value);
                                         setCodeError(null);
                                     }}
                                     onKeyDown={(e) => {
@@ -467,15 +469,12 @@ export default function MyBooking({ onClose }: Props) {
                                             handleVerifyCode();
                                         }
                                     }}
-                                    placeholder="Enter your phone number"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-red-500"
-                                    autoFocus
+                                    required
+                                    error={codeError ?? undefined}
+                                    className="w-full rounded-xl border border-gray-200 focus-within:border-red-500"
+                                    prefixClassName="border-r border-gray-200 text-gray-500"
+                                    inputClassName="text-gray-700 placeholder:text-gray-400"
                                 />
-                                {codeError && (
-                                    <p className="mt-2 text-sm text-red-500">
-                                        {codeError}
-                                    </p>
-                                )}
                             </div>
 
                             <div className="mt-6 flex gap-3">

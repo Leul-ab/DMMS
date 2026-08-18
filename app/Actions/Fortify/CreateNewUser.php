@@ -26,10 +26,16 @@ class CreateNewUser implements CreatesNewUsers
             $input['phone'] = PhoneHelper::normalize($input['phone']);
         }
 
-        Validator::make($input, [
-            ...$this->profileRules(),
-            'password' => $this->passwordRules(),
-        ])->validate();
+        Validator::make(
+            $input,
+            [
+                ...$this->profileRules(),
+                'password' => $this->passwordRules(),
+            ],
+            [
+                'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
+            ],
+        )->validate();
 
         return User::create([
             'name' => $input['name'],
