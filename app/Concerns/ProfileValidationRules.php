@@ -61,6 +61,7 @@ trait ProfileValidationRules
             'nullable',
             'string',
             'max:255',
+            'regex:/^\+251\d{9}$/',
             $userId === null
                 ? Rule::unique(User::class, 'phone')
                 : Rule::unique(User::class, 'phone')->ignore($userId),
