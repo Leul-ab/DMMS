@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Support\PhoneHelper;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -12,6 +13,12 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->filled('phone')) {
+            $request->merge([
+                'phone' => PhoneHelper::normalize($request->input('phone')),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -23,6 +30,7 @@ class CustomerController extends Controller
                 'required',
                 'string',
                 'max:20',
+                'regex:' . PhoneHelper::PATTERN,
                 'unique:customers,phone',
             ],
 
@@ -32,6 +40,8 @@ class CustomerController extends Controller
                 'max:255',
                 'unique:customers,email',
             ],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
         $customer = Customer::create([
@@ -60,10 +70,14 @@ class CustomerController extends Controller
     public function verifyMember(Request $request)
     {
         $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', 'regex:' . PhoneHelper::PATTERN],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
-        $customer = Customer::where('phone', $request->input('phone'))->first();
+        $phone = PhoneHelper::normalize($request->input('phone'));
+
+        $customer = Customer::where('phone', $phone)->first();
 
         if (!$customer) {
             return response()->json([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Support\PhoneHelper;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -35,6 +36,12 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->filled('phone')) {
+            $request->merge([
+                'phone' => PhoneHelper::normalize($request->input('phone')),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -44,7 +51,8 @@ class CustomerController extends Controller
             'phone' => [
                 'required',
                 'string',
-                'max:255',
+                'max:20',
+                'regex:' . PhoneHelper::PATTERN,
                 'unique:customers,phone',
             ],
             'email' => [
@@ -56,6 +64,8 @@ class CustomerController extends Controller
             'is_member' => [
                 'boolean',
             ],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
         Customer::create($validated);
@@ -80,6 +90,12 @@ class CustomerController extends Controller
      */
     public function update(Request $request, Customer $customer)
     {
+        if ($request->filled('phone')) {
+            $request->merge([
+                'phone' => PhoneHelper::normalize($request->input('phone')),
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -89,7 +105,8 @@ class CustomerController extends Controller
             'phone' => [
                 'required',
                 'string',
-                'max:255',
+                'max:20',
+                'regex:' . PhoneHelper::PATTERN,
                 'unique:customers,phone,' . $customer->id,
             ],
             'email' => [
@@ -101,6 +118,8 @@ class CustomerController extends Controller
             'is_member' => [
                 'boolean',
             ],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
         // Customer code is NOT changed during editing

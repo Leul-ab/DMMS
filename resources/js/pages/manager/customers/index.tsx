@@ -30,6 +30,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import PhoneInput, {
+    isValidEthiopianPhone,
+    normalizeEthiopianPhone,
+} from '@/components/phone-input';
 import { useCan } from '@/hooks/use-can';
 
 import {
@@ -150,7 +154,7 @@ export default function CustomersIndex({
         setSelectedCustomer(customer);
 
         setName(customer.name);
-        setPhone(customer.phone ?? '');
+        setPhone(normalizeEthiopianPhone(customer.phone ?? ''));
         setEmail(customer.email ?? '');
         setIsMember(customer.is_member);
 
@@ -191,7 +195,7 @@ export default function CustomersIndex({
     const handleAdd = () => {
         if (
             !name.trim() ||
-            !phone.trim()
+            !isValidEthiopianPhone(phone)
         ) {
             return;
         }
@@ -225,7 +229,7 @@ export default function CustomersIndex({
         if (
             !selectedCustomer ||
             !name.trim() ||
-            !phone.trim()
+            !isValidEthiopianPhone(phone)
         ) {
             return;
         }
@@ -579,17 +583,10 @@ export default function CustomersIndex({
                                 Phone Number
                             </label>
 
-                            <Input
+                            <PhoneInput
                                 value={phone}
-                                onChange={(
-                                    event,
-                                ) =>
-                                    setPhone(
-                                        event.target
-                                            .value,
-                                    )
-                                }
-                                placeholder="Enter phone number"
+                                onChange={setPhone}
+                                required
                             />
                         </div>
 
@@ -805,16 +802,10 @@ export default function CustomersIndex({
                                 Phone Number
                             </label>
 
-                            <Input
+                            <PhoneInput
                                 value={phone}
-                                onChange={(
-                                    event,
-                                ) =>
-                                    setPhone(
-                                        event.target
-                                            .value,
-                                    )
-                                }
+                                onChange={setPhone}
+                                required
                             />
                         </div>
 

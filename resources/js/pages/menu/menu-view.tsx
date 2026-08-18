@@ -12,6 +12,7 @@ import {
     ArrowRight,
     Utensils,
     UserPlus,
+    Bell,
     Calendar,
     Package,
     Search,
@@ -37,6 +38,9 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import PhoneInput, {
+    isValidEthiopianPhone,
+} from '@/components/phone-input';
 import {
     Select,
     SelectContent,
@@ -62,10 +66,20 @@ type Category = {
 
 type Discount = {
     id: number;
+    name: string | null;
+    description: string | null;
     discount_type: string;
     percentage: string | null;
     fixed_amount: string | null;
     applies_to: string;
+    start_date: string | null;
+    start_time: string | null;
+};
+
+type MemberNotification = {
+    id: number;
+    read_at: string | null;
+    discount: Discount | null;
 };
 
 type MenuItem = {
@@ -125,6 +139,8 @@ type Props = {
     tableError?: string | null;
     order_id?: number | null;
     isMember?: boolean;
+    memberUnreadCount?: number;
+    memberNotifications?: MemberNotification[];
 };
 
 const formatCountdown = (seconds: number): string => {
@@ -136,6 +152,16 @@ const formatCountdown = (seconds: number): string => {
     const secs = seconds % 60;
 
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const formatAvailableAt = (discount: Discount | null): string => {
+    if (!discount?.start_date) {
+        return '—';
+    }
+
+    return discount.start_time
+        ? `${discount.start_date} ${discount.start_time}`
+        : discount.start_date;
 };
 
 const getCategoryIcon = (name: string) => {
@@ -174,10 +200,20 @@ export function MenuView({
     tableError: propTableError = null,
     order_id = null,
     isMember = false,
+    memberUnreadCount = 0,
+    memberNotifications = [],
 }: Props & { basePath?: string; allowTableSelection?: boolean }) {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [showMemberForm, setShowMemberForm] = useState(false);
     const [showMemberVerify, setShowMemberVerify] = useState(false);
+    const [showMemberNotifications, setShowMemberNotifications] =
+        useState(false);
+    const [localNotifications, setLocalNotifications] = useState<
+        MemberNotification[]
+    >(memberNotifications ?? []);
+    const [localUnreadCount, setLocalUnreadCount] = useState<number>(
+        memberUnreadCount ?? 0,
+    );
     const [memberVerifyPhone, setMemberVerifyPhone] = useState('');
     const [memberVerifyError, setMemberVerifyError] = useState('');
     const [isVerifyingMember, setIsVerifyingMember] = useState(false);
@@ -423,7 +459,10 @@ export function MenuView({
     const handleRegisterMember = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!memberData.name.trim() || !memberData.phone.trim()) {
+        if (
+            !memberData.name.trim() ||
+            !isValidEthiopianPhone(memberData.phone)
+        ) {
             return;
         }
 
@@ -479,8 +518,10 @@ export function MenuView({
         e.preventDefault();
         setMemberVerifyError('');
 
-        if (!memberVerifyPhone.trim()) {
-            setMemberVerifyError('Please enter your phone number.');
+        if (!isValidEthiopianPhone(memberVerifyPhone)) {
+            setMemberVerifyError(
+                'Please enter a valid phone number starting with 9 (9 digits).',
+            );
 
             return;
         }
@@ -525,6 +566,48 @@ export function MenuView({
             setMemberVerifyError('Verification failed. Please try again.');
         } finally {
             setIsVerifyingMember(false);
+        }
+    };
+
+    const handleMarkNotificationRead = async (id: number) => {
+        try {
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+            const response = await fetch(
+                `/customer/member-notifications/${id}/read`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-XSRF-TOKEN': getXsrfToken(),
+                    },
+                    body: JSON.stringify({ customer_phone: customer_phone }),
+                },
+            );
+            const data = await response.json();
+
+            if (data.success) {
+                setLocalNotifications((prev) =>
+                    prev.map((n) =>
+                        n.id === id
+                            ? { ...n, read_at: new Date().toISOString() }
+                            : n,
+                    ),
+                );
+                setLocalUnreadCount(
+                    typeof data.unread_count === 'number'
+                        ? data.unread_count
+                        : Math.max(0, localUnreadCount - 1),
+                );
+            }
+        } catch {
+            /* ignore network errors */
         }
     };
 
@@ -1126,14 +1209,14 @@ export function MenuView({
                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
                                 Phone Number
                             </label>
-                            <Input
-                                type="tel"
+                            <PhoneInput
                                 value={memberData.phone}
-                                onChange={(e) =>
-                                    setMemberData('phone', e.target.value)
+                                onChange={(value) =>
+                                    setMemberData('phone', value)
                                 }
-                                placeholder="Enter your phone number"
-                                className="border-red-200 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                                required
+                                className="border-red-200 focus-within:border-red-500 focus-within:ring-red-500/20"
+                                inputClassName="text-stone-700 placeholder:text-red-400"
                             />
                             {memberErrors.phone && (
                                 <p className="mt-1 text-sm text-red-500">
@@ -1224,20 +1307,16 @@ export function MenuView({
                             <label className="mb-1.5 block text-sm font-bold text-stone-700">
                                 Phone Number
                             </label>
-                            <Input
-                                type="tel"
+                            <PhoneInput
                                 value={memberVerifyPhone}
-                                onChange={(e) =>
-                                    setMemberVerifyPhone(e.target.value)
+                                onChange={(value) =>
+                                    setMemberVerifyPhone(value)
                                 }
-                                placeholder="Enter your phone number"
-                                className="border-red-200 focus-visible:border-red-500 focus-visible:ring-red-500/20"
+                                required
+                                error={memberVerifyError}
+                                className="border-red-200 focus-within:border-red-500 focus-within:ring-red-500/20"
+                                inputClassName="text-stone-700 placeholder:text-red-400"
                             />
-                            {memberVerifyError && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {memberVerifyError}
-                                </p>
-                            )}
                         </div>
                         <DialogFooter className="gap-2 pt-2">
                             <Button
@@ -1514,15 +1593,119 @@ export function MenuView({
                                 <UserPlus className="h-4 w-4" />
                                 Join as Member
                             </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowMemberVerify(true)}
-                                className="rounded-full border-red-300/30 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
-                            >
-                                <Star className="h-4 w-4" />
-                                Member Discount
-                            </Button>
+                            <div className="relative">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setShowMemberVerify(true)}
+                                    className="relative rounded-full border-red-300/30 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20 hover:text-white"
+                                >
+                                    <Star className="h-4 w-4" />
+                                    Member Discount
+                                    <Bell className="h-4 w-4" />
+                                    {localUnreadCount > 0 && (
+                                        <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white ring-2 ring-red-300">
+                                            {localUnreadCount}
+                                        </span>
+                                    )}
+                                </Button>
+
+                                {showMemberNotifications && isMember && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-[70]"
+                                            onClick={() =>
+                                                setShowMemberNotifications(
+                                                    false,
+                                                )
+                                            }
+                                        />
+                                        <div className="absolute right-0 z-[80] mt-2 w-80 rounded-xl border border-red-200 bg-white p-3 text-stone-700 shadow-xl">
+                                            <div className="mb-2 flex items-center justify-between">
+                                                <span className="text-sm font-bold text-stone-800">
+                                                    Member Notifications
+                                                </span>
+                                                {localUnreadCount > 0 && (
+                                                    <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                                        {localUnreadCount} new
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {localNotifications.length ===
+                                            0 ? (
+                                                <p className="text-sm text-stone-400">
+                                                    No notifications yet.
+                                                </p>
+                                            ) : (
+                                                <ul className="max-h-80 space-y-2 overflow-y-auto">
+                                                    {localNotifications.map(
+                                                        (n) => (
+                                                            <li
+                                                                key={n.id}
+                                                                onClick={() =>
+                                                                    handleMarkNotificationRead(
+                                                                        n.id,
+                                                                    )
+                                                                }
+                                                                className={`cursor-pointer rounded-lg border p-3 transition ${
+                                                                    n.read_at
+                                                                        ? 'border-stone-100 bg-stone-50'
+                                                                        : 'border-red-200 bg-red-50'
+                                                                }`}
+                                                            >
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="font-semibold text-stone-800">
+                                                                        {n.discount
+                                                                            ?.name ??
+                                                                            'Member Discount'}
+                                                                    </span>
+                                                                    {!n.read_at && (
+                                                                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                                                                            NEW
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {n.discount
+                                                                    ?.description && (
+                                                                    <p className="mt-1 text-sm text-stone-500">
+                                                                        {
+                                                                            n
+                                                                                .discount
+                                                                                .description
+                                                                        }
+                                                                    </p>
+                                                                )}
+                                                                <div className="mt-1 text-sm font-bold text-red-600">
+                                                                    {n.discount
+                                                                        ?.discount_type ===
+                                                                    'percentage'
+                                                                        ? `${n.discount?.percentage}% off`
+                                                                        : n.discount
+                                                                              ?.fixed_amount
+                                                                          ? `$${n.discount.fixed_amount} off`
+                                                                          : ''}
+                                                                </div>
+                                                                <div className="mt-1 text-xs text-stone-400">
+                                                                    Available:{' '}
+                                                                    {formatAvailableAt(
+                                                                        n.discount,
+                                                                    )}
+                                                                </div>
+                                                                <div className="mt-1 text-xs font-medium text-stone-400">
+                                                                    {n.read_at
+                                                                        ? 'Read'
+                                                                        : 'Unread'}
+                                                                </div>
+                                                            </li>
+                                                        ),
+                                                    )}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

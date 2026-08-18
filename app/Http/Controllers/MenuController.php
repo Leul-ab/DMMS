@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Discount;
+use App\Models\MemberDiscountNotification;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
@@ -100,13 +102,82 @@ class MenuController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Determine customer membership for discount eligibility
+        // Determine customer membership for discount eligibility.
+        // The authenticated member is tracked via the session (set during
+        // phone verification / registration), so fall back to the session
+        // when the ?customer_phone query param is absent - otherwise the
+        // member would only be recognised on the single reload that
+        // carries the query param, and the badge would never appear.
         $customer = null;
-        $customerPhone = $request->query('customer_phone');
+        $customerPhone = $request->query('customer_phone') ?? session('customer_phone');
         if ($customerPhone) {
             $customer = Customer::where('phone', $customerPhone)->first();
         }
         $isMember = $customer?->is_member ?? false;
+
+        // Member-only discount notifications (only for authenticated members).
+        $memberUnreadCount = 0;
+        $memberNotifications = [];
+        $memberAvailableDiscounts = [];
+
+        if ($customer && $customer->is_member) {
+            $memberAvailableDiscounts = Discount::withoutGlobalScope('branch')
+                ->memberAvailable()
+                ->where(function ($query) use ($customer) {
+                    // A member without an assigned branch (the norm for
+                    // customer-registered members) sees every member discount.
+                    if ($customer->branch_id === null) {
+                        return;
+                    }
+
+                    $query->where('branch_id', $customer->branch_id)
+                        ->orWhereNull('branch_id');
+                })
+                ->orderByDesc('start_date')
+                ->get()
+                ->map(function (Discount $discount) {
+                    return [
+                        'id' => $discount->id,
+                        'name' => $discount->name,
+                        'description' => $discount->description,
+                        'discount_type' => $discount->discount_type,
+                        'percentage' => $discount->percentage,
+                        'fixed_amount' => $discount->fixed_amount,
+                    ];
+                })
+                ->all();
+
+            // Count notifications for member-only discounts regardless of
+            // whether the discount is still in its active window. A
+            // notification stays unread (and the badge visible) until the
+            // member explicitly reads it.
+            $memberNotifications = MemberDiscountNotification::with('discount')
+                ->where('customer_id', $customer->id)
+                ->whereHas('discount', fn ($query) => $query->where('applies_to', 'members'))
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(function (MemberDiscountNotification $notification) {
+                    return [
+                        'id' => $notification->id,
+                        'read_at' => $notification->read_at?->toDateTimeString(),
+                        'discount' => $notification->discount ? [
+                            'id' => $notification->discount->id,
+                            'name' => $notification->discount->name,
+                            'description' => $notification->discount->description,
+                            'discount_type' => $notification->discount->discount_type,
+                            'percentage' => $notification->discount->percentage,
+                            'fixed_amount' => $notification->discount->fixed_amount,
+                            'start_date' => $notification->discount->start_date?->toDateString(),
+                            'start_time' => $notification->discount->start_time?->format('H:i:s'),
+                        ] : null,
+                    ];
+                })
+                ->all();
+
+            $memberUnreadCount = collect($memberNotifications)
+                ->filter(fn ($notification) => $notification['read_at'] === null)
+                ->count();
+        }
 
         // Get available tables for manual selection.
         // The /menu page always offers free table selection via the dropdown.
@@ -135,6 +206,11 @@ class MenuController extends Controller
                 ? (int) $orderId
                 : null,
             'isMember' => $isMember,
+
+            // Member-only discount notifications (empty unless an authenticated member).
+            'memberUnreadCount' => $memberUnreadCount,
+            'memberNotifications' => $memberNotifications,
+            'memberAvailableDiscounts' => $memberAvailableDiscounts,
 
             // Booking confirmation data (passed explicitly so the confirmation
             // dialog always receives the real booking details after a redirect).

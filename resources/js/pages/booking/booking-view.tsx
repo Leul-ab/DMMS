@@ -24,10 +24,10 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import {
-    store as bookingStore,
-} from '@/routes/booking';
+import PhoneInput, {
+    isValidEthiopianPhone,
+} from '@/components/phone-input';
+import { store as bookingStore } from '@/routes/booking';
 
 type RestaurantTable = {
     id: number;
@@ -113,8 +113,11 @@ export default function BookingView({
     };
 
     const handleVerifyCustomer = async () => {
-        if (!phoneNumber.trim()) {
-            setVerificationError('Please enter your phone number.');
+        if (!isValidEthiopianPhone(phoneNumber)) {
+            setVerificationError(
+                'Please enter a valid phone number starting with 9 (9 digits).',
+            );
+
             return;
         }
 
@@ -630,14 +633,13 @@ export default function BookingView({
                                     <label className="mb-2 block text-sm font-bold text-stone-700">
                                         Phone Number
                                     </label>
-                                    <input
-                                        type="tel"
+                                    <PhoneInput
                                         value={phoneNumber}
-                                        onChange={(e) =>
-                                            setPhoneNumber(e.target.value)
-                                        }
-                                        placeholder="Enter your phone number"
-                                        className="h-11 w-full rounded-xl border border-red-200 bg-white px-4 text-stone-700 transition outline-none placeholder:text-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                                        onChange={setPhoneNumber}
+                                        required
+                                        className="h-11 w-full rounded-xl border-red-200 bg-white focus-within:border-red-500 focus-within:ring-red-500/20"
+                                        prefixClassName="border-r border-red-200 text-red-600"
+                                        inputClassName="text-stone-700 placeholder:text-red-400"
                                     />
                                 </div>
 

@@ -61,6 +61,7 @@ class UserController extends Controller
 $phoneRules = ['nullable', 'string', 'max:20'];
 
 if ($phone !== null) {
+    $phoneRules[] = 'regex:' . PhoneHelper::PATTERN;
     $phoneRules[] = Rule::unique('users', 'phone');
 }
 
@@ -75,6 +76,7 @@ $validated = $request->validate([
     'is_waiter' => ['boolean'],
 ], [
     'phone.unique' => 'This phone number already exists. Please use another phone number.',
+    'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
 ]);
         if (Role::find($validated['role_id'])?->slug === 'super_admin') {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);
@@ -123,6 +125,7 @@ $validated = $request->validate([
         $phoneRules = ['nullable', 'string', 'max:20'];
 
         if ($phone !== null) {
+            $phoneRules[] = 'regex:' . PhoneHelper::PATTERN;
             $phoneRules[] = Rule::unique('users', 'phone')->ignore($user->id);
         }
 
@@ -135,6 +138,8 @@ $validated = $request->validate([
             'branch_id' => ['required', 'exists:branches,id'],
             'is_active' => ['boolean'],
             'is_waiter' => ['boolean'],
+        ], [
+            'phone.regex' => 'The phone number must be in the format +251 followed by 9 digits starting with 9 (e.g. +251912345678).',
         ]);
 
         if (Role::find($validated['role_id'])?->slug === 'super_admin') {

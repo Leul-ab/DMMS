@@ -3,6 +3,9 @@ import { CheckCircle2, Copy } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { login } from '@/routes';
 import menuRoutes from '@/routes/menu';
+import PhoneInput, {
+    isValidEthiopianPhone,
+} from '@/components/phone-input';
 
 export default function LandingPage() {
     const { auth } = usePage().props;
@@ -31,7 +34,10 @@ export default function LandingPage() {
     const handleRegisterMember = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!memberData.name.trim() || !memberData.phone.trim()) {
+        if (
+            !memberData.name.trim() ||
+            !isValidEthiopianPhone(memberData.phone)
+        ) {
             return;
         }
 
@@ -282,17 +288,18 @@ export default function LandingPage() {
                                 <label className="mb-2 block text-sm font-bold text-gray-700">
                                     Phone Number
                                 </label>
-                                <input
-                                    type="tel"
+                                <PhoneInput
                                     value={memberData.phone}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         setMemberData({
                                             ...memberData,
-                                            phone: e.target.value,
+                                            phone: value,
                                         })
                                     }
-                                    placeholder="Enter your phone number"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-red-500"
+                                    required
+                                    error={memberErrors.phone}
+                                    className="border-red-200 focus-within:border-red-500 focus-within:ring-red-500/20"
+                                    inputClassName="text-stone-700 placeholder:text-red-400"
                                 />
                                 {memberErrors.phone && (
                                     <p className="mt-1 text-sm text-red-500">

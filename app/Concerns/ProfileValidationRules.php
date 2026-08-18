@@ -3,6 +3,7 @@
 namespace App\Concerns;
 
 use App\Models\User;
+use App\Support\PhoneHelper;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 
@@ -61,6 +62,7 @@ trait ProfileValidationRules
             'nullable',
             'string',
             'max:255',
+            'regex:' . PhoneHelper::PATTERN,
             $userId === null
                 ? Rule::unique(User::class, 'phone')
                 : Rule::unique(User::class, 'phone')->ignore($userId),

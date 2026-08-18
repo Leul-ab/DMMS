@@ -3,6 +3,7 @@ import { UserPlus } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import PhoneInput from '@/components/phone-input';
 
 export default function CreateCustomer() {
     const { data, setData, post, processing, errors } = useForm({
@@ -105,25 +106,15 @@ export default function CreateCustomer() {
                                     Phone Number
                                 </label>
 
-                                <input
+                                <PhoneInput
                                     id="phone"
-                                    type="text"
+                                    required
                                     value={data.phone}
-                                    onChange={(e) =>
-                                        setData(
-                                            'phone',
-                                            e.target.value
-                                        )
+                                    onChange={(value) =>
+                                        setData('phone', value)
                                     }
-                                    placeholder="Enter phone number"
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    error={errors.phone}
                                 />
-
-                                {errors.phone && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.phone}
-                                    </p>
-                                )}
                             </div>
 
                             {/* Email */}

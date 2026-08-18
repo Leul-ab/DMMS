@@ -3,6 +3,9 @@ import { User } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import PhoneInput, {
+    normalizeEthiopianPhone,
+} from '@/components/phone-input';
 
 type Customer = {
     id: number;
@@ -21,7 +24,7 @@ export default function EditCustomer({ customer }: Props) {
     const { data, setData, put, processing, errors } = useForm({
         customer_code: customer.customer_code,
         name: customer.name,
-        phone: customer.phone,
+        phone: normalizeEthiopianPhone(customer.phone),
         email: customer.email ?? '',
         is_member: customer.is_member,
     });
@@ -116,24 +119,15 @@ export default function EditCustomer({ customer }: Props) {
                                     Phone Number
                                 </label>
 
-                                <input
+                                <PhoneInput
                                     id="phone"
-                                    type="text"
+                                    required
                                     value={data.phone}
-                                    onChange={(e) =>
-                                        setData(
-                                            'phone',
-                                            e.target.value
-                                        )
+                                    onChange={(value) =>
+                                        setData('phone', value)
                                     }
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    error={errors.phone}
                                 />
-
-                                {errors.phone && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.phone}
-                                    </p>
-                                )}
                             </div>
 
                             {/* Email */}

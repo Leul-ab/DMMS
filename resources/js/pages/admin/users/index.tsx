@@ -1,8 +1,9 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import Heading from '@/components/heading';
+import PhoneInput from '@/components/phone-input';
 import StatusToggle from '@/components/status-toggle';
 
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +83,11 @@ export default function UsersIndex({
     filters,
 }: Props) {
     const can = useCan();
+
+    const pageErrors = (usePage().props.errors ?? {}) as Record<
+        string,
+        string | undefined
+    >;
 
     // -----------------------------------------
     // Search and filters
@@ -687,12 +693,10 @@ export default function UsersIndex({
                                 Phone
                             </label>
 
-                            <Input
+                            <PhoneInput
                                 value={phone}
-                                onChange={(event) =>
-                                    setPhone(event.target.value)
-                                }
-                                placeholder="Enter phone number"
+                                onChange={setPhone}
+                                error={pageErrors?.phone}
                             />
                         </div>
 
@@ -1018,11 +1022,10 @@ export default function UsersIndex({
                                 Phone
                             </label>
 
-                            <Input
+                            <PhoneInput
                                 value={phone}
-                                onChange={(event) =>
-                                    setPhone(event.target.value)
-                                }
+                                onChange={setPhone}
+                                error={pageErrors?.phone}
                             />
                         </div>
 

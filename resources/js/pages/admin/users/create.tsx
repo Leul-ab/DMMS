@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PhoneInput from '@/components/phone-input';
 import {
     Select,
     SelectContent,
@@ -103,16 +104,13 @@ export default function UserCreate({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="phone">Phone Number</Label>
-                                <Input
+                                <PhoneInput
                                     id="phone"
                                     value={data.phone}
-                                    onChange={(e) =>
-                                        setData('phone', e.target.value)
+                                    onChange={(value) =>
+                                        setData('phone', value)
                                     }
-                                    placeholder="+1234567890"
-                                />
-                                <InputError
-                                    message={errors.phone ?? pageErrors.phone}
+                                    error={errors.phone ?? pageErrors.phone}
                                 />
                             </div>
 
