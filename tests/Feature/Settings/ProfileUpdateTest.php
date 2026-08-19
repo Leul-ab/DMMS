@@ -4,6 +4,7 @@ namespace Tests\Feature\Settings;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ProfileUpdateTest extends TestCase
@@ -41,6 +42,64 @@ class ProfileUpdateTest extends TestCase
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_name_and_phone_can_be_updated()
+    {
+        $user = User::factory()->create(['phone' => null]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => 'New Name',
+                'email' => $user->email,
+                'phone' => '0912345678',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('profile.edit'));
+
+        $user->refresh();
+
+        $this->assertSame('New Name', $user->name);
+        $this->assertSame('+251912345678', $user->phone);
+    }
+
+    public function test_phone_must_use_the_plus_251_format()
+    {
+        $user = User::factory()->create(['phone' => null]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => '12345',
+            ]);
+
+        $response->assertSessionHasErrors('phone');
+    }
+
+    public function test_role_cannot_be_changed_from_profile()
+    {
+        $roleA = Role::create(['name' => 'role-a', 'guard_name' => 'web']);
+        $roleB = Role::create(['name' => 'role-b', 'guard_name' => 'web']);
+        $user = User::factory()->create(['role_id' => $roleA->id]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch(route('profile.update'), [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role_id' => $roleB->id,
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('profile.edit'));
+
+        $this->assertSame($roleA->id, $user->refresh()->role_id);
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged()
