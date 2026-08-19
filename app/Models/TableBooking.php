@@ -59,7 +59,7 @@ class TableBooking extends Model
     }
 
     /**
-     * The restaurant tabless associated with this booking (many-to-many).
+     * The restaurant tables associated with this booking (many-to-many).
      */
     public function tables()
     {
@@ -69,6 +69,14 @@ class TableBooking extends Model
             'booking_id',
             'table_id'
         );
+    }
+
+    /**
+     * The main booking payment for this booking.
+     */
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'booking_id')->where('payment_type', 'booking');
     }
 
     /**

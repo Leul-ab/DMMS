@@ -23,6 +23,7 @@ type BookingData = {
     expires_at: string;
     time_remaining_seconds: number;
     payment_status: string;
+    paid_at?: string | null;
 };
 
 export default function BookingSidebar() {
@@ -154,8 +155,8 @@ export default function BookingSidebar() {
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Payment confirmed successfully!');
-                setBooking({ ...booking, payment_status: 'paid' });
+                toast.success('Payment recorded successfully.\nBooking verification request sent.');
+                setBooking({ ...booking, payment_status: 'paid', paid_at: data.booking?.paid_at || new Date().toISOString() });
             } else {
                 toast.error(data.message || 'Payment failed.');
             }

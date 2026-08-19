@@ -23,6 +23,9 @@ import {
     Leaf,
     Flame,
     MessageSquareText,
+    RefreshCw,
+    Upload,
+    Image,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -105,6 +108,8 @@ type BookingData = {
     transaction_number?: string | null;
     amount?: string | number | null;
     paid_at?: string | null;
+    verification_status?: string | null;
+    rejection_reason?: string | null;
 };
 
 type Props = {
@@ -218,7 +223,8 @@ export function MenuView({
 
     const [paymentStep, setPaymentStep] = useState<'idle' | 'select' | 'account' | 'verification' | 'success'>('idle');
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-    const [transactionNumber, setTransactionNumber] = useState('');
+    const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+    const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
     const [isSubmittingVerification, setIsSubmittingVerification] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
 
@@ -548,7 +554,7 @@ export function MenuView({
     };
 
     const handleCopyAccount = async () => {
-        if (!selectedPaymentMethod) {
+        if (!selectedPaymentMethod || !bookingConfirm || copySuccess) {
             return;
         }
 
@@ -557,34 +563,15 @@ export function MenuView({
         try {
             await navigator.clipboard.writeText(accountNumber);
             setCopySuccess(true);
-            toast.success('Account number copied.');
 
-            setTimeout(() => {
-                setPaymentStep('verification');
-                setCopySuccess(false);
-            }, 800);
-        } catch {
-            toast.error('Failed to copy account number.');
-        }
-    };
-
-    const handleSubmitVerification = async () => {
-        if (!bookingConfirm || !selectedPaymentMethod || !transactionNumber.trim()) {
-            return;
-        }
-
-        setIsSubmittingVerification(true);
-
-        try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
-
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
-            const response = await fetch(`/booking/${bookingConfirm.id}/submit-payment`, {
+            const response = await fetch(`/customer/bookings/${bookingConfirm.id}/copy-account`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -592,19 +579,100 @@ export function MenuView({
                 },
                 body: JSON.stringify({
                     payment_method: selectedPaymentMethod,
-                    transaction_number: transactionNumber,
                 }),
             });
 
             const data = await response.json();
 
+            if (data.success || data.already_exists) {
+                toast.success('Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.');
+                if (data.booking) {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: data.booking.payment_status || 'paid',
+                        payment_method: data.booking.payment_method || selectedPaymentMethod,
+                        verification_status: data.booking.verification_status || null,
+                    });
+                } else {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: 'paid',
+                        payment_method: selectedPaymentMethod,
+                    });
+                }
+            } else {
+                toast.error(data.message || 'Failed to create payment notification.');
+                setCopySuccess(false);
+            }
+
+            setTimeout(() => {
+                setCopySuccess(false);
+            }, 2000);
+        } catch {
+            toast.error('Unable to copy account number.');
+            setCopySuccess(false);
+        }
+    };
+
+    const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+
+        if (file) {
+            if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                toast.error('Please upload a valid payment screenshot (JPG, PNG, or WEBP).');
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Payment screenshot must not exceed 5 MB.');
+                return;
+            }
+        }
+
+        setPaymentScreenshot(file);
+        setScreenshotPreview(file ? URL.createObjectURL(file) : null);
+    };
+
+    const handleRemoveScreenshot = () => {
+        setPaymentScreenshot(null);
+        setScreenshotPreview(null);
+    };
+
+    const handleSubmitVerification = async () => {
+        if (!bookingConfirm || !selectedPaymentMethod || !paymentScreenshot) {
+            return;
+        }
+
+        setIsSubmittingVerification(true);
+
+        try {
+            const csrfToken =
+                (
+                    document.querySelector(
+                        'meta[name="csrf-token"]',
+                    ) as HTMLMetaElement
+                )?.content || '';
+
+            const formData = new FormData();
+            formData.append('payment_method', selectedPaymentMethod);
+            formData.append('payment_screenshot', paymentScreenshot);
+
+            const response = await fetch(`/booking/${bookingConfirm.id}/submit-payment`, {
+                method: 'POST',
+                headers: {
+                    'X-XSRF-TOKEN': csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
             if (data.success) {
-                toast.success('Payment verified successfully!');
+                toast.success('Payment submitted successfully. Booking verification request sent.');
                 setBookingConfirm({
                     ...bookingConfirm,
                     payment_status: 'paid',
                     payment_method: data.booking?.payment_method || selectedPaymentMethod,
-                    transaction_number: data.booking?.transaction_number || transactionNumber,
                     paid_at: data.booking?.paid_at || new Date().toISOString(),
                 });
                 setPaymentStep('success');
@@ -621,7 +689,8 @@ export function MenuView({
     const handleClosePayment = () => {
         setPaymentStep('idle');
         setSelectedPaymentMethod(null);
-        setTransactionNumber('');
+        setPaymentScreenshot(null);
+        setScreenshotPreview(null);
         setCopySuccess(false);
     };
 
@@ -954,6 +1023,28 @@ export function MenuView({
                             <Separator className="bg-red-200/40" />
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-red-600">
+                                    Payment Status
+                                </span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
+                                    bookingConfirm?.payment_status === 'paid'
+                                        ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                }`}>
+                                    {bookingConfirm?.payment_status === 'pending' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'paid'
+                                        ? 'Paid'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'Pending Verification'
+                                        : 'Unpaid'}
+                                </span>
+                            </div>
+                            <Separator className="bg-red-200/40" />
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-red-600">
                                     Expires In
                                 </span>
                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${bookingConfirm?.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -1103,30 +1194,59 @@ export function MenuView({
                             </div>
                             <div>
                                 <label className="mb-2 block text-sm font-bold text-gray-700">
-                                    Transaction Number
+                                    Upload Payment Screenshot
                                 </label>
                                 <input
-                                    type="text"
-                                    value={transactionNumber}
-                                    onChange={(e) => setTransactionNumber(e.target.value)}
-                                    placeholder="Enter transaction number"
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-3.5 outline-none focus:border-red-500"
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                    onChange={handleScreenshotChange}
+                                    className="hidden"
+                                    id="menu-payment-screenshot"
                                 />
+                                {!screenshotPreview ? (
+                                    <label
+                                        htmlFor="menu-payment-screenshot"
+                                        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-6 transition hover:border-red-400"
+                                    >
+                                        <Upload className="mb-2 h-8 w-8 text-gray-400" />
+                                        <span className="text-sm font-semibold text-gray-600">
+                                            Choose Screenshot
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                            JPG, PNG, WEBP up to 5MB
+                                        </span>
+                                    </label>
+                                ) : (
+                                    <div className="relative rounded-xl border border-gray-200 p-2">
+                                        <img
+                                            src={screenshotPreview}
+                                            alt="Payment screenshot preview"
+                                            className="mx-auto max-h-48 rounded-lg object-contain"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveScreenshot}
+                                            className="absolute right-3 top-3 rounded-full bg-red-600 p-1 text-white transition hover:bg-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <Button
                                 onClick={handleSubmitVerification}
-                                disabled={isSubmittingVerification || !transactionNumber.trim()}
+                                disabled={isSubmittingVerification || !paymentScreenshot}
                                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                             >
                                 {isSubmittingVerification ? (
                                     <span className="flex items-center justify-center gap-2">
                                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                        Verifying...
+                                        Submitting...
                                     </span>
                                 ) : (
                                     <span className="flex items-center justify-center gap-2">
                                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                                        Submit Payment Verification
+                                        Submit Payment
                                     </span>
                                 )}
                             </Button>

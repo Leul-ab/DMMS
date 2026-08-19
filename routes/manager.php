@@ -154,6 +154,25 @@ Route::middleware(['auth'])
         )->name('payment-verification.extension.reject')->middleware('permission:status payments');
 
         // =========================
+        // Booking Verification
+        // =========================
+
+        Route::get(
+            'booking-verification',
+            [PaymentVerificationController::class, 'bookingVerification']
+        )->name('booking-verification.index')->middleware('permission:view payments');
+
+        Route::post(
+            'booking-verification/{notification}/verify',
+            [PaymentVerificationController::class, 'verifyBooking']
+        )->name('booking-verification.verify')->middleware('permission:status payments');
+
+        Route::post(
+            'booking-verification/{notification}/reject',
+            [PaymentVerificationController::class, 'rejectBooking']
+        )->name('booking-verification.reject')->middleware('permission:status payments');
+
+        // =========================
         // Booking Payment
         // =========================
 
@@ -177,10 +196,20 @@ Route::middleware(['auth'])
             [PaymentVerificationController::class, 'rejectBookingPayment']
         )->name('booking-payment.reject')->middleware('permission:status payments');
 
-        Route::patch(
+        Route::get(
             'booking-payment/notifications/{notification}/read',
             [PaymentVerificationController::class, 'markNotificationRead']
         )->name('booking-payment.notifications.read')->middleware('permission:status payments');
+
+        Route::get(
+            'booking-payment/{notification}/screenshot',
+            [PaymentVerificationController::class, 'viewScreenshot']
+        )->name('booking-payment.screenshot')->middleware('permission:view payments');
+
+        Route::get(
+            'verification-count',
+            [PaymentVerificationController::class, 'verificationCount']
+        )->name('verification-count');
 
         // =========================
         // Table Sections

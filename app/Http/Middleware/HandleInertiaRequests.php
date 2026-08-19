@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\BookingVerificationNotification;
+use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -45,9 +47,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'permissions' => $request->user() ? $request->user()->getAllPermissions()->pluck('name')->values()->all() : [],
             'allBranches' => fn () => ($request->user()?->can('switch branches'))
-                ? \App\Models\Branch::query()->orderBy('name')->get(['id', 'name'])
+                ? Branch::query()->orderBy('name')->get(['id', 'name'])
                 : [],
-            'currentBranch' => fn () => \App\Models\Branch::current()
+            'currentBranch' => fn () => Branch::current()
                 ?->only(['id', 'name']),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'booking_success' => session('booking_success', false),
@@ -56,13 +58,14 @@ class HandleInertiaRequests extends Middleware
             'order_count' => function () use ($request) {
                 if ($request->session()->has('customer_phone')) {
                     $customerPhone = $request->session()->get('customer_phone');
-                    $customer = \App\Models\Customer::where('phone', $customerPhone)->first();
+                    $customer = Customer::where('phone', $customerPhone)->first();
                     if ($customer) {
-                        return \App\Models\Order::where('customer_id', $customer->id)
+                        return Order::where('customer_id', $customer->id)
                             ->whereIn('status', ['pending', 'received', 'confirmed', 'preparing', 'ready', 'served'])
                             ->count();
                     }
                 }
+
                 return 0;
             },
             'notifications' => function () use ($request) {
@@ -79,7 +82,9 @@ class HandleInertiaRequests extends Middleware
                         ? Order::where('payment_status', 'pending')->whereHas('payment')->count()
                         : 0,
                     'bookingPayment' => $user?->can('view payments')
-                        ? BookingVerificationNotification::where('status', 'pending')->count()
+                        ? BookingVerificationNotification::whereIn('status', ['pending', 'read'])
+                            ->where('notification_type', 'booking_payment')
+                            ->count()
                         : 0,
                 ];
             },

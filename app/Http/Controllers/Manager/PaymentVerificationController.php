@@ -8,7 +8,9 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Receipt;
 use App\Models\RestaurantTable;
-use App\Models\TableBooking;
+use App\Notifications\BookingPaymentRejected;
+use App\Notifications\BookingPaymentVerified;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,14 +37,14 @@ class PaymentVerificationController extends Controller
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                   ->orWhereHas('customer', function ($cq) use ($search) {
-                       $cq->where('phone', 'like', "%{$search}%")
-                          ->orWhere('name', 'like', "%{$search}%");
-                   })
-                  ->orWhereHas('payment', function ($pq) use ($search) {
-                      $pq->where('transaction_number', 'like', "%{$search}%");
-                  });
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('phone', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('payment', function ($pq) use ($search) {
+                        $pq->where('transaction_number', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -80,13 +82,137 @@ class PaymentVerificationController extends Controller
                 ->count(),
         ];
 
-        return Inertia::render('manager/payment-verification/index', [
+        return Inertia::render('manager/verification/index', [
+            'activeTab' => 'payment',
             'orders' => $orders,
+            'extensions' => [],
             'stats' => $stats,
             'filters' => $request->only([
                 'search', 'payment_status', 'payment_method',
             ]),
         ]);
+    }
+
+    /**
+     * Display all bookings that require payment verification.
+     */
+    public function bookingVerification(Request $request): Response
+    {
+        $query = BookingVerificationNotification::with([
+            'booking.customer',
+            'booking.tables.section',
+            'customer',
+        ])->where('notification_type', 'booking_payment');
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                    ->orWhere('payment_attempt_reference', 'like', "%{$search}%")
+                    ->orWhere('payment_method', 'like', "%{$search}%")
+                    ->orWhereHas('booking', function ($bq) use ($search) {
+                        $bq->where('id', 'like', "%{$search}%")
+                            ->orWhereHas('customer', function ($cq) use ($search) {
+                                $cq->where('name', 'like', "%{$search}%")
+                                    ->orWhere('phone', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('tables', function ($tq) use ($search) {
+                                $tq->where('table_number', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($status = $request->query('status')) {
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+        } else {
+            $query->whereIn('status', ['pending', 'read']);
+        }
+
+        if ($paymentMethod = $request->query('payment_method')) {
+            if ($paymentMethod !== 'all') {
+                $query->where('payment_method', $paymentMethod);
+            }
+        }
+
+        $notifications = $query->latest()
+            ->paginate(15)
+            ->withQueryString()
+            ->through(function ($notification) {
+                $tableNumbers = $notification->booking && $notification->booking->tables
+                    ? $notification->booking->tables->pluck('table_number')->toArray()
+                    : [];
+
+                return (object) [
+                    'id' => $notification->id,
+                    'booking_id' => $notification->booking_id,
+                    'customer_name' => $notification->customer?->name ?? 'Unknown',
+                    'customer_phone' => $notification->customer?->phone ?? 'N/A',
+                    'table_numbers' => $tableNumbers,
+                    'payment_method' => $notification->payment_method,
+                    'payment_account' => $notification->payment_account,
+                    'payment_attempt_reference' => $notification->payment_attempt_reference,
+                    'transaction_number' => $notification->transaction_number,
+                    'payment_screenshot' => $notification->payment_screenshot,
+                    'amount' => $notification->amount,
+                    'status' => $notification->status,
+                    'notification_type' => $notification->notification_type,
+                    'read_at' => $notification->read_at,
+                    'copied_at' => $notification->copied_at,
+                    'verified_at' => $notification->verified_at,
+                    'rejected_at' => $notification->rejected_at,
+                    'rejection_reason' => $notification->rejection_reason,
+                    'created_at' => $notification->created_at,
+                ];
+            });
+
+        $stats = [
+            'pending' => BookingVerificationNotification::whereIn('status', ['pending', 'read'])
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'verified' => BookingVerificationNotification::where('status', 'verified')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'rejected' => BookingVerificationNotification::where('status', 'rejected')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'expired' => BookingVerificationNotification::where('status', 'expired')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'cancelled' => BookingVerificationNotification::where('status', 'cancelled')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+        ];
+
+        return Inertia::render('manager/verification/index', [
+            'activeTab' => 'booking',
+            'notifications' => $notifications,
+            'stats' => $stats,
+            'filters' => $request->only([
+                'search', 'status', 'payment_method', 'verification_type',
+            ]),
+        ]);
+    }
+
+    /**
+     * Verify a booking payment notification.
+     */
+    public function verifyBooking(Request $request, BookingVerificationNotification $notification): RedirectResponse
+    {
+        return $this->approveBookingPayment($request, $notification);
+    }
+
+    /**
+     * Reject a booking payment notification.
+     */
+    public function rejectBooking(Request $request, BookingVerificationNotification $notification): RedirectResponse
+    {
+        return $this->rejectBookingPayment($request, $notification);
     }
 
     /**
@@ -324,6 +450,10 @@ class PaymentVerificationController extends Controller
                         'section' => $t->section?->name ?? null,
                     ]),
                     'payment_method' => $notification->payment_method,
+                    'payment_account' => $notification->payment_account,
+                    'payment_attempt_reference' => $notification->payment_attempt_reference,
+                    'transaction_number' => $notification->transaction_number,
+                    'payment_screenshot' => $notification->payment_screenshot,
                     'amount' => $notification->amount,
                     'status' => $notification->status,
                     'notification_type' => $notification->notification_type,
@@ -340,10 +470,21 @@ class PaymentVerificationController extends Controller
             });
 
         $stats = [
-            'pending' => BookingVerificationNotification::where('status', 'pending')->count(),
-            'read' => BookingVerificationNotification::where('status', 'read')->count(),
-            'verified' => BookingVerificationNotification::where('status', 'verified')->count(),
-            'rejected' => BookingVerificationNotification::where('status', 'rejected')->count(),
+            'pending' => BookingVerificationNotification::whereIn('status', ['pending', 'read'])
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'verified' => BookingVerificationNotification::where('status', 'verified')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'rejected' => BookingVerificationNotification::where('status', 'rejected')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'expired' => BookingVerificationNotification::where('status', 'expired')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
+            'cancelled' => BookingVerificationNotification::where('status', 'cancelled')
+                ->where('notification_type', 'booking_payment')
+                ->count(),
         ];
 
         return Inertia::render('manager/verification/booking-payment', [
@@ -372,22 +513,37 @@ class PaymentVerificationController extends Controller
                 'booking_id' => $notification->booking_id,
                 'customer_name' => $notification->customer?->name ?? 'Unknown',
                 'customer_phone' => $notification->customer?->phone ?? 'N/A',
+                'customer_email' => $notification->customer?->email ?? 'N/A',
                 'tables' => $notification->booking->tables->map(fn ($t) => [
                     'id' => $t->id,
                     'table_number' => $t->table_number,
                     'section' => $t->section?->name ?? null,
                 ]),
+                'table_numbers' => $notification->booking ? $notification->booking->tables->pluck('table_number')->toArray() : [],
                 'payment_method' => $notification->payment_method,
+                'payment_account' => $notification->payment_account,
+                'payment_attempt_reference' => $notification->payment_attempt_reference,
+                'transaction_number' => $notification->transaction_number,
+                'payment_screenshot' => $notification->payment_screenshot,
                 'amount' => $notification->amount,
                 'status' => $notification->status,
                 'notification_type' => $notification->notification_type,
                 'read_at' => $notification->read_at,
+                'copied_at' => $notification->copied_at,
+                'expired_at' => $notification->expired_at,
+                'verified_at' => $notification->verified_at,
+                'verified_by' => $notification->verifier ? $notification->verifier->name : null,
+                'rejected_at' => $notification->rejected_at,
+                'rejected_by' => $notification->rejector ? $notification->rejector->name : null,
+                'rejection_reason' => $notification->rejection_reason,
                 'created_at' => $notification->created_at,
+                'updated_at' => $notification->updated_at,
                 'booking' => $notification->booking ? [
                     'id' => $notification->booking->id,
                     'status' => $notification->booking->status,
                     'payment_status' => $notification->booking->payment_status,
                     'booked_at' => $notification->booking->booked_at,
+                    'booking_amount' => $notification->booking->booking_amount,
                     'expires_at' => $notification->booking->expires_at,
                     'cancelled_at' => $notification->booking->cancelled_at,
                     'paid_at' => $notification->booking->paid_at,
@@ -401,12 +557,19 @@ class PaymentVerificationController extends Controller
      */
     public function approveBookingPayment(Request $request, BookingVerificationNotification $notification): RedirectResponse
     {
-        if ($notification->status === 'verified') {
-            return back()->with('error', 'This booking payment has already been approved.');
+        if (in_array($notification->status, ['verified', 'rejected', 'expired', 'cancelled'])) {
+            $msg = [
+                'verified' => 'This booking payment has already been approved.',
+                'rejected' => 'This booking payment has already been rejected.',
+                'expired' => 'This booking payment has expired.',
+                'cancelled' => 'This booking has been cancelled.',
+            ][$notification->status];
+
+            return back()->with('error', $msg);
         }
 
-        if ($notification->status === 'rejected') {
-            return back()->with('error', 'This booking payment has already been rejected.');
+        if (! in_array($notification->status, ['pending', 'read'])) {
+            return back()->with('error', 'This payment cannot be verified.');
         }
 
         $validated = $request->validate([
@@ -419,21 +582,30 @@ class PaymentVerificationController extends Controller
             return back()->with('error', 'No booking found for this notification.');
         }
 
-        if ($booking->payment_status === 'paid') {
-            return back()->with('error', 'This booking has already been paid.');
-        }
-
-        if ($booking->status === 'cancelled') {
-            return back()->with('error', 'This booking has been cancelled.');
-        }
-
         try {
             DB::transaction(function () use ($validated, $notification, $booking) {
+                $paymentAccountNumber = $validated['transaction_number'] ?? $notification->payment_method.'-'.now()->format('YmdHis');
+
+                if ($booking->payment_status === 'paid') {
+                    $notification->update([
+                        'status' => 'verified',
+                        'verified_at' => now(),
+                        'verified_by' => auth()->id(),
+                        'read_at' => $notification->read_at ?: now(),
+                        'transaction_number' => $paymentAccountNumber,
+                    ]);
+
+                    $booking->customer?->notify(new BookingPaymentVerified($booking, $notification));
+
+                    return;
+                }
+
                 $booking->update([
                     'payment_status' => 'paid',
                     'paid_at' => now(),
                     'status' => 'active',
-                    'transaction_reference' => $validated['transaction_number'] ?? $booking->transaction_reference,
+                    'transaction_reference' => $paymentAccountNumber,
+                    'expires_at' => now()->addHours(2),
                 ]);
 
                 $tableIds = $booking->tables()->pluck('restaurant_tables.id');
@@ -444,6 +616,7 @@ class PaymentVerificationController extends Controller
                     'verified_at' => now(),
                     'verified_by' => auth()->id(),
                     'read_at' => $notification->read_at ?: now(),
+                    'transaction_number' => $paymentAccountNumber,
                 ]);
 
                 Payment::create([
@@ -453,12 +626,14 @@ class PaymentVerificationController extends Controller
                     'payment_status' => 'paid',
                     'payment_type' => 'booking',
                     'amount' => $notification->amount,
-                    'transaction_reference' => $validated['transaction_number'] ?? $notification->payment_method.'-'.now()->format('YmdHis'),
-                    'transaction_number' => $validated['transaction_number'] ?? $notification->payment_method.'-'.now()->format('YmdHis'),
+                    'transaction_reference' => $paymentAccountNumber,
+                    'transaction_number' => $paymentAccountNumber,
                     'verified_by' => auth()->id(),
                     'verified_at' => now(),
                     'paid_at' => now(),
                 ]);
+
+                $booking->customer?->notify(new BookingPaymentVerified($booking, $notification));
             });
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -472,16 +647,23 @@ class PaymentVerificationController extends Controller
      */
     public function rejectBookingPayment(Request $request, BookingVerificationNotification $notification): RedirectResponse
     {
-        if ($notification->status === 'verified') {
-            return back()->with('error', 'This booking payment has already been approved.');
+        if (in_array($notification->status, ['verified', 'rejected', 'expired', 'cancelled'])) {
+            $msg = [
+                'verified' => 'This booking payment has already been approved.',
+                'rejected' => 'This booking payment has already been rejected.',
+                'expired' => 'This booking payment has expired.',
+                'cancelled' => 'This booking has been cancelled.',
+            ][$notification->status];
+
+            return back()->with('error', $msg);
         }
 
-        if ($notification->status === 'rejected') {
-            return back()->with('error', 'This booking payment has already been rejected.');
+        if (! in_array($notification->status, ['pending', 'read'])) {
+            return back()->with('error', 'This payment cannot be rejected.');
         }
 
         $validated = $request->validate([
-            'rejection_reason' => ['nullable', 'string', 'max:1000'],
+            'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);
 
         $booking = $notification->booking;
@@ -492,15 +674,6 @@ class PaymentVerificationController extends Controller
 
         try {
             DB::transaction(function () use ($validated, $notification, $booking) {
-                $booking->update([
-                    'payment_status' => 'cancelled',
-                    'status' => 'cancelled',
-                    'cancelled_at' => now(),
-                ]);
-
-                $tableIds = $booking->tables()->pluck('restaurant_tables.id');
-                RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
-
                 $notification->update([
                     'status' => 'rejected',
                     'rejected_at' => now(),
@@ -508,12 +681,14 @@ class PaymentVerificationController extends Controller
                     'rejection_reason' => $validated['rejection_reason'],
                     'read_at' => $notification->read_at ?: now(),
                 ]);
+
+                $booking->customer?->notify(new BookingPaymentRejected($booking, $notification));
             });
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Booking payment rejected.');
+        return back()->with('success', 'Booking payment rejected. The customer reported the payment as paid, but it was rejected during verification.');
     }
 
     /**
@@ -531,6 +706,30 @@ class PaymentVerificationController extends Controller
         ]);
 
         return back()->with('success', 'Notification marked as read.');
+    }
+
+    /**
+     * Return the global verification count as JSON.
+     */
+    public function verificationCount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $orderCount = $user?->can('view payments')
+            ? Order::where('payment_status', 'pending')->whereHas('payment')->count()
+            : 0;
+
+        $bookingCount = $user?->can('view payments')
+            ? BookingVerificationNotification::whereIn('status', ['pending', 'read'])
+                ->where('notification_type', 'booking_payment')
+                ->count()
+            : 0;
+
+        return response()->json([
+            'paymentVerification' => $orderCount,
+            'bookingPayment' => $bookingCount,
+            'total' => $orderCount + $bookingCount,
+        ]);
     }
 
     /**
@@ -616,5 +815,23 @@ class PaymentVerificationController extends Controller
             'success',
             'Payment rejected successfully.'
         );
+    }
+
+    /**
+     * View a booking payment screenshot.
+     */
+    public function viewScreenshot(BookingVerificationNotification $notification)
+    {
+        if (! $notification->payment_screenshot) {
+            abort(404);
+        }
+
+        $path = storage_path('app/public/'.$notification->payment_screenshot);
+
+        if (! file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
 }

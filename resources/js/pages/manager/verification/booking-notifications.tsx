@@ -10,6 +10,7 @@ import {
     CheckCircle2,
     XCircle,
     Search,
+    Ban,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -74,6 +75,8 @@ type Stats = {
     read: number;
     verified: number;
     rejected: number;
+    expired: number;
+    cancelled: number;
 };
 
 type Props = {
@@ -100,6 +103,8 @@ const statusColors: Record<string, string> = {
     read: 'bg-blue-100 text-blue-800 border-blue-200',
     verified: 'bg-green-100 text-green-800 border-green-200',
     rejected: 'bg-red-100 text-red-800 border-red-200',
+    expired: 'bg-gray-100 text-gray-800 border-gray-200',
+    cancelled: 'bg-orange-100 text-orange-800 border-orange-200',
 };
 
 const statusLabels: Record<string, string> = {
@@ -107,6 +112,8 @@ const statusLabels: Record<string, string> = {
     read: 'Read',
     verified: 'Verified',
     rejected: 'Rejected',
+    expired: 'Expired',
+    cancelled: 'Cancelled',
 };
 
 export default function BookingVerificationNotifications({
@@ -184,7 +191,7 @@ export default function BookingVerificationNotifications({
                 />
 
                 {/* Stats */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                     <Card className="border-yellow-200 bg-yellow-50/50">
                         <CardContent className="flex items-center gap-4 p-6">
                             <div className="rounded-full bg-yellow-100 p-3 text-yellow-700">
@@ -232,6 +239,30 @@ export default function BookingVerificationNotifications({
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card className="border-gray-200 bg-gray-50/50">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-full bg-gray-100 p-3 text-gray-700">
+                                <Calendar className="size-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-700">Expired</p>
+                                <p className="text-2xl font-black text-gray-900">{stats.expired}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-orange-200 bg-orange-50/50">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-full bg-orange-100 p-3 text-orange-700">
+                                <Ban className="size-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-orange-700">Cancelled</p>
+                                <p className="text-2xl font-black text-orange-900">{stats.cancelled}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filters */}
@@ -256,13 +287,15 @@ export default function BookingVerificationNotifications({
                                 <SelectTrigger className="w-[190px]">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="read">Read</SelectItem>
-                                    <SelectItem value="verified">Verified</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="read">Read</SelectItem>
+                                <SelectItem value="verified">Verified</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="expired">Expired</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
                             </Select>
 
                             <Button onClick={applyFilters}>

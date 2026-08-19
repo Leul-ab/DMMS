@@ -7,6 +7,8 @@ import {
     CheckCircle2,
     XCircle,
     Search,
+    Calendar,
+    Ban,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -71,6 +73,8 @@ type Stats = {
     read: number;
     verified: number;
     rejected: number;
+    expired: number;
+    cancelled: number;
 };
 
 type Props = {
@@ -182,15 +186,15 @@ export default function BookingPaymentTab({
                 />
 
                 {/* Stats */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-red-200 bg-red-50/50">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                    <Card className="border-yellow-200 bg-yellow-50/50">
                         <CardContent className="flex items-center gap-4 p-6">
-                            <div className="rounded-full bg-red-100 p-3 text-red-700">
+                            <div className="rounded-full bg-yellow-100 p-3 text-yellow-700">
                                 <Bell className="size-6" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-red-700">Pending</p>
-                                <p className="text-2xl font-black text-red-900">{stats.pending}</p>
+                                <p className="text-sm font-medium text-yellow-700">Pending</p>
+                                <p className="text-2xl font-black text-yellow-900">{stats.pending}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -230,6 +234,30 @@ export default function BookingPaymentTab({
                             </div>
                         </CardContent>
                     </Card>
+
+                    <Card className="border-gray-200 bg-gray-50/50">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-full bg-gray-100 p-3 text-gray-700">
+                                <Calendar className="size-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-700">Expired</p>
+                                <p className="text-2xl font-black text-gray-900">{stats.expired}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-orange-200 bg-orange-50/50">
+                        <CardContent className="flex items-center gap-4 p-6">
+                            <div className="rounded-full bg-orange-100 p-3 text-orange-700">
+                                <Ban className="size-6" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-orange-700">Cancelled</p>
+                                <p className="text-2xl font-black text-orange-900">{stats.cancelled}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Filters */}
@@ -254,13 +282,15 @@ export default function BookingPaymentTab({
                                 <SelectTrigger className="w-[190px]">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Statuses</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="read">Read</SelectItem>
-                                    <SelectItem value="verified">Verified</SelectItem>
-                                    <SelectItem value="rejected">Rejected</SelectItem>
-                                </SelectContent>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="read">Read</SelectItem>
+                                <SelectItem value="verified">Verified</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                                <SelectItem value="expired">Expired</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
                             </Select>
 
                             <Button onClick={applyFilters}>
