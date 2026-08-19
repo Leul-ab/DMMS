@@ -615,29 +615,31 @@ export function MenuView({
                         {cart.map((item) => (
                             <div
                                 key={item.id}
-                                className="group flex items-center gap-3 rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
+                                className="group rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
                             >
-                                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-red-100">
-                                    {item.image ? (
-                                        <img
-                                            src={`/storage/${item.image}`}
-                                            alt={item.name}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    ) : (
-                                        <div className="flex h-full items-center justify-center text-red-400">
-                                            <Utensils className="h-5 w-5" />
-                                        </div>
-                                    )}
+                                <p className="truncate text-sm font-bold text-stone-800">
+                                    {item.name}
+                                </p>
+                                <div className="mt-2 flex justify-center">
+                                    <div className="h-16 w-16 overflow-hidden rounded-lg bg-red-100">
+                                        {item.image ? (
+                                            <img
+                                                src={`/storage/${item.image}`}
+                                                alt={item.name}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center text-red-400">
+                                                <Utensils className="h-5 w-5" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-bold text-stone-800">
-                                        {item.name}
+                                <div className="mt-3">
+                                    <p className="mb-2 text-xs font-semibold text-stone-700">
+                                        Special Preferences
                                     </p>
-                                    <p className="text-xs text-red-600">
-                                        {Number(item.price).toFixed(2)} ETB
-                                    </p>
-                                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                    <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                                         {SPECIAL_PREFERENCES.map(
                                             (pref) => {
                                                 const checked =
@@ -673,7 +675,9 @@ export function MenuView({
                                             },
                                         )}
                                     </div>
-                                    <div className="mt-2 flex items-center gap-2">
+                                </div>
+                                <div className="mt-3 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -700,17 +704,18 @@ export function MenuView({
                                             onClick={() =>
                                                 removeFromCart(item.id)
                                             }
-                                            className="ml-auto text-red-400 transition hover:text-red-500"
+                                            className="ml-2 text-red-400 transition hover:text-red-500"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
-                                </div>
-                                <div className="text-right text-sm font-bold text-red-600">
-                                    {(
-                                        Number(item.price) * item.quantity
-                                    ).toFixed(2)}{' '}
-                                    ETB
+                                    <div className="text-right text-sm font-bold text-red-600">
+                                        {(
+                                            Number(item.price) *
+                                            item.quantity
+                                        ).toFixed(2)}{' '}
+                                        ETB
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -1915,41 +1920,31 @@ export function MenuView({
                                     {cart.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="flex gap-4 rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
+                                            className="rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
                                         >
-                                            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-red-100">
-                                                {item.image ? (
-                                                    <img
-                                                        src={`/storage/${item.image}`}
-                                                        alt={item.name}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-full items-center justify-center text-red-400">
-                                                        <Utensils className="h-6 w-6" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-start justify-between">
-                                                    <h3 className="font-bold text-stone-800">
-                                                        {item.name}
-                                                    </h3>
-                                                    <span className="text-sm font-black whitespace-nowrap text-red-600">
-                                                        {(
-                                                            Number(item.price) *
-                                                            item.quantity
-                                                        ).toFixed(2)}{' '}
-                                                        ETB
-                                                    </span>
+                                            <h3 className="font-bold text-stone-800">
+                                                {item.name}
+                                            </h3>
+                                            <div className="mt-2 flex justify-center">
+                                                <div className="h-20 w-20 overflow-hidden rounded-xl bg-red-100">
+                                                    {item.image ? (
+                                                        <img
+                                                            src={`/storage/${item.image}`}
+                                                            alt={item.name}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-full items-center justify-center text-red-400">
+                                                            <Utensils className="h-6 w-6" />
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <p className="mt-0.5 text-xs text-red-600">
-                                                    {Number(item.price).toFixed(
-                                                        2,
-                                                    )}{' '}
-                                                    ETB each
+                                            </div>
+                                            <div className="mt-3">
+                                                <p className="mb-2 text-xs font-semibold text-stone-700">
+                                                    Special Preferences
                                                 </p>
-                                                <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                                                <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                                                     {SPECIAL_PREFERENCES.map(
                                                         (pref) => {
                                                             const checked =
@@ -1985,7 +1980,9 @@ export function MenuView({
                                                         },
                                                     )}
                                                 </div>
-                                                <div className="mt-3 flex items-center gap-3">
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -2023,6 +2020,13 @@ export function MenuView({
                                                         Remove
                                                     </button>
                                                 </div>
+                                                <span className="text-right text-sm font-black whitespace-nowrap text-red-600">
+                                                    {(
+                                                        Number(item.price) *
+                                                        item.quantity
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </span>
                                             </div>
                                         </div>
                                     ))}
