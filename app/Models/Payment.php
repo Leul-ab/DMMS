@@ -15,8 +15,10 @@ class Payment extends Model
         'order_id',
         'user_id',
         'table_id',
+        'booking_id',
         'payment_method',
         'payment_status',
+        'payment_type',
         'amount',
         'subtotal',
         'tax',
@@ -27,6 +29,7 @@ class Payment extends Model
         'verified_by',
         'verified_at',
         'notes',
+        'extension_period_hours',
         'paid_at',
     ];
 
@@ -40,6 +43,7 @@ class Payment extends Model
             'discount' => 'decimal:2',
             'paid_at' => 'datetime',
             'verified_at' => 'datetime',
+            'payment_type' => 'string',
         ];
     }
 
@@ -61,5 +65,10 @@ class Payment extends Model
     public function table(): BelongsTo
     {
         return $this->belongsTo(RestaurantTable::class, 'table_id');
+    }
+
+    public function booking(): BelongsTo
+    {
+        return $this->belongsTo(TableBooking::class, 'booking_id');
     }
 }

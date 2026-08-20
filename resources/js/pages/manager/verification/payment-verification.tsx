@@ -13,7 +13,6 @@ import {
     Smartphone,
     Landmark,
     Ban,
-    Receipt,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -41,7 +40,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { useCan } from '@/hooks/use-can';
 
 type Payment = {
     id: number;
@@ -95,8 +93,43 @@ type Order = {
     order_items: ReceiptItem[];
 };
 
+type BookingExtension = {
+    id: number;
+    booking_id: number;
+    amount: string;
+    payment_method: string | null;
+    payment_status: string;
+    transaction_reference: string;
+    transaction_number: string | null;
+    verified_at: string | null;
+    paid_at: string | null;
+    extension_period_hours: number | null;
+    cashier: { id: number; name: string } | null;
+    verifier: { id: number; name: string } | null;
+    booking: {
+        id: number;
+        customer_name: string;
+        customer_phone: string;
+        tables: { id: number; table_number: number }[];
+    } | null;
+    payment: {
+        id: number;
+        payment_method: string | null;
+        payment_status: string;
+        amount: string;
+        transaction_number: string | null;
+        transaction_reference: string | null;
+        verified_at: string | null;
+        paid_at: string | null;
+        cashier: { id: number; name: string } | null;
+        verifier: { id: number; name: string } | null;
+    };
+};
+
+type VerificationItem = Order | BookingExtension;
+
 type PaginatedData = {
-    data: Order[];
+    data: VerificationItem[];
     current_page: number;
     last_page: number;
     per_page: number;
@@ -114,6 +147,7 @@ type Stats = {
 
 type Props = {
     orders: PaginatedData;
+    extensions: BookingExtension[];
     stats: Stats;
     filters: {
         search?: string;
@@ -148,39 +182,38 @@ const paymentMethodIcons: Record<string, React.ReactNode> = {
     cbe_birr: <Landmark className="size-4" />,
 };
 
-export default function PaymentVerificationIndex({
+export default function PaymentVerificationTab({
     orders,
+    extensions,
     stats,
     filters,
 }: Props) {
-    const can = useCan();
-
     const [search, setSearch] = useState(filters.search || '');
     const [paymentStatus, setPaymentStatus] = useState(filters.payment_status || 'pending');
     const [paymentMethod, setPaymentMethod] = useState(filters.payment_method || '');
 
-    const [verifyingOrder, setVerifyingOrder] = useState<Order | null>(null);
+    const [verifyingItem, setVerifyingItem] = useState<VerificationItem | null>(null);
     const [transactionNumber, setTransactionNumber] = useState('');
     const [transactionError, setTransactionError] = useState('');
     const [processing, setProcessing] = useState(false);
 
-    const [rejectingOrder, setRejectingOrder] = useState<Order | null>(null);
+    const [rejectingItem, setRejectingItem] = useState<VerificationItem | null>(null);
     const [viewingReceiptOrder, setViewingReceiptOrder] = useState<Order | null>(null);
 
     const applyFilters = () => {
         const params: Record<string, string> = {};
 
         if (search) {
-params.search = search;
-}
+            params.search = search;
+        }
 
         if (paymentStatus) {
-params.payment_status = paymentStatus;
-}
+            params.payment_status = paymentStatus;
+        }
 
         if (paymentMethod) {
-params.payment_method = paymentMethod;
-}
+            params.payment_method = paymentMethod;
+        }
 
         router.get('/manager/payment-verification', params, { preserveState: true });
     };
@@ -192,16 +225,16 @@ params.payment_method = paymentMethod;
         router.get('/manager/payment-verification', {}, { preserveState: true });
     };
 
-    const openVerifyModal = (order: Order) => {
-        setVerifyingOrder(order);
+    const openVerifyModal = (item: VerificationItem) => {
+        setVerifyingItem(item);
         setTransactionNumber('');
         setTransactionError('');
     };
 
     const submitVerification = () => {
-        if (!verifyingOrder) {
-return;
-}
+        if (!verifyingItem) {
+            return;
+        }
 
         if (!transactionNumber.trim()) {
             setTransactionError('Transaction number is required before verifying the payment.');
@@ -210,14 +243,19 @@ return;
         }
 
         setProcessing(true);
+        const isExtension = 'booking_id' in verifyingItem;
+        const url = isExtension
+            ? `/manager/payment-verification/extensions/${verifyingItem.id}/verify`
+            : `/manager/payment-verification/${verifyingItem.id}/verify`;
+
         router.patch(
-            `/manager/payment-verification/${verifyingOrder.id}/verify`,
+            url,
             { transaction_number: transactionNumber.trim() },
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success('Payment verified successfully!');
-                    setVerifyingOrder(null);
+                    setVerifyingItem(null);
                     setTransactionNumber('');
                     setProcessing(false);
                 },
@@ -234,16 +272,21 @@ return;
         );
     };
 
-    const rejectPayment = (order: Order) => {
+    const rejectPayment = (item: VerificationItem) => {
         setProcessing(true);
+        const isExtension = 'booking_id' in item;
+        const url = isExtension
+            ? `/manager/payment-verification/extensions/${item.id}/reject`
+            : `/manager/payment-verification/${item.id}/reject`;
+
         router.patch(
-            `/manager/payment-verification/${order.id}/reject`,
+            url,
             {},
             {
                 preserveScroll: true,
                 onSuccess: () => {
                     toast.success('Payment rejected.');
-                    setRejectingOrder(null);
+                    setRejectingItem(null);
                     setProcessing(false);
                 },
                 onError: () => {
@@ -315,8 +358,8 @@ return;
                                     onChange={(e) => setSearch(e.target.value)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
-applyFilters();
-}
+                                            applyFilters();
+                                        }
                                     }}
                                     className="w-full"
                                 />
@@ -365,7 +408,8 @@ applyFilters();
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b bg-gray-50 text-left">
-                                        <th className="p-3 font-semibold">Order ID</th>
+                                        <th className="p-3 font-semibold">Type</th>
+                                        <th className="p-3 font-semibold">ID / Reference</th>
                                         <th className="p-3 font-semibold">Customer</th>
                                         <th className="p-3 font-semibold">Table</th>
                                         <th className="p-3 font-semibold">Payment Method</th>
@@ -378,98 +422,109 @@ applyFilters();
                                 <tbody>
                                     {orders.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan={8} className="p-12 text-center text-gray-500">
+                                            <td colSpan={9} className="p-12 text-center text-gray-500">
                                                 No payments found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        orders.data.map((order) => (
-                                            <tr key={order.id} className="border-b last:border-0 hover:bg-gray-50">
-                                                <td className="p-3 font-mono text-xs font-bold">
-                                                    {order.order_number}
-                                                </td>
-                                                <td className="p-3">
-                                                    <p className="font-medium">{order.customer?.name || order.customer_name || 'Walk-in'}</p>
-                                                    {order.customer_phone && (
-                                                        <p className="flex items-center gap-1 text-xs text-gray-500">
-                                                            <Phone className="size-3" />
-                                                            {order.customer_phone}
-                                                        </p>
-                                                    )}
-                                                </td>
-                                                <td className="p-3">
-                                                    {order.table ? `Table ${order.table.table_number}` : '—'}
-                                                </td>
-                                                <td className="p-3">
-                                                    {order.payment?.payment_method ? (
-                                                        <span className="flex items-center gap-1.5 capitalize">
-                                                            {paymentMethodIcons[order.payment.payment_method] || <CreditCard className="size-4" />}
-                                                            {paymentMethodLabels[order.payment.payment_method] || order.payment.payment_method}
+                                        [...orders.data, ...extensions].map((item) => {
+                                            const isExtension = 'booking_id' in item;
+                                            const order = isExtension ? null : item as Order;
+                                            const extension = isExtension ? item as BookingExtension : null;
+
+                                            return (
+                                                <tr key={isExtension ? `ext-${item.id}` : item.id} className="border-b last:border-0 hover:bg-gray-50">
+                                                    <td className="p-3">
+                                                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
+                                                            {isExtension ? 'Booking Extension' : 'Order'}
                                                         </span>
-                                                    ) : (
-                                                        '—'
-                                                    )}
-                                                </td>
-                                                <td className="p-3 font-bold">
-                                                    {Number(order.payment?.amount || order.total_amount).toFixed(2)} ETB
-                                                </td>
-                                                <td className="p-3">
-                                                    <Badge className={`border ${paymentStatusColors[order.payment_status] || ''}`}>
-                                                        {paymentStatusLabels[order.payment_status] || order.payment_status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="p-3 text-xs text-gray-500">
-                                                    {order.payment?.verified_at
-                                                        ? new Date(order.payment.verified_at).toLocaleString()
-                                                        : new Date(order.created_at).toLocaleDateString()}
-                                                </td>
-                                                <td className="p-3">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {order.payment_status === 'pending' && can('verify payments') && (
-                                                            <>
-                                                                <Button
-                                                                    size="sm"
-                                                                    onClick={() => openVerifyModal(order)}
-                                                                    className="bg-green-600 hover:bg-green-700"
-                                                                >
-                                                                    <CheckCircle2 className="mr-1 size-4" />
-                                                                    Verify Payment
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="outline"
-                                                                    className="text-red-600 hover:text-red-700"
-                                                                    onClick={() => setRejectingOrder(order)}
-                                                                >
-                                                                    <Ban className="mr-1 size-4" />
-                                                                    Reject
-                                                                </Button>
-                                                            </>
+                                                    </td>
+                                                    <td className="p-3 font-mono text-xs font-bold">
+                                                        {isExtension
+                                                            ? `BK-${String(extension!.booking_id).padStart(6, '0')}`
+                                                            : item.order_number}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <p className="font-medium">
+                                                            {isExtension
+                                                                ? extension!.booking?.customer_name || 'Unknown'
+                                                                : order!.customer?.name || order!.customer_name || 'Walk-in'}
+                                                        </p>
+                                                        {(isExtension ? extension!.booking?.customer_phone : order!.customer_phone) && (
+                                                            <p className="flex items-center gap-1 text-xs text-gray-500">
+                                                                <Phone className="size-3" />
+                                                                {isExtension
+                                                                    ? extension!.booking?.customer_phone
+                                                                    : order!.customer_phone}
+                                                            </p>
                                                         )}
-                                                        {order.payment_status === 'paid' && (
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="flex items-center gap-1 text-xs text-green-700">
-                                                                    <CheckCircle2 className="size-4" />
-                                                                    {order.payment?.verifier?.name
-                                                                        ? `Verified by ${order.payment.verifier.name}`
-                                                                        : 'Verified'}
-                                                                </span>
-                                                                {order.receipt && (
+                                                    </td>
+                                                    <td className="p-3">
+                                                        {isExtension
+                                                            ? extension!.booking?.tables.map((t) => `Table ${t.table_number}`).join(', ') || '—'
+                                                            : order!.table ? `Table ${order!.table.table_number}` : '—'}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        {item.payment?.payment_method ? (
+                                                            <span className="flex items-center gap-1.5 capitalize">
+                                                                {paymentMethodIcons[item.payment.payment_method] || <CreditCard className="size-4" />}
+                                                                {paymentMethodLabels[item.payment.payment_method] || item.payment.payment_method}
+                                                            </span>
+                                                        ) : (
+                                                            '—'
+                                                        )}
+                                                    </td>
+                                                    <td className="p-3 font-bold">
+                                                        {Number(item.payment?.amount || (isExtension ? 0 : order!.total_amount)).toFixed(2)} ETB
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <Badge className={`border ${paymentStatusColors[item.payment_status] || ''}`}>
+                                                            {paymentStatusLabels[item.payment_status] || item.payment_status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="p-3 text-xs text-gray-500">
+                                                        {item.payment?.verified_at
+                                                            ? new Date(item.payment.verified_at).toLocaleString()
+                                                            : new Date(isExtension ? (item as BookingExtension).paid_at || '' : (item as Order).created_at).toLocaleDateString()}
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            {item.payment_status === 'pending' && (
+                                                                <>
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => openVerifyModal(item)}
+                                                                        className="bg-green-600 hover:bg-green-700"
+                                                                    >
+                                                                        <CheckCircle2 className="mr-1 size-4" />
+                                                                        Verify Payment
+                                                                    </Button>
                                                                     <Button
                                                                         size="sm"
                                                                         variant="outline"
-                                                                        onClick={() => setViewingReceiptOrder(order)}
+                                                                        className="text-red-600 hover:text-red-700"
+                                                                        onClick={() => setRejectingItem(item)}
                                                                     >
-                                                                        <Receipt className="mr-1 size-4" />
-                                                                        Receipt
+                                                                        <Ban className="mr-1 size-4" />
+                                                                        Reject
                                                                     </Button>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))
+                                                                </>
+                                                            )}
+                                                            {item.payment_status === 'paid' && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="flex items-center gap-1 text-xs text-green-700">
+                                                                        <CheckCircle2 className="size-4" />
+                                                                        {item.payment?.verifier?.name
+                                                                            ? `Verified by ${item.payment.verifier.name}`
+                                                                            : 'Verified'}
+                                                                    </span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
@@ -486,8 +541,8 @@ applyFilters();
                                         const prevUrl = orders.links[0]?.url;
 
                                         if (prevUrl) {
-router.get(prevUrl, {}, { preserveState: true });
-}
+                                            router.get(prevUrl, {}, { preserveState: true });
+                                        }
                                     }}
                                 >
                                     Previous
@@ -503,8 +558,8 @@ router.get(prevUrl, {}, { preserveState: true });
                                         const nextUrl = orders.links[orders.links.length - 1]?.url;
 
                                         if (nextUrl) {
-router.get(nextUrl, {}, { preserveState: true });
-}
+                                            router.get(nextUrl, {}, { preserveState: true });
+                                        }
                                     }}
                                 >
                                     Next
@@ -520,10 +575,10 @@ router.get(nextUrl, {}, { preserveState: true });
             {/* ========================= */}
 
             <Dialog
-                open={!!verifyingOrder}
+                open={!!verifyingItem}
                 onOpenChange={(open) => {
                     if (!open) {
-                        setVerifyingOrder(null);
+                        setVerifyingItem(null);
                         setTransactionError('');
                     }
                 }}
@@ -535,34 +590,46 @@ router.get(nextUrl, {}, { preserveState: true });
                             Verify Payment
                         </DialogTitle>
                         <DialogDescription>
-                            Enter the transaction number to verify payment for order {verifyingOrder?.order_number}.
+                            Enter the transaction number to verify payment for{' '}
+                            {verifyingItem && 'booking_id' in verifyingItem
+                                ? `booking BK-${String((verifyingItem as BookingExtension).booking_id).padStart(6, '0')}`
+                                : `order ${verifyingItem?.order_number}`}
+                            .
                         </DialogDescription>
                     </DialogHeader>
 
-                    {verifyingOrder && (
+                    {verifyingItem && (
                         <div className="space-y-4 py-2">
                             <div className="rounded-lg bg-gray-50 p-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Customer</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.customer?.name || verifyingOrder.customer_name || 'Walk-in'}</p>
+                                        <p className="mt-1 font-bold">
+                                            {verifyingItem && 'booking_id' in verifyingItem
+                                                ? (verifyingItem as BookingExtension).booking?.customer_name || 'Unknown'
+                                                : (verifyingItem as Order).customer?.name || (verifyingItem as Order).customer_name || 'Walk-in'}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Table</p>
-                                        <p className="mt-1 font-bold">{verifyingOrder.table ? `Table ${verifyingOrder.table.table_number}` : '—'}</p>
+                                        <p className="mt-1 font-bold">
+                                            {verifyingItem && 'booking_id' in verifyingItem
+                                                ? (verifyingItem as BookingExtension).booking?.tables.map((t) => `Table ${t.table_number}`).join(', ') || '—'
+                                                : (verifyingItem as Order).table ? `Table ${(verifyingItem as Order).table!.table_number}` : '—'}
+                                        </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Method</p>
                                         <p className="mt-1 flex items-center gap-1 font-bold capitalize">
-                                            {verifyingOrder.payment?.payment_method
-                                                ? (paymentMethodLabels[verifyingOrder.payment.payment_method] || verifyingOrder.payment.payment_method)
+                                            {verifyingItem.payment?.payment_method
+                                                ? (paymentMethodLabels[verifyingItem.payment.payment_method] || verifyingItem.payment.payment_method)
                                                 : '—'}
                                         </p>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</p>
                                         <p className="mt-1 font-bold text-green-700">
-                                            {Number(verifyingOrder.payment?.amount || verifyingOrder.total_amount).toFixed(2)} ETB
+                                            {Number(verifyingItem.payment?.amount || 0).toFixed(2)} ETB
                                         </p>
                                     </div>
                                 </div>
@@ -581,13 +648,13 @@ router.get(nextUrl, {}, { preserveState: true });
                                             setTransactionNumber(e.target.value);
 
                                             if (transactionError) {
-setTransactionError('');
-}
+                                                setTransactionError('');
+                                            }
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
-submitVerification();
-}
+                                                submitVerification();
+                                            }
                                         }}
                                         placeholder="e.g. TXNX8F9A2B"
                                         className="pl-9"
@@ -606,7 +673,7 @@ submitVerification();
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setVerifyingOrder(null)}
+                            onClick={() => setVerifyingItem(null)}
                             disabled={processing}
                         >
                             Cancel
@@ -640,8 +707,8 @@ submitVerification();
                 open={!!viewingReceiptOrder}
                 onOpenChange={(open) => {
                     if (!open) {
-setViewingReceiptOrder(null);
-}
+                        setViewingReceiptOrder(null);
+                    }
                 }}
                 order={viewingReceiptOrder}
             />
@@ -651,11 +718,11 @@ setViewingReceiptOrder(null);
             {/* ========================= */}
 
             <Dialog
-                open={!!rejectingOrder}
+                open={!!rejectingItem}
                 onOpenChange={(open) => {
                     if (!open) {
-setRejectingOrder(null);
-}
+                        setRejectingItem(null);
+                    }
                 }}
             >
                 <DialogContent>
@@ -664,8 +731,11 @@ setRejectingOrder(null);
                             Reject Payment?
                         </DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to reject the payment for order{' '}
-                            <strong>{rejectingOrder?.order_number}</strong>?
+                            Are you sure you want to reject the payment for{' '}
+                            {rejectingItem && 'booking_id' in rejectingItem
+                                ? `booking BK-${String((rejectingItem as BookingExtension).booking_id).padStart(6, '0')}`
+                                : `order ${rejectingItem?.order_number}`}
+                            ?
                             This will mark the payment as rejected.
                         </DialogDescription>
                     </DialogHeader>
@@ -673,14 +743,14 @@ setRejectingOrder(null);
                     <DialogFooter>
                         <Button
                             variant="outline"
-                            onClick={() => setRejectingOrder(null)}
+                            onClick={() => setRejectingItem(null)}
                             disabled={processing}
                         >
                             Cancel
                         </Button>
                         <Button
                             variant="destructive"
-                            onClick={() => rejectingOrder && rejectPayment(rejectingOrder)}
+                            onClick={() => rejectingItem && rejectPayment(rejectingItem)}
                             disabled={processing}
                         >
                             {processing ? (
@@ -701,12 +771,3 @@ setRejectingOrder(null);
         </>
     );
 }
-
-PaymentVerificationIndex.layout = {
-    breadcrumbs: [
-        {
-            title: 'Payment Verification',
-            href: '/manager/payment-verification',
-        },
-    ],
-};

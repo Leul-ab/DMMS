@@ -8,7 +8,6 @@ use App\Models\MenuItem;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -134,7 +133,7 @@ class MenuItemController extends Controller
 
     public function toggleAvailability(MenuItem $item): RedirectResponse
     {
-        $item->update(['is_available' => !$item->is_available]);
+        $item->update(['is_available' => ! $item->is_available]);
 
         $status = $item->is_available ? 'available' : 'unavailable';
         Inertia::flash('toast', ['type' => 'success', 'message' => "Item marked as {$status}."]);

@@ -9,10 +9,10 @@ use App\Models\User;
 use App\Support\PhoneHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -58,24 +58,24 @@ class UserController extends Controller
             $phone = PhoneHelper::normalize($request->input('phone'));
             $request->merge(['phone' => $phone]);
         }
-$phoneRules = ['nullable', 'string', 'max:20'];
+        $phoneRules = ['nullable', 'string', 'max:20'];
 
-if ($phone !== null) {
-    $phoneRules[] = Rule::unique('users', 'phone');
-}
+        if ($phone !== null) {
+            $phoneRules[] = Rule::unique('users', 'phone');
+        }
 
-$validated = $request->validate([
-    'name' => ['required', 'string', 'max:255'],
-    'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-    'phone' => $phoneRules,
-    'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
-    'role_id' => ['required', 'exists:roles,id'],
-    'branch_id' => ['required', 'exists:branches,id'],
-    'is_active' => ['boolean'],
-    'is_waiter' => ['boolean'],
-], [
-    'phone.unique' => 'This phone number already exists. Please use another phone number.',
-]);
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => $phoneRules,
+            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
+            'role_id' => ['required', 'exists:roles,id'],
+            'branch_id' => ['required', 'exists:branches,id'],
+            'is_active' => ['boolean'],
+            'is_waiter' => ['boolean'],
+        ], [
+            'phone.unique' => 'This phone number already exists. Please use another phone number.',
+        ]);
         if (Role::find($validated['role_id'])?->slug === 'super_admin') {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'Super Admin accounts can only be created through the seeding system.']);
 
@@ -160,70 +160,70 @@ $validated = $request->validate([
     }
 
     public function destroy(User $user): RedirectResponse
-{
-    $user->load('role');
+    {
+        $user->load('role');
 
-    if ($user->role?->slug === 'super_admin') {
+        if ($user->role?->slug === 'super_admin') {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'The Super Admin account cannot be deleted.',
+            ]);
+
+            return back();
+        }
+
+        if ($user->id === Auth::id()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'You cannot delete your own account.',
+            ]);
+
+            return back();
+        }
+
+        $user->delete();
+
         Inertia::flash('toast', [
-            'type' => 'error',
-            'message' => 'The Super Admin account cannot be deleted.',
+            'type' => 'success',
+            'message' => 'User deleted successfully.',
+        ]);
+
+        return to_route('admin.users.index');
+    }
+
+    public function toggleStatus(User $user): RedirectResponse
+    {
+        $user->load('role');
+
+        if ($user->role?->slug === 'super_admin') {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'The Super Admin account cannot be deactivated.',
+            ]);
+
+            return back();
+        }
+
+        if ($user->id === Auth::id()) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => 'You cannot deactivate your own account.',
+            ]);
+
+            return back();
+        }
+
+        $user->update([
+            'is_active' => ! $user->is_active,
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $user->is_active
+                ? 'User activated successfully.'
+                : 'User deactivated successfully.',
         ]);
 
         return back();
     }
-
-    if ($user->id === Auth::id()) {
-        Inertia::flash('toast', [
-            'type' => 'error',
-            'message' => 'You cannot delete your own account.',
-        ]);
-
-        return back();
-    }
-
-    $user->delete();
-
-    Inertia::flash('toast', [
-        'type' => 'success',
-        'message' => 'User deleted successfully.',
-    ]);
-
-    return to_route('admin.users.index');
 }
-   public function toggleStatus(User $user): RedirectResponse
-{
-    $user->load('role');
-
-    if ($user->role?->slug === 'super_admin') {
-        Inertia::flash('toast', [
-            'type' => 'error',
-            'message' => 'The Super Admin account cannot be deactivated.',
-        ]);
-
-        return back();
-    }
-
-    if ($user->id === Auth::id()) {
-        Inertia::flash('toast', [
-            'type' => 'error',
-            'message' => 'You cannot deactivate your own account.',
-        ]);
-
-        return back();
-    }
-
-    $user->update([
-        'is_active' => ! $user->is_active,
-    ]);
-
-    Inertia::flash('toast', [
-        'type' => 'success',
-        'message' => $user->is_active
-            ? 'User activated successfully.'
-            : 'User deactivated successfully.',
-    ]);
-
-    return back();
-}
-}
-

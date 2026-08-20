@@ -23,6 +23,7 @@ class TableController extends Controller
 
         $tables = $tables->map(function ($table) use ($activeAssignments) {
             $assignment = $activeAssignments->get($table->id);
+
             return [
                 'id' => $table->id,
                 'table_number' => $table->table_number,

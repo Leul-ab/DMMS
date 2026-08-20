@@ -20,7 +20,7 @@ class TableSeeder extends Seeder
                 ['table_number' => $number],
                 [
                     'branch_id' => $branch?->id,
-                    'qr_code' => 'QR-' . strtoupper(Str::random(12)),
+                    'qr_code' => 'QR-'.strtoupper(Str::random(12)),
                     'status' => 'available',
                 ]
             );

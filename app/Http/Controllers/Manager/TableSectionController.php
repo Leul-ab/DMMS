@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\TableSection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -31,7 +31,7 @@ class TableSectionController extends Controller
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $validated['branch_id'] = \App\Models\Branch::current()?->id;
+        $validated['branch_id'] = Branch::current()?->id;
 
         $maxSortOrder = TableSection::query()->lockForUpdate()->max('sort_order') ?? 0;
         $validated['sort_order'] = $maxSortOrder + 1;

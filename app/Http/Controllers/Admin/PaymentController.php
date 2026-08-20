@@ -25,11 +25,11 @@ class PaymentController extends Controller
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                   ->orWhereHas('customer', function ($cq) use ($search) {
-                      $cq->where('phone', 'like', "%{$search}%")
-                         ->orWhere('name', 'like', "%{$search}%");
-                  });
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhereHas('customer', function ($cq) use ($search) {
+                        $cq->where('phone', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -40,7 +40,7 @@ class PaymentController extends Controller
             } elseif ($paymentStatus === 'pending') {
                 $query->where(function ($q) {
                     $q->where('payment_status', 'pending')
-                      ->orWhereNull('payment_status');
+                        ->orWhereNull('payment_status');
                 });
             } else {
                 $query->where('payment_status', $paymentStatus);
@@ -87,13 +87,13 @@ class PaymentController extends Controller
             'total_orders' => Order::count(),
             'pending_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'pending')
-                  ->orWhereNull('payment_status');
+                    ->orWhereNull('payment_status');
             })->count(),
             'paid_orders' => Order::where('payment_status', 'paid')->count(),
             'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
             'cancelled_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'cancelled')
-                  ->orWhere('status', 'cancelled');
+                    ->orWhere('status', 'cancelled');
             })->count(),
             'today_revenue' => Order::where('payment_status', 'paid')
                 ->where('status', 'completed')
@@ -132,7 +132,7 @@ class PaymentController extends Controller
             if ($paymentStatus === 'pending') {
                 $query->where(function ($q) {
                     $q->where('payment_status', 'pending')
-                      ->orWhereNull('payment_status');
+                        ->orWhereNull('payment_status');
                 });
             } else {
                 $query->where('payment_status', $paymentStatus);
@@ -207,8 +207,8 @@ class PaymentController extends Controller
             'orderItems.menuItem',
             'payment.cashier',
         ])->where('payment_status', 'paid')
-          ->where('status', 'completed')
-          ->whereDate('created_at', today());
+            ->where('status', 'completed')
+            ->whereDate('created_at', today());
 
         $orders = $query->latest()
             ->paginate(15)
@@ -218,13 +218,13 @@ class PaymentController extends Controller
             'total_orders' => Order::count(),
             'pending_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'pending')
-                  ->orWhereNull('payment_status');
+                    ->orWhereNull('payment_status');
             })->count(),
             'paid_orders' => Order::where('payment_status', 'paid')->count(),
             'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
             'cancelled_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'cancelled')
-                  ->orWhere('status', 'cancelled');
+                    ->orWhere('status', 'cancelled');
             })->count(),
             'today_revenue' => Order::where('payment_status', 'paid')
                 ->where('status', 'completed')
@@ -259,7 +259,7 @@ class PaymentController extends Controller
             'orderItems.menuItem',
             'payment.cashier',
         ])->where('payment_status', 'paid')
-          ->where('status', 'completed');
+            ->where('status', 'completed');
 
         $orders = $query->latest()
             ->paginate(15)
@@ -269,13 +269,13 @@ class PaymentController extends Controller
             'total_orders' => Order::count(),
             'pending_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'pending')
-                  ->orWhereNull('payment_status');
+                    ->orWhereNull('payment_status');
             })->count(),
             'paid_orders' => Order::where('payment_status', 'paid')->count(),
             'unpaid_orders' => Order::where('payment_status', 'unpaid')->count(),
             'cancelled_payments' => Order::where(function ($q) {
                 $q->where('payment_status', 'cancelled')
-                  ->orWhere('status', 'cancelled');
+                    ->orWhere('status', 'cancelled');
             })->count(),
             'today_revenue' => Order::where('payment_status', 'paid')
                 ->where('status', 'completed')
@@ -323,11 +323,11 @@ class PaymentController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        DB::transaction(function () use ($validated, $order, $request) {
+        DB::transaction(function () use ($validated, $order) {
             $payment = $order->payment;
 
-            if (!$payment) {
-                $payment = new Payment();
+            if (! $payment) {
+                $payment = new Payment;
                 $payment->order_id = $order->id;
                 $payment->table_id = $order->table_id;
                 $payment->subtotal = $order->total_amount;
@@ -337,19 +337,19 @@ class PaymentController extends Controller
             $payment->user_id = auth()->id();
             $payment->payment_status = $validated['payment_status'];
 
-            if (!empty($validated['payment_method'])) {
+            if (! empty($validated['payment_method'])) {
                 $payment->payment_method = $validated['payment_method'];
             }
 
-            if (!empty($validated['transaction_reference'])) {
+            if (! empty($validated['transaction_reference'])) {
                 $payment->transaction_reference = $validated['transaction_reference'];
             }
 
-            if (!empty($validated['notes'])) {
+            if (! empty($validated['notes'])) {
                 $payment->notes = $validated['notes'];
             }
 
-            if ($validated['payment_status'] === 'paid' && !$payment->paid_at) {
+            if ($validated['payment_status'] === 'paid' && ! $payment->paid_at) {
                 $payment->paid_at = now();
             }
 

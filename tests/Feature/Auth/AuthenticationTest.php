@@ -155,4 +155,3 @@ class AuthenticationTest extends TestCase
         $response->assertTooManyRequests();
     }
 }
-

@@ -1,12 +1,12 @@
 <?php
 
+use App\Http\Controllers\Api\TableController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return \Inertia\Inertia::render('LandingPage');
+    return Inertia::render('LandingPage');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -29,6 +29,6 @@ require __DIR__.'/orders.php';
 Route::middleware(['auth'])->group(function () {
     Route::get(
         '/api/tables',
-        [App\Http\Controllers\Api\TableController::class, 'index']
+        [TableController::class, 'index']
     );
 });

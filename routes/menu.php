@@ -22,4 +22,3 @@ Route::post('/customer/register', [CustomerController::class, 'store'])
 
 Route::post('/customer/verify-member', [CustomerController::class, 'verifyMember'])
     ->name('customer.verify-member');
-

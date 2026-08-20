@@ -44,15 +44,15 @@ class MenuController extends Controller
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
 
             if ($table) {
-                session([$sessionKey . '_id' => $table->id]);
-                session([$sessionKey . '_number' => $table->table_number]);
+                session([$sessionKey.'_id' => $table->id]);
+                session([$sessionKey.'_number' => $table->table_number]);
                 Branch::setCurrent($table->branch_id);
             }
         }
 
         // Try to get table from session if not in URL
-        if (!$tableNumber && session()->has($sessionKey . '_id')) {
-            $table = RestaurantTable::find(session($sessionKey . '_id'));
+        if (! $tableNumber && session()->has($sessionKey.'_id')) {
+            $table = RestaurantTable::find(session($sessionKey.'_id'));
             if ($table) {
                 $tableNumber = $table->table_number;
                 Branch::setCurrent($table->branch_id);
@@ -65,16 +65,16 @@ class MenuController extends Controller
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
 
             // If table was found but session doesn't have it, store it
-            if ($table && !session()->has($sessionKey . '_id')) {
-                session([$sessionKey . '_id' => $table->id]);
-                session([$sessionKey . '_number' => $table->table_number]);
+            if ($table && ! session()->has($sessionKey.'_id')) {
+                session([$sessionKey.'_id' => $table->id]);
+                session([$sessionKey.'_number' => $table->table_number]);
                 Branch::setCurrent($table->branch_id);
             }
         }
 
         // Validate the table exists and is available
         $tableError = null;
-        if ($tableNumber && !$table) {
+        if ($tableNumber && ! $table) {
             $tableError = 'The table you are looking for does not exist or is no longer available.';
         } elseif ($table && $table->status === 'awaiting_payment') {
             $tableError = 'This table is currently processing payment. Please wait or check with the staff.';
@@ -112,7 +112,7 @@ class MenuController extends Controller
         // The /menu page always offers free table selection via the dropdown.
         // The customer-menu page never lists tables - it only uses the scanned table.
         $availableTables = [];
-        if (!$isCustomerMenu) {
+        if (! $isCustomerMenu) {
             $availableTables = RestaurantTable::where('status', 'available')
                 ->orderBy('table_number')
                 ->get();
@@ -171,14 +171,14 @@ class MenuController extends Controller
             ?? session('scanned_table_number')
             ?? session('customer_menu_table_number');
 
-        if (!$tableNumber && !$tableId) {
+        if (! $tableNumber && ! $tableId) {
             return redirect()
                 ->route('menu.index')
                 ->with('error', 'No table was selected.');
         }
 
         // If we have table number but not ID, find the table
-        if ($tableNumber && !$tableId) {
+        if ($tableNumber && ! $tableId) {
             $table = RestaurantTable::where('table_number', $tableNumber)->first();
             if ($table) {
                 $tableId = $table->id;
@@ -188,7 +188,7 @@ class MenuController extends Controller
 
         $table = $tableId ? RestaurantTable::find($tableId) : null;
 
-        if (!$table) {
+        if (! $table) {
             return redirect()
                 ->route('menu.index')
                 ->with('error', 'The selected table was not found.');
