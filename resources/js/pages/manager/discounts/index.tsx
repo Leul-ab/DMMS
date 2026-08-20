@@ -54,7 +54,7 @@ type Discount = {
     end_date: string;
     start_time: string | null;
     end_time: string | null;
-    menu_items?: number[];
+    menu_items?: number[] | { id: number }[];
 };
 
 type Props = {
@@ -1553,10 +1553,10 @@ export default function DiscountsIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.start_date &&
-                                        selectedDiscount.start_time
-                                            ? `${selectedDiscount.start_date} ${selectedDiscount.start_time.slice(0, 5)}`
-                                            : selectedDiscount.start_date}
+                                        {formatDateTime(
+                                            selectedDiscount.start_date,
+                                            selectedDiscount.start_time,
+                                        )}
                                     </p>
                                 </div>
 
@@ -1566,10 +1566,10 @@ export default function DiscountsIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.end_date &&
-                                        selectedDiscount.end_time
-                                            ? `${selectedDiscount.end_date} ${selectedDiscount.end_time.slice(0, 5)}`
-                                            : selectedDiscount.end_date}
+                                        {formatDateTime(
+                                            selectedDiscount.end_date,
+                                            selectedDiscount.end_time,
+                                        )}
                                     </p>
                                 </div>
                             </div>
