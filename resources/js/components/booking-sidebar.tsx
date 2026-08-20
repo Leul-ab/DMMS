@@ -155,8 +155,8 @@ export default function BookingSidebar() {
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Payment recorded successfully.\nBooking verification request sent.');
-                setBooking({ ...booking, payment_status: 'paid', paid_at: data.booking?.paid_at || new Date().toISOString() });
+                toast.success('Payment verification request submitted.\nPlease wait for manager approval.');
+                setBooking({ ...booking, payment_status: data.booking?.payment_status || 'pending_verification', expires_at: data.booking?.expires_at || new Date(Date.now() + 7200000).toISOString() });
             } else {
                 toast.error(data.message || 'Payment failed.');
             }

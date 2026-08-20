@@ -398,8 +398,7 @@ class BookingController extends Controller
         try {
             DB::transaction(function () use ($booking, $paymentMethod) {
                 $booking->update([
-                    'payment_status' => 'paid',
-                    'paid_at' => Carbon::now(),
+                    'payment_status' => 'pending_verification',
                     'expires_at' => Carbon::now()->addHours(2),
                     'payment_method' => $paymentMethod,
                 ]);
@@ -412,6 +411,12 @@ class BookingController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
+            \Log::error('Payment verification creation failed', [
+                'booking_id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Unable to create the payment notification. Please refresh the booking and try again.',
@@ -420,10 +425,10 @@ class BookingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment recorded successfully. Booking verification request sent.',
+            'message' => 'Payment verification request submitted. Please wait for manager approval.',
             'booking' => [
                 'id' => $booking->id,
-                'payment_status' => 'paid',
+                'payment_status' => 'pending_verification',
                 'paid_at' => $booking->paid_at,
                 'expires_at' => $booking->expires_at,
                 'status' => $booking->status,
@@ -454,11 +459,10 @@ class BookingController extends Controller
                 ->store('payment_screenshots', 'public');
         }
 
-        if ($booking->payment_status !== 'paid') {
+        if ($booking->payment_status !== 'pending_verification' && $booking->payment_status !== 'paid') {
             $booking->update([
                 'payment_method' => $validated['payment_method'],
-                'payment_status' => 'paid',
-                'paid_at' => now(),
+                'payment_status' => 'pending_verification',
                 'expires_at' => now()->addHours(2),
             ]);
         }
@@ -824,51 +828,70 @@ class BookingController extends Controller
                 ->store('payment_screenshots', 'public');
         }
 
-        try {
-            DB::transaction(function () use ($booking, $validated, $transactionReference, $screenshotPath) {
-                $booking->update([
-                    'payment_method' => $validated['payment_method'],
-                    'payment_status' => 'paid',
-                    'paid_at' => now(),
-                    'status' => 'active',
-                    'expires_at' => now()->addHours(2),
-                    'transaction_reference' => $transactionReference,
-                ]);
+        $notificationError = null;
+        $notification = null;
 
-                $this->createBookingVerificationNotification($booking, $validated['payment_method'], $screenshotPath);
-            });
-        } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+        try {
+            $booking->update([
+                'payment_method' => $validated['payment_method'],
+                'payment_status' => 'pending_verification',
+                'status' => 'active',
+                'expires_at' => now()->addHours(2),
+                'transaction_reference' => $transactionReference,
+            ]);
+
+            try {
+                $notification = $this->createBookingVerificationNotification($booking, $validated['payment_method'], $screenshotPath);
+            } catch (\InvalidArgumentException $e) {
+                $notificationError = $e->getMessage();
+            } catch (\Exception $e) {
+                \Log::error('Payment notification creation failed', [
+                    'booking_id' => $booking->id,
+                    'customer_id' => $booking->customer_id,
+                    'error' => $e->getMessage(),
+                ]);
+                $notificationError = 'Unable to create the payment notification. Please try again.';
+            }
         } catch (\Exception $e) {
+            \Log::error('Booking update failed during copy account', [
+                'booking_id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Unable to create the payment notification. Please refresh the booking and try again.',
+                'message' => 'Unable to process the payment request. Please refresh the booking and try again.',
             ], 500);
         }
 
-        $notification = BookingVerificationNotification::where('booking_id', $booking->id)
-            ->whereIn('status', ['pending', 'read'])
-            ->latest()
-            ->first();
+        if (!$notification) {
+            $notification = BookingVerificationNotification::where('booking_id', $booking->id)
+                ->whereIn('status', ['pending', 'read'])
+                ->latest()
+                ->first();
+        }
 
-        return response()->json([
+        $response = [
             'success' => true,
-            'message' => 'Account number copied and payment marked as Paid.',
+            'message' => $notificationError
+                ? 'Payment information copied successfully, but the payment notification could not be created. Please try again.'
+                : 'Payment verification request submitted. Please wait for manager approval.',
             'already_exists' => false,
             'account_number' => $accountNumber,
             'booking' => [
                 'id' => $booking->id,
-                'payment_status' => 'paid',
+                'payment_status' => 'pending_verification',
                 'paid_at' => $booking->paid_at,
                 'status' => 'active',
                 'expires_at' => $booking->expires_at,
                 'payment_method' => $validated['payment_method'],
                 'transaction_reference' => $transactionReference,
             ],
-            'notification' => [
+        ];
+
+        if ($notification) {
+            $response['notification'] = [
                 'id' => $notification->id,
                 'booking_id' => $notification->booking_id,
                 'payment_method' => $notification->payment_method,
@@ -879,8 +902,15 @@ class BookingController extends Controller
                 'copied_at' => $notification->copied_at,
                 'created_at' => $notification->created_at,
                 'payment_screenshot' => $notification->payment_screenshot,
-            ],
-        ]);
+            ];
+        }
+
+        if ($notificationError) {
+            $response['notification_error'] = true;
+            $response['notification_error_message'] = $notificationError;
+        }
+
+        return response()->json($response);
     }
 
     /**

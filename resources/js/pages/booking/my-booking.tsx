@@ -76,6 +76,7 @@ export default function MyBooking({ onClose }: Props) {
     const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
     const [isSubmittingVerification, setIsSubmittingVerification] = useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [isCopying, setIsCopying] = useState(false);
 
     const [extensionStep, setExtensionStep] = useState<'idle' | 'select' | 'account' | 'verification' | 'success' | 'rejected'>('idle');
     const [extensionPaymentMethod, setExtensionPaymentMethod] = useState<string | null>(null);
@@ -350,11 +351,13 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const handleCopyAccount = async () => {
-        if (!selectedPaymentMethod || !booking || copySuccess) {
+        if (!selectedPaymentMethod || !booking || copySuccess || isCopying) {
             return;
         }
 
         const accountNumber = bookingPaymentAccounts[selectedPaymentMethod].number;
+
+        setIsCopying(true);
 
         try {
             await navigator.clipboard.writeText(accountNumber);
@@ -381,14 +384,20 @@ export default function MyBooking({ onClose }: Props) {
 
             const data = await response.json();
 
-            if (data.success || data.already_exists) {
-                toast.success('Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.');
+            const paymentMethodLabel = bookingPaymentAccounts[selectedPaymentMethod]?.label || 'Payment';
+
+            if (data.success) {
+                if (data.notification_error) {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.`);
+                    toast.error(data.notification_error_message || 'The payment notification could not be created. Please try again.');
+                } else {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.\nPayment verification request submitted.\nPlease wait for manager approval.`);
+                }
 
                 if (data.booking) {
                     setBooking({
                         ...booking,
-                        payment_status: data.booking.payment_status || 'paid',
-                        paid_at: data.booking.paid_at || new Date().toISOString(),
+                        payment_status: data.booking.payment_status || 'pending_verification',
                         status: data.booking.status || 'active',
                         expires_at: data.booking.expires_at || new Date(Date.now() + 7200000).toISOString(),
                         payment_method: data.booking.payment_method || selectedPaymentMethod,
@@ -396,24 +405,36 @@ export default function MyBooking({ onClose }: Props) {
                 } else {
                     setBooking({
                         ...booking,
-                        payment_status: 'paid',
-                        paid_at: new Date().toISOString(),
+                        payment_status: 'pending_verification',
                         status: 'active',
                         expires_at: new Date(Date.now() + 7200000).toISOString(),
                         payment_method: selectedPaymentMethod,
                     });
                 }
+            } else if (data.already_exists) {
+                toast.success(data.message || 'Account number copied.\nThis booking has already been paid.');
+
+                if (data.booking) {
+                    setBooking({
+                        ...booking,
+                        payment_status: data.booking.payment_status || 'pending_verification',
+                        status: data.booking.status || 'active',
+                        expires_at: data.booking.expires_at || new Date(Date.now() + 7200000).toISOString(),
+                        payment_method: data.booking.payment_method || selectedPaymentMethod,
+                    });
+                }
             } else {
-                toast.error(data.message || 'Failed to create payment notification.');
-                setCopySuccess(false);
+                toast.error(data.message || 'Account number copied. However, we could not submit your payment verification request. Please try again.');
             }
 
             setTimeout(() => {
                 setCopySuccess(false);
+                setIsCopying(false);
             }, 2000);
         } catch {
             toast.error('Unable to copy account number.');
             setCopySuccess(false);
+            setIsCopying(false);
         }
     };
 
@@ -447,12 +468,11 @@ export default function MyBooking({ onClose }: Props) {
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Payment submitted successfully. Booking verification request sent.');
+                toast.success('Payment verification submitted. Please wait for manager approval.');
                 setBooking({
                     ...booking,
-                    payment_status: 'paid',
+                    payment_status: 'pending_verification',
                     payment_method: data.booking?.payment_method || selectedPaymentMethod,
-                    paid_at: data.booking?.paid_at || new Date().toISOString(),
                 });
                 setPaymentStep('success');
             } else {
@@ -713,7 +733,7 @@ return;
             );
         }
 
-        if (booking.payment_status === 'pending') {
+        if (booking.payment_status === 'pending_verification' || booking.payment_status === 'pending') {
             return (
                 <Badge
                     variant="secondary"
@@ -826,11 +846,10 @@ return;
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Payment recorded successfully.\nBooking verification request sent.');
+                toast.success('Payment verification request submitted.\nPlease wait for manager approval.');
                 setBooking({
                     ...booking,
-                    payment_status: data.booking?.payment_status || 'paid',
-                    paid_at: data.booking?.paid_at || new Date().toISOString(),
+                    payment_status: data.booking?.payment_status || 'pending_verification',
                     status: data.booking?.status || 'active',
                     expires_at: data.booking?.expires_at || new Date(Date.now() + 7200000).toISOString(),
                 });
@@ -1500,10 +1519,15 @@ return;
                                             </div>
                                             <Button
                                                 onClick={handleCopyAccount}
-                                                disabled={copySuccess}
+                                                disabled={copySuccess || isCopying}
                                                 className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 py-3.5 font-bold text-white hover:from-red-600 hover:to-red-700"
                                             >
-                                                {copySuccess ? (
+                                                {isCopying ? (
+                                                    <span className="flex items-center justify-center gap-2">
+                                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                        Submitting...
+                                                    </span>
+                                                ) : copySuccess ? (
                                                     <span className="flex items-center justify-center gap-2">
                                                         <Check className="h-4 w-4" />
                                                         Copied

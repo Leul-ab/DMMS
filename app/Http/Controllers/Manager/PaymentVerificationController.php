@@ -682,13 +682,19 @@ class PaymentVerificationController extends Controller
                     'read_at' => $notification->read_at ?: now(),
                 ]);
 
+                $booking->update([
+                    'payment_status' => 'unpaid',
+                    'paid_at' => null,
+                    'expires_at' => now()->addHours(2),
+                ]);
+
                 $booking->customer?->notify(new BookingPaymentRejected($booking, $notification));
             });
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Booking payment rejected. The customer reported the payment as paid, but it was rejected during verification.');
+        return back()->with('success', 'Booking payment rejected. The customer can resubmit payment verification.');
     }
 
     /**

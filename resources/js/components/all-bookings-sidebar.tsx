@@ -474,16 +474,20 @@ function BookingCard({
                                 className={`font-medium ${
                                     booking.payment_status === 'paid'
                                         ? 'text-green-600'
-                                        : booking.payment_status === 'expired'
-                                          ? 'text-red-600'
-                                          : 'text-yellow-600'
+                                        : booking.payment_status === 'pending_verification' || booking.payment_status === 'pending'
+                                          ? 'text-yellow-600'
+                                          : booking.payment_status === 'expired'
+                                            ? 'text-red-600'
+                                            : 'text-yellow-600'
                                 }`}
                             >
                                 {booking.payment_status === 'paid'
                                     ? 'Paid'
-                                    : booking.payment_status === 'expired'
-                                      ? 'Expired'
-                                      : 'Unpaid'}
+                                    : booking.payment_status === 'pending_verification' || booking.payment_status === 'pending'
+                                      ? 'Pending Verification'
+                                      : booking.payment_status === 'expired'
+                                        ? 'Expired'
+                                        : 'Unpaid'}
                             </span>
                         </div>
                     )}

@@ -257,7 +257,7 @@ export function MenuView({
             return;
         }
 
-        if (bookingConfirm?.payment_status === 'paid') {
+        if (bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification') {
             return;
         }
 
@@ -617,26 +617,43 @@ export function MenuView({
 
             const data = await response.json();
 
-            if (data.success || data.already_exists) {
-                toast.success('Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.');
+            const paymentMethodLabel = bookingPaymentAccounts[selectedPaymentMethod]?.label || 'Payment';
+
+            if (data.success) {
+                if (data.notification_error) {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.`);
+                    toast.error(data.notification_error_message || 'The payment notification could not be created. Please try again.');
+                } else {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.\nPayment verification request submitted.\nPlease wait for manager approval.`);
+                }
 
                 if (data.booking) {
                     setBookingConfirm({
                         ...bookingConfirm,
-                        payment_status: data.booking.payment_status || 'paid',
+                        payment_status: data.booking.payment_status || 'pending_verification',
                         payment_method: data.booking.payment_method || selectedPaymentMethod,
                         verification_status: data.booking.verification_status || null,
                     });
                 } else {
                     setBookingConfirm({
                         ...bookingConfirm,
-                        payment_status: 'paid',
+                        payment_status: 'pending_verification',
                         payment_method: selectedPaymentMethod,
                     });
                 }
+            } else if (data.already_exists) {
+                toast.success(data.message || 'Account number copied.\nThis booking has already been paid.');
+
+                if (data.booking) {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: data.booking.payment_status || 'pending_verification',
+                        payment_method: data.booking.payment_method || selectedPaymentMethod,
+                        verification_status: data.booking.verification_status || null,
+                    });
+                }
             } else {
-                toast.error(data.message || 'Failed to create payment notification.');
-                setCopySuccess(false);
+                toast.error(data.message || 'Account number copied. However, we could not submit your payment verification request. Please try again.');
             }
 
             setTimeout(() => {
@@ -704,12 +721,11 @@ export function MenuView({
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Payment submitted successfully. Booking verification request sent.');
+                toast.success('Payment verification submitted. Please wait for manager approval.');
                 setBookingConfirm({
                     ...bookingConfirm,
-                    payment_status: 'paid',
+                    payment_status: 'pending_verification',
                     payment_method: data.booking?.payment_method || selectedPaymentMethod,
-                    paid_at: data.booking?.paid_at || new Date().toISOString(),
                 });
                 setPaymentStep('success');
             } else {
@@ -1083,15 +1099,22 @@ export function MenuView({
                                 <span className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
                                     bookingConfirm?.payment_status === 'paid'
                                         ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
                                         : bookingConfirm?.payment_status === 'pending'
                                         ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
                                         : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
                                 }`}>
+                                    {bookingConfirm?.payment_status === 'pending_verification' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
                                     {bookingConfirm?.payment_status === 'pending' && (
                                         <RefreshCw className="h-3 w-3 animate-spin mr-1" />
                                     )}
                                     {bookingConfirm?.payment_status === 'paid'
                                         ? 'Paid'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'Pending Verification'
                                         : bookingConfirm?.payment_status === 'pending'
                                         ? 'Pending Verification'
                                         : 'Unpaid'}
@@ -1102,8 +1125,8 @@ export function MenuView({
                                 <span className="text-sm text-red-600">
                                     Expires In
                                 </span>
-                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${bookingConfirm?.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    {bookingConfirm?.payment_status === 'paid' ? (
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification' ? (
                                         <CheckCircle2 className="h-4 w-4" />
                                     ) : (
                                         <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
@@ -1131,7 +1154,7 @@ export function MenuView({
                         </div>
                     </div>
 
-                    {paymentStep === 'idle' && bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && (
+                    {paymentStep === 'idle' && bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && bookingConfirm.payment_status !== 'pending_verification' && (
                         <Button
                             onClick={handlePayNow}
                             className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -1337,14 +1360,16 @@ export function MenuView({
                         </div>
                     )}
 
-                    {bookingConfirm && bookingConfirm.payment_status === 'paid' && paymentStep !== 'success' && (
-                        <div className="rounded-xl bg-green-50 p-4 text-center">
-                            <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
-                            <p className="mt-2 text-sm font-bold text-green-700">
-                                Payment Confirmed
+                    {bookingConfirm && (bookingConfirm.payment_status === 'paid' || bookingConfirm.payment_status === 'pending_verification') && paymentStep !== 'success' && (
+                        <div className={`rounded-xl p-4 text-center ${bookingConfirm.payment_status === 'paid' ? 'bg-green-50' : 'bg-yellow-50'}`}>
+                            <CheckCircle2 className={`mx-auto h-8 w-8 ${bookingConfirm.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`} />
+                            <p className={`mt-2 text-sm font-bold ${bookingConfirm.payment_status === 'paid' ? 'text-green-700' : 'text-yellow-700'}`}>
+                                {bookingConfirm.payment_status === 'paid' ? 'Payment Confirmed' : 'Pending Verification'}
                             </p>
-                            <p className="text-xs text-green-600">
-                                Your booking payment has been received.
+                            <p className={`text-xs ${bookingConfirm.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                {bookingConfirm.payment_status === 'paid'
+                                    ? 'Your booking payment has been received.'
+                                    : 'Your payment verification is pending manager approval.'}
                             </p>
                         </div>
                     )}

@@ -118,6 +118,7 @@ export default function BookingView({
     const [isSubmittingVerification, setIsSubmittingVerification] =
         useState(false);
     const [copySuccess, setCopySuccess] = useState(false);
+    const [isCopying, setIsCopying] = useState(false);
     const [showMyBooking, setShowMyBooking] = useState(false);
 
     const toggleTableSelection = (tableId: string) => {
@@ -267,7 +268,7 @@ export default function BookingView({
             return;
         }
 
-        if (confirmedBooking?.payment_status === 'paid') {
+        if (confirmedBooking?.payment_status === 'paid' || confirmedBooking?.payment_status === 'pending_verification') {
             return;
         }
 
@@ -288,12 +289,14 @@ export default function BookingView({
     };
 
     const handleCopyAccount = async () => {
-        if (!selectedPaymentMethod || !confirmedBooking || copySuccess) {
+        if (!selectedPaymentMethod || !confirmedBooking || copySuccess || isCopying) {
             return;
         }
 
         const accountNumber =
             bookingPaymentAccounts[selectedPaymentMethod].number;
+
+        setIsCopying(true);
 
         try {
             await navigator.clipboard.writeText(accountNumber);
@@ -323,16 +326,22 @@ export default function BookingView({
 
             const data = await response.json();
 
-            if (data.success || data.already_exists) {
-                toast.success(
-                    'Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.',
-                );
+            const paymentMethodLabel = bookingPaymentAccounts[selectedPaymentMethod]?.label || 'Payment';
+
+            if (data.success) {
+                if (data.notification_error) {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.`);
+                    toast.error(data.notification_error_message || 'The payment notification could not be created. Please try again.');
+                } else {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.\nPayment verification request submitted.\nPlease wait for manager approval.`);
+                }
 
                 if (data.booking) {
                     setConfirmedBooking({
                         ...confirmedBooking,
                         payment_status:
-                            data.booking.payment_status || 'paid',
+                            data.booking.payment_status ||
+                            'pending_verification',
                         payment_method:
                             data.booking.payment_method ||
                             selectedPaymentMethod,
@@ -340,23 +349,39 @@ export default function BookingView({
                 } else {
                     setConfirmedBooking({
                         ...confirmedBooking,
-                        payment_status: 'paid',
+                        payment_status: 'pending_verification',
                         payment_method: selectedPaymentMethod,
+                    });
+                }
+            } else if (data.already_exists) {
+                toast.success(data.message || 'Account number copied.\nThis booking has already been paid.');
+
+                if (data.booking) {
+                    setConfirmedBooking({
+                        ...confirmedBooking,
+                        payment_status:
+                            data.booking.payment_status ||
+                            'pending_verification',
+                        payment_method:
+                            data.booking.payment_method ||
+                            selectedPaymentMethod,
                     });
                 }
             } else {
                 toast.error(
-                    data.message || 'Failed to create payment notification.',
+                    data.message ||
+                        'Account number copied. However, we could not submit your payment verification request. Please try again.',
                 );
-                setCopySuccess(false);
             }
 
             setTimeout(() => {
                 setCopySuccess(false);
+                setIsCopying(false);
             }, 2000);
         } catch {
             toast.error('Unable to copy account number.');
             setCopySuccess(false);
+            setIsCopying(false);
         }
     };
 
@@ -422,15 +447,13 @@ export default function BookingView({
 
             if (data.success) {
                 toast.success(
-                    'Payment submitted successfully. Booking verification request sent.',
+                    'Payment verification submitted. Please wait for manager approval.',
                 );
                 setConfirmedBooking({
                     ...confirmedBooking,
-                    payment_status: 'paid',
+                    payment_status: 'pending_verification',
                     payment_method:
                         data.booking?.payment_method || selectedPaymentMethod,
-                    paid_at:
-                        data.booking?.paid_at || new Date().toISOString(),
                 });
                 setPaymentStep('success');
             } else {
@@ -1089,19 +1112,23 @@ export default function BookingView({
                                                 className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
                                                     confirmedBooking.payment_status === 'paid'
                                                         ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
-                                                        : confirmedBooking.payment_status === 'pending'
+                                                        : confirmedBooking.payment_status === 'pending_verification'
                                                           ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
-                                                          : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                                          : confirmedBooking.payment_status === 'pending'
+                                                            ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                                            : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
                                                 }`}
                                             >
-                                                {confirmedBooking.payment_status === 'pending' && (
+                                                {confirmedBooking.payment_status === 'pending_verification' && (
                                                     <RefreshCw className="h-3 w-3 animate-spin mr-1" />
                                                 )}
                                                 {confirmedBooking.payment_status === 'paid'
                                                     ? 'Paid'
-                                                    : confirmedBooking.payment_status === 'pending'
+                                                    : confirmedBooking.payment_status === 'pending_verification'
                                                       ? 'Pending Verification'
-                                                      : 'Unpaid'}
+                                                      : confirmedBooking.payment_status === 'pending'
+                                                        ? 'Pending Verification'
+                                                        : 'Unpaid'}
                                             </span>
                                         </div>
                                         <Separator className="bg-red-200/40" />
@@ -1219,10 +1246,15 @@ export default function BookingView({
                                         </div>
                                         <Button
                                             onClick={handleCopyAccount}
-                                            disabled={copySuccess}
+                                            disabled={copySuccess || isCopying}
                                             className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 py-3.5 font-bold text-white hover:from-red-600 hover:to-red-700"
                                         >
-                                            {copySuccess ? (
+                                            {isCopying ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                    Submitting...
+                                                </span>
+                                            ) : copySuccess ? (
                                                 <span className="flex items-center justify-center gap-2">
                                                     <Check className="h-4 w-4" />
                                                     Copied
