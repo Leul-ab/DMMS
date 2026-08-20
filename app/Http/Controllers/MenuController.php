@@ -90,16 +90,34 @@ class MenuController extends Controller
         // Get selected category
         $selectedCategory = $request->query('category');
 
+        // Determine customer membership for discount eligibility BEFORE loading
+        // menu items, so members-only discounts are excluded from the data
+        // until a valid member/customer code is verified. The authenticated
+        // member is tracked via the session (set during phone verification /
+        // registration), so fall back to the session when the ?customer_phone
+        // query param is absent - otherwise the member would only be
+        // recognised on the single reload that carries the query param.
+        $customer = null;
+        $customerPhone = $request->query('customer_phone') ?? session('customer_phone');
+        if ($customerPhone) {
+            $customer = Customer::where('phone', $customerPhone)->first();
+        }
+        $isMember = $customer?->is_member ?? false;
+
         // Get menu items
         $menuItemsQuery = MenuItem::with([
             'category',
-            'discounts' => function ($query) {
+            'discounts' => function ($query) use ($isMember) {
                 // Only currently-active discounts are displayed in the menu.
-                // Inactive/expired are excluded, and the start/end date-time
-                // window must contain "now" (applies_to is still honoured per
-                // customer on the frontend via isMember).
                 $query->whereNotIn('status', ['inactive', 'expired'])
                     ->activeWindow();
+
+                // Members-only discounts are only exposed in the menu data once
+                // the customer is verified as a member; otherwise only All
+                // Customers discounts are included. Enforced server-side.
+                if (! $isMember) {
+                    $query->where('applies_to', 'all');
+                }
             },
         ]);
 
@@ -111,19 +129,6 @@ class MenuController extends Controller
         $menuItems = $menuItemsQuery
             ->orderBy('name')
             ->get();
-
-        // Determine customer membership for discount eligibility.
-        // The authenticated member is tracked via the session (set during
-        // phone verification / registration), so fall back to the session
-        // when the ?customer_phone query param is absent - otherwise the
-        // member would only be recognised on the single reload that
-        // carries the query param, and the badge would never appear.
-        $customer = null;
-        $customerPhone = $request->query('customer_phone') ?? session('customer_phone');
-        if ($customerPhone) {
-            $customer = Customer::where('phone', $customerPhone)->first();
-        }
-        $isMember = $customer?->is_member ?? false;
 
         // Member-only discount notifications (only for authenticated members).
         $memberUnreadCount = 0;
