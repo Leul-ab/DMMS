@@ -5,6 +5,8 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/up', fn () => response()->json(['status' => 'ok']));
+
 Route::get('/', function () {
     return \Inertia\Inertia::render('LandingPage');
 })->name('home');
