@@ -63,6 +63,70 @@ class MemberDiscountNotificationTest extends TestCase
         $this->assertDatabaseCount('member_discount_notifications', 0);
     }
 
+    public function test_discount_with_future_start_time_today_does_not_notify(): void
+    {
+        $this->makeDiscount([
+            'name' => 'Later Today',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->toDateString(),
+            'start_time' => now()->addHour()->format('H:i:s'),
+            'end_time' => now()->addHours(2)->format('H:i:s'),
+        ]);
+        Customer::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'M',
+            'phone' => '+251911111111',
+            'is_member' => true,
+        ]);
+
+        $this->artisan('discounts:notify-members')->assertSuccessful();
+
+        $this->assertDatabaseCount('member_discount_notifications', 0);
+    }
+
+    public function test_discount_ending_before_now_does_not_notify(): void
+    {
+        $this->makeDiscount([
+            'name' => 'Ended',
+            'status' => 'active',
+            'start_date' => now()->subDays(2)->toDateString(),
+            'end_date' => now()->subDay()->toDateString(),
+            'start_time' => '00:00:00',
+            'end_time' => '23:59:59',
+        ]);
+        Customer::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'M',
+            'phone' => '+251911111111',
+            'is_member' => true,
+        ]);
+
+        $this->artisan('discounts:notify-members')->assertSuccessful();
+
+        $this->assertDatabaseCount('member_discount_notifications', 0);
+    }
+
+    public function test_discount_within_window_notifies(): void
+    {
+        $member = Customer::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'M',
+            'phone' => '+251911111111',
+            'is_member' => true,
+        ]);
+        $this->makeDiscount([
+            'name' => 'Within',
+            'start_date' => now()->subHour()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'start_time' => now()->subHour()->format('H:i:s'),
+            'end_time' => now()->addHour()->format('H:i:s'),
+        ]);
+
+        $this->artisan('discounts:notify-members')->assertSuccessful();
+
+        $this->assertDatabaseHas('member_discount_notifications', ['customer_id' => $member->id]);
+    }
+
     public function test_active_member_discount_notifies_only_members(): void
     {
         $this->makeDiscount(['name' => 'Active']);

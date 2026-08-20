@@ -93,24 +93,31 @@ class Discount extends Model
     /**
      * Restrict to discounts whose combined start_date + start_time and
      * end_date + end_time window currently contains "now" (ignoring status).
-     * This correctly handles discounts that span midnight (e.g. start 23:05
-     * on day 1, end 23:00 on day 2) which a naive time-of-day comparison
-     * would mishandle.
+     *
+     * The stored start_date/end_date (DATE) and start_time/end_time (TIME) are
+     * wall-clock values in the APPLICATION timezone. To keep the comparison in
+     * the same timezone as the application, we compare them directly against
+     * "now" formatted in the application timezone, without using DB timezone
+     * functions (e.g. SQLite's datetime()) that would reinterpret the values.
+     * This also correctly handles discounts that span midnight.
      */
     public function scopeActiveWindow($query)
     {
         $now = now()->format('Y-m-d H:i:s');
+
         $driver = $query->getConnection()->getDriverName();
 
-        if ($driver === 'sqlite') {
-            return $query
-                ->whereRaw("datetime(start_date || ' ' || COALESCE(start_time, '00:00:00')) <= ?", [$now])
-                ->whereRaw("datetime(end_date || ' ' || COALESCE(end_time, '23:59:59')) >= ?", [$now]);
-        }
+        $startExpr = $driver === 'sqlite'
+            ? "(start_date || ' ' || COALESCE(start_time, '00:00:00'))"
+            : "CONCAT(start_date, ' ', COALESCE(start_time, '00:00:00'))";
+
+        $endExpr = $driver === 'sqlite'
+            ? "(end_date || ' ' || COALESCE(end_time, '23:59:59'))"
+            : "CONCAT(end_date, ' ', COALESCE(end_time, '23:59:59'))";
 
         return $query
-            ->whereRaw('TIMESTAMP(start_date, COALESCE(start_time, ?)) <= ?', ['00:00:00', $now])
-            ->whereRaw('TIMESTAMP(end_date, COALESCE(end_time, ?)) >= ?', ['23:59:59', $now]);
+            ->whereRaw("{$startExpr} <= ?", [$now])
+            ->whereRaw("{$endExpr} >= ?", [$now]);
     }
 
     /**
