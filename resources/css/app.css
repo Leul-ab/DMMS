@@ -167,70 +167,7 @@
     animation: float 3s ease-in-out infinite;
 }
 
-/* ====================== Red Glassmorphism Sidebar ====================== */
 
-/* Warm red-tinted page backdrop behind the floating glass panels */
-[data-slot='sidebar-wrapper'] {
-    background:
-        radial-gradient(
-            1200px 800px at 0% 0%,
-            rgba(248, 113, 113, 0.16),
-            transparent 60%
-        ),
-        radial-gradient(
-            1000px 700px at 100% 100%,
-            rgba(222, 29, 29, 0.12),
-            transparent 55%
-        ),
-        linear-gradient(180deg, #fef2f2 0%, #fee2e2 100%);
-}
-
-/* Frosted glass sidebar panel */
-[data-sidebar='sidebar'] {
-    background: linear-gradient(
-        180deg,
-        rgba(254, 242, 242, 0.4),
-        rgba(254, 226, 226, 0.3)
-    );
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid rgba(254, 202, 202, 0.45);
-    box-shadow:
-        0 10px 40px -12px rgba(185, 28, 28, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-
-.dark [data-sidebar='sidebar'] {
-    background: linear-gradient(
-        180deg,
-        rgba(69, 10, 10, 0.5),
-        rgba(127, 29, 29, 0.38)
-    );
-    border: 1px solid rgba(248, 113, 113, 0.18);
-    box-shadow:
-        0 10px 40px -12px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-/* Glassy main content card floating over the warm backdrop */
-[data-slot='sidebar-inset'] {
-    background: rgba(255, 255, 255, 0.72);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
-    backdrop-filter: blur(18px) saturate(150%);
-    border: 1px solid rgba(254, 202, 202, 0.45);
-    box-shadow: 0 8px 30px -12px rgba(185, 28, 28, 0.2);
-}
-
-.dark [data-slot='sidebar-inset'] {
-    background: rgba(28, 25, 23, 0.72);
-    border: 1px solid rgba(248, 113, 113, 0.14);
-}
-
-/* Soft red hover glow on nav buttons inside the sidebar */
-[data-sidebar='sidebar'] [data-sidebar='menu-button']:hover,
-[data-sidebar='sidebar'] [data-sidebar='menu-button'][data-active='true'] {
-    box-shadow: 0 4px 14px -6px rgba(222, 29, 29, 0.45);
-}
 
 /* Hide scrollbar while keeping scroll functionality */
 .no-scrollbar {

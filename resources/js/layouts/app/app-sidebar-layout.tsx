@@ -16,7 +16,7 @@ function SidebarFloatingTrigger() {
             onClick={toggleSidebar}
             aria-label={isExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
             className={[
-                'fixed top-5 z-50 flex h-8 w-5 items-center justify-center',
+                'fixed top-5 z-[100] flex h-8 w-5 items-center justify-center',
                 'rounded-r-full bg-red-500 text-white shadow-lg shadow-red-500/40',
                 'transition-all duration-300 ease-in-out',
                 'hover:w-6 hover:bg-red-600 hover:shadow-red-600/50',
@@ -49,10 +49,10 @@ export default function AppSidebarLayout({ children }: AppLayoutProps) {
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
-            <SidebarFloatingTrigger />
             <AppContent variant="sidebar" className="overflow-x-hidden">
                 {children}
             </AppContent>
+            <SidebarFloatingTrigger />
         </AppShell>
     );
 }

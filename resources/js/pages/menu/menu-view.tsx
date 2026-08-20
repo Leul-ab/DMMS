@@ -1364,7 +1364,7 @@ export function MenuView({
                         </div>
                     </Link>
 
-                    <nav className="flex items-center gap-1.5 sm:gap-2.5">
+                    <nav className="flex items-center gap-1 rounded-full border border-stone-200 bg-white p-1 shadow-sm sm:gap-1.5">
                         {allowTableSelection ? (
                             availableTables.length > 0 ? (
                                 <Select
@@ -1379,15 +1379,15 @@ export function MenuView({
                                         );
                                     }}
                                 >
-                                    <SelectTrigger className="h-9 w-fit gap-1 rounded-full border-red-200 bg-red-50/80 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 hover:text-red-700 [&>svg]:ml-0">
-                                        <Utensils className="h-3.5 w-3.5 shrink-0" />
+                                    <SelectTrigger className="h-9 w-fit gap-2 rounded-full border-0 bg-transparent px-3 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-100 focus:ring-0 [&>svg]:ml-0">
+                                        <Utensils className="h-4 w-4 shrink-0 text-red-500" />
                                         <span className="hidden sm:inline">
                                             {table
                                                 ? `Table ${table.table_number}`
                                                 : 'Choose Table'}
                                         </span>
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-red-200">
+                                    <SelectContent className="rounded-xl border-stone-200">
                                         {availableTables.map((t) => (
                                             <SelectItem
                                                 key={t.id}
@@ -1400,26 +1400,27 @@ export function MenuView({
                                     </SelectContent>
                                 </Select>
                             ) : (
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-red-50 whitespace-nowrap text-red-600"
-                                >
+                                <div className="flex h-9 items-center px-3 text-sm font-medium text-stone-500">
                                     No tables
-                                </Badge>
+                                </div>
                             )
                         ) : table ? (
-                            <div className="flex items-center gap-1.5 rounded-full border border-red-300 bg-red-100/80 px-3 py-1.5 text-sm font-bold text-red-700 shadow-sm">
-                                <Utensils className="h-3.5 w-3.5" />
+                            <div className="flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold text-stone-700">
+                                <Utensils className="h-4 w-4 text-red-500" />
                                 <span className="xs:inline hidden">Table</span>
                                 {table.table_number}
                                 <Badge
                                     variant="secondary"
-                                    className="bg-red-200 px-1.5 py-0 text-[10px] text-red-800"
+                                    className="bg-red-100 px-1.5 py-0 text-[10px] text-red-700"
                                 >
                                     QR
                                 </Badge>
                             </div>
                         ) : null}
+
+                        {(allowTableSelection || table) && (
+                            <div className="h-4 w-px bg-stone-200" />
+                        )}
 
                         <a
                             href={
@@ -1431,35 +1432,43 @@ export function MenuView({
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="rounded-full text-red-600 hover:bg-red-100 hover:text-red-700"
+                                className="h-9 rounded-full px-3 font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900"
                             >
-                                <Calendar className="h-3.5 w-3.5" />
+                                <Calendar className="h-4 w-4 text-stone-400 sm:mr-2" />
                                 <span className="hidden sm:inline">
                                     Book a Table
                                 </span>
                             </Button>
                         </a>
 
+                        <div className="h-4 w-px bg-stone-200" />
+
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={handleMyOrderClick}
-                            className="rounded-full text-red-600 hover:bg-red-100 hover:text-red-700"
+                            className="h-9 rounded-full px-3 font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900"
                         >
-                            <Package className="h-3.5 w-3.5" />
+                            <Package className="h-4 w-4 text-stone-400 sm:mr-2" />
                             <span className="hidden sm:inline">My Order</span>
                         </Button>
 
                         {hasActiveBooking && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowMyBooking(true)}
-                                className="rounded-full text-red-600 hover:bg-red-100 hover:text-red-700"
-                            >
-                                My Booking
-                            </Button>
+                            <>
+                                <div className="h-4 w-px bg-stone-200" />
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setShowMyBooking(true)}
+                                    className="h-9 rounded-full bg-red-50 px-3 font-semibold text-red-700 hover:bg-red-100 hover:text-red-800"
+                                >
+                                    <Calendar className="h-4 w-4 text-red-500 sm:mr-2" />
+                                    <span className="hidden sm:inline">
+                                        My Booking
+                                    </span>
+                                </Button>
+                            </>
                         )}
                     </nav>
                 </div>
@@ -1472,7 +1481,7 @@ export function MenuView({
                         <button
                             type="button"
                             className={
-                                'fixed right-4 bottom-4 z-[60] flex h-11 items-center gap-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-red-500/40 transition-all hover:from-red-600 hover:to-red-700 hover:shadow-2xl hover:shadow-red-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
+                                'hidden sm:flex fixed right-4 bottom-4 z-[60] h-11 items-center gap-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 pr-3 pl-4 text-sm font-bold text-white shadow-xl shadow-red-500/40 transition-all hover:from-red-600 hover:to-red-700 hover:shadow-2xl hover:shadow-red-500/50 active:scale-90 sm:right-6 sm:bottom-6' +
                                 (cartOpen
                                     ? ' pointer-events-none scale-0 opacity-0'
                                     : ' scale-100 opacity-100')
