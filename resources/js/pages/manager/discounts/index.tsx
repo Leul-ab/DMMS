@@ -618,7 +618,13 @@ export default function DiscountsIndex({
             return '—';
         }
 
-        const iso = time ? `${date}T${time}` : `${date}T00:00:00`;
+        // If the date already carries a time (ISO datetime), use it directly;
+        // otherwise combine the date with the separate time string.
+        const iso = date.includes('T')
+            ? date
+            : time
+              ? `${date}T${time}`
+              : `${date}T00:00:00`;
         const parsed = new Date(iso);
 
         if (isNaN(parsed.getTime())) {
