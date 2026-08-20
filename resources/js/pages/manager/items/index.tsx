@@ -985,223 +985,225 @@ export default function ItemsIndex({
 
                     <div className="space-y-4 py-4">
 
-                        {/* Category */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Category
-                            </label>
+                        {/* Category & Item Name */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Category
+                                </label>
 
-                            <Select
-                                value={categoryId}
-                                onValueChange={(value) => {
-                                    setCategoryId(value);
+                                <Select
+                                    value={categoryId}
+                                    onValueChange={(value) => {
+                                        setCategoryId(value);
 
-                                    if (errors.categoryId) {
-                                        const error = validateCategory(value);
-                                        setErrors((prev) => ({
-                                            ...prev,
-                                            categoryId: error || undefined,
-                                        }));
-                                    }
-                                }}
-                                onOpenChange={(open) => {
-                                    if (!open && !errors.categoryId) {
-                                        const error = validateCategory(categoryId);
-
-                                        if (error) {
+                                        if (errors.categoryId) {
+                                            const error = validateCategory(value);
                                             setErrors((prev) => ({
                                                 ...prev,
-                                                categoryId: error,
+                                                categoryId: error || undefined,
                                             }));
                                         }
-                                    }
-                                }}
-                            >
-                                <SelectTrigger
-                                    className={
-                                        errors.categoryId
-                                            ? 'border-red-500'
-                                            : categoryId && !errors.categoryId
-                                                ? 'border-green-500'
-                                                : ''
-                                    }
+                                    }}
+                                    onOpenChange={(open) => {
+                                        if (!open && !errors.categoryId) {
+                                            const error = validateCategory(categoryId);
+
+                                            if (error) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    categoryId: error,
+                                                }));
+                                            }
+                                        }
+                                    }}
                                 >
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
+                                    <SelectTrigger
+                                        className={
+                                            errors.categoryId
+                                                ? 'border-red-500'
+                                                : categoryId && !errors.categoryId
+                                                    ? 'border-green-500'
+                                                    : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    {categories.map(
-                                        (
-                                            category,
-                                        ) => (
-                                            <SelectItem
-                                                key={
-                                                    category.id
-                                                }
-                                                value={String(
-                                                    category.id,
-                                                )}
-                                            >
-                                                {
-                                                    category.name
-                                                }
-                                            </SelectItem>
-                                        ),
-                                    )}
-                                </SelectContent>
-                            </Select>
+                                    <SelectContent>
+                                        {categories.map(
+                                            (
+                                                category,
+                                            ) => (
+                                                <SelectItem
+                                                    key={
+                                                        category.id
+                                                    }
+                                                    value={String(
+                                                        category.id,
+                                                    )}
+                                                >
+                                                    {
+                                                        category.name
+                                                    }
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
 
-                            {errors.categoryId && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.categoryId}
-                                </p>
-                            )}
-                        </div>
+                                {errors.categoryId && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.categoryId}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Item Name
-                            </label>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Item Name
+                                </label>
 
-                            <Input
-                                value={name}
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setName(value);
+                                <Input
+                                    value={name}
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setName(value);
 
-                                    if (errors.name) {
-                                        const error = validateName(value);
+                                        if (errors.name) {
+                                            const error = validateName(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                name: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validateName(name);
                                         setErrors((prev) => ({
                                             ...prev,
                                             name: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: Chicken Burger"
+                                    className={
+                                        errors.name
+                                            ? 'border-red-500'
+                                            : name.trim() && !errors.name
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validateName(name);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        name: error || undefined,
-                                    }));
-                                }}
-                                placeholder="Example: Chicken Burger"
-                                className={
-                                    errors.name
-                                        ? 'border-red-500'
-                                        : name.trim() && !errors.name
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.name && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.name}
-                                </p>
-                            )}
+                                {errors.name && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Price */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Price
-                            </label>
+                        {/* Price & Preparation Time */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Price
+                                </label>
 
-                            <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={price}
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setPrice(value);
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={price}
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setPrice(value);
 
-                                    if (errors.price) {
-                                        const error = validatePrice(value);
+                                        if (errors.price) {
+                                            const error = validatePrice(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                price: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validatePrice(price);
                                         setErrors((prev) => ({
                                             ...prev,
                                             price: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: 10.99"
+                                    className={
+                                        errors.price
+                                            ? 'border-red-500'
+                                            : price && !errors.price
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validatePrice(price);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        price: error || undefined,
-                                    }));
-                                }}
-                                placeholder="Example: 10.99"
-                                className={
-                                    errors.price
-                                        ? 'border-red-500'
-                                        : price && !errors.price
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.price && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.price}
-                                </p>
-                            )}
-                        </div>
+                                {errors.price && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.price}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Preparation Time */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Preparation Time (minutes)
-                            </label>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Preparation Time (minutes)
+                                </label>
 
-                            <Input
-                                type="number"
-                                min="0"
-                                max="1440"
-                                value={
-                                    preparationTime
-                                }
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setPreparationTime(value);
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="1440"
+                                    value={
+                                        preparationTime
+                                    }
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setPreparationTime(value);
 
-                                    if (errors.preparationTime) {
-                                        const error = validatePreparationTime(value);
+                                        if (errors.preparationTime) {
+                                            const error = validatePreparationTime(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                preparationTime: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validatePreparationTime(preparationTime);
                                         setErrors((prev) => ({
                                             ...prev,
                                             preparationTime: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: 20"
+                                    className={
+                                        errors.preparationTime
+                                            ? 'border-red-500'
+                                            : preparationTime && !errors.preparationTime
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validatePreparationTime(preparationTime);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        preparationTime: error || undefined,
-                                    }));
-                                }}
-                                placeholder="Example: 20"
-                                className={
-                                    errors.preparationTime
-                                        ? 'border-red-500'
-                                        : preparationTime && !errors.preparationTime
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.preparationTime && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.preparationTime}
-                                </p>
-                            )}
+                                {errors.preparationTime && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.preparationTime}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Item Image */}
@@ -1250,12 +1252,10 @@ export default function ItemsIndex({
                             />
                         </div>
 
-                        {/* Available */}
-                        <div className="flex items-center gap-2">
+                        {/* Status / Utility */}
+                        <div className="flex items-center gap-2 border-t pt-4">
                             <StatusToggle
-                                checked={
-                                    isAvailable
-                                }
+                                checked={isAvailable}
                                 onCheckedChange={() =>
                                     setIsAvailable(
                                         !isAvailable,
@@ -1455,222 +1455,227 @@ export default function ItemsIndex({
 
                     <div className="space-y-4 py-4">
 
-                        {/* Category */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Category
-                            </label>
+                        {/* Category & Item Name */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Category
+                                </label>
 
-                            <Select
-                                value={
-                                    categoryId
-                                }
-                                onValueChange={(value) => {
-                                    setCategoryId(value);
-
-                                    if (errors.categoryId) {
-                                        const error = validateCategory(value);
-                                        setErrors((prev) => ({
-                                            ...prev,
-                                            categoryId: error || undefined,
-                                        }));
+                                <Select
+                                    value={
+                                        categoryId
                                     }
-                                }}
-                                onOpenChange={(open) => {
-                                    if (!open && !errors.categoryId) {
-                                        const error = validateCategory(categoryId);
+                                    onValueChange={(value) => {
+                                        setCategoryId(value);
 
-                                        if (error) {
+                                        if (errors.categoryId) {
+                                            const error = validateCategory(value);
                                             setErrors((prev) => ({
                                                 ...prev,
-                                                categoryId: error,
+                                                categoryId: error || undefined,
                                             }));
                                         }
-                                    }
-                                }}
-                            >
-                                <SelectTrigger
-                                    className={
-                                        errors.categoryId
-                                            ? 'border-red-500'
-                                            : categoryId && !errors.categoryId
-                                                ? 'border-green-500'
-                                                : ''
-                                    }
+                                    }}
+                                    onOpenChange={(open) => {
+                                        if (!open && !errors.categoryId) {
+                                            const error = validateCategory(categoryId);
+
+                                            if (error) {
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    categoryId: error,
+                                                }));
+                                            }
+                                        }
+                                    }}
                                 >
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
+                                    <SelectTrigger
+                                        className={
+                                            errors.categoryId
+                                                ? 'border-red-500'
+                                                : categoryId && !errors.categoryId
+                                                    ? 'border-green-500'
+                                                    : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    {categories.map(
-                                        (
-                                            category,
-                                        ) => (
-                                            <SelectItem
-                                                key={
-                                                    category.id
-                                                }
-                                                value={String(
-                                                    category.id,
-                                                )}
-                                            >
-                                                {
-                                                    category.name
-                                                }
-                                            </SelectItem>
-                                        ),
-                                    )}
-                                </SelectContent>
-                            </Select>
+                                    <SelectContent>
+                                        {categories.map(
+                                            (
+                                                category,
+                                            ) => (
+                                                <SelectItem
+                                                    key={
+                                                        category.id
+                                                    }
+                                                    value={String(
+                                                        category.id,
+                                                    )}
+                                                >
+                                                    {
+                                                        category.name
+                                                    }
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
 
-                            {errors.categoryId && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.categoryId}
-                                </p>
-                            )}
-                        </div>
+                                {errors.categoryId && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.categoryId}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Item Name
-                            </label>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Item Name
+                                </label>
 
-                            <Input
-                                value={name}
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setName(value);
+                                <Input
+                                    value={name}
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setName(value);
 
-                                    if (errors.name) {
-                                        const error = validateName(value);
+                                        if (errors.name) {
+                                            const error = validateName(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                name: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validateName(name);
                                         setErrors((prev) => ({
                                             ...prev,
                                             name: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: Chicken Burger"
+                                    className={
+                                        errors.name
+                                            ? 'border-red-500'
+                                            : name.trim() && !errors.name
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validateName(name);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        name: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.name
-                                        ? 'border-red-500'
-                                        : name.trim() && !errors.name
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.name && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.name}
-                                </p>
-                            )}
+                                {errors.name && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Price */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Price
-                            </label>
+                        {/* Price & Preparation Time */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Price
+                                </label>
 
-                            <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={price}
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setPrice(value);
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={price}
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setPrice(value);
 
-                                    if (errors.price) {
-                                        const error = validatePrice(value);
+                                        if (errors.price) {
+                                            const error = validatePrice(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                price: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validatePrice(price);
                                         setErrors((prev) => ({
                                             ...prev,
                                             price: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: 10.99"
+                                    className={
+                                        errors.price
+                                            ? 'border-red-500'
+                                            : price && !errors.price
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validatePrice(price);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        price: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.price
-                                        ? 'border-red-500'
-                                        : price && !errors.price
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.price && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.price}
-                                </p>
-                            )}
-                        </div>
+                                {errors.price && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.price}
+                                    </p>
+                                )}
+                            </div>
 
-                        {/* Preparation Time */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Preparation Time (minutes)
-                            </label>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Preparation Time (minutes)
+                                </label>
 
-                            <Input
-                                type="number"
-                                min="0"
-                                max="1440"
-                                value={
-                                    preparationTime
-                                }
-                                onChange={(
-                                    event,
-                                ) => {
-                                    const value = event.target.value;
-                                    setPreparationTime(value);
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="1440"
+                                    value={
+                                        preparationTime
+                                    }
+                                    onChange={(
+                                        event,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setPreparationTime(value);
 
-                                    if (errors.preparationTime) {
-                                        const error = validatePreparationTime(value);
+                                        if (errors.preparationTime) {
+                                            const error = validatePreparationTime(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                preparationTime: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validatePreparationTime(preparationTime);
                                         setErrors((prev) => ({
                                             ...prev,
                                             preparationTime: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: 20"
+                                    className={
+                                        errors.preparationTime
+                                            ? 'border-red-500'
+                                            : preparationTime && !errors.preparationTime
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validatePreparationTime(preparationTime);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        preparationTime: error || undefined,
-                                    }));
-                                }}
-                                className={
-                                    errors.preparationTime
-                                        ? 'border-red-500'
-                                        : preparationTime && !errors.preparationTime
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.preparationTime && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.preparationTime}
-                                </p>
-                            )}
+                                {errors.preparationTime && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.preparationTime}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {/* Replace Image */}
@@ -1726,8 +1731,8 @@ export default function ItemsIndex({
                             />
                         </div>
 
-                        {/* Available */}
-                        <div className="flex items-center gap-2">
+                        {/* Status / Utility */}
+                        <div className="flex items-center gap-2 border-t pt-4">
                             <StatusToggle
                                 checked={
                                     isAvailable

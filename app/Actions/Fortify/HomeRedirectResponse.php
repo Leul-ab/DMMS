@@ -12,6 +12,10 @@ class HomeRedirectResponse implements LoginResponse, RegisterResponse
     {
         $user = $request->user();
 
+        if ($user->requiresPasswordChange()) {
+            return redirect()->route('password.change');
+        }
+
         if ($user->can('view dashboard')) {
             return redirect()->route('dashboard');
         }

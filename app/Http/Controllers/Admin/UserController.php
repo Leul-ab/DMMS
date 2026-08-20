@@ -84,7 +84,12 @@ $validated = $request->validate([
             return back();
         }
 
-        $validated['password'] = Hash::make($validated['password'] ?? '12345678');
+        $defaultPassword = '12345678';
+        $usesDefaultPassword = empty($validated['password']) ||
+            $validated['password'] === $defaultPassword;
+
+        $validated['password'] = Hash::make($validated['password'] ?? $defaultPassword);
+        $validated['must_change_password'] = $usesDefaultPassword;
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_waiter'] = $request->boolean('is_waiter');
         $validated['email_verified_at'] = now();

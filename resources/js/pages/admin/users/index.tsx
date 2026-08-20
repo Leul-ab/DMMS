@@ -255,8 +255,6 @@ export default function UsersIndex({
                 phone: phone || null,
                 role_id: Number(roleId),
                 branch_id: Number(branchId),
-                password: password || null,
-                password_confirmation: passwordConfirmation || null,
                 is_active: isActive,
                 is_waiter: isWaiter,
             },
@@ -653,181 +651,153 @@ export default function UsersIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Name */}
+                        {/* Name & Email */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Full Name
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Full Name
-                            </label>
+                                <Input
+                                    value={name}
+                                    onChange={(event) =>
+                                        setName(event.target.value)
+                                    }
+                                    placeholder="Enter full name"
+                                />
+                            </div>
 
-                            <Input
-                                value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
-                                placeholder="Enter full name"
-                            />
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Email
+                                </label>
+
+                                <Input
+                                    type="email"
+                                    value={email}
+                                    onChange={(event) =>
+                                        setEmail(event.target.value)
+                                    }
+                                    placeholder="Enter email address"
+                                />
+                            </div>
                         </div>
 
-                        {/* Email */}
+                        {/* Phone & Role */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Phone
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Email
-                            </label>
+                                <PhoneInput
+                                    value={phone}
+                                    onChange={setPhone}
+                                    error={pageErrors?.phone}
+                                />
+                            </div>
 
-                            <Input
-                                type="email"
-                                value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
-                                placeholder="Enter email address"
-                            />
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Role
+                                </label>
+
+                                <Select value={roleId} onValueChange={setRoleId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        {roles
+                                            .filter(
+                                                (role) =>
+                                                    role.slug !==
+                                                    'super_admin',
+                                            )
+                                            .map((role) => (
+                                                <SelectItem
+                                                    key={role.id}
+                                                    value={String(role.id)}
+                                                >
+                                                    {role.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
-                        {/* Phone */}
+                        {/* Branch & Password */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Branch
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Phone
-                            </label>
+                                <Select
+                                    value={branchId}
+                                    onValueChange={setBranchId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a branch" />
+                                    </SelectTrigger>
 
-                            <PhoneInput
-                                value={phone}
-                                onChange={setPhone}
-                                error={pageErrors?.phone}
-                            />
-                        </div>
-
-                        {/* Role */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Role
-                            </label>
-
-                            <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                    {roles
-                                        .filter(
-                                            (role) =>
-                                                role.slug !==
-                                                'super_admin',
-                                        )
-                                        .map((role) => (
+                                    <SelectContent>
+                                        {branches.map((branch) => (
                                             <SelectItem
-                                                key={role.id}
-                                                value={String(role.id)}
+                                                key={branch.id}
+                                                value={String(branch.id)}
                                             >
-                                                {role.name}
+                                                {branch.name}
                                             </SelectItem>
                                         ))}
-                                </SelectContent>
-                            </Select>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Password
+                                </label>
+
+                                <Input
+                                    disabled
+                                    value="Default password: 12345678"
+                                />
+                            </div>
                         </div>
 
-                        {/* Branch */}
+                        {/* Status / Utility */}
+                        <div className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={(event) =>
+                                        setIsActive(event.target.checked)
+                                    }
+                                    className="h-4 w-4"
+                                />
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Branch
-                            </label>
+                                <label className="text-sm font-medium">
+                                    Active User
+                                </label>
+                            </div>
 
-                            <Select
-                                value={branchId}
-                                onValueChange={setBranchId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a branch" />
-                                </SelectTrigger>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isWaiter}
+                                    onChange={(event) =>
+                                        setIsWaiter(event.target.checked)
+                                    }
+                                    className="h-4 w-4"
+                                />
 
-                                <SelectContent>
-                                    {branches.map((branch) => (
-                                        <SelectItem
-                                            key={branch.id}
-                                            value={String(branch.id)}
-                                        >
-                                            {branch.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Password */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Password
-                            </label>
-
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(event) =>
-                                    setPassword(event.target.value)
-                                }
-                                placeholder="Leave empty for default password"
-                            />
-
-                            <p className="mt-1 text-xs text-muted-foreground">
-                                If left empty, the default password will be
-                                used.
-                            </p>
-                        </div>
-
-                        {/* Confirm Password */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Confirm Password
-                            </label>
-
-                            <Input
-                                type="password"
-                                value={passwordConfirmation}
-                                onChange={(event) =>
-                                    setPasswordConfirmation(event.target.value)
-                                }
-                                placeholder="Confirm password"
-                            />
-                        </div>
-
-                        {/* Active */}
-
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
-
-                            <label className="text-sm font-medium">
-                                Active User
-                            </label>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isWaiter}
-                                onChange={(event) =>
-                                    setIsWaiter(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
-
-                            <label className="text-sm font-medium">
-                                Is this user a waiter?
-                            </label>
+                                <label className="text-sm font-medium">
+                                    Is this user a waiter?
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -984,129 +954,202 @@ export default function UsersIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Name */}
+                        {/* Name & Email */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Full Name
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Full Name
-                            </label>
+                                <Input
+                                    value={name}
+                                    onChange={(event) =>
+                                        setName(event.target.value)
+                                    }
+                                />
+                            </div>
 
-                            <Input
-                                value={name}
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
-                            />
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Email
+                                </label>
+
+                                <Input
+                                    type="email"
+                                    value={email}
+                                    onChange={(event) =>
+                                        setEmail(event.target.value)
+                                    }
+                                />
+                            </div>
                         </div>
 
-                        {/* Email */}
+                        {/* Phone & Role */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Phone
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Email
-                            </label>
+                                <PhoneInput
+                                    value={phone}
+                                    onChange={setPhone}
+                                    error={pageErrors?.phone}
+                                />
+                            </div>
 
-                            <Input
-                                type="email"
-                                value={email}
-                                onChange={(event) =>
-                                    setEmail(event.target.value)
-                                }
-                            />
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Role
+                                </label>
+
+                                <Select value={roleId} onValueChange={setRoleId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        {roles
+                                            .filter(
+                                                (role) =>
+                                                    role.slug !==
+                                                    'super_admin',
+                                            )
+                                            .map((role) => (
+                                                <SelectItem
+                                                    key={role.id}
+                                                    value={String(role.id)}
+                                                >
+                                                    {role.name}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
-                        {/* Phone */}
+                        {/* Branch & New Password */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Branch
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Phone
-                            </label>
+                                <Select
+                                    value={branchId}
+                                    onValueChange={setBranchId}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a branch" />
+                                    </SelectTrigger>
 
-                            <PhoneInput
-                                value={phone}
-                                onChange={setPhone}
-                                error={pageErrors?.phone}
-                            />
-                        </div>
-
-                        {/* Role */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Role
-                            </label>
-
-                            <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                    {roles
-                                        .filter(
-                                            (role) =>
-                                                role.slug !==
-                                                'super_admin',
-                                        )
-                                        .map((role) => (
+                                    <SelectContent>
+                                        {branches.map((branch) => (
                                             <SelectItem
-                                                key={role.id}
-                                                value={String(role.id)}
+                                                key={branch.id}
+                                                value={String(branch.id)}
                                             >
-                                                {role.name}
+                                                {branch.name}
                                             </SelectItem>
                                         ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Branch */}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    New Password
+                                </label>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Branch
-                            </label>
+                                <Input
+                                    type="password"
+                                    value={password}
+                                    onChange={(event) =>
+                                        setPassword(event.target.value)
+                                    }
+                                    placeholder="Leave empty to keep current password"
+                                />
 
-                            <Select
-                                value={branchId}
-                                onValueChange={setBranchId}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a branch" />
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                    {branches.map((branch) => (
-                                        <SelectItem
-                                            key={branch.id}
-                                            value={String(branch.id)}
-                                        >
-                                            {branch.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* New Password */}
-
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                New Password
-                            </label>
-
-                            <Input
-                                type="password"
-                                value={password}
-                                onChange={(event) =>
-                                    setPassword(event.target.value)
-                                }
-                                placeholder="Leave empty to keep current password"
-                            />
+                                {password.length > 0 && (() => {
+                                    const weakPasswords = [
+                                        'password',
+                                        '12345678',
+                                        'qwerty',
+                                        'admin123',
+                                        'password123',
+                                        '123456',
+                                        'letmein',
+                                        'welcome',
+                                        'abc123',
+                                        'iloveyou',
+                                    ];
+                                    const checks = [
+                                        {
+                                            label: 'Minimum 8 characters',
+                                            valid: password.length >= 8,
+                                        },
+                                        {
+                                            label: 'At least 1 uppercase letter',
+                                            valid: /[A-Z]/.test(password),
+                                        },
+                                        {
+                                            label: 'At least 1 lowercase letter',
+                                            valid: /[a-z]/.test(password),
+                                        },
+                                        {
+                                            label: 'At least 1 number',
+                                            valid: /[0-9]/.test(password),
+                                        },
+                                        {
+                                            label: 'At least 1 special character',
+                                            valid: /[^A-Za-z0-9]/.test(
+                                                password,
+                                            ),
+                                        },
+                                        {
+                                            label:
+                                                'Not a common, weak, easily guessed, or compromised password',
+                                            valid: !weakPasswords.includes(
+                                                password.toLowerCase(),
+                                            ),
+                                        },
+                                    ];
+                                    return (
+                                        <ul className="mt-2 space-y-1 text-xs">
+                                            {checks.map((check) => (
+                                                <li
+                                                    key={check.label}
+                                                    className="flex items-center gap-1.5"
+                                                >
+                                                    <span
+                                                        className={
+                                                            check.valid
+                                                                ? 'font-bold text-green-600'
+                                                                : 'font-bold text-gray-400'
+                                                        }
+                                                    >
+                                                        {check.valid
+                                                            ? '✔'
+                                                            : '○'}
+                                                    </span>
+                                                    <span
+                                                        className={
+                                                            check.valid
+                                                                ? 'text-green-600'
+                                                                : 'text-muted-foreground'
+                                                        }
+                                                    >
+                                                        {check.label}
+                                                    </span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    );
+                                })()}
+                            </div>
                         </div>
 
                         {/* Confirm New Password */}
-
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Confirm New Password
@@ -1122,36 +1165,37 @@ export default function UsersIndex({
                             />
                         </div>
 
-                        {/* Active */}
+                        {/* Status / Utility */}
+                        <div className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={(event) =>
+                                        setIsActive(event.target.checked)
+                                    }
+                                    className="h-4 w-4"
+                                />
 
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={(event) =>
-                                    setIsActive(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
+                                <label className="text-sm font-medium">
+                                    Active User
+                                </label>
+                            </div>
 
-                            <label className="text-sm font-medium">
-                                Active User
-                            </label>
-                        </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={isWaiter}
+                                    onChange={(event) =>
+                                        setIsWaiter(event.target.checked)
+                                    }
+                                    className="h-4 w-4"
+                                />
 
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
-                                checked={isWaiter}
-                                onChange={(event) =>
-                                    setIsWaiter(event.target.checked)
-                                }
-                                className="h-4 w-4"
-                            />
-
-                            <label className="text-sm font-medium">
-                                Is this user a waiter?
-                            </label>
+                                <label className="text-sm font-medium">
+                                    Is this user a waiter?
+                                </label>
+                            </div>
                         </div>
                     </div>
 

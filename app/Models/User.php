@@ -26,6 +26,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int|null $branch_id
  * @property bool $is_waiter
  * @property bool $is_active
+ * @property bool $must_change_password
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -38,7 +39,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Branch|null $branch
  * @property-read WaiterTableAssignment|null $latestTableAssignment
  */
-#[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'branch_id', 'is_active', 'is_waiter'])]
+#[Fillable(['name', 'email', 'phone', 'password', 'role_id', 'branch_id', 'is_active', 'is_waiter', 'must_change_password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
@@ -93,6 +94,12 @@ class User extends Authenticatable implements PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
             'is_waiter' => 'boolean',
+            'must_change_password' => 'boolean',
         ];
+    }
+
+    public function requiresPasswordChange(): bool
+    {
+        return (bool) $this->must_change_password;
     }
 }

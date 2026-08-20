@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Serve;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\RestaurantTable;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -17,14 +18,57 @@ class ServeController extends Controller
      */
     public function index()
     {
-        $orders = Order::with([
-            'table',
-            'orderItems.menuItem',
-            'customer',
-        ])
-            ->where('status', 'ready')
-            ->latest()
-            ->get();
+        $user = auth()->user();
+
+        // Tables directly assigned to this waiter
+        // (waiter -> table assignment relationship).
+        $assignedTableIds = $user
+            ->tableAssignments()
+            ->whereNotNull('table_id')
+            ->pluck('table_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        // Sections that those assigned tables belong to
+        // (table -> table section relationship).
+        $assignedSectionIds = RestaurantTable::query()
+            ->whereIn('id', $assignedTableIds)
+            ->whereNotNull('table_section_id')
+            ->pluck('table_section_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        // Allowed tables = directly assigned tables plus every other table
+        // that belongs to one of the assigned sections.
+        $allowedTableIds = RestaurantTable::query()
+            ->where(function ($query) use ($assignedTableIds, $assignedSectionIds) {
+                $query->whereIn('id', $assignedTableIds);
+
+                if (! empty($assignedSectionIds)) {
+                    $query->orWhereIn('table_section_id', $assignedSectionIds);
+                }
+            })
+            ->pluck('id')
+            ->all();
+
+        // Waiters with no assigned tables/sections see no table orders.
+        if (empty($allowedTableIds)) {
+            $orders = collect();
+        } else {
+            $orders = Order::with([
+                'table',
+                'orderItems.menuItem',
+                'customer',
+            ])
+                ->where('status', 'ready')
+                ->whereIn('table_id', $allowedTableIds)
+                ->latest()
+                ->get();
+        }
 
         return Inertia::render('serve/index', [
             'orders' => $orders,

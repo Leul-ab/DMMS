@@ -71,7 +71,7 @@ export default function Profile({
                                 <Input
                                     id="email"
                                     type="email"
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full opacity-50 cursor-not-allowed pointer-events-none"
                                     defaultValue={auth.user.email}
                                     name="email"
                                     required

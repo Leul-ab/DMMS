@@ -67,85 +67,52 @@ export default function UserEdit({ user, roles, branches }: Props) {
                 />
 
                 <Card className="max-w-2xl">
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) =>
-                                        setData('name', e.target.value)
-                                    }
-                                    placeholder="Full name"
-                                    required
-                                />
-                                <InputError message={errors.name} />
-                            </div>
+                    <CardContent className="p-5">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) =>
+                                            setData('name', e.target.value)
+                                        }
+                                        placeholder="Full name"
+                                        required
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) =>
-                                        setData('email', e.target.value)
-                                    }
-                                    placeholder="email@example.com"
-                                    required
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone (optional)</Label>
-                                <PhoneInput
-                                    id="phone"
-                                    value={data.phone}
-                                    onChange={(value) =>
-                                        setData('phone', value)
-                                    }
-                                    error={errors.phone}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">
-                                    Password (leave blank to keep current)
-                                </Label>
-                                <PasswordInput
-                                    id="password"
-                                    value={data.password}
-                                    onChange={(e) =>
-                                        setData('password', e.target.value)
-                                    }
-                                    placeholder="New password"
-                                />
-                                <InputError message={errors.password} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
-                                    Confirm Password
-                                </Label>
-                                <PasswordInput
-                                    id="password_confirmation"
-                                    value={data.password_confirmation}
-                                    onChange={(e) =>
-                                        setData(
-                                            'password_confirmation',
-                                            e.target.value,
-                                        )
-                                    }
-                                    placeholder="Confirm new password"
-                                />
-                                <InputError
-                                    message={errors.password_confirmation}
-                                />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="phone">Phone (optional)</Label>
+                                    <PhoneInput
+                                        id="phone"
+                                        value={data.phone}
+                                        onChange={(value) =>
+                                            setData('phone', value)
+                                        }
+                                        error={errors.phone}
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) =>
+                                            setData('email', e.target.value)
+                                        }
+                                        placeholder="email@example.com"
+                                        required
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
+
                                 <div className="grid gap-2">
                                     <Label>Role</Label>
                                     <Select
@@ -176,55 +143,94 @@ export default function UserEdit({ user, roles, branches }: Props) {
                                     </Select>
                                     <InputError message={errors.role_id} />
                                 </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password">
+                                        Password (leave blank to keep current)
+                                    </Label>
+                                    <PasswordInput
+                                        id="password"
+                                        value={data.password}
+                                        onChange={(e) =>
+                                            setData('password', e.target.value)
+                                        }
+                                        placeholder="New password"
+                                    />
+                                    <InputError message={errors.password} />
+                                </div>
 
                                 <div className="grid gap-2">
-                                    <Label>Branch</Label>
-                                    <Select
-                                        value={data.branch_id}
-                                        onValueChange={(value) =>
-                                            setData('branch_id', value)
+                                    <Label htmlFor="password_confirmation">
+                                        Confirm Password
+                                    </Label>
+                                    <PasswordInput
+                                        id="password_confirmation"
+                                        value={data.password_confirmation}
+                                        onChange={(e) =>
+                                            setData(
+                                                'password_confirmation',
+                                                e.target.value,
+                                            )
                                         }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a branch" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {branches.map((branch) => (
-                                                <SelectItem
-                                                    key={branch.id}
-                                                    value={String(branch.id)}
-                                                >
-                                                    {branch.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={errors.branch_id} />
+                                        placeholder="Confirm new password"
+                                    />
+                                    <InputError
+                                        message={errors.password_confirmation}
+                                    />
                                 </div>
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onCheckedChange={(checked) =>
-                                        setData('is_active', checked === true)
+                            <div className="grid gap-2">
+                                <Label>Branch</Label>
+                                <Select
+                                    value={data.branch_id}
+                                    onValueChange={(value) =>
+                                        setData('branch_id', value)
                                     }
-                                />
-                                <Label htmlFor="is_active">Active</Label>
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {branches.map((branch) => (
+                                            <SelectItem
+                                                key={branch.id}
+                                                value={String(branch.id)}
+                                            >
+                                                {branch.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={errors.branch_id} />
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="is_waiter"
-                                    checked={data.is_waiter}
-                                    onCheckedChange={(checked) =>
-                                        setData('is_waiter', checked === true)
-                                    }
-                                />
-                                <Label htmlFor="is_waiter">
-                                    Is this user a waiter?
-                                </Label>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="is_active"
+                                        checked={data.is_active}
+                                        onCheckedChange={(checked) =>
+                                            setData('is_active', checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="is_active">Active</Label>
+                                </div>
+
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="is_waiter"
+                                        checked={data.is_waiter}
+                                        onCheckedChange={(checked) =>
+                                            setData('is_waiter', checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="is_waiter">
+                                        Is this user a waiter?
+                                    </Label>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4">

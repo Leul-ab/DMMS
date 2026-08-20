@@ -1,5 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -20,6 +20,7 @@ type Props = {
 export default function Security(props: Props) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+    const [passwordChanged, setPasswordChanged] = useState(false);
 
     return (
         <>
@@ -30,7 +31,7 @@ export default function Security(props: Props) {
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Update password"
+                    title="Security"
                     description="Ensure your account is using a long, random password to stay secure"
                 />
 
@@ -45,6 +46,7 @@ export default function Security(props: Props) {
                         'current_password',
                     ]}
                     resetOnSuccess
+                    onSuccess={() => setPasswordChanged(true)}
                     onError={(errors) => {
                         if (errors.password) {
                             passwordInput.current?.focus();
@@ -56,11 +58,11 @@ export default function Security(props: Props) {
                     }}
                     className="space-y-6"
                 >
-                    {({ errors, processing }) => (
+                    {({ errors, processing, reset }) => (
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="current_password">
-                                    Current password
+                                    Old Password
                                 </Label>
 
                                 <PasswordInput
@@ -69,14 +71,16 @@ export default function Security(props: Props) {
                                     name="current_password"
                                     className="mt-1 block w-full"
                                     autoComplete="current-password"
-                                    placeholder="Current password"
+                                    placeholder="Old Password"
                                 />
 
-                                <InputError message={errors.current_password} />
+                                <InputError
+                                    message={errors.current_password}
+                                />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                <Label htmlFor="password">New Password</Label>
 
                                 <PasswordInput
                                     id="password"
@@ -84,7 +88,7 @@ export default function Security(props: Props) {
                                     name="password"
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
-                                    placeholder="New password"
+                                    placeholder="New Password"
                                     passwordrules={props.passwordRules}
                                 />
 
@@ -93,7 +97,7 @@ export default function Security(props: Props) {
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    Confirm New Password
                                 </Label>
 
                                 <PasswordInput
@@ -101,7 +105,7 @@ export default function Security(props: Props) {
                                     name="password_confirmation"
                                     className="mt-1 block w-full"
                                     autoComplete="new-password"
-                                    placeholder="Confirm password"
+                                    placeholder="Confirm New Password"
                                     passwordrules={props.passwordRules}
                                 />
 
@@ -112,10 +116,19 @@ export default function Security(props: Props) {
 
                             <div className="flex items-center gap-4">
                                 <Button
+                                    type="submit"
                                     disabled={processing}
                                     data-test="update-password-button"
                                 >
                                     Save
+                                </Button>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => reset()}
+                                >
+                                    Cancel
                                 </Button>
                             </div>
                         </>
@@ -123,16 +136,20 @@ export default function Security(props: Props) {
                 </Form>
             </div>
 
-            <ManageTwoFactor
-                canManageTwoFactor={props.canManageTwoFactor}
-                requiresConfirmation={props.requiresConfirmation}
-                twoFactorEnabled={props.twoFactorEnabled}
-            />
+            {passwordChanged && (
+                <>
+                    <ManageTwoFactor
+                        canManageTwoFactor={props.canManageTwoFactor}
+                        requiresConfirmation={props.requiresConfirmation}
+                        twoFactorEnabled={props.twoFactorEnabled}
+                    />
 
-            <ManagePasskeys
-                canManagePasskeys={props.canManagePasskeys}
-                passkeys={props.passkeys}
-            />
+                    <ManagePasskeys
+                        canManagePasskeys={props.canManagePasskeys}
+                        passkeys={props.passkeys}
+                    />
+                </>
+            )}
         </>
     );
 }

@@ -25,6 +25,19 @@ require __DIR__.'/serve.php';
 
 require __DIR__.'/orders.php';
 
+// First-login forced password change
+Route::middleware(['auth'])->group(function () {
+    Route::get(
+        '/password/change',
+        [App\Http\Controllers\Auth\PasswordChangeController::class, 'edit']
+    )->name('password.change');
+
+    Route::put(
+        '/password/change',
+        [App\Http\Controllers\Auth\PasswordChangeController::class, 'update']
+    )->name('password.change.update');
+});
+
 // API routes
 Route::middleware(['auth'])->group(function () {
     Route::get(

@@ -39,7 +39,7 @@ export default function UserCreate({
         name: '',
         email: '',
         phone: '',
-        password: '12345678',
+        password: '',
         role_id: '',
         branch_id: currentBranchId
             ? String(currentBranchId)
@@ -71,61 +71,52 @@ export default function UserCreate({
                 />
 
                 <Card className="max-w-2xl">
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) =>
-                                        setData('name', e.target.value)
-                                    }
-                                    placeholder="Full name"
-                                    required
-                                />
-                                <InputError message={errors.name} />
-                            </div>
+                    <CardContent className="p-5">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) =>
+                                            setData('name', e.target.value)
+                                        }
+                                        placeholder="Full name"
+                                        required
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) =>
-                                        setData('email', e.target.value)
-                                    }
-                                    placeholder="email@example.com"
-                                    required
-                                />
-                                <InputError message={errors.email} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <PhoneInput
-                                    id="phone"
-                                    value={data.phone}
-                                    onChange={(value) =>
-                                        setData('phone', value)
-                                    }
-                                    error={errors.phone ?? pageErrors.phone}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    value={data.password}
-                                    placeholder="12345678"
-                                    disabled
-                                />
-                                <InputError message={errors.password} />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="phone">Phone Number</Label>
+                                    <PhoneInput
+                                        id="phone"
+                                        value={data.phone}
+                                        onChange={(value) =>
+                                            setData('phone', value)
+                                        }
+                                        error={errors.phone ?? pageErrors.phone}
+                                    />
+                                </div>
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) =>
+                                            setData('email', e.target.value)
+                                        }
+                                        placeholder="email@example.com"
+                                        required
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
+
                                 <div className="grid gap-2">
                                     <Label>Role</Label>
                                     <Select
@@ -156,6 +147,21 @@ export default function UserCreate({
                                     </Select>
                                     <InputError message={errors.role_id} />
                                 </div>
+                            </div>
+
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input
+                                        id="password"
+                                        value="Default password: 12345678"
+                                        disabled
+                                    />
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        A default password is assigned. The
+                                        user must change it on first login.
+                                    </p>
+                                </div>
 
                                 <div className="grid gap-2">
                                     <Label>Branch</Label>
@@ -183,28 +189,30 @@ export default function UserCreate({
                                 </div>
                             </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="is_active"
-                                    checked={data.is_active}
-                                    onCheckedChange={(checked) =>
-                                        setData('is_active', checked === true)
-                                    }
-                                />
-                                <Label htmlFor="is_active">Active</Label>
-                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="is_active"
+                                        checked={data.is_active}
+                                        onCheckedChange={(checked) =>
+                                            setData('is_active', checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="is_active">Active</Label>
+                                </div>
 
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="is_waiter"
-                                    checked={data.is_waiter}
-                                    onCheckedChange={(checked) =>
-                                        setData('is_waiter', checked === true)
-                                    }
-                                />
-                                <Label htmlFor="is_waiter">
-                                    Is this user a waiter?
-                                </Label>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="is_waiter"
+                                        checked={data.is_waiter}
+                                        onCheckedChange={(checked) =>
+                                            setData('is_waiter', checked === true)
+                                        }
+                                    />
+                                    <Label htmlFor="is_waiter">
+                                        Is this user a waiter?
+                                    </Label>
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4">

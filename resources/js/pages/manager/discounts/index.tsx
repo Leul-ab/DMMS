@@ -354,8 +354,17 @@ export default function DiscountsIndex({
     // -----------------------------------------
 
     const openEditModal = (discount: Discount) => {
-        setSelectedDiscount(discount);
+        const menuItemsData =
+            (discount.menu_items as
+                | number[]
+                | { id: number }[]
+                | undefined) || [];
 
+        const selectedItems = menuItemsData.map((item) =>
+            typeof item === 'number' ? item : item.id,
+        );
+
+        setSelectedDiscount(discount);
         setName(discount.name);
         setDescription(discount.description || '');
         setDiscountType(discount.discount_type);
@@ -377,7 +386,7 @@ export default function DiscountsIndex({
                   ? `${discount.end_date}T00:00`
                   : '',
         );
-        setEditSelectedMenuItems(discount.menu_items || []);
+        setEditSelectedMenuItems(selectedItems);
         setEditMenuItemSearch('');
 
         setIsEditOpen(true);
@@ -1006,147 +1015,180 @@ export default function DiscountsIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Discount Name
-                            </label>
+                        {/* Name & Discount Type */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Discount Name
+                                </label>
 
-                            <Input
-                                value={name}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setName(value);
+                                <Input
+                                    value={name}
+                                    onChange={(
+                                        event: React.ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setName(value);
 
-                                    if (errors.name) {
-                                        const error = validateName(value);
+                                        if (errors.name) {
+                                            const error = validateName(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                name: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validateName(name);
                                         setErrors((prev) => ({
                                             ...prev,
                                             name: error || undefined,
                                         }));
-                                    }
-                                }}
-                                onBlur={() => {
-                                    const error = validateName(name);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        name: error || undefined,
-                                    }));
-                                }}
-                                placeholder="Example: Summer Sale"
-                                className={
-                                    errors.name
-                                        ? 'border-red-500'
-                                        : name.trim() && !errors.name
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
-
-                            {errors.name && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.name}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Discount Type */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Discount Type
-                            </label>
-
-                            <Select
-                                value={discountType}
-                                onValueChange={(value) => {
-                                    setDiscountType(value);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        discountType:
-                                            validateDiscountType(value) || undefined,
-                                        percentage: value === 'percentage'
-                                            ? validatePercentage(percentage) || undefined
-                                            : undefined,
-                                    }));
-                                }}
-                            >
-                                <SelectTrigger
+                                    }}
+                                    placeholder="Example: Summer Sale"
                                     className={
-                                        errors.discountType
+                                        errors.name
                                             ? 'border-red-500'
-                                            : discountType && !errors.discountType
+                                            : name.trim() && !errors.name
                                                 ? 'border-green-500'
                                                 : ''
                                     }
+                                />
+
+                                {errors.name && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Discount Type
+                                </label>
+
+                                <Select
+                                    value={discountType}
+                                    onValueChange={(value) => {
+                                        setDiscountType(value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            discountType:
+                                                validateDiscountType(value) || undefined,
+                                            percentage: value === 'percentage'
+                                                ? validatePercentage(percentage) || undefined
+                                                : undefined,
+                                        }));
+                                    }}
                                 >
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
+                                    <SelectTrigger
+                                        className={
+                                            errors.discountType
+                                                ? 'border-red-500'
+                                                : discountType && !errors.discountType
+                                                    ? 'border-green-500'
+                                                    : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    <SelectItem value="percentage">
-                                        Percentage
-                                    </SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="percentage">
+                                            Percentage
+                                        </SelectItem>
 
-                                    <SelectItem value="fixed">
-                                        Fixed Amount
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                                        <SelectItem value="fixed">
+                                            Fixed Amount
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                            {errors.discountType && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.discountType}
-                                </p>
-                            )}
+                                {errors.discountType && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.discountType}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
-                        {/* Applies To */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Applies To
-                            </label>
+                        {/* Applies To & Status */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Applies To
+                                </label>
 
-                            <Select
-                                value={appliesTo}
-                                onValueChange={(value) => {
-                                    setAppliesTo(value);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        appliesTo:
-                                            validateAppliesTo(value) || undefined,
-                                    }));
-                                }}
-                            >
-                                <SelectTrigger
-                                    className={
-                                        errors.appliesTo
-                                            ? 'border-red-500'
-                                            : appliesTo && !errors.appliesTo
-                                                ? 'border-green-500'
-                                                : ''
-                                    }
+                                <Select
+                                    value={appliesTo}
+                                    onValueChange={(value) => {
+                                        setAppliesTo(value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            appliesTo:
+                                                validateAppliesTo(value) || undefined,
+                                        }));
+                                    }}
                                 >
-                                    <SelectValue placeholder="Select applies to" />
-                                </SelectTrigger>
+                                    <SelectTrigger
+                                        className={
+                                            errors.appliesTo
+                                                ? 'border-red-500'
+                                                : appliesTo && !errors.appliesTo
+                                                    ? 'border-green-500'
+                                                    : ''
+                                        }
+                                    >
+                                        <SelectValue placeholder="Select applies to" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        All Customers
-                                    </SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Customers
+                                        </SelectItem>
 
-                                    <SelectItem value="members">
-                                        Members Only
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                                        <SelectItem value="members">
+                                            Members Only
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                            {errors.appliesTo && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.appliesTo}
-                                </p>
-                            )}
+                                {errors.appliesTo && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.appliesTo}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Status
+                                </label>
+
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        <SelectItem value="active">
+                                            Active
+                                        </SelectItem>
+
+                                        <SelectItem value="inactive">
+                                            Inactive
+                                        </SelectItem>
+
+                                        <SelectItem value="scheduled">
+                                            Scheduled
+                                        </SelectItem>
+
+                                        <SelectItem value="expired">
+                                            Expired
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Percentage */}
@@ -1315,45 +1357,14 @@ export default function DiscountsIndex({
                             )}
                         </div>
 
-                        {/* Status */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Status
-                            </label>
-
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                    <SelectItem value="active">
-                                        Active
-                                    </SelectItem>
-
-                                    <SelectItem value="inactive">
-                                        Inactive
-                                    </SelectItem>
-
-                                    <SelectItem value="scheduled">
-                                        Scheduled
-                                    </SelectItem>
-
-                                    <SelectItem value="expired">
-                                        Expired
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
                         {/* Date & Time Range */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Date &amp; Time Range
                             </label>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
                                         Start Date &amp; Time
                                     </label>
                                     <DateTimePicker
@@ -1376,8 +1387,8 @@ export default function DiscountsIndex({
                                         error={errors.startDateTime}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
                                         End Date &amp; Time
                                     </label>
                                     <DateTimePicker
@@ -1574,50 +1585,77 @@ export default function DiscountsIndex({
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
-                        {/* Name */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Discount Name
-                            </label>
+                        {/* Name & Discount Type */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Discount Name
+                                </label>
 
-                            <Input
-                                value={name}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const value = event.target.value;
-                                    setName(value);
+                                <Input
+                                    value={name}
+                                    onChange={(
+                                        event: React.ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                        const value = event.target.value;
+                                        setName(value);
 
-                                    if (errors.name) {
-                                        const error = validateName(value);
+                                        if (errors.name) {
+                                            const error = validateName(value);
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                name: error || undefined,
+                                            }));
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const error = validateName(name);
                                         setErrors((prev) => ({
                                             ...prev,
                                             name: error || undefined,
                                         }));
+                                    }}
+                                    placeholder="Example: Summer Sale"
+                                    className={
+                                        errors.name
+                                            ? 'border-red-500'
+                                            : name.trim() && !errors.name
+                                                ? 'border-green-500'
+                                                : ''
                                     }
-                                }}
-                                onBlur={() => {
-                                    const error = validateName(name);
-                                    setErrors((prev) => ({
-                                        ...prev,
-                                        name: error || undefined,
-                                    }));
-                                }}
-                                placeholder="Example: Summer Sale"
-                                className={
-                                    errors.name
-                                        ? 'border-red-500'
-                                        : name.trim() && !errors.name
-                                            ? 'border-green-500'
-                                            : ''
-                                }
-                            />
+                                />
 
-                            {errors.name && (
-                                <p className="mt-1 text-sm text-red-500">
-                                    {errors.name}
-                                </p>
-                            )}
+                                {errors.name && (
+                                    <p className="mt-1 text-sm text-red-500">
+                                        {errors.name}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Discount Type
+                                </label>
+
+                                <Select
+                                    value={discountType}
+                                    onValueChange={setDiscountType}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+
+                                    <SelectContent>
+                                        <SelectItem value="percentage">
+                                            Percentage
+                                        </SelectItem>
+
+                                        <SelectItem value="fixed">
+                                            Fixed Amount
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Description */}
@@ -1636,56 +1674,62 @@ export default function DiscountsIndex({
                             />
                         </div>
 
-                        {/* Discount Type */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Discount Type
-                            </label>
+                        {/* Applies To & Status */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Applies To
+                                </label>
 
-                            <Select
-                                value={discountType}
-                                onValueChange={setDiscountType}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
+                                <Select
+                                    value={appliesTo}
+                                    onValueChange={setAppliesTo}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select applies to" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    <SelectItem value="percentage">
-                                        Percentage
-                                    </SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="all">
+                                            All Customers
+                                        </SelectItem>
 
-                                    <SelectItem value="fixed">
-                                        Fixed Amount
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                                        <SelectItem value="members">
+                                            Members Only
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Applies To */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Applies To
-                            </label>
+                            <div>
+                                <label className="mb-2 block text-sm font-medium">
+                                    Status
+                                </label>
 
-                            <Select
-                                value={appliesTo}
-                                onValueChange={setAppliesTo}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select applies to" />
-                                </SelectTrigger>
+                                <Select value={status} onValueChange={setStatus}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
 
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        All Customers
-                                    </SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="active">
+                                            Active
+                                        </SelectItem>
 
-                                    <SelectItem value="members">
-                                        Members Only
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                                        <SelectItem value="inactive">
+                                            Inactive
+                                        </SelectItem>
+
+                                        <SelectItem value="scheduled">
+                                            Scheduled
+                                        </SelectItem>
+
+                                        <SelectItem value="expired">
+                                            Expired
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Percentage */}
@@ -1783,45 +1827,14 @@ export default function DiscountsIndex({
                             </div>
                         </div>
 
-                        {/* Status */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Status
-                            </label>
-
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-
-                                <SelectContent>
-                                    <SelectItem value="active">
-                                        Active
-                                    </SelectItem>
-
-                                    <SelectItem value="inactive">
-                                        Inactive
-                                    </SelectItem>
-
-                                    <SelectItem value="scheduled">
-                                        Scheduled
-                                    </SelectItem>
-
-                                    <SelectItem value="expired">
-                                        Expired
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
                         {/* Date & Time Range */}
                         <div>
                             <label className="mb-2 block text-sm font-medium">
                                 Date &amp; Time Range
                             </label>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
                                         Start Date &amp; Time
                                     </label>
                                     <DateTimePicker
@@ -1831,8 +1844,8 @@ export default function DiscountsIndex({
                                         }
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="block text-sm text-gray-600">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">
                                         End Date &amp; Time
                                     </label>
                                     <DateTimePicker

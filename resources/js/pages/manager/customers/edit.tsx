@@ -47,116 +47,118 @@ export default function EditCustomer({ customer }: Props) {
                 />
 
                 <Card className="max-w-2xl">
-                    <CardContent className="p-6">
+                    <CardContent className="p-5">
                         <form
                             onSubmit={submit}
-                            className="space-y-6"
+                            className="space-y-4"
                         >
-                            {/* Customer Code */}
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="customer_code"
-                                    className="text-sm font-medium"
-                                >
-                                    Customer Code
-                                </label>
+                            {/* Name + Phone */}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="name"
+                                        className="text-sm font-medium"
+                                    >
+                                        Full Name
+                                    </label>
 
-                                <input
-                                    id="customer_code"
-                                    type="text"
-                                    value={data.customer_code}
-                                    onChange={(e) =>
-                                        setData(
-                                            'customer_code',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                />
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        value={data.name}
+                                        onChange={(e) =>
+                                            setData(
+                                                'name',
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    />
 
-                                {errors.customer_code && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.customer_code}
-                                    </p>
-                                )}
+                                    {errors.name && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.name}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="phone"
+                                        className="text-sm font-medium"
+                                    >
+                                        Phone Number
+                                    </label>
+
+                                    <PhoneInput
+                                        id="phone"
+                                        required
+                                        value={data.phone}
+                                        onChange={(value) =>
+                                            setData('phone', value)
+                                        }
+                                        error={errors.phone}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Name */}
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="name"
-                                    className="text-sm font-medium"
-                                >
-                                    Full Name
-                                </label>
+                            {/* Customer Code + Email */}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="customer_code"
+                                        className="text-sm font-medium"
+                                    >
+                                        Customer Code
+                                    </label>
 
-                                <input
-                                    id="name"
-                                    type="text"
-                                    value={data.name}
-                                    onChange={(e) =>
-                                        setData(
-                                            'name',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                />
+                                    <input
+                                        id="customer_code"
+                                        type="text"
+                                        value={data.customer_code}
+                                        onChange={(e) =>
+                                            setData(
+                                                'customer_code',
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    />
 
-                                {errors.name && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.name}
-                                    </p>
-                                )}
-                            </div>
+                                    {errors.customer_code && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.customer_code}
+                                        </p>
+                                    )}
+                                </div>
 
-                            {/* Phone */}
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="phone"
-                                    className="text-sm font-medium"
-                                >
-                                    Phone Number
-                                </label>
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="email"
+                                        className="text-sm font-medium"
+                                    >
+                                        Email
+                                    </label>
 
-                                <PhoneInput
-                                    id="phone"
-                                    required
-                                    value={data.phone}
-                                    onChange={(value) =>
-                                        setData('phone', value)
-                                    }
-                                    error={errors.phone}
-                                />
-                            </div>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={data.email}
+                                        onChange={(e) =>
+                                            setData(
+                                                'email',
+                                                e.target.value
+                                            )
+                                        }
+                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    />
 
-                            {/* Email */}
-                            <div className="space-y-2">
-                                <label
-                                    htmlFor="email"
-                                    className="text-sm font-medium"
-                                >
-                                    Email
-                                </label>
-
-                                <input
-                                    id="email"
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) =>
-                                        setData(
-                                            'email',
-                                            e.target.value
-                                        )
-                                    }
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                />
-
-                                {errors.email && (
-                                    <p className="text-sm text-red-500">
-                                        {errors.email}
-                                    </p>
-                                )}
+                                    {errors.email && (
+                                        <p className="text-sm text-red-500">
+                                            {errors.email}
+                                        </p>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Membership */}

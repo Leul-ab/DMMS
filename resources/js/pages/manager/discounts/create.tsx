@@ -120,42 +120,66 @@ export default function DiscountCreate({ menuItems }: Props) {
                 />
 
                 <Card className="max-w-2xl">
-                    <CardContent className="pt-6">
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">Discount Name</Label>
-                                <Input
-                                    id="name"
-                                    value={data.name}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setData('name', value);
-                                        const error =
-                                            validateDiscountName(value);
-                                        setNameError(error);
-                                    }}
-                                    onBlur={() => {
-                                        const error = validateDiscountName(
-                                            data.name,
-                                        );
-                                        setNameError(error);
-                                    }}
-                                    placeholder="e.g. Summer Sale, New Customer"
-                                    required
-                                    className={
-                                        nameError
-                                            ? 'border-red-500'
-                                            : data.name.trim() && !nameError
-                                              ? 'border-green-500'
-                                              : ''
-                                    }
-                                />
-                                {nameError && (
-                                    <p className="mt-1 text-sm text-red-500">
-                                        {nameError}
-                                    </p>
-                                )}
-                                <InputError message={errors.name} />
+                    <CardContent className="p-5">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">Discount Name</Label>
+                                    <Input
+                                        id="name"
+                                        value={data.name}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setData('name', value);
+                                            const error =
+                                                validateDiscountName(value);
+                                            setNameError(error);
+                                        }}
+                                        onBlur={() => {
+                                            const error = validateDiscountName(
+                                                data.name,
+                                            );
+                                            setNameError(error);
+                                        }}
+                                        placeholder="e.g. Summer Sale, New Customer"
+                                        required
+                                        className={
+                                            nameError
+                                                ? 'border-red-500'
+                                                : data.name.trim() && !nameError
+                                                  ? 'border-green-500'
+                                                  : ''
+                                        }
+                                    />
+                                    {nameError && (
+                                        <p className="mt-1 text-sm text-red-500">
+                                            {nameError}
+                                        </p>
+                                    )}
+                                    <InputError message={errors.name} />
+                                </div>
+
+                                <div className="grid gap-2">
+                                    <Label htmlFor="discount_type">
+                                        Discount Type
+                                    </Label>
+                                    <Select
+                                        value={data.discount_type}
+                                        onValueChange={(value) =>
+                                            setData('discount_type', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="percentage">
+                                                Percentage
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.discount_type} />
+                                </div>
                             </div>
 
                             <div className="grid gap-2">
@@ -175,52 +199,58 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <InputError message={errors.description} />
                             </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="discount_type">
-                                    Discount Type
-                                </Label>
-                                <Select
-                                    value={data.discount_type}
-                                    onValueChange={(value) =>
-                                        setData('discount_type', value)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="percentage">
-                                            Percentage
-                                        </SelectItem>
-                                        <SelectItem value="fixed">
-                                            Fixed Amount
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.discount_type} />
-                            </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="applies_to">Applies To</Label>
+                                    <Select
+                                        value={data.applies_to}
+                                        onValueChange={(value) =>
+                                            setData('applies_to', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select applies to" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">
+                                                All Customers
+                                            </SelectItem>
+                                            <SelectItem value="members">
+                                                Members Only
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.applies_to} />
+                                </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="applies_to">Applies To</Label>
-                                <Select
-                                    value={data.applies_to}
-                                    onValueChange={(value) =>
-                                        setData('applies_to', value)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select applies to" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All Customers
-                                        </SelectItem>
-                                        <SelectItem value="members">
-                                            Members Only
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.applies_to} />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select
+                                        value={data.status}
+                                        onValueChange={(value) =>
+                                            setData('status', value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="inactive">
+                                                Inactive
+                                            </SelectItem>
+                                            <SelectItem value="scheduled">
+                                                Scheduled
+                                            </SelectItem>
+                                            <SelectItem value="expired">
+                                                Expired
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <InputError message={errors.status} />
+                                </div>
                             </div>
 
                             <div className="grid gap-2">
@@ -273,82 +303,31 @@ export default function DiscountCreate({ menuItems }: Props) {
                                 <InputError message={errors.menu_items} />
                             </div>
 
-                            {data.discount_type === 'percentage' && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="percentage">
-                                        Percentage (%)
-                                    </Label>
-                                    <Input
-                                        id="percentage"
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                        value={data.percentage}
-                                        onChange={(e) =>
-                                            setData(
-                                                'percentage',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="15"
-                                        required
-                                    />
-                                    <InputError message={errors.percentage} />
-                                </div>
-                            )}
-
-                            {data.discount_type === 'fixed' && (
-                                <div className="grid gap-2">
-                                    <Label htmlFor="fixed_amount">
-                                        Fixed Amount
-                                    </Label>
-                                    <Input
-                                        id="fixed_amount"
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={data.fixed_amount}
-                                        onChange={(e) =>
-                                            setData(
-                                                'fixed_amount',
-                                                e.target.value,
-                                            )
-                                        }
-                                        placeholder="10.00"
-                                        required
-                                    />
-                                    <InputError message={errors.fixed_amount} />
-                                </div>
-                            )}
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="status">Status</Label>
-                                <Select
-                                    value={data.status}
-                                    onValueChange={(value) =>
-                                        setData('status', value)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="active">
-                                            Active
-                                        </SelectItem>
-                                        <SelectItem value="inactive">
-                                            Inactive
-                                        </SelectItem>
-                                        <SelectItem value="scheduled">
-                                            Scheduled
-                                        </SelectItem>
-                                        <SelectItem value="expired">
-                                            Expired
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.status} />
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                {data.discount_type === 'percentage' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="percentage">
+                                            Percentage (%)
+                                        </Label>
+                                        <Input
+                                            id="percentage"
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            value={data.percentage}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'percentage',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="15"
+                                            required
+                                        />
+                                        <InputError message={errors.percentage} />
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
