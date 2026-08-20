@@ -611,6 +611,38 @@ export default function DiscountsIndex({
         return '—';
     };
 
+    // Format a date + optional time into a clear, human-readable string.
+    // Date-only strings are treated as local midnight to avoid timezone shifts.
+    const formatDateTime = (date: string | null, time: string | null) => {
+        if (!date) {
+            return '—';
+        }
+
+        const iso = time ? `${date}T${time}` : `${date}T00:00:00`;
+        const parsed = new Date(iso);
+
+        if (isNaN(parsed.getTime())) {
+            return time ? `${date} ${time.slice(0, 5)}` : date;
+        }
+
+        const datePart = parsed.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+
+        if (!time) {
+            return datePart;
+        }
+
+        const timePart = parsed.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+
+        return `${datePart}, ${timePart}`;
+    };
+
     // -----------------------------------------
     // Status Badge Colors
     // -----------------------------------------
@@ -761,8 +793,6 @@ export default function DiscountsIndex({
                                         <tr className="border-b text-left">
                                             <th className="p-3">Name</th>
 
-                                            <th className="p-3">Description</th>
-
                                             <th className="p-3">Type</th>
 
                                             <th className="p-3">
@@ -792,16 +822,6 @@ export default function DiscountsIndex({
                                                 {/* Name */}
                                                 <td className="p-3 font-medium">
                                                     {discount.name}
-                                                </td>
-
-                                                {/* Description */}
-                                                <td className="p-3 text-muted-foreground">
-                                                    {discount.description
-                                                        ? discount.description
-                                                            .length > 50
-                                                            ? `${discount.description.slice(0, 50)}...`
-                                                            : discount.description
-                                                        : '—'}
                                                 </td>
 
                                                 {/* Type */}
@@ -840,18 +860,18 @@ export default function DiscountsIndex({
 
                                                 {/* Start Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.start_date &&
-                                                    discount.start_time
-                                                        ? `${discount.start_date} ${discount.start_time.slice(0, 5)}`
-                                                        : discount.start_date}
+                                                    {formatDateTime(
+                                                        discount.start_date,
+                                                        discount.start_time,
+                                                    )}
                                                 </td>
 
                                                 {/* End Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.end_date &&
-                                                    discount.end_time
-                                                        ? `${discount.end_date} ${discount.end_time.slice(0, 5)}`
-                                                        : discount.end_date}
+                                                    {formatDateTime(
+                                                        discount.end_date,
+                                                        discount.end_time,
+                                                    )}
                                                 </td>
 
                                                 {/* Status */}
