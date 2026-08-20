@@ -1926,13 +1926,29 @@ export function MenuView({
                                             {(() => {
                                                 const activeDiscount = (
                                                     item.discounts ?? []
-                                                ).find(
-                                                    (d) =>
-                                                        d.discount_type ===
-                                                            'percentage' &&
-                                                        Number(d.percentage) >
-                                                            0,
-                                                );
+                                                )
+                                                    .filter(
+                                                        (d) =>
+                                                            d.discount_type ===
+                                                                'percentage' &&
+                                                            Number(d.percentage) >
+                                                                0,
+                                                    )
+                                                    .sort((a, b) => {
+                                                        const aEligible =
+                                                            a.applies_to ===
+                                                                'all' ||
+                                                            isMember;
+                                                        const bEligible =
+                                                            b.applies_to ===
+                                                                'all' ||
+                                                            isMember;
+
+                                                        return (
+                                                            (bEligible ? 1 : 0) -
+                                                            (aEligible ? 1 : 0)
+                                                        );
+                                                    })[0];
 
                                                 if (!activeDiscount) {
                                                     return (

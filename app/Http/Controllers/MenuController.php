@@ -91,7 +91,17 @@ class MenuController extends Controller
         $selectedCategory = $request->query('category');
 
         // Get menu items
-        $menuItemsQuery = MenuItem::with(['category', 'discounts']);
+        $menuItemsQuery = MenuItem::with([
+            'category',
+            'discounts' => function ($query) {
+                // Only currently-active discounts are displayed in the menu.
+                // Inactive/expired are excluded, and the start/end date-time
+                // window must contain "now" (applies_to is still honoured per
+                // customer on the frontend via isMember).
+                $query->whereNotIn('status', ['inactive', 'expired'])
+                    ->activeWindow();
+            },
+        ]);
 
         // Filter by category if selected
         if ($selectedCategory) {
