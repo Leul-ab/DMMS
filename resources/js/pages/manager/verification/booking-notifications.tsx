@@ -168,6 +168,7 @@ export default function BookingVerificationNotifications({
 
     const formatDateTime = (dateStr: string) => {
         const d = new Date(dateStr);
+
         return (
             d.toLocaleDateString([], {
                 month: 'short',
@@ -426,6 +427,7 @@ export default function BookingVerificationNotifications({
                                     disabled={notifications.current_page <= 1}
                                     onClick={() => {
                                         const prevUrl = notifications.links[0]?.url;
+
                                         if (prevUrl) {
                                             router.get(prevUrl, {}, { preserveState: true });
                                         }
@@ -442,6 +444,7 @@ export default function BookingVerificationNotifications({
                                     disabled={notifications.current_page >= notifications.last_page}
                                     onClick={() => {
                                         const nextUrl = notifications.links[notifications.links.length - 1]?.url;
+
                                         if (nextUrl) {
                                             router.get(nextUrl, {}, { preserveState: true });
                                         }

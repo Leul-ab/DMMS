@@ -17,6 +17,7 @@ class OrderItem extends Model
         'quantity',
         'price',
         'notes',
+        'special_preferences',
         'status',
     ];
 
@@ -25,6 +26,7 @@ class OrderItem extends Model
         return [
             'quantity' => 'integer',
             'price' => 'decimal:2',
+            'special_preferences' => 'array',
         ];
     }
 

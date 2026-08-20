@@ -87,7 +87,18 @@ type MenuItem = {
 
 type CartItem = MenuItem & {
     quantity: number;
+    special_preferences: string[];
 };
+
+const SPECIAL_PREFERENCES = [
+    'No Onion',
+    'No Garlic',
+    'No Spicy',
+    'Extra Spicy',
+    'Extra Cheese',
+    'Less Salt',
+    'No Sauce',
+] as const;
 
 type RestaurantTable = {
     id: number;
@@ -320,13 +331,33 @@ export function MenuView({
                 );
             }
 
-            return [...currentCart, { ...item, quantity: 1 }];
+            return [
+                ...currentCart,
+                { ...item, quantity: 1, special_preferences: [] },
+            ];
         });
         toast.success(`${item.name} added to order`, {
             duration: 2000,
             icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
         });
     }, []);
+
+    const togglePreference = (itemId: number, preference: string) => {
+        setCart((currentCart) =>
+            currentCart.map((item) => {
+                if (item.id !== itemId) {
+                    return item;
+                }
+
+                const current = item.special_preferences ?? [];
+                const next = current.includes(preference)
+                    ? current.filter((p) => p !== preference)
+                    : [...current, preference];
+
+                return { ...item, special_preferences: next };
+            }),
+        );
+    };
 
     const increaseQuantity = (itemId: number) => {
         setCart((currentCart) =>
@@ -389,6 +420,7 @@ export function MenuView({
                 items: cart.map((item) => ({
                     id: item.id,
                     quantity: item.quantity,
+                    special_preferences: item.special_preferences ?? [],
                 })),
                 customer_phone: customer_phone || null,
                 special_instructions: specialInstructions.trim() || null,
@@ -568,6 +600,7 @@ export function MenuView({
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -586,6 +619,7 @@ export function MenuView({
 
             if (data.success || data.already_exists) {
                 toast.success('Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.');
+
                 if (data.booking) {
                     setBookingConfirm({
                         ...bookingConfirm,
@@ -620,11 +654,13 @@ export function MenuView({
         if (file) {
             if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
                 toast.error('Please upload a valid payment screenshot (JPG, PNG, or WEBP).');
+
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
                 toast.error('Payment screenshot must not exceed 5 MB.');
+
                 return;
             }
         }
@@ -762,9 +798,12 @@ export function MenuView({
                         {cart.map((item) => (
                             <div
                                 key={item.id}
-                                className="group flex items-center gap-3 rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
+                                className="rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
                             >
-                                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-red-100">
+                                <p className="text-sm font-bold text-stone-800">
+                                    {item.name}
+                                </p>
+                                <div className="mt-2 h-28 w-full overflow-hidden rounded-lg bg-red-100">
                                     {item.image ? (
                                         <img
                                             src={`/storage/${item.image}`}
@@ -773,18 +812,40 @@ export function MenuView({
                                         />
                                     ) : (
                                         <div className="flex h-full items-center justify-center text-red-400">
-                                            <Utensils className="h-5 w-5" />
+                                            <Utensils className="h-6 w-6" />
                                         </div>
                                     )}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-bold text-stone-800">
-                                        {item.name}
+                                <div className="mt-2.5">
+                                    <p className="text-xs font-bold text-stone-800">
+                                        Special Preferences
                                     </p>
-                                    <p className="text-xs text-red-600">
-                                        {Number(item.price).toFixed(2)} ETB
-                                    </p>
-                                    <div className="mt-2 flex items-center gap-2">
+                                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                                        {SPECIAL_PREFERENCES.map((pref) => (
+                                            <label
+                                                key={pref}
+                                                className="flex items-center gap-1.5 text-xs text-stone-700"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={(item.special_preferences ?? []).includes(pref)}
+                                                    onChange={() => togglePreference(item.id, pref)}
+                                                    className="h-3.5 w-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                                />
+                                                {pref}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="mt-2.5 flex items-center justify-between">
+                                    <span className="text-sm font-bold text-red-600">
+                                        {(
+                                            Number(item.price) *
+                                            item.quantity
+                                        ).toFixed(2)}{' '}
+                                        ETB
+                                    </span>
+                                    <div className="flex items-center gap-2">
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -816,12 +877,6 @@ export function MenuView({
                                             <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
-                                </div>
-                                <div className="text-right text-sm font-bold text-red-600">
-                                    {(
-                                        Number(item.price) * item.quantity
-                                    ).toFixed(2)}{' '}
-                                    ETB
                                 </div>
                             </div>
                         ))}
@@ -2218,9 +2273,12 @@ export function MenuView({
                                     {cart.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="flex gap-4 rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
+                                            className="rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
                                         >
-                                            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-red-100">
+                                            <h3 className="font-bold text-stone-800">
+                                                {item.name}
+                                            </h3>
+                                            <div className="mt-3 h-40 w-full overflow-hidden rounded-xl bg-red-100">
                                                 {item.image ? (
                                                     <img
                                                         src={`/storage/${item.image}`}
@@ -2229,67 +2287,80 @@ export function MenuView({
                                                     />
                                                 ) : (
                                                     <div className="flex h-full items-center justify-center text-red-400">
-                                                        <Utensils className="h-6 w-6" />
+                                                        <Utensils className="h-8 w-8" />
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-start justify-between">
-                                                    <h3 className="font-bold text-stone-800">
-                                                        {item.name}
-                                                    </h3>
-                                                    <span className="text-sm font-black whitespace-nowrap text-red-600">
-                                                        {(
-                                                            Number(item.price) *
-                                                            item.quantity
-                                                        ).toFixed(2)}{' '}
-                                                        ETB
-                                                    </span>
-                                                </div>
-                                                <p className="mt-0.5 text-xs text-red-600">
-                                                    {Number(item.price).toFixed(
-                                                        2,
-                                                    )}{' '}
-                                                    ETB each
+                                            <div className="mt-3">
+                                                <p className="text-sm font-bold text-stone-800">
+                                                    Special Preferences
                                                 </p>
-                                                <div className="mt-3 flex items-center gap-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            decreaseQuantity(
-                                                                item.id,
-                                                            )
-                                                        }
-                                                        className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:border-red-400 hover:bg-red-100"
-                                                    >
-                                                        <Minus className="h-3 w-3" />
-                                                    </button>
-                                                    <span className="w-6 text-center text-sm font-bold text-stone-800">
-                                                        {item.quantity}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            increaseQuantity(
-                                                                item.id,
-                                                            )
-                                                        }
-                                                        className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm transition hover:from-red-600 hover:to-red-700 active:scale-90"
-                                                    >
-                                                        <Plus className="h-3 w-3" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            removeFromCart(
-                                                                item.id,
-                                                            )
-                                                        }
-                                                        className="ml-2 text-xs font-semibold text-red-400 transition hover:text-red-500"
-                                                    >
-                                                        Remove
-                                                    </button>
+                                                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5">
+                                                    {SPECIAL_PREFERENCES.map((pref) => (
+                                                        <label
+                                                            key={pref}
+                                                            className="flex items-center gap-1.5 text-sm text-stone-700"
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={(item.special_preferences ?? []).includes(pref)}
+                                                                onChange={() => togglePreference(item.id, pref)}
+                                                                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-500"
+                                                            />
+                                                            {pref}
+                                                        </label>
+                                                    ))}
                                                 </div>
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <p className="text-xs text-red-600">
+                                                    {Number(item.price).toFixed(2)} ETB each
+                                                </p>
+                                                <span className="text-base font-black whitespace-nowrap text-red-600">
+                                                    {(
+                                                        Number(item.price) *
+                                                        item.quantity
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        decreaseQuantity(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:border-red-400 hover:bg-red-100"
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </button>
+                                                <span className="w-6 text-center text-sm font-bold text-stone-800">
+                                                    {item.quantity}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        increaseQuantity(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm transition hover:from-red-600 hover:to-red-700 active:scale-90"
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeFromCart(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="ml-2 text-xs font-semibold text-red-400 transition hover:text-red-500"
+                                                >
+                                                    Remove
+                                                </button>
                                             </div>
                                         </div>
                                     ))}

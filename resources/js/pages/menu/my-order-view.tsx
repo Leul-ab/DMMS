@@ -31,6 +31,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
+    special_preferences?: string[];
     menu_item: MenuItem;
 };
 
@@ -806,40 +807,68 @@ export default function MyOrderView({
                                                         (item) => (
                                                             <div
                                                                 key={item.id}
-                                                                className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3"
+                                                                className="rounded-xl border border-gray-100 bg-white px-4 py-3"
                                                             >
-                                                                <div>
-                                                                    <p className="font-bold">
-                                                                        {
-                                                                            item
-                                                                                .menu_item
-                                                                                .name
-                                                                        }
-                                                                    </p>
-                                                                    <p className="text-sm text-gray-500">
-                                                                        {
+                                                                <div className="flex items-center justify-between">
+                                                                    <div>
+                                                                        <p className="font-bold">
+                                                                            {
+                                                                                item
+                                                                                    .menu_item
+                                                                                    .name
+                                                                            }
+                                                                        </p>
+                                                                        <p className="text-sm text-gray-500">
+                                                                            {
+                                                                                item.quantity
+                                                                            }{' '}
+                                                                            ×{' '}
+                                                                            {Number(
+                                                                                item.price,
+                                                                            ).toFixed(
+                                                                                2,
+                                                                            )}{' '}
+                                                                            ETB
+                                                                        </p>
+                                                                    </div>
+                                                                    <p className="font-black whitespace-nowrap">
+                                                                        {(
+                                                                            Number(
+                                                                                item.price,
+                                                                            ) *
                                                                             item.quantity
-                                                                        }{' '}
-                                                                        ×{' '}
-                                                                        {Number(
-                                                                            item.price,
                                                                         ).toFixed(
                                                                             2,
                                                                         )}{' '}
                                                                         ETB
                                                                     </p>
                                                                 </div>
-                                                                <p className="font-black whitespace-nowrap">
-                                                                    {(
-                                                                        Number(
-                                                                            item.price,
-                                                                        ) *
-                                                                        item.quantity
-                                                                    ).toFixed(
-                                                                        2,
-                                                                    )}{' '}
-                                                                    ETB
-                                                                </p>
+                                                                {item.special_preferences &&
+                                                                    item.special_preferences.length >
+                                                                        0 && (
+                                                                        <div className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                                                                            <p className="text-xs font-bold text-red-800">
+                                                                                Special Preferences
+                                                                            </p>
+                                                                            <ul className="mt-1 list-inside list-disc text-xs text-red-900">
+                                                                                {item.special_preferences.map(
+                                                                                    (
+                                                                                        pref
+                                                                                    ) => (
+                                                                                        <li
+                                                                                            key={
+                                                                                                pref
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                pref
+                                                                                            }
+                                                                                        </li>
+                                                                                    ))
+                                                                                }
+                                                                            </ul>
+                                                                        </div>
+                                                                    )}
                                                             </div>
                                                         ),
                                                     )}

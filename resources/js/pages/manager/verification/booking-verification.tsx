@@ -37,7 +37,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
     Select,
     SelectContent,
@@ -45,6 +44,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useCan } from '@/hooks/use-can';
 
 type Notification = {
@@ -204,6 +204,7 @@ export default function BookingVerificationTab({
                     } else {
                         toast.error('Failed to approve booking payment.');
                     }
+
                     setProcessing(false);
                 },
             }
@@ -238,6 +239,7 @@ export default function BookingVerificationTab({
                     } else {
                         toast.error('Failed to reject booking payment.');
                     }
+
                     setProcessing(false);
                 },
             }
@@ -245,7 +247,10 @@ export default function BookingVerificationTab({
     };
 
     const formatDateTime = (dateStr: string) => {
-        if (!dateStr) return '—';
+        if (!dateStr) {
+return '—';
+}
+
         const d = new Date(dateStr);
 
         return (
@@ -260,7 +265,10 @@ export default function BookingVerificationTab({
     };
 
     const formatDate = (dateStr: string) => {
-        if (!dateStr) return '—';
+        if (!dateStr) {
+return '—';
+}
+
         const d = new Date(dateStr);
 
         return d.toLocaleDateString([], {
@@ -271,7 +279,10 @@ export default function BookingVerificationTab({
     };
 
     const formatTime = (dateStr: string) => {
-        if (!dateStr) return '—';
+        if (!dateStr) {
+return '—';
+}
+
         const d = new Date(dateStr);
 
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });

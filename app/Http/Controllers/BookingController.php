@@ -121,7 +121,7 @@ class BookingController extends Controller
     /**
      * Store a new booking.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
@@ -130,7 +130,6 @@ class BookingController extends Controller
             'source' => ['nullable', 'string', 'in:booking,customer-booking'],
         ]);
 
-        // Check if any of the selected tables are already booked
         $bookedTables = TableBooking::whereIn('status', ['active'])
             ->whereHas('tables', function ($query) use ($validated) {
                 $query->whereIn('restaurant_tables.id', $validated['table_ids']);
@@ -138,19 +137,23 @@ class BookingController extends Controller
             ->exists();
 
         if ($bookedTables) {
-            return back()->withErrors(['tables' => 'Some of the selected tables are already booked.']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Some of the selected tables are already booked.',
+            ], 422);
         }
 
-        // Check if any tables are already assigned to waiters or occupied
         $unavailableTables = RestaurantTable::whereIn('id', $validated['table_ids'])
             ->whereIn('status', ['occupied', 'awaiting_payment'])
             ->exists();
 
         if ($unavailableTables) {
-            return back()->withErrors(['tables' => 'Some of the selected tables are currently occupied.']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Some of the selected tables are currently occupied.',
+            ], 422);
         }
 
-        // Start booking session - store in session
         $expiresAt = Carbon::now()->addMinutes(5);
 
         $booking = TableBooking::create([
@@ -162,37 +165,31 @@ class BookingController extends Controller
             'booking_amount' => 500,
         ]);
 
-        // Attach tables
         $booking->tables()->attach($validated['table_ids']);
 
-        // Update table statuses to 'reserved'
         RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'reserved']);
 
-        // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
 
-        // Store customer phone in session for ownership validation in payment endpoints
-        session(['customer_phone' => $customer?->phone ?? '']);
+        session(['customer_phone' => $booking->customer?->phone ?? '']);
 
-        // Build booking data for the success dialog
         $customer = $booking->customer;
         $tablesList = $booking->tables->pluck('table_number')->toArray();
 
-        return redirect()
-            ->route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index')
-            ->with([
-                'booking_success' => true,
-                'booking_data' => [
-                    'id' => $booking->id,
-                    'customer_name' => $customer?->name ?? 'Unknown',
-                    'customer_phone' => $customer?->phone ?? '',
-                    'tables' => $tablesList,
-                    'booked_at' => $booking->booked_at,
-                    'expires_at' => $booking->expires_at,
-                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
-                    'payment_status' => $booking->payment_status,
-                ],
-            ]);
+        return response()->json([
+            'success' => true,
+            'booking' => [
+                'id' => $booking->id,
+                'customer_name' => $customer?->name ?? 'Unknown',
+                'customer_phone' => $customer?->phone ?? '',
+                'tables' => $tablesList,
+                'booked_at' => $booking->booked_at,
+                'expires_at' => $booking->expires_at,
+                'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
+                'payment_status' => $booking->payment_status,
+                'status' => $booking->status,
+            ],
+        ]);
     }
 
     /**

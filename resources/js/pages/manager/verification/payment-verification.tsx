@@ -75,6 +75,7 @@ type ReceiptItem = {
         id: number;
         name: string;
     };
+    special_preferences?: string[];
 };
 
 type Order = {

@@ -11,6 +11,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
+    special_preferences?: string[];
     menu_item: {
         id: number;
         name: string;

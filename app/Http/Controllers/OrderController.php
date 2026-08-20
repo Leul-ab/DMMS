@@ -13,9 +13,18 @@ use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
+    private const ALLOWED_SPECIAL_PREFERENCES = [
+        'No Onion',
+        'No Garlic',
+        'No Spicy',
+        'Extra Spicy',
+        'Extra Cheese',
+        'Less Salt',
+        'No Sauce',
+    ];
+
     public function store(Request $request)
     {
-        // Use the table_id from the request, or fall back to the session-scanned table
         $tableId = $request->input('table_id')
             ?? session('scanned_table_id')
             ?? session('customer_menu_table_id');
@@ -41,6 +50,17 @@ class OrderController extends Controller
                 'required',
                 'integer',
                 'min:1',
+            ],
+
+            'items.*.special_preferences' => [
+                'nullable',
+                'array',
+            ],
+
+            'items.*.special_preferences.*' => [
+                'string',
+                'max:50',
+                'in:' . implode(',', self::ALLOWED_SPECIAL_PREFERENCES),
             ],
 
             'customer_phone' => [
@@ -172,6 +192,9 @@ class OrderController extends Controller
                     'menu_item_id' => $menuItem->id,
                     'quantity' => $quantity,
                     'price' => $menuItem->price,
+                    'special_preferences' => !empty($item['special_preferences'])
+                        ? array_values(array_unique($item['special_preferences']))
+                        : [],
                     'status' => 'pending',
                 ]);
             }
@@ -227,6 +250,9 @@ class OrderController extends Controller
                         'menu_item_id' => $menuItem->id,
                         'quantity' => $quantity,
                         'price' => $menuItem->price,
+                        'special_preferences' => !empty($item['special_preferences'])
+                            ? array_values(array_unique($item['special_preferences']))
+                            : [],
                         'status' => 'pending',
                     ]);
                 }
@@ -299,6 +325,8 @@ class OrderController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'exists:menu_items,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.special_preferences' => ['nullable', 'array'],
+            'items.*.special_preferences.*' => ['string', 'max:50', 'in:' . implode(',', self::ALLOWED_SPECIAL_PREFERENCES)],
         ]);
 
         $this->addItemsToOrder($validated, $order);

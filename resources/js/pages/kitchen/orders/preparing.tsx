@@ -13,6 +13,7 @@ type OrderItem = {
     id: number;
     quantity: number;
     menu_item: MenuItem;
+    special_preferences?: string[];
 };
 
 type Table = {
@@ -99,6 +100,12 @@ export default function PreparingOrders({ orders }: Props) {
                                             >
                                                 <span>
                                                     {item.menu_item.name}
+
+                                                    {item.special_preferences && item.special_preferences.length > 0 && (
+                                                        <p className="mt-0.5 text-[10px] text-red-700">
+                                                            {item.special_preferences.join(', ')}
+                                                        </p>
+                                                    )}
                                                 </span>
 
                                                 <Badge variant="secondary">

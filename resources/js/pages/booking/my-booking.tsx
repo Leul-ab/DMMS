@@ -329,11 +329,13 @@ export default function MyBooking({ onClose }: Props) {
         if (file) {
             if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
                 toast.error('Please upload a valid payment screenshot (JPG, PNG, or WEBP).');
+
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
                 toast.error('Payment screenshot must not exceed 5 MB.');
+
                 return;
             }
         }
@@ -381,6 +383,7 @@ export default function MyBooking({ onClose }: Props) {
 
             if (data.success || data.already_exists) {
                 toast.success('Payment recorded successfully.\nAccount number copied.\nYour booking payment is marked as Paid.');
+
                 if (data.booking) {
                     setBooking({
                         ...booking,
@@ -471,7 +474,9 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const handleRequestExtension = async () => {
-        if (!booking) return;
+        if (!booking) {
+return;
+}
 
         const method = extensionPaymentMethod || 'cbe_birr';
         setIsSubmittingExtension(true);
@@ -481,6 +486,7 @@ export default function MyBooking({ onClose }: Props) {
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -515,7 +521,9 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const handleCopyExtensionAccount = async () => {
-        if (!extensionPaymentMethod) return;
+        if (!extensionPaymentMethod) {
+return;
+}
 
         const accountNumber = bookingPaymentAccounts[extensionPaymentMethod].number;
 
@@ -534,7 +542,9 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const handleSubmitExtensionVerification = async () => {
-        if (!booking || !extensionPaymentMethod || !extensionTransactionNumber.trim()) return;
+        if (!booking || !extensionPaymentMethod || !extensionTransactionNumber.trim()) {
+return;
+}
 
         setIsSubmittingExtension(true);
 
@@ -543,6 +553,7 @@ export default function MyBooking({ onClose }: Props) {
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
@@ -572,7 +583,9 @@ export default function MyBooking({ onClose }: Props) {
     };
 
     const handleCheckExtensionStatus = async () => {
-        if (!booking) return;
+        if (!booking) {
+return;
+}
 
         setIsCheckingExtension(true);
 
@@ -581,6 +594,7 @@ export default function MyBooking({ onClose }: Props) {
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
+
                 return match ? decodeURIComponent(match[3]) : '';
             };
 

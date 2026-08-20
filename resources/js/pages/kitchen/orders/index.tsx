@@ -12,6 +12,7 @@ type OrderItem = {
     id: number;
     quantity: number;
     menu_item: MenuItem;
+    special_preferences?: string[];
 };
 
 type Table = {

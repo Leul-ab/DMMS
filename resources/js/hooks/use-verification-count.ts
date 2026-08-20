@@ -16,6 +16,7 @@ export function useVerificationCount(pollIntervalMs = 30000) {
     const fetchCounts = async () => {
         try {
             const response = await fetch('/manager/verification-count');
+
             if (response.ok) {
                 const data = await response.json();
                 setCounts({

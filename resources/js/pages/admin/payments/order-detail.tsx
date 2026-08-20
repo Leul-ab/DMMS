@@ -45,6 +45,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     menu_item: { id: number; name: string; image: string | null } | null;
+    special_preferences?: string[];
 };
 
 type Order = {
@@ -277,6 +278,13 @@ export default function PaymentOrderDetail({ order }: Props) {
                                                                 ?.name ||
                                                                 'Item'}
                                                         </p>
+
+                                                        {item.special_preferences && item.special_preferences.length > 0 && (
+                                                            <p className="mt-0.5 text-[10px] text-red-700">
+                                                                {item.special_preferences.join(', ')}
+                                                            </p>
+                                                        )}
+
                                                         <p className="text-xs text-gray-500">
                                                             × {item.quantity}
                                                         </p>

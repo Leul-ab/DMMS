@@ -14,6 +14,7 @@ type OrderItem = {
     quantity: number;
     price?: number;
     menu_item: MenuItem;
+    special_preferences?: string[];
 };
 
 type Table = {
@@ -125,6 +126,12 @@ export default function NewOrders({ orders }: Props) {
                                                     <p className="font-medium">
                                                         {item.menu_item.name}
                                                     </p>
+
+                                                    {item.special_preferences && item.special_preferences.length > 0 && (
+                                                        <p className="mt-0.5 text-[10px] text-red-700">
+                                                            {item.special_preferences.join(', ')}
+                                                        </p>
+                                                    )}
 
                                                     <p className="text-sm text-muted-foreground">
                                                         {item.quantity} ×{' '}

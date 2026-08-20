@@ -21,6 +21,7 @@ type OrderItem = {
     id: number;
     quantity: number;
     menu_item: MenuItem | null;
+    special_preferences?: string[];
 };
 
 type Order = {
