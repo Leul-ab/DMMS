@@ -16,6 +16,7 @@ class DiscountController extends Controller
     public function index(Request $request): Response
     {
         $discounts = Discount::query()
+            ->with('menuItems')
             ->when($request->search, function ($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })

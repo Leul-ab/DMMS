@@ -54,7 +54,7 @@ type Discount = {
     end_date: string;
     start_time: string | null;
     end_time: string | null;
-    menu_items?: number[];
+    menu_items?: number[] | { id: number }[];
 };
 
 type Props = {
@@ -611,6 +611,44 @@ export default function DiscountsIndex({
         return '—';
     };
 
+    // Format a date + optional time into a clear, human-readable string.
+    // Date-only strings are treated as local midnight to avoid timezone shifts.
+    const formatDateTime = (date: string | null, time: string | null) => {
+        if (!date) {
+            return '—';
+        }
+
+        // If the date already carries a time (ISO datetime), use it directly;
+        // otherwise combine the date with the separate time string.
+        const iso = date.includes('T')
+            ? date
+            : time
+              ? `${date}T${time}`
+              : `${date}T00:00:00`;
+        const parsed = new Date(iso);
+
+        if (isNaN(parsed.getTime())) {
+            return time ? `${date} ${time.slice(0, 5)}` : date;
+        }
+
+        const datePart = parsed.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+
+        if (!time) {
+            return datePart;
+        }
+
+        const timePart = parsed.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+        });
+
+        return `${datePart}, ${timePart}`;
+    };
+
     // -----------------------------------------
     // Status Badge Colors
     // -----------------------------------------
@@ -761,8 +799,6 @@ export default function DiscountsIndex({
                                         <tr className="border-b text-left">
                                             <th className="p-3">Name</th>
 
-                                            <th className="p-3">Description</th>
-
                                             <th className="p-3">Type</th>
 
                                             <th className="p-3">
@@ -792,16 +828,6 @@ export default function DiscountsIndex({
                                                 {/* Name */}
                                                 <td className="p-3 font-medium">
                                                     {discount.name}
-                                                </td>
-
-                                                {/* Description */}
-                                                <td className="p-3 text-muted-foreground">
-                                                    {discount.description
-                                                        ? discount.description
-                                                            .length > 50
-                                                            ? `${discount.description.slice(0, 50)}...`
-                                                            : discount.description
-                                                        : '—'}
                                                 </td>
 
                                                 {/* Type */}
@@ -840,18 +866,18 @@ export default function DiscountsIndex({
 
                                                 {/* Start Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.start_date &&
-                                                    discount.start_time
-                                                        ? `${discount.start_date} ${discount.start_time.slice(0, 5)}`
-                                                        : discount.start_date}
+                                                    {formatDateTime(
+                                                        discount.start_date,
+                                                        discount.start_time,
+                                                    )}
                                                 </td>
 
                                                 {/* End Date & Time */}
                                                 <td className="p-3 text-muted-foreground">
-                                                    {discount.end_date &&
-                                                    discount.end_time
-                                                        ? `${discount.end_date} ${discount.end_time.slice(0, 5)}`
-                                                        : discount.end_date}
+                                                    {formatDateTime(
+                                                        discount.end_date,
+                                                        discount.end_time,
+                                                    )}
                                                 </td>
 
                                                 {/* Status */}
@@ -1005,9 +1031,23 @@ export default function DiscountsIndex({
             ========================================= */}
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Add Discount</DialogTitle>
+    <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]"
+        onPointerDownOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+        onInteractOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+    >
+        <DialogHeader>
+            <DialogTitle>Add Discount</DialogTitle>
 
                         <DialogDescription>
                             Create a new discount or promotion.
@@ -1527,10 +1567,10 @@ export default function DiscountsIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.start_date &&
-                                        selectedDiscount.start_time
-                                            ? `${selectedDiscount.start_date} ${selectedDiscount.start_time.slice(0, 5)}`
-                                            : selectedDiscount.start_date}
+                                        {formatDateTime(
+                                            selectedDiscount.start_date,
+                                            selectedDiscount.start_time,
+                                        )}
                                     </p>
                                 </div>
 
@@ -1540,10 +1580,10 @@ export default function DiscountsIndex({
                                     </p>
 
                                     <p className="font-medium">
-                                        {selectedDiscount.end_date &&
-                                        selectedDiscount.end_time
-                                            ? `${selectedDiscount.end_date} ${selectedDiscount.end_time.slice(0, 5)}`
-                                            : selectedDiscount.end_date}
+                                        {formatDateTime(
+                                            selectedDiscount.end_date,
+                                            selectedDiscount.end_time,
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -1574,10 +1614,24 @@ export default function DiscountsIndex({
                 EDIT DISCOUNT MODAL
             ========================================= */}
 
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Discount</DialogTitle>
+           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+    <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]"
+        onPointerDownOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+        onInteractOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+    >
+        <DialogHeader>
+            <DialogTitle>Edit Discount</DialogTitle>
 
                         <DialogDescription>
                             Update the discount information.
@@ -1656,22 +1710,6 @@ export default function DiscountsIndex({
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <textarea
-                                value={description}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) => setDescription(event.target.value)}
-                                rows={3}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            />
                         </div>
 
                         {/* Applies To & Status */}
@@ -1856,6 +1894,23 @@ export default function DiscountsIndex({
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
+
+                            <textarea
+                                value={description}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) => setDescription(event.target.value)}
+                                placeholder="Describe this discount..."
+                                rows={3}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
                         </div>
                     </div>
 
