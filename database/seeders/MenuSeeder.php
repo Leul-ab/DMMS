@@ -14,13 +14,11 @@ class MenuSeeder extends Seeder
         $branch = Branch::where('slug', 'main-branch')->first();
 
         $categories = [
-            ['name' => 'Breakfast', 'description' => 'Start your day right', 'sort_order' => 1, 'is_active' => true],
-            ['name' => 'Lunch', 'description' => 'Midday meals', 'sort_order' => 2, 'is_active' => true],
-            ['name' => 'Dinner', 'description' => 'Evening dining', 'sort_order' => 3, 'is_active' => true],
-            ['name' => 'Beverages', 'description' => 'Refreshing drinks', 'sort_order' => 4, 'is_active' => true],
-            ['name' => 'Desserts', 'description' => 'Sweet treats', 'sort_order' => 5, 'is_active' => true],
-            ['name' => 'Pizza', 'description' => 'Wood-fired pizzas', 'sort_order' => 6, 'is_active' => true],
-            ['name' => 'Burgers', 'description' => 'Juicy burgers', 'sort_order' => 7, 'is_active' => true],
+            ['name' => 'Breakfast', 'description' => 'Traditional Ethiopian morning meals', 'sort_order' => 1, 'is_active' => true],
+            ['name' => 'Lunch', 'description' => 'Hearty midday injera platters', 'sort_order' => 2, 'is_active' => true],
+            ['name' => 'Dinner', 'description' => 'Evening traditional feasts', 'sort_order' => 3, 'is_active' => true],
+            ['name' => 'Beverage', 'description' => 'Refreshing traditional drinks', 'sort_order' => 4, 'is_active' => true],
+            ['name' => 'Hot Drink', 'description' => 'Coffee, tea and warm drinks', 'sort_order' => 5, 'is_active' => true],
         ];
 
         foreach ($categories as $data) {
@@ -32,40 +30,39 @@ class MenuSeeder extends Seeder
 
         $items = [
             // Breakfast
-            ['category' => 'Breakfast', 'name' => 'Pancakes', 'description' => 'Fluffy pancakes with maple syrup', 'price' => 8.99, 'preparation_time' => 10, 'is_available' => true, 'featured' => true],
-            ['category' => 'Breakfast', 'name' => 'Omelette', 'description' => 'Three-egg omelette with vegetables', 'price' => 7.99, 'preparation_time' => 8, 'is_available' => true, 'featured' => false],
-            ['category' => 'Breakfast', 'name' => 'French Toast', 'description' => 'Golden-brown french toast with berries', 'price' => 9.49, 'preparation_time' => 10, 'is_available' => true, 'featured' => false],
+            ['category' => 'Breakfast', 'name' => 'Firfir', 'description' => 'Shredded injera tossed in spicy berbere sauce', 'price' => 150.00, 'preparation_time' => 10, 'is_available' => true, 'featured' => true],
+            ['category' => 'Breakfast', 'name' => 'Chechebsa', 'description' => 'Torn kita bread with berbere, kibbeh and honey', 'price' => 130.00, 'preparation_time' => 8, 'is_available' => true, 'featured' => false],
+            ['category' => 'Breakfast', 'name' => 'Genfo', 'description' => 'Barley porridge with spiced clarified butter', 'price' => 120.00, 'preparation_time' => 10, 'is_available' => true, 'featured' => false],
+            ['category' => 'Breakfast', 'name' => 'Fatira', 'description' => 'Layered fried pastry stuffed with egg', 'price' => 110.00, 'preparation_time' => 12, 'is_available' => true, 'featured' => false],
+            ['category' => 'Breakfast', 'name' => 'Ful Medames', 'description' => 'Mashed fava beans with tomato, onion and chili', 'price' => 100.00, 'preparation_time' => 8, 'is_available' => true, 'featured' => false],
 
             // Lunch
-            ['category' => 'Lunch', 'name' => 'Caesar Salad', 'description' => 'Crisp romaine with parmesan and croutons', 'price' => 10.99, 'preparation_time' => 8, 'is_available' => true, 'featured' => false],
-            ['category' => 'Lunch', 'name' => 'Grilled Chicken Sandwich', 'description' => 'Herb-marinated chicken breast on sourdough', 'price' => 11.99, 'preparation_time' => 12, 'is_available' => true, 'featured' => true],
-            ['category' => 'Lunch', 'name' => 'Soup of the Day', 'description' => 'Freshly made daily soup', 'price' => 5.99, 'preparation_time' => 5, 'is_available' => true, 'featured' => false],
+            ['category' => 'Lunch', 'name' => 'Doro Wot', 'description' => 'Slow-cooked chicken stew with boiled egg on injera', 'price' => 350.00, 'preparation_time' => 25, 'is_available' => true, 'featured' => true],
+            ['category' => 'Lunch', 'name' => 'Misir Wot', 'description' => 'Spicy red lentil stew served on injera', 'price' => 180.00, 'preparation_time' => 15, 'is_available' => true, 'featured' => false],
+            ['category' => 'Lunch', 'name' => 'Shiro Wot', 'description' => 'Silky chickpea flour stew with garlic and berbere', 'price' => 170.00, 'preparation_time' => 15, 'is_available' => true, 'featured' => false],
+            ['category' => 'Lunch', 'name' => 'Beyaynetu', 'description' => 'Fasting platter of assorted vegan stews on injera', 'price' => 250.00, 'preparation_time' => 20, 'is_available' => true, 'featured' => true],
+            ['category' => 'Lunch', 'name' => 'Gomen Besiga', 'description' => 'Collard greens simmered with tender beef', 'price' => 300.00, 'preparation_time' => 20, 'is_available' => true, 'featured' => false],
 
             // Dinner
-            ['category' => 'Dinner', 'name' => 'Grilled Salmon', 'description' => 'Atlantic salmon with lemon butter sauce', 'price' => 18.99, 'preparation_time' => 20, 'is_available' => true, 'featured' => true],
-            ['category' => 'Dinner', 'name' => 'Steak Frites', 'description' => 'Ribeye steak with seasoned fries', 'price' => 24.99, 'preparation_time' => 25, 'is_available' => true, 'featured' => false],
-            ['category' => 'Dinner', 'name' => 'Pasta Carbonara', 'description' => 'Classic carbonara with pancetta', 'price' => 14.99, 'preparation_time' => 15, 'is_available' => true, 'featured' => false],
+            ['category' => 'Dinner', 'name' => 'Kitfo Special', 'description' => 'Minced beef seasoned with mitmita and kibbeh, with ayib and gomen', 'price' => 550.00, 'preparation_time' => 20, 'is_available' => true, 'featured' => true],
+            ['category' => 'Dinner', 'name' => 'Shekla Tibs', 'description' => 'Sizzling beef cubes sauteed with rosemary, served in a clay dish', 'price' => 480.00, 'preparation_time' => 25, 'is_available' => true, 'featured' => false],
+            ['category' => 'Dinner', 'name' => 'Zilzil Tibs', 'description' => 'Strips of beef stir-fried with onions and peppers', 'price' => 450.00, 'preparation_time' => 22, 'is_available' => true, 'featured' => false],
+            ['category' => 'Dinner', 'name' => 'Yebeg Alicha', 'description' => 'Mild lamb stew cooked with turmeric and spices', 'price' => 500.00, 'preparation_time' => 30, 'is_available' => true, 'featured' => false],
+            ['category' => 'Dinner', 'name' => 'Derek Kikil', 'description' => 'Slow-simmered beef shank with awaze dipping sauce', 'price' => 520.00, 'preparation_time' => 35, 'is_available' => true, 'featured' => false],
 
-            // Beverages
-            ['category' => 'Beverages', 'name' => 'Fresh Orange Juice', 'description' => 'Squeezed to order', 'price' => 3.99, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],
-            ['category' => 'Beverages', 'name' => 'Italian Soda', 'description' => 'Sparkling water with fruit syrup', 'price' => 3.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
-            ['category' => 'Beverages', 'name' => 'Espresso', 'description' => 'Double shot espresso', 'price' => 2.49, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
-            ['category' => 'Beverages', 'name' => 'Iced Coffee', 'description' => 'Cold brew with ice', 'price' => 3.99, 'preparation_time' => 3, 'is_available' => true, 'featured' => true],
-            // Desserts
-            ['category' => 'Desserts', 'name' => 'Chocolate Cake', 'description' => 'Rich chocolate layer cake', 'price' => 6.99, 'preparation_time' => 5, 'is_available' => true, 'featured' => true],
-            ['category' => 'Desserts', 'name' => 'Tiramisu', 'description' => 'Classic Italian tiramisu', 'price' => 7.49, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],
-            ['category' => 'Desserts', 'name' => 'Ice Cream Sundae', 'description' => 'Vanilla ice cream with toppings', 'price' => 5.99, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],
+            // Beverage
+            ['category' => 'Beverage', 'name' => 'Tej', 'description' => 'Traditional honey wine brewed with gesho', 'price' => 180.00, 'preparation_time' => 3, 'is_available' => true, 'featured' => true],
+            ['category' => 'Beverage', 'name' => 'Tella', 'description' => 'Homemade traditional barley beer', 'price' => 120.00, 'preparation_time' => 3, 'is_available' => true, 'featured' => false],
+            ['category' => 'Beverage', 'name' => 'Spris', 'description' => 'Layered fresh avocado, mango and papaya juice', 'price' => 150.00, 'preparation_time' => 6, 'is_available' => true, 'featured' => false],
+            ['category' => 'Beverage', 'name' => 'Ambo Water', 'description' => 'Naturally carbonated Ethiopian mineral water', 'price' => 60.00, 'preparation_time' => 2, 'is_available' => true, 'featured' => false],
+            ['category' => 'Beverage', 'name' => 'Fresh Mango Juice', 'description' => 'Freshly blended seasonal mango', 'price' => 120.00, 'preparation_time' => 5, 'is_available' => true, 'featured' => false],
 
-            // Pizza
-            ['category' => 'Pizza', 'name' => 'Margherita', 'description' => 'Tomato, mozzarella, basil', 'price' => 11.99, 'preparation_time' => 15, 'is_available' => true, 'featured' => true],
-            ['category' => 'Pizza', 'name' => 'Pepperoni', 'description' => 'Classic pepperoni pizza', 'price' => 13.49, 'preparation_time' => 15, 'is_available' => true, 'featured' => false],
-            ['category' => 'Pizza', 'name' => 'BBQ Chicken', 'description' => 'BBQ sauce, chicken, red onions', 'price' => 14.99, 'preparation_time' => 18, 'is_available' => true, 'featured' => false],
-
-            // Burgers
-            ['category' => 'Burgers', 'name' => 'Classic Burger', 'description' => 'Beef patty with lettuce, tomato, onion', 'price' => 10.99, 'preparation_time' => 12, 'is_available' => true, 'featured' => true],
-            ['category' => 'Burgers', 'name' => 'Cheese Burger', 'description' => 'Classic with melted cheddar', 'price' => 11.99, 'preparation_time' => 12, 'is_available' => true, 'featured' => false],
-            ['category' => 'Burgers', 'name' => 'Bacon Burger', 'description' => 'Topped with crispy bacon', 'price' => 13.49, 'preparation_time' => 14, 'is_available' => true, 'featured' => false],
-            ['category' => 'Burgers', 'name' => 'Veggie Burger', 'description' => 'Plant-based patty with fresh toppings', 'price' => 11.49, 'preparation_time' => 12, 'is_available' => true, 'featured' => false],
+            // Hot Drink
+            ['category' => 'Hot Drink', 'name' => 'Buna (Ethiopian Coffee)', 'description' => 'Traditional jebena-brewed coffee ceremony style', 'price' => 80.00, 'preparation_time' => 10, 'is_available' => true, 'featured' => true],
+            ['category' => 'Hot Drink', 'name' => 'Macchiato', 'description' => 'Espresso topped with steamed milk, Ethiopian style', 'price' => 90.00, 'preparation_time' => 5, 'is_available' => true, 'featured' => false],
+            ['category' => 'Hot Drink', 'name' => 'Shai (Tea)', 'description' => 'Black tea brewed with fresh ginger and spices', 'price' => 50.00, 'preparation_time' => 5, 'is_available' => true, 'featured' => false],
+            ['category' => 'Hot Drink', 'name' => 'Atmit', 'description' => 'Warm roasted barley drink with milk and honey', 'price' => 70.00, 'preparation_time' => 7, 'is_available' => true, 'featured' => false],
+            ['category' => 'Hot Drink', 'name' => 'Hot Chocolate', 'description' => 'Rich cocoa made with steamed milk', 'price' => 100.00, 'preparation_time' => 6, 'is_available' => true, 'featured' => false],
         ];
 
         foreach ($items as $data) {

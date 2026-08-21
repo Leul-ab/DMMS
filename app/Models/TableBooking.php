@@ -61,7 +61,7 @@ class TableBooking extends Model
 
     public function payments(): HasMany
     {
-        return $this->hasMany(BookingPayment::class);
+        return $this->hasMany(BookingPayment::class, 'booking_id');
     }
 
     public function originalPayment(): HasMany

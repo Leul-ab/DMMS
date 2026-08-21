@@ -20,6 +20,10 @@ class ServeController extends Controller
     {
         $user = auth()->user();
 
+        // Super admins are not tied to any table assignment;
+        // they always see every ready order across the branch.
+        $isSuperAdmin = $user->role?->slug === 'super_admin';
+
         // Tables directly assigned to this waiter
         // (waiter -> table assignment relationship).
         $assignedTableIds = $user
@@ -55,8 +59,9 @@ class ServeController extends Controller
             ->pluck('id')
             ->all();
 
-        // Waiters with no assigned tables/sections see no table orders.
-        if (empty($allowedTableIds)) {
+        // Waiters with no assigned tables/sections see no table orders,
+        // but super admins bypass the assignment scoping entirely.
+        if (! $isSuperAdmin && empty($allowedTableIds)) {
             $orders = collect();
         } else {
             $orders = Order::with([
@@ -65,7 +70,9 @@ class ServeController extends Controller
                 'customer',
             ])
                 ->where('status', 'ready')
-                ->whereIn('table_id', $allowedTableIds)
+                ->when(! $isSuperAdmin, function ($query) use ($allowedTableIds) {
+                    $query->whereIn('table_id', $allowedTableIds);
+                })
                 ->latest()
                 ->get();
         }

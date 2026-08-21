@@ -109,7 +109,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
