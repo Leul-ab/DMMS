@@ -1031,9 +1031,23 @@ export default function DiscountsIndex({
             ========================================= */}
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Add Discount</DialogTitle>
+    <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]"
+        onPointerDownOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+        onInteractOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+    >
+        <DialogHeader>
+            <DialogTitle>Add Discount</DialogTitle>
 
                         <DialogDescription>
                             Create a new discount or promotion.
@@ -1600,10 +1614,24 @@ export default function DiscountsIndex({
                 EDIT DISCOUNT MODAL
             ========================================= */}
 
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Discount</DialogTitle>
+           <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+    <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]"
+        onPointerDownOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+        onInteractOutside={(event) => {
+            const target = event.target as HTMLElement;
+            if (target.closest('[data-date-time-picker-panel]')) {
+                event.preventDefault();
+            }
+        }}
+    >
+        <DialogHeader>
+            <DialogTitle>Edit Discount</DialogTitle>
 
                         <DialogDescription>
                             Update the discount information.
@@ -1682,22 +1710,6 @@ export default function DiscountsIndex({
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-
-                        {/* Description */}
-                        <div>
-                            <label className="mb-2 block text-sm font-medium">
-                                Description
-                            </label>
-
-                            <textarea
-                                value={description}
-                                onChange={(
-                                    event: React.ChangeEvent<HTMLTextAreaElement>,
-                                ) => setDescription(event.target.value)}
-                                rows={3}
-                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                            />
                         </div>
 
                         {/* Applies To & Status */}
@@ -1882,6 +1894,23 @@ export default function DiscountsIndex({
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label className="mb-2 block text-sm font-medium">
+                                Description
+                            </label>
+
+                            <textarea
+                                value={description}
+                                onChange={(
+                                    event: React.ChangeEvent<HTMLTextAreaElement>,
+                                ) => setDescription(event.target.value)}
+                                placeholder="Describe this discount..."
+                                rows={3}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            />
                         </div>
                     </div>
 

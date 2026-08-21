@@ -30,6 +30,9 @@ class MemberDiscountController extends Controller
             ]);
         }
 
+        // Notifications are derived from the member-only discounts that are
+        // currently within their active window, so they appear automatically
+        // when a discount starts and vanish once it ends.
         $discounts = Discount::withoutGlobalScope('branch')
             ->memberAvailable()
             ->where(function ($query) use ($customer) {
@@ -43,64 +46,98 @@ class MemberDiscountController extends Controller
                     ->orWhereNull('branch_id');
             })
             ->orderByDesc('start_date')
+            ->get();
+
+        $readStates = MemberDiscountNotification::where('customer_id', $customer->id)
+            ->whereIn('discount_id', $discounts->pluck('id')->toArray())
             ->get()
+            ->keyBy('discount_id');
+
+        $discountsData = $discounts
             ->map(fn (Discount $discount) => $this->formatDiscount($discount))
             ->all();
 
-        $notifications = MemberDiscountNotification::with('discount')
-            ->where('customer_id', $customer->id)
-            ->whereHas('discount', fn ($query) => $query->where('applies_to', 'members'))
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(function (MemberDiscountNotification $notification) {
+        $notifications = $discounts
+            ->map(function (Discount $discount) use ($readStates) {
+                $row = $readStates->get($discount->id);
+
                 return [
-                    'id' => $notification->id,
-                    'read_at' => $notification->read_at?->toDateTimeString(),
-                    'discount' => $notification->discount
-                        ? $this->formatDiscount($notification->discount)
-                        : null,
+                    'id' => $discount->id,
+                    'discount_id' => $discount->id,
+                    'read_at' => $row?->read_at?->toDateTimeString(),
+                    'discount' => $this->formatDiscount($discount),
                 ];
             })
             ->all();
 
-        $unreadCount = collect($notifications)
-            ->filter(fn ($notification) => $notification['read_at'] === null)
-            ->count();
-
+        // The badge count reflects the number of active member-only discounts.
         return response()->json([
             'success' => true,
-            'discounts' => $discounts,
+            'discounts' => $discountsData,
             'notifications' => $notifications,
-            'unread_count' => $unreadCount,
+            'unread_count' => $discounts->count(),
         ]);
     }
 
     /**
-     * Mark a single member notification as read. Access is restricted to
-     * the member who owns the notification.
+     * Mark a single member discount's notification as read for the member who
+     * owns it. Each discount keeps its own read flag, so marking one read
+     * never affects another discount or another member.
      */
-    public function markRead(Request $request, MemberDiscountNotification $notification)
+    public function markRead(Request $request, Discount $discount)
     {
         $phone = PhoneHelper::normalize($request->input('customer_phone'));
         $customer = $phone ? Customer::where('phone', $phone)->first() : null;
 
-        if (! $customer || ! $customer->is_member || $notification->customer_id !== $customer->id) {
+        if (! $customer || ! $customer->is_member) {
             return response()->json([
                 'success' => false,
                 'message' => 'Access denied.',
             ], 403);
         }
 
+        if ($discount->applies_to !== 'members') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid discount.',
+            ], 404);
+        }
+
+        // FirstOrCreate guarantees each member has exactly one read-state row
+        // per discount (the unique(customer_id, discount_id) constraint
+        // prevents duplicates), and markAsRead only touches this one row.
+        $notification = MemberDiscountNotification::firstOrCreate(
+            [
+                'customer_id' => $customer->id,
+                'discount_id' => $discount->id,
+            ],
+            [
+                'branch_id' => $discount->branch_id,
+                'read_at' => null,
+            ],
+        );
+
         $notification->markAsRead();
 
-        $unreadCount = MemberDiscountNotification::where('customer_id', $customer->id)
-            ->whereNull('read_at')
-            ->whereHas('discount', fn ($query) => $query->where('applies_to', 'members'))
+        // The badge count is the number of currently active member-only
+        // discounts and does not depend on individual read state.
+        $unreadCount = Discount::withoutGlobalScope('branch')
+            ->memberAvailable()
+            ->where(function ($query) use ($customer) {
+                if ($customer->branch_id === null) {
+                    return;
+                }
+
+                $query->where('branch_id', $customer->branch_id)
+                    ->orWhereNull('branch_id');
+            })
             ->count();
 
         return response()->json([
             'success' => true,
             'unread_count' => $unreadCount,
+            'notification_id' => $notification->id,
+            'read_at' => $notification->read_at?->toDateTimeString(),
         ]);
     }
 

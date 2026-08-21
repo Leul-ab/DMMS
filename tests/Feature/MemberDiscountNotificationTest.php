@@ -226,17 +226,15 @@ class MemberDiscountNotificationTest extends TestCase
             ->assertJsonCount(0, 'notifications');
     }
 
-    public function test_member_sees_unread_notification_and_can_mark_it_read(): void
+    public function test_member_sees_member_discount_notification_and_can_mark_it_read(): void
     {
-        $this->makeDiscount(['name' => 'Active']);
+        $discount = $this->makeDiscount(['name' => 'Active']);
         $member = Customer::create([
             'branch_id' => $this->branch->id,
             'name' => 'M',
             'phone' => '+251911111111',
             'is_member' => true,
         ]);
-
-        $this->artisan('discounts:notify-members')->assertSuccessful();
 
         $this->getJson('/customer/member-discounts?customer_phone=' . urlencode($member->phone))
             ->assertOk()
@@ -245,15 +243,23 @@ class MemberDiscountNotificationTest extends TestCase
             ->assertJsonCount(1, 'notifications')
             ->assertJsonFragment(['name' => 'Active']);
 
-        $notification = MemberDiscountNotification::first();
-        $this->postJson('/customer/member-notifications/' . $notification->id . '/read', [
+        // Marking the discount's notification read is keyed by discount id.
+        $this->postJson('/customer/member-notifications/' . $discount->id . '/read', [
             'customer_phone' => $member->phone,
         ])
             ->assertOk()
-            ->assertJsonPath('unread_count', 0);
+            ->assertJsonPath('unread_count', 1); // badge reflects active discounts
+
+        // The individual notification is now read and persists.
+        $this->assertNotNull(
+            MemberDiscountNotification::where('customer_id', $member->id)
+                ->where('discount_id', $discount->id)
+                ->first()
+                ->read_at,
+        );
 
         $this->getJson('/customer/member-discounts?customer_phone=' . urlencode($member->phone))
-            ->assertJsonPath('unread_count', 0);
+            ->assertJsonPath('notifications.0.read_at', fn ($value) => $value !== null);
     }
 
     public function test_non_member_receives_no_notifications(): void
@@ -281,9 +287,10 @@ class MemberDiscountNotificationTest extends TestCase
             ->assertJsonCount(0, 'notifications');
     }
 
-    public function test_member_cannot_mark_another_members_notification_read(): void
+    public function test_marking_one_notification_does_not_affect_others_or_other_members(): void
     {
-        $this->makeDiscount(['name' => 'Active']);
+        $discountA = $this->makeDiscount(['name' => 'A']);
+        $discountB = $this->makeDiscount(['name' => 'B']);
         $member = Customer::create([
             'branch_id' => $this->branch->id,
             'name' => 'M',
@@ -296,19 +303,34 @@ class MemberDiscountNotificationTest extends TestCase
             'phone' => '+251944444444',
             'is_member' => true,
         ]);
-        $this->artisan('discounts:notify-members');
 
-        $notification = MemberDiscountNotification::where('customer_id', $member->id)->first();
+        // The member marks only discount A's notification as read.
+        $this->postJson('/customer/member-notifications/' . $discountA->id . '/read', [
+            'customer_phone' => $member->phone,
+        ])->assertOk();
 
-        $this->postJson('/customer/member-notifications/' . $notification->id . '/read', [
-            'customer_phone' => $other->phone,
-        ])
-            ->assertForbidden();
+        // Discount B (same member) is still unread.
+        $this->assertNull(
+            MemberDiscountNotification::where('customer_id', $member->id)
+                ->where('discount_id', $discountB->id)
+                ->first()
+                ?->read_at,
+        );
 
-        $this->assertDatabaseHas('member_discount_notifications', [
-            'id' => $notification->id,
-            'read_at' => null,
-        ]);
+        // The other member has no read state affected for discount A.
+        $this->assertNull(
+            MemberDiscountNotification::where('customer_id', $other->id)
+                ->where('discount_id', $discountA->id)
+                ->first(),
+        );
+
+        // Only the member's discount A is marked read.
+        $this->assertNotNull(
+            MemberDiscountNotification::where('customer_id', $member->id)
+                ->where('discount_id', $discountA->id)
+                ->first()
+                ->read_at,
+        );
     }
 
     public function test_menu_page_includes_member_notification_props(): void

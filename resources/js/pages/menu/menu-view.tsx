@@ -78,6 +78,7 @@ type Discount = {
 
 type MemberNotification = {
     id: number;
+    discount_id: number;
     read_at: string | null;
     discount: Discount | null;
 };
@@ -569,7 +570,7 @@ export function MenuView({
         }
     };
 
-    const handleMarkNotificationRead = async (id: number) => {
+    const handleMarkNotificationRead = async (discountId: number) => {
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(
@@ -579,7 +580,7 @@ export function MenuView({
                 return match ? decodeURIComponent(match[3]) : '';
             };
             const response = await fetch(
-                `/customer/member-notifications/${id}/read`,
+                `/customer/member-notifications/${discountId}/read`,
                 {
                     method: 'POST',
                     headers: {
@@ -595,15 +596,17 @@ export function MenuView({
             if (data.success) {
                 setLocalNotifications((prev) =>
                     prev.map((n) =>
-                        n.id === id
+                        n.discount_id === discountId
                             ? { ...n, read_at: new Date().toISOString() }
                             : n,
                     ),
                 );
+                // The badge reflects the number of active member-only
+                // discounts and is independent of read state.
                 setLocalUnreadCount(
                     typeof data.unread_count === 'number'
                         ? data.unread_count
-                        : Math.max(0, localUnreadCount - 1),
+                        : localUnreadCount,
                 );
             }
         } catch {
@@ -1374,7 +1377,9 @@ export function MenuView({
                                     onValueChange={(value) => {
                                         router.get(
                                             `${basePath}?table=${value}`,
-                                            {},
+                                            customer_phone
+                                                ? { customer_phone }
+                                                : {},
                                             { preserveScroll: true },
                                         );
                                     }}
@@ -1634,9 +1639,14 @@ export function MenuView({
                                                 <span className="text-sm font-bold text-stone-800">
                                                     Member Notifications
                                                 </span>
-                                                {localUnreadCount > 0 && (
+                                                {localNotifications.filter(
+                                                    (n) => !n.read_at,
+                                                ).length > 0 && (
                                                     <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
-                                                        {localUnreadCount} new
+                                                        {localNotifications.filter(
+                                                            (n) => !n.read_at,
+                                                        ).length}{' '}
+                                                        new
                                                     </span>
                                                 )}
                                             </div>
@@ -1652,11 +1662,11 @@ export function MenuView({
                                                         (n) => (
                                                             <li
                                                                 key={n.id}
-                                                                onClick={() =>
-                                                                    handleMarkNotificationRead(
-                                                                        n.id,
-                                                                    )
-                                                                }
+                                                                    onClick={() =>
+                                                                        handleMarkNotificationRead(
+                                                                            n.discount_id,
+                                                                        )
+                                                                    }
                                                                 className={`cursor-pointer rounded-lg border p-3 transition ${
                                                                     n.read_at
                                                                         ? 'border-stone-100 bg-stone-50'
@@ -1932,23 +1942,22 @@ export function MenuView({
                                                             d.discount_type ===
                                                                 'percentage' &&
                                                             Number(d.percentage) >
-                                                                0,
+                                                                0 &&
+                                                            (d.applies_to ===
+                                                                'all' ||
+                                                                isMember),
                                                     )
-                                                    .sort((a, b) => {
-                                                        const aEligible =
-                                                            a.applies_to ===
-                                                                'all' ||
-                                                            isMember;
-                                                        const bEligible =
-                                                            b.applies_to ===
-                                                                'all' ||
-                                                            isMember;
-
-                                                        return (
-                                                            (bEligible ? 1 : 0) -
-                                                            (aEligible ? 1 : 0)
-                                                        );
-                                                    })[0];
+                                                    .sort(
+                                                        (a, b) =>
+                                                            (b.applies_to ===
+                                                            'members'
+                                                                ? 1
+                                                                : 0) -
+                                                            (a.applies_to ===
+                                                            'members'
+                                                                ? 1
+                                                                : 0),
+                                                    )[0];
 
                                                 if (!activeDiscount) {
                                                     return (
@@ -1961,9 +1970,6 @@ export function MenuView({
                                                     );
                                                 }
 
-                                                const isEligible =
-                                                    activeDiscount.applies_to ===
-                                                        'all' || isMember;
                                                 const discountedPrice =
                                                     Number(item.price) -
                                                     (Number(item.price) *
@@ -1972,48 +1978,28 @@ export function MenuView({
                                                         )) /
                                                         100;
 
-                                                if (isEligible) {
-                                                    return (
-                                                        <div className="flex flex-col items-end gap-1.5">
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="bg-green-100 text-green-800"
-                                                            >
-                                                                {
-                                                                    activeDiscount.percentage
-                                                                }
-                                                                % OFF
-                                                            </Badge>
-                                                            <span className="text-sm whitespace-nowrap text-muted-foreground line-through">
-                                                                {Number(
-                                                                    item.price,
-                                                                ).toFixed(
-                                                                    2,
-                                                                )}{' '}
-                                                                ETB
-                                                            </span>
-                                                            <span className="text-base font-black whitespace-nowrap text-red-600 drop-shadow-sm">
-                                                                {discountedPrice.toFixed(
-                                                                    2,
-                                                                )}{' '}
-                                                                ETB
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                }
-
                                                 return (
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="text-base font-black whitespace-nowrap text-red-600 drop-shadow-sm">
+                                                    <div className="flex flex-col items-end gap-1.5">
+                                                        <Badge
+                                                            variant="secondary"
+                                                            className="bg-green-100 text-green-800"
+                                                        >
+                                                            {
+                                                                activeDiscount.percentage
+                                                            }
+                                                            % OFF
+                                                        </Badge>
+                                                        <span className="text-sm whitespace-nowrap text-muted-foreground line-through">
                                                             {Number(
                                                                 item.price,
                                                             ).toFixed(2)}{' '}
                                                             ETB
                                                         </span>
-                                                        <span className="text-xs text-muted-foreground">
-                                                            ⭐ Register as a
-                                                            Member to unlock
-                                                            this discount.
+                                                        <span className="text-base font-black whitespace-nowrap text-red-600 drop-shadow-sm">
+                                                            {discountedPrice.toFixed(
+                                                                2,
+                                                            )}{' '}
+                                                            ETB
                                                         </span>
                                                     </div>
                                                 );

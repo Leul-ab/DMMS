@@ -28,6 +28,6 @@ Route::post('/customer/verify-member', [CustomerController::class, 'verifyMember
 Route::get('/customer/member-discounts', [MemberDiscountController::class, 'index'])
     ->name('customer.member-discounts');
 
-Route::post('/customer/member-notifications/{notification}/read', [MemberDiscountController::class, 'markRead'])
+Route::post('/customer/member-notifications/{discount}/read', [MemberDiscountController::class, 'markRead'])
     ->name('customer.member-notification.read');
 
