@@ -79,14 +79,14 @@ class CustomerController extends Controller
 
         $customer = Customer::where('phone', $phone)->first();
 
-        if (!$customer) {
+        if (! $customer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Customer not found. Please register first.',
             ]);
         }
 
-        if (!$customer->is_member) {
+        if (! $customer->is_member) {
             return response()->json([
                 'success' => false,
                 'message' => 'You are not a member yet. Join membership to unlock discounts.',

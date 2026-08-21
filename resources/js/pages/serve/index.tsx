@@ -26,7 +26,11 @@ type OrderItem = {
     id: number;
     quantity: number;
     menu_item: MenuItem | null;
+<<<<<<< HEAD
     special_preferences: string[] | null;
+=======
+    special_preferences?: string[];
+>>>>>>> origin/feature/update-booking
 };
 
 type Order = {
@@ -241,6 +245,7 @@ export default function ServeOrders({ orders }: Props) {
                                                 key={item.id}
                                                 className="flex flex-col rounded-md border border-green-100 bg-white px-3 py-2"
                                             >
+<<<<<<< HEAD
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm font-medium">
                                                         {item.menu_item?.name ??
@@ -268,6 +273,21 @@ export default function ServeOrders({ orders }: Props) {
                                                             )}
                                                         </div>
                                                     )}
+=======
+                                                <span className="text-sm font-medium">
+                                                    {item.menu_item?.name ??
+                                                        'Item'}
+
+                                                    {item.special_preferences && item.special_preferences.length > 0 && (
+                                                        <p className="mt-0.5 text-[10px] text-red-700">
+                                                            {item.special_preferences.join(', ')}
+                                                        </p>
+                                                    )}
+                                                </span>
+                                                <Badge variant="secondary">
+                                                    x{item.quantity}
+                                                </Badge>
+>>>>>>> origin/feature/update-booking
                                             </div>
                                         ))}
                                     </div>

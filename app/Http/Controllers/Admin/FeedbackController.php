@@ -8,6 +8,7 @@ use App\Models\MenuItem;
 use App\Models\RestaurantTable;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -51,7 +52,7 @@ class FeedbackController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            $feedbacks = new \Illuminate\Pagination\LengthAwarePaginator(
+            $feedbacks = new LengthAwarePaginator(
                 [],
                 0,
                 $perPage ?? 10,
@@ -112,7 +113,7 @@ class FeedbackController extends Controller
         return response()->streamDownload(function () use ($feedbacks) {
             $handle = fopen('php://output', 'w');
 
-             fputcsv($handle, [
+            fputcsv($handle, [
                 'Customer', 'Phone', 'Order ID', 'Table', 'Menu Items',
                 'Overall Rating', 'Comment', 'Waiter', 'Date',
             ]);

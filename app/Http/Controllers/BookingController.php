@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BookingVerificationNotification;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\BookingPayment;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
-use App\Support\PhoneHelper;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class BookingController extends Controller
@@ -43,7 +43,7 @@ class BookingController extends Controller
             ->orderBy('table_number')
             ->get(['id', 'table_number', 'status']);
 
-        $sections = \App\Models\TableSection::ordered()
+        $sections = TableSection::ordered()
             ->get(['id', 'name', 'description', 'sort_order']);
 
         $sections = $sections->map(function ($section) {
@@ -91,7 +91,7 @@ class BookingController extends Controller
 
         $customer = Customer::where('phone', $phone)->first();
 
-        if (!$customer) {
+        if (! $customer) {
             return response()->json([
                 'found' => false,
                 'message' => 'Customer not found. Please register or check your phone number.',
@@ -109,6 +109,9 @@ class BookingController extends Controller
         ]);
     }
 
+    /**
+     * Store a new booking.
+     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -119,14 +122,18 @@ class BookingController extends Controller
             'booking_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $bookedTables = TableBooking::whereIn('status', ['pending_payment', 'active'])
+        // Check if any of the selected tables are already booked
+        $bookedTables = TableBooking::whereIn('status', ['active'])
             ->whereHas('tables', function ($query) use ($validated) {
                 $query->whereIn('restaurant_tables.id', $validated['table_ids']);
             })
             ->exists();
 
         if ($bookedTables) {
-            return back()->withErrors(['tables' => 'Some of the selected tables are already booked.']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Some of the selected tables are already booked.',
+            ], 422);
         }
 
         $unavailableTables = RestaurantTable::whereIn('id', $validated['table_ids'])
@@ -134,69 +141,49 @@ class BookingController extends Controller
             ->exists();
 
         if ($unavailableTables) {
-            return back()->withErrors(['tables' => 'Some of the selected tables are currently occupied.']);
-        }
-
-        $paymentExpiresAt = Carbon::now()->addMinutes(self::PAYMENT_WINDOW_MINUTES);
-
-        $bookingAmount = $validated['booking_amount'] ?? $this->calculateDefaultBookingAmount($validated['table_ids']);
-
-        DB::transaction(function () use ($validated, $paymentExpiresAt, $bookingAmount) {
-            $booking = TableBooking::create([
-                'customer_id' => $validated['customer_id'],
-                'status' => 'pending_payment',
-                'payment_status' => 'pending',
-                'booking_amount' => $bookingAmount,
-                'booked_at' => Carbon::now(),
-                'expires_at' => $paymentExpiresAt,
-            ]);
-
-            $booking->tables()->attach($validated['table_ids']);
-
-            RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'reserved']);
-
-            session(['active_booking_id' => $booking->id]);
-        });
-
-        $customer = Customer::find($validated['customer_id']);
-        $selectedTableIds = $validated['table_ids'];
-        $tablesList = RestaurantTable::whereIn('id', $selectedTableIds)->pluck('table_number')->toArray();
-        $menuRoute = $validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index';
-
-        if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
-                'success' => true,
-                'booking' => [
-                    'id' => session('active_booking_id'),
-                    'customer_name' => $customer?->name ?? 'Unknown',
-                    'customer_phone' => $customer?->phone ?? '',
-                    'tables' => $tablesList,
-                    'booked_at' => now()->toIso8601String(),
-                    'expires_at' => $paymentExpiresAt->toIso8601String(),
-                    'expires_in_seconds' => self::PAYMENT_WINDOW_MINUTES * 60,
-                    'payment_status' => 'pending',
-                    'booking_amount' => $bookingAmount,
-                    'status' => 'pending_payment',
-                ],
-                'redirect_url' => route($menuRoute),
-            ]);
+                'success' => false,
+                'message' => 'Some of the selected tables are currently occupied.',
+            ], 422);
         }
+
+        // Start booking session - store in session
+        $expiresAt = Carbon::now()->addMinutes(5);
+
+        $booking = TableBooking::create([
+            'customer_id' => $validated['customer_id'],
+            'status' => 'active',
+            'payment_status' => 'unpaid',
+            'booked_at' => Carbon::now(),
+            'expires_at' => $expiresAt,
+        ]);
+
+        // Attach tables
+        $booking->tables()->attach($validated['table_ids']);
+
+        // Update table statuses to 'reserved'
+        RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'reserved']);
+
+        // Store booking ID in session
+        session(['active_booking_id' => $booking->id]);
+
+        // Build booking data for the success dialog
+        $customer = $booking->customer;
+        $tablesList = $booking->tables->pluck('table_number')->toArray();
 
         return redirect()
-            ->route($menuRoute)
+            ->route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index')
             ->with([
                 'booking_success' => true,
                 'booking_data' => [
-                    'id' => session('active_booking_id'),
+                    'id' => $booking->id,
                     'customer_name' => $customer?->name ?? 'Unknown',
                     'customer_phone' => $customer?->phone ?? '',
                     'tables' => $tablesList,
-                    'booked_at' => now()->toIso8601String(),
-                    'expires_at' => $paymentExpiresAt->toIso8601String(),
-                    'expires_in_seconds' => self::PAYMENT_WINDOW_MINUTES * 60,
-                    'payment_status' => 'pending',
-                    'booking_amount' => $bookingAmount,
-                    'status' => 'pending_payment',
+                    'booked_at' => $booking->booked_at,
+                    'expires_at' => $booking->expires_at,
+                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
+                    'payment_status' => $booking->payment_status,
                 ],
                 'customer_phone' => $customer?->phone ?? '',
             ]);
@@ -535,8 +522,12 @@ class BookingController extends Controller
 
     public function cancel(TableBooking $booking): RedirectResponse
     {
-        if (!$booking->canBeCancelled()) {
-            return back()->withErrors(['booking' => 'This booking cannot be cancelled.']);
+        if ($booking->status !== 'active') {
+            return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
+        }
+
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            return back()->withErrors(['booking' => 'The 5-minute cancellation window has expired.']);
         }
 
         $booking->update([
@@ -547,6 +538,14 @@ class BookingController extends Controller
         $tableIds = $booking->tables()->pluck('restaurant_tables.id');
         RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
 
+        // Cancel any pending booking payment verification notifications
+        BookingVerificationNotification::where('booking_id', $booking->id)
+            ->whereIn('status', ['pending', 'read'])
+            ->update([
+                'status' => 'cancelled',
+                'expired_at' => now(),
+            ]);
+
         session()->forget('active_booking_id');
 
         return redirect()->route('menu.index')->with('success', 'Booking cancelled successfully.');
@@ -556,7 +555,7 @@ class BookingController extends Controller
     {
         $bookingId = session('active_booking_id');
 
-        if (!$bookingId) {
+        if (! $bookingId) {
             return response()->json(['booking' => null]);
         }
 
@@ -564,37 +563,36 @@ class BookingController extends Controller
             ->where('id', $bookingId)
             ->first();
 
-        if (!$booking) {
+        if (! $booking) {
             session()->forget('active_booking_id');
+
             return response()->json(['booking' => null]);
         }
 
-        $this->checkAndExpireBooking($booking);
+        $isExpired = false;
+        if ($booking->status === 'active' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            $booking->update([
+                'status' => 'expired',
+                'payment_status' => 'expired',
+                'cancelled_at' => Carbon::now(),
+            ]);
 
-        if ($booking->wasChanged() && $booking->status === 'expired') {
-            session()->forget('active_booking_id');
             $tableIds = $booking->tables()->pluck('restaurant_tables.id');
             RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
+
+            session()->forget('active_booking_id');
 
             return response()->json(['booking' => null, 'expired' => true]);
         }
 
-        $timeRemaining = $booking->time_remaining;
-
-        $pendingOriginalPayment = $booking->payments()
-            ->where('payment_type', 'original')
-            ->where('payment_status', 'pending')
-            ->first();
-
-        $pendingExtensionPayment = $booking->payments()
-            ->where('payment_type', 'extension')
-            ->where('payment_status', 'pending')
-            ->first();
-
-        $isNearExpiry = false;
-        if ($booking->isActive() && $timeRemaining !== null && $timeRemaining <= 300) {
-            $isNearExpiry = true;
+        $timeRemaining = null;
+        if ($booking->status === 'active' && $booking->expires_at) {
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
         }
+
+        $latestNotification = BookingVerificationNotification::where('booking_id', $booking->id)
+            ->latest()
+            ->first();
 
         return response()->json([
             'booking' => [
@@ -618,24 +616,49 @@ class BookingController extends Controller
                 'cancelled_at' => $booking->cancelled_at,
                 'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
-                'is_expired' => false,
-                'is_near_expiry' => $isNearExpiry,
-                'booking_amount' => $booking->booking_amount,
-                'extension_amount' => $booking->extension_amount,
-                'extension_fee' => $booking->extension_fee,
-                'pending_payment' => $pendingOriginalPayment ? [
-                    'id' => $pendingOriginalPayment->id,
-                    'payment_method' => $pendingOriginalPayment->payment_method,
-                    'amount' => $pendingOriginalPayment->amount,
-                    'payment_status' => $pendingOriginalPayment->payment_status,
-                ] : null,
-                'pending_extension_payment' => $pendingExtensionPayment ? [
-                    'id' => $pendingExtensionPayment->id,
-                    'payment_method' => $pendingExtensionPayment->payment_method,
-                    'amount' => $pendingExtensionPayment->amount,
-                    'payment_status' => $pendingExtensionPayment->payment_status,
-                ] : null,
-                'can_extend' => $booking->canBeExtended(),
+                'is_expired' => $isExpired,
+            ],
+        ]);
+    }
+
+    /**
+     * Process payment for a booking within the 5-minute window.
+     */
+    public function pay(TableBooking $booking): JsonResponse
+    {
+        if ($booking->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking is already ' . $booking->status . '.',
+            ], 422);
+        }
+
+        if ($booking->payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking has already been paid.',
+            ], 422);
+        }
+
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The 5-minute payment window has expired.',
+            ], 422);
+        }
+
+        $booking->update([
+            'payment_status' => 'paid',
+            'paid_at' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment confirmed successfully.',
+            'booking' => [
+                'id' => $booking->id,
+                'payment_status' => $booking->payment_status,
+                'paid_at' => $booking->paid_at,
             ],
         ]);
     }
@@ -673,6 +696,8 @@ class BookingController extends Controller
                     'paid_at' => $booking->paid_at,
                     'time_remaining_seconds' => $timeRemaining,
                     'is_expired' => $isExpired,
+                    'extension_payment_status' => $booking->extension_payment_status,
+                    'booking_amount' => $booking->booking_amount,
                 ];
             });
 
@@ -680,6 +705,289 @@ class BookingController extends Controller
             'bookings' => $bookings,
             'total' => $bookings->count(),
             'active_count' => $bookings->where('status', 'active')->where('is_expired', false)->count(),
+        ]);
+    }
+
+    /**
+     * Process payment for a booking within the 5-minute window.
+     */
+    public function pay(Request $request, TableBooking $booking): JsonResponse
+    {
+        if ($booking->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking is already '.$booking->status.'.',
+            ], 422);
+        }
+
+        if ($booking->payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking has already been paid.',
+            ], 422);
+        }
+
+        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The 5-minute payment window has expired.',
+            ], 422);
+        }
+
+        $customerPhone = session('customer_phone');
+        if (! $customerPhone || ! $booking->customer || $booking->customer->phone !== $customerPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: This booking does not belong to the current customer.',
+            ], 403);
+        }
+
+        $paymentMethod = $request->input('payment_method', $booking->payment_method ?: 'cbe_birr');
+
+        try {
+            DB::transaction(function () use ($booking, $paymentMethod) {
+                $booking->update([
+                    'payment_status' => 'pending_verification',
+                    'expires_at' => Carbon::now()->addHours(2),
+                    'payment_method' => $paymentMethod,
+                ]);
+
+                $this->createBookingVerificationNotification($booking, $paymentMethod);
+            });
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Payment verification creation failed', [
+                'booking_id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to create the payment notification. Please refresh the booking and try again.',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment verification request submitted. Please wait for manager approval.',
+            'booking' => [
+                'id' => $booking->id,
+                'payment_status' => 'pending_verification',
+                'paid_at' => $booking->paid_at,
+                'expires_at' => $booking->expires_at,
+                'status' => $booking->status,
+            ],
+        ]);
+    }
+
+    /**
+     * Submit payment verification with screenshot and payment method.
+     */
+    public function submitPaymentVerification(Request $request, TableBooking $booking): JsonResponse
+    {
+        if ($booking->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking is already '.$booking->status.'.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'payment_method' => ['required', 'string', 'in:telebirr,cbe_birr'],
+            'payment_screenshot' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $screenshotPath = null;
+        if ($request->hasFile('payment_screenshot')) {
+            $screenshotPath = $request->file('payment_screenshot')
+                ->store('payment_screenshots', 'public');
+        }
+
+        if ($booking->payment_status !== 'pending_verification' && $booking->payment_status !== 'paid') {
+            $booking->update([
+                'payment_method' => $validated['payment_method'],
+                'payment_status' => 'pending_verification',
+                'expires_at' => now()->addHours(2),
+            ]);
+        }
+
+        $notification = BookingVerificationNotification::where('booking_id', $booking->id)
+            ->whereIn('status', ['pending', 'read'])
+            ->latest()
+            ->first();
+
+        if ($notification) {
+            $notification->update([
+                'payment_screenshot' => $screenshotPath,
+                'payment_method' => $validated['payment_method'],
+                'status' => 'pending',
+            ]);
+        } else {
+            $this->createBookingVerificationNotification($booking, $validated['payment_method'], $screenshotPath);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment submitted for verification.',
+            'booking' => [
+                'id' => $booking->id,
+                'payment_status' => $booking->payment_status,
+                'payment_method' => $booking->payment_method,
+                'transaction_reference' => $booking->transaction_reference,
+                'paid_at' => $booking->paid_at,
+                'expires_at' => $booking->expires_at,
+            ],
+        ]);
+    }
+
+    /**
+     * Request a booking time extension.
+     */
+    public function requestExtension(Request $request, TableBooking $booking): JsonResponse
+    {
+        if ($booking->status !== 'active' && $booking->status !== 'expired') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking cannot be extended.',
+            ], 422);
+        }
+
+        if ($booking->payment_status !== 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'The original booking payment is not paid.',
+            ], 422);
+        }
+
+        if ($booking->extension_payment_status === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'An extension payment is already pending.',
+            ], 422);
+        }
+
+        if ($booking->extension_payment_status === 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking has already been extended.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'payment_method' => ['required', 'string', 'in:telebirr,cbe_birr'],
+        ]);
+
+        $extensionPeriodHours = config('booking_extension.extension_period_hours', 2);
+        $extensionFeePercentage = config('booking_extension.extension_fee_percentage', 50);
+
+        $originalAmount = (float) ($booking->booking_amount ?: 0);
+        $extensionAmount = $originalAmount * ($extensionFeePercentage / 100);
+
+        if ($extensionAmount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to calculate extension amount. Please contact support.',
+            ], 422);
+        }
+
+        $payment = Payment::create([
+            'branch_id' => $booking->branch_id,
+            'order_id' => null,
+            'user_id' => auth()->id(),
+            'table_id' => $booking->tables->first()?->id,
+            'booking_id' => $booking->id,
+            'payment_method' => $validated['payment_method'],
+            'payment_status' => 'pending',
+            'payment_type' => 'extension',
+            'amount' => $extensionAmount,
+            'transaction_reference' => 'EXT-'.strtoupper(uniqid()),
+            'extension_period_hours' => $extensionPeriodHours,
+        ]);
+
+        $booking->update([
+            'extension_payment_status' => 'pending',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Extension payment request created.',
+            'payment' => [
+                'id' => $payment->id,
+                'amount' => $payment->amount,
+                'payment_method' => $payment->payment_method,
+                'payment_status' => $payment->payment_status,
+                'payment_type' => $payment->payment_type,
+                'extension_period_hours' => $extensionPeriodHours,
+            ],
+            'booking' => [
+                'id' => $booking->id,
+                'extension_payment_status' => $booking->extension_payment_status,
+            ],
+        ]);
+    }
+
+    /**
+     * Apply a booking extension after payment verification.
+     */
+    public function extendBooking(Request $request, TableBooking $booking): JsonResponse
+    {
+        if ($booking->extension_payment_status !== 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Extension payment has not been verified.',
+            ], 422);
+        }
+
+        $extensionPeriodHours = config('booking_extension.extension_period_hours', 2);
+
+        $booking->update([
+            'status' => 'active',
+            'expires_at' => Carbon::now()->addHours($extensionPeriodHours),
+            'last_extended_at' => Carbon::now(),
+            'extension_applied_at' => $booking->extension_applied_at ?: Carbon::now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking extended successfully.',
+            'booking' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'expires_at' => $booking->expires_at,
+                'extension_payment_status' => $booking->extension_payment_status,
+            ],
+        ]);
+    }
+
+    /**
+     * Check extension payment status.
+     */
+    public function checkExtensionStatus(TableBooking $booking): JsonResponse
+    {
+        $extensionPayment = $booking->extensionPayment()->first();
+
+        return response()->json([
+            'booking' => [
+                'id' => $booking->id,
+                'status' => $booking->status,
+                'payment_status' => $booking->payment_status,
+                'expires_at' => $booking->expires_at,
+                'extension_payment_status' => $booking->extension_payment_status,
+                'extension_applied_at' => $booking->extension_applied_at,
+                'last_extended_at' => $booking->last_extended_at,
+            ],
+            'extension_payment' => $extensionPayment ? [
+                'id' => $extensionPayment->id,
+                'amount' => $extensionPayment->amount,
+                'payment_method' => $extensionPayment->payment_method,
+                'payment_status' => $extensionPayment->payment_status,
+                'verified_at' => $extensionPayment->verified_at,
+            ] : null,
         ]);
     }
 
@@ -695,19 +1003,21 @@ class BookingController extends Controller
 
         $customer = Customer::where('phone', $phone)->first();
 
-        if (!$customer) {
+        if (! $customer) {
             return response()->json([
                 'found' => false,
                 'message' => 'No customer found with that phone number.',
             ]);
         }
 
+        session(['customer_phone' => $customer->phone]);
+
         $booking = TableBooking::with(['customer', 'tables', 'payments'])
             ->where('customer_id', $customer->id)
             ->orderBy('created_at', 'desc')
             ->first();
 
-        if (!$booking) {
+        if (! $booking) {
             return response()->json([
                 'found' => false,
                 'message' => 'No booking found for this customer.',
@@ -721,23 +1031,15 @@ class BookingController extends Controller
             RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
         }
 
-        $timeRemaining = $booking->time_remaining;
-        $isExpired = $booking->status === 'expired';
-
-        $pendingOriginalPayment = $booking->payments()
-            ->where('payment_type', 'original')
-            ->where('payment_status', 'pending')
-            ->first();
-
-        $pendingExtensionPayment = $booking->payments()
-            ->where('payment_type', 'extension')
-            ->where('payment_status', 'pending')
-            ->first();
-
-        $isNearExpiry = false;
-        if ($booking->isActive() && $timeRemaining !== null && $timeRemaining <= 300) {
-            $isNearExpiry = true;
+        $timeRemaining = null;
+        if ($booking->status === 'active' && $booking->expires_at && !$isExpired) {
+            $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
         }
+
+        // Load any rejection notification message for the customer
+        $latestNotification = BookingVerificationNotification::where('booking_id', $booking->id)
+            ->latest()
+            ->first();
 
         return response()->json([
             'found' => true,
@@ -746,7 +1048,7 @@ class BookingController extends Controller
                 'customer_name' => $booking->customer?->name ?? 'Unknown',
                 'customer_phone' => $booking->customer?->phone ?? 'N/A',
                 'customer_id' => $booking->customer?->id,
-                'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
+                'tables' => $booking->tables->map(fn ($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
                 'payment_status' => $booking->payment_status,
                 'extension_payment_status' => $booking->extension_payment_status,
@@ -758,23 +1060,6 @@ class BookingController extends Controller
                 'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
                 'is_expired' => $isExpired,
-                'is_near_expiry' => $isNearExpiry,
-                'booking_amount' => $booking->booking_amount,
-                'extension_amount' => $booking->extension_amount,
-                'extension_fee' => $booking->extension_fee,
-                'pending_payment' => $pendingOriginalPayment ? [
-                    'id' => $pendingOriginalPayment->id,
-                    'payment_method' => $pendingOriginalPayment->payment_method,
-                    'amount' => $pendingOriginalPayment->amount,
-                    'payment_status' => $pendingOriginalPayment->payment_status,
-                ] : null,
-                'pending_extension_payment' => $pendingExtensionPayment ? [
-                    'id' => $pendingExtensionPayment->id,
-                    'payment_method' => $pendingExtensionPayment->payment_method,
-                    'amount' => $pendingExtensionPayment->amount,
-                    'payment_status' => $pendingExtensionPayment->payment_status,
-                ] : null,
-                'can_extend' => $booking->canBeExtended(),
             ],
         ]);
     }
@@ -794,7 +1079,7 @@ class BookingController extends Controller
                 'customer_name' => $booking->customer?->name ?? 'Unknown',
                 'customer_phone' => $booking->customer?->phone ?? 'N/A',
                 'customer_email' => $booking->customer?->email ?? 'N/A',
-                'tables' => $booking->tables->map(fn($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
+                'tables' => $booking->tables->map(fn ($t) => ['id' => $t->id, 'table_number' => $t->table_number]),
                 'status' => $booking->status,
                 'payment_status' => $booking->payment_status,
                 'extension_payment_status' => $booking->extension_payment_status,
@@ -807,81 +1092,7 @@ class BookingController extends Controller
                 'booking_amount' => $booking->booking_amount,
                 'extension_amount' => $booking->extension_amount,
                 'is_expired' => $isExpired,
-                'payments' => $booking->payments->map(function ($p) {
-                    return [
-                        'id' => $p->id,
-                        'payment_method' => $p->payment_method,
-                        'payment_type' => $p->payment_type,
-                        'amount' => $p->amount,
-                        'payment_status' => $p->payment_status,
-                        'paid_at' => $p->paid_at,
-                        'verified_at' => $p->verified_at,
-                        'transaction_number' => $p->transaction_number,
-                    ];
-                }),
             ],
         ]);
-    }
-
-    private function calculateDefaultBookingAmount(array $tableIds): float
-    {
-        $tableCount = count($tableIds);
-        $defaultFeePerTable = (float) config('booking.default_fee_per_table', 500);
-
-        return $tableCount * $defaultFeePerTable;
-    }
-
-    private function checkAndExpireBooking(TableBooking $booking): void
-    {
-        if ($booking->status === 'pending_payment' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
-            $booking->update([
-                'status' => 'expired',
-                'payment_status' => 'expired',
-                'cancelled_at' => Carbon::now(),
-            ]);
-
-            $payment = $booking->payments()
-                ->where('payment_type', 'original')
-                ->where('payment_status', 'pending')
-                ->first();
-
-            if ($payment) {
-                $payment->update(['payment_status' => 'expired']);
-            }
-
-            $tableIds = $booking->tables()->pluck('restaurant_tables.id');
-            RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
-        }
-
-        if ($booking->status === 'active' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
-            $booking->update([
-                'status' => 'expired',
-                'cancelled_at' => Carbon::now(),
-            ]);
-
-            $tableIds = $booking->tables()->pluck('restaurant_tables.id');
-            RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
-        }
-    }
-
-    private function getPaymentBlockedMessage(TableBooking $booking): string
-    {
-        if ($booking->status === 'expired' || $booking->payment_status === 'expired') {
-            return 'Payment time expired. This booking has been cancelled.';
-        }
-
-        if ($booking->payment_status === 'paid') {
-            return 'This booking has already been paid.';
-        }
-
-        if ($booking->status !== 'pending_payment') {
-            return 'This booking is not in a payable state.';
-        }
-
-        if ($booking->isPaymentExpired()) {
-            return 'The 5-minute payment window has expired.';
-        }
-
-        return 'Payment is not available for this booking.';
     }
 }

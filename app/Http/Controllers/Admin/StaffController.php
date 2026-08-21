@@ -4,17 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
-use App\Models\RestaurantTable;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WaiterTableAssignment;
 use App\Support\PhoneHelper;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -71,7 +69,7 @@ class StaffController extends Controller
             return back();
         }
 
-        $validated['name'] = $validated['first_name'] . ' ' . $validated['last_name'];
+        $validated['name'] = $validated['first_name'].' '.$validated['last_name'];
         $validated['password'] = Hash::make($validated['password']);
         $validated['is_active'] = $request->boolean('is_active');
         $validated['is_waiter'] = $request->boolean('is_waiter');
@@ -112,7 +110,7 @@ class StaffController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'phone' => $phoneRules,
             'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role_id' => ['required', 'exists:roles,id'],
@@ -155,6 +153,7 @@ class StaffController extends Controller
 
         if ($user->id === auth()->id()) {
             Inertia::flash('toast', ['type' => 'error', 'message' => 'You cannot delete your own account.']);
+
             return back();
         }
 

@@ -11,7 +11,11 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
+<<<<<<< HEAD
     special_preferences: string[] | null;
+=======
+    special_preferences?: string[];
+>>>>>>> origin/feature/update-booking
     menu_item: {
         id: number;
         name: string;

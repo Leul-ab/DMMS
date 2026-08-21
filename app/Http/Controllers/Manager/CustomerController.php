@@ -113,7 +113,7 @@ class CustomerController extends Controller
                 'nullable',
                 'email',
                 'max:255',
-                'unique:customers,email,' . $customer->id,
+                'unique:customers,email,'.$customer->id,
             ],
             'is_member' => [
                 'boolean',
@@ -148,7 +148,7 @@ class CustomerController extends Controller
     public function toggleMembership(Customer $customer)
     {
         $customer->update([
-            'is_member' => !$customer->is_member,
+            'is_member' => ! $customer->is_member,
         ]);
 
         return back()->with('success', 'Membership status updated successfully.');

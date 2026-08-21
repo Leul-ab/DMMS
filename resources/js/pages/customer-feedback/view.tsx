@@ -13,6 +13,7 @@ type Order = {
     order_items: {
         id: number;
         quantity: number;
+        special_preferences?: string[];
         menu_item: { id: number; name: string };
     }[];
 };

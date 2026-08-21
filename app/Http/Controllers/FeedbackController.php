@@ -117,7 +117,7 @@ class FeedbackController extends Controller
         }
 
         // Check if feedback exists.
-        if (!$order->feedback) {
+        if (! $order->feedback) {
             return redirect()
                 ->route('menu.customer-my-order')
                 ->with('error', 'No feedback has been submitted for this order yet.');
