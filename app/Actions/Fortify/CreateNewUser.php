@@ -45,4 +45,3 @@ class CreateNewUser implements CreatesNewUsers
         ]);
     }
 }
-

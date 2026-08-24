@@ -32,6 +32,8 @@ type Booking = {
     cancelled_at: string | null;
     time_remaining_seconds: number | null;
     is_expired: boolean;
+    extension_payment_status?: string | null;
+    booking_amount?: string | number | null;
 };
 
 type BookingsResponse = {
@@ -472,16 +474,43 @@ function BookingCard({
                                 className={`font-medium ${
                                     booking.payment_status === 'paid'
                                         ? 'text-green-600'
-                                        : booking.payment_status === 'expired'
-                                          ? 'text-red-600'
-                                          : 'text-yellow-600'
+                                        : booking.payment_status === 'pending_verification' || booking.payment_status === 'pending'
+                                          ? 'text-yellow-600'
+                                          : booking.payment_status === 'expired'
+                                            ? 'text-red-600'
+                                            : 'text-yellow-600'
                                 }`}
                             >
                                 {booking.payment_status === 'paid'
                                     ? 'Paid'
-                                    : booking.payment_status === 'expired'
-                                      ? 'Expired'
-                                      : 'Unpaid'}
+                                    : booking.payment_status === 'pending_verification' || booking.payment_status === 'pending'
+                                      ? 'Pending Verification'
+                                      : booking.payment_status === 'expired'
+                                        ? 'Expired'
+                                        : 'Unpaid'}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Extension Status */}
+                    {booking.extension_payment_status && (
+                        <div className="flex items-center gap-2 text-sm">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            <span className="text-gray-500">Extension:</span>
+                            <span
+                                className={`font-medium ${
+                                    booking.extension_payment_status === 'paid'
+                                        ? 'text-green-600'
+                                        : booking.extension_payment_status === 'rejected'
+                                          ? 'text-red-600'
+                                          : 'text-yellow-600'
+                                }`}
+                            >
+                                {booking.extension_payment_status === 'paid'
+                                    ? 'Applied'
+                                    : booking.extension_payment_status === 'rejected'
+                                      ? 'Not Applied'
+                                      : 'Pending'}
                             </span>
                         </div>
                     )}

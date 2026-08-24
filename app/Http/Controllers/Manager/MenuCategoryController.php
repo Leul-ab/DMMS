@@ -130,7 +130,7 @@ class MenuCategoryController extends Controller
     public function toggleStatus(MenuCategory $category): RedirectResponse
     {
         $category->update([
-            'is_active' => !$category->is_active,
+            'is_active' => ! $category->is_active,
         ]);
 
         return back()->with('success', 'Category status updated successfully.');

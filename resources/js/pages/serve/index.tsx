@@ -27,6 +27,7 @@ type OrderItem = {
     quantity: number;
     menu_item: MenuItem | null;
     special_preferences: string[] | null;
+
 };
 
 type Order = {
@@ -268,6 +269,7 @@ export default function ServeOrders({ orders }: Props) {
                                                             )}
                                                         </div>
                                                     )}
+
                                             </div>
                                         ))}
                                     </div>

@@ -12,6 +12,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 
@@ -105,7 +107,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureRedirects(): void
     {
-        app()->singleton(\Laravel\Fortify\Contracts\LoginResponse::class, HomeRedirectResponse::class);
-        app()->singleton(\Laravel\Fortify\Contracts\RegisterResponse::class, HomeRedirectResponse::class);
+        app()->singleton(LoginResponse::class, HomeRedirectResponse::class);
+        app()->singleton(RegisterResponse::class, HomeRedirectResponse::class);
     }
 }

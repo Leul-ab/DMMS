@@ -103,6 +103,7 @@ export default function PreparingOrders({ orders }: Props) {
                                                         {item.menu_item.name}
                                                     </span>
 
+
                                                     <Badge variant="secondary">
                                                         x{item.quantity}
                                                     </Badge>

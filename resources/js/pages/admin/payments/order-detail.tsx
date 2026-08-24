@@ -46,6 +46,7 @@ type OrderItem = {
     price: string;
     menu_item: { id: number; name: string; image: string | null } | null;
     special_preferences: string[] | null;
+
 };
 
 type Order = {

@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
@@ -17,16 +18,17 @@ class TableBooking extends Model
         'customer_id',
         'status',
         'payment_status',
+        'payment_method',
+        'transaction_reference',
         'booking_amount',
         'extension_amount',
         'extension_payment_status',
-        'extension_paid_at',
-        'extension_expires_at',
-        'original_expires_at',
         'booked_at',
         'expires_at',
+        'original_expires_at',
         'cancelled_at',
-        'paid_at',
+        'extension_paid_at',
+        'extension_expires_at',
     ];
 
     protected function casts(): array
@@ -34,13 +36,14 @@ class TableBooking extends Model
         return [
             'booking_amount' => 'decimal:2',
             'extension_amount' => 'decimal:2',
+            'booking_amount' => 'decimal:2',
+            'extension_amount' => 'decimal:2',
             'booked_at' => 'datetime',
             'expires_at' => 'datetime',
             'original_expires_at' => 'datetime',
-            'extension_expires_at' => 'datetime',
             'cancelled_at' => 'datetime',
-            'paid_at' => 'datetime',
             'extension_paid_at' => 'datetime',
+            'extension_expires_at' => 'datetime',
         ];
     }
 
@@ -59,6 +62,9 @@ class TableBooking extends Model
         );
     }
 
+    /**
+     * Payment records captured through the customer booking flow.
+     */
     public function payments(): HasMany
     {
         return $this->hasMany(BookingPayment::class, 'booking_id');
@@ -72,6 +78,14 @@ class TableBooking extends Model
     public function extensionPayment(): HasMany
     {
         return $this->payments()->where('payment_type', 'extension');
+    }
+
+    /**
+     * The verified payment record created through manager verification.
+     */
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'booking_id')->where('payment_type', 'booking');
     }
 
     public function isPendingPayment(): bool

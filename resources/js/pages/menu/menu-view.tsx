@@ -5,6 +5,7 @@ import {
     Minus,
     Trash2,
     Copy,
+    Check,
     CheckCircle2,
     Clock,
     ChefHat,
@@ -23,6 +24,9 @@ import {
     Leaf,
     Flame,
     MessageSquareText,
+    RefreshCw,
+    Upload,
+    Image,
 } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
@@ -111,6 +115,8 @@ type CartItem = MenuItem & {
     special_preferences: string[];
 };
 
+
+
 type RestaurantTable = {
     id: number;
     table_number: number;
@@ -124,8 +130,14 @@ type BookingData = {
     tables: number[];
     booked_at: string;
     expires_at: string;
-    expires_in_seconds: number;
+    expires_in_seconds?: number | null;
     payment_status: string;
+    payment_method?: string | null;
+    transaction_number?: string | null;
+    amount?: string | number | null;
+    paid_at?: string | null;
+    verification_status?: string | null;
+    rejection_reason?: string | null;
 };
 
 type Props = {
@@ -259,6 +271,20 @@ export function MenuView({
         bookingConfirm?.expires_in_seconds ?? 300,
     );
 
+    const [paymentStep, setPaymentStep] = useState<'idle' | 'select' | 'account' | 'verification' | 'success'>('idle');
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+    const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null);
+    const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+    const [isSubmittingVerification, setIsSubmittingVerification] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const bookingPaymentAccounts: Record<string, { label: string; number: string }> = {
+        telebirr: { label: 'Telebirr', number: '0912345678' },
+        cbe_birr: { label: 'CBE', number: '100012345678' },
+    };
+
+
+
     useEffect(() => {
         if (booking_success && customer_phone && booking_data) {
             setBookingConfirm(booking_data);
@@ -272,12 +298,20 @@ export function MenuView({
             return;
         }
 
+        if (bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification') {
+            return;
+        }
+
+        if (bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification') {
+            return;
+        }
+
         const interval = setInterval(() => {
             setCountdown((prev) => Math.max(0, prev - 1));
         }, 1000);
 
-        return () => clearInterval(interval);
-    }, [showBookingSuccess]);
+    }, [showBookingSuccess, bookingConfirm?.payment_status]);
+
 
     useEffect(() => {
         const checkActiveBooking = async () => {
@@ -343,12 +377,32 @@ export function MenuView({
             }
 
             return [...currentCart, { ...item, quantity: 1, special_preferences: [] }];
+
         });
         toast.success(`${item.name} added to order`, {
             duration: 2000,
             icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
         });
     }, []);
+
+    const togglePreference = (itemId: number, preference: string) => {
+        setCart((currentCart) =>
+            currentCart.map((item) => {
+                if (item.id !== itemId) {
+                    return item;
+                }
+
+                const current = item.special_preferences ?? [];
+                const next = current.includes(preference)
+                    ? current.filter((p) => p !== preference)
+                    : [...current, preference];
+
+                return { ...item, special_preferences: next };
+            }),
+        );
+    };
+
+
 
     const increaseQuantity = (itemId: number) => {
         setCart((currentCart) =>
@@ -379,22 +433,7 @@ export function MenuView({
         toast.info('Item removed from order');
     };
 
-    const togglePreference = (itemId: number, preference: string) => {
-        setCart((currentCart) =>
-            currentCart.map((item) => {
-                if (item.id !== itemId) {
-                    return item;
-                }
 
-                const current = item.special_preferences ?? [];
-                const next = current.includes(preference)
-                    ? current.filter((p) => p !== preference)
-                    : [...current, preference];
-
-                return { ...item, special_preferences: next };
-            }),
-        );
-    };
 
     const cartTotal = cart.reduce(
         (total, item) => total + Number(item.price) * item.quantity,
@@ -633,6 +672,176 @@ export function MenuView({
         }
     };
 
+    const handlePayNow = () => {
+        setPaymentStep('select');
+    };
+
+    const handleSelectMethod = (method: string) => {
+        setSelectedPaymentMethod(method);
+        setPaymentStep('account');
+    };
+
+    const handleCopyAccount = async () => {
+        if (!selectedPaymentMethod || !bookingConfirm || copySuccess) {
+            return;
+        }
+
+        const accountNumber = bookingPaymentAccounts[selectedPaymentMethod].number;
+
+        try {
+            await navigator.clipboard.writeText(accountNumber);
+            setCopySuccess(true);
+
+            const getXsrfToken = () => {
+                const match = document.cookie.match(
+                    new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
+                );
+
+                return match ? decodeURIComponent(match[3]) : '';
+            };
+
+            const response = await fetch(`/customer/bookings/${bookingConfirm.id}/copy-account`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': getXsrfToken(),
+                },
+                body: JSON.stringify({
+                    payment_method: selectedPaymentMethod,
+                }),
+            });
+
+            const data = await response.json();
+
+            const paymentMethodLabel = bookingPaymentAccounts[selectedPaymentMethod]?.label || 'Payment';
+
+            if (data.success) {
+                if (data.notification_error) {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.`);
+                    toast.error(data.notification_error_message || 'The payment notification could not be created. Please try again.');
+                } else {
+                    toast.success(`${paymentMethodLabel} account number copied successfully.\nPayment verification request submitted.\nPlease wait for manager approval.`);
+                }
+
+                if (data.booking) {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: data.booking.payment_status || 'pending_verification',
+                        payment_method: data.booking.payment_method || selectedPaymentMethod,
+                        verification_status: data.booking.verification_status || null,
+                    });
+                } else {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: 'pending_verification',
+                        payment_method: selectedPaymentMethod,
+                    });
+                }
+            } else if (data.already_exists) {
+                toast.success(data.message || 'Account number copied.\nThis booking has already been paid.');
+
+                if (data.booking) {
+                    setBookingConfirm({
+                        ...bookingConfirm,
+                        payment_status: data.booking.payment_status || 'pending_verification',
+                        payment_method: data.booking.payment_method || selectedPaymentMethod,
+                        verification_status: data.booking.verification_status || null,
+                    });
+                }
+            } else {
+                toast.error(data.message || 'Account number copied. However, we could not submit your payment verification request. Please try again.');
+            }
+
+            setTimeout(() => {
+                setCopySuccess(false);
+            }, 2000);
+        } catch {
+            toast.error('Unable to copy account number.');
+            setCopySuccess(false);
+        }
+    };
+
+    const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+
+        if (file) {
+            if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+                toast.error('Please upload a valid payment screenshot (JPG, PNG, or WEBP).');
+
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Payment screenshot must not exceed 5 MB.');
+
+                return;
+            }
+        }
+
+        setPaymentScreenshot(file);
+        setScreenshotPreview(file ? URL.createObjectURL(file) : null);
+    };
+
+    const handleRemoveScreenshot = () => {
+        setPaymentScreenshot(null);
+        setScreenshotPreview(null);
+    };
+
+    const handleSubmitVerification = async () => {
+        if (!bookingConfirm || !selectedPaymentMethod || !paymentScreenshot) {
+            return;
+        }
+
+        setIsSubmittingVerification(true);
+
+        try {
+            const csrfToken =
+                (
+                    document.querySelector(
+                        'meta[name="csrf-token"]',
+                    ) as HTMLMetaElement
+                )?.content || '';
+
+            const formData = new FormData();
+            formData.append('payment_method', selectedPaymentMethod);
+            formData.append('payment_screenshot', paymentScreenshot);
+
+            const response = await fetch(`/booking/${bookingConfirm.id}/submit-payment`, {
+                method: 'POST',
+                headers: {
+                    'X-XSRF-TOKEN': csrfToken,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                toast.success('Payment verification submitted. Please wait for manager approval.');
+                setBookingConfirm({
+                    ...bookingConfirm,
+                    payment_status: 'pending_verification',
+                    payment_method: data.booking?.payment_method || selectedPaymentMethod,
+                });
+                setPaymentStep('success');
+            } else {
+                toast.error(data.message || 'Payment verification failed.');
+            }
+        } catch {
+            toast.error('Payment verification failed. Please try again.');
+        } finally {
+            setIsSubmittingVerification(false);
+        }
+    };
+
+    const handleClosePayment = () => {
+        setPaymentStep('idle');
+        setSelectedPaymentMethod(null);
+        setPaymentScreenshot(null);
+        setScreenshotPreview(null);
+        setCopySuccess(false);
+    };
+
     const handleMyOrderClick = () => {
         if (!table) {
             setTableError(
@@ -701,9 +910,12 @@ export function MenuView({
                         {cart.map((item) => (
                             <div
                                 key={item.id}
-                                className="group flex items-center gap-3 rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
+                                className="rounded-xl border border-red-200/60 bg-white p-3 shadow-sm transition hover:border-red-400 hover:shadow-md hover:shadow-red-200/30"
                             >
-                                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-red-100">
+                                <p className="text-sm font-bold text-stone-800">
+                                    {item.name}
+                                </p>
+                                <div className="mt-2 h-28 w-full overflow-hidden rounded-lg bg-red-100">
                                     {item.image ? (
                                         <img
                                             src={`/storage/${item.image}`}
@@ -712,13 +924,13 @@ export function MenuView({
                                         />
                                     ) : (
                                         <div className="flex h-full items-center justify-center text-red-400">
-                                            <Utensils className="h-5 w-5" />
+                                            <Utensils className="h-6 w-6" />
                                         </div>
                                     )}
                                 </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-sm font-bold text-stone-800">
-                                        {item.name}
+                                <div className="mt-2.5">
+                                    <p className="text-xs font-bold text-stone-800">
+                                        Special Preferences
                                     </p>
                                     <p className="text-xs text-red-600">
                                         {Number(item.price).toFixed(2)} ETB
@@ -760,6 +972,7 @@ export function MenuView({
                                         )}
                                     </div>
                                     <div className="mt-2 flex items-center gap-2">
+
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -791,12 +1004,6 @@ export function MenuView({
                                             <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
-                                </div>
-                                <div className="text-right text-sm font-bold text-red-600">
-                                    {(
-                                        Number(item.price) * item.quantity
-                                    ).toFixed(2)}{' '}
-                                    ETB
                                 </div>
                             </div>
                         ))}
@@ -998,10 +1205,72 @@ export function MenuView({
                             <Separator className="bg-red-200/40" />
                             <div className="flex items-center justify-between">
                                 <span className="text-sm text-red-600">
+                                    Payment Status
+                                </span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
+                                    bookingConfirm?.payment_status === 'paid'
+                                        ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                }`}>
+                                    {bookingConfirm?.payment_status === 'pending_verification' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'pending' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'paid'
+                                        ? 'Paid'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'Pending Verification'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'Pending Verification'
+                                        : 'Unpaid'}
+                                </span>
+                            </div>
+                            <Separator className="bg-red-200/40" />
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-red-600">
+                                    Payment Status
+                                </span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
+                                    bookingConfirm?.payment_status === 'paid'
+                                        ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                }`}>
+                                    {bookingConfirm?.payment_status === 'pending_verification' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'pending' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'paid'
+                                        ? 'Paid'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'Pending Verification'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'Pending Verification'
+                                        : 'Unpaid'}
+                                </span>
+                            </div>
+                            <Separator className="bg-red-200/40" />
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-red-600">
                                     Expires In
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-sm font-bold text-red-700">
-                                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification' ? (
+                                        <CheckCircle2 className="h-4 w-4" />
+                                    ) : (
+                                        <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                                    )}
                                     {formatCountdown(countdown)}
                                 </span>
                             </div>
@@ -1025,39 +1294,9 @@ export function MenuView({
                         </div>
                     </div>
 
-                    {bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && (
+                    {paymentStep === 'idle' && bookingConfirm && countdown > 0 && bookingConfirm.payment_status !== 'paid' && bookingConfirm.payment_status !== 'pending_verification' && (
                         <Button
-                            onClick={async () => {
-                                try {
-                                    const getXsrfToken = () => {
-                                        const match = document.cookie.match(
-                                            new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
-                                        );
-
-                                        return match ? decodeURIComponent(match[3]) : '';
-                                    };
-                                    const response = await fetch(`/booking/${bookingConfirm.id}/pay`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'X-XSRF-TOKEN': getXsrfToken(),
-                                        },
-                                    });
-                                    const data = await response.json();
-
-                                    if (data.success) {
-                                        toast.success('Payment confirmed successfully!');
-                                        setBookingConfirm({
-                                            ...bookingConfirm,
-                                            payment_status: 'paid',
-                                        });
-                                    } else {
-                                        toast.error(data.message || 'Payment failed.');
-                                    }
-                                } catch {
-                                    toast.error('Payment failed. Please try again.');
-                                }
-                            }}
+                            onClick={handlePayNow}
                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                         >
                             <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -1065,14 +1304,212 @@ export function MenuView({
                         </Button>
                     )}
 
-                    {bookingConfirm && bookingConfirm.payment_status === 'paid' && (
-                        <div className="rounded-xl bg-green-50 p-4 text-center">
-                            <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
-                            <p className="mt-2 text-sm font-bold text-green-700">
-                                Payment Confirmed
+                    {/* Payment Flow UI */}
+                    {paymentStep === 'select' && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">Make Payment</h3>
+                            <p className="text-sm text-gray-500">Select Payment Method</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                {Object.entries(bookingPaymentAccounts).map(([key, account]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => handleSelectMethod(key)}
+                                        className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-red-100 p-4 transition hover:border-red-300 hover:bg-red-50"
+                                    >
+                                        <span className="text-2xl">
+                                            {key === 'telebirr' ? '📱' : '🏦'}
+                                        </span>
+                                        <span className="text-sm font-bold text-gray-900">
+                                            {account.label}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <Button
+                                variant="ghost"
+                                onClick={handleClosePayment}
+                                className="w-full text-gray-500"
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'account' && selectedPaymentMethod && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">
+                                {bookingPaymentAccounts[selectedPaymentMethod].label} Payment
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                                {bookingPaymentAccounts[selectedPaymentMethod].label} Account Number
                             </p>
-                            <p className="text-xs text-green-600">
-                                Your booking payment has been received.
+                            <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50 p-4 text-center">
+                                <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">
+                                    Account Number
+                                </p>
+                                <p className="mt-2 font-mono text-xl font-black tracking-wider text-stone-900 select-all">
+                                    {bookingPaymentAccounts[selectedPaymentMethod].number}
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleCopyAccount}
+                                disabled={copySuccess}
+                                className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 py-3.5 font-bold text-white hover:from-red-600 hover:to-red-700"
+                            >
+                                {copySuccess ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Check className="h-4 w-4" />
+                                        Copied
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Copy className="h-4 w-4" />
+                                        Copy
+                                    </span>
+                                )}
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={handleClosePayment}
+                                className="w-full text-gray-500"
+                            >
+                                Back
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'verification' && selectedPaymentMethod && bookingConfirm && (
+                        <div className="space-y-3">
+                            <h3 className="text-lg font-black text-gray-900">
+                                Payment Verification
+                            </h3>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Booking</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        #{String(bookingConfirm.id).padStart(6, '0')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Table</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        Table {bookingConfirm.tables?.join(', ') || 'N/A'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Payment Method</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        {bookingPaymentAccounts[selectedPaymentMethod].label}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Amount</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        0.00 ETB
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="mb-2 block text-sm font-bold text-gray-700">
+                                    Upload Payment Screenshot
+                                </label>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                    onChange={handleScreenshotChange}
+                                    className="hidden"
+                                    id="menu-payment-screenshot"
+                                />
+                                {!screenshotPreview ? (
+                                    <label
+                                        htmlFor="menu-payment-screenshot"
+                                        className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-6 transition hover:border-red-400"
+                                    >
+                                        <Upload className="mb-2 h-8 w-8 text-gray-400" />
+                                        <span className="text-sm font-semibold text-gray-600">
+                                            Choose Screenshot
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                            JPG, PNG, WEBP up to 5MB
+                                        </span>
+                                    </label>
+                                ) : (
+                                    <div className="relative rounded-xl border border-gray-200 p-2">
+                                        <img
+                                            src={screenshotPreview}
+                                            alt="Payment screenshot preview"
+                                            className="mx-auto max-h-48 rounded-lg object-contain"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveScreenshot}
+                                            className="absolute right-3 top-3 rounded-full bg-red-600 p-1 text-white transition hover:bg-red-700"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                            <Button
+                                onClick={handleSubmitVerification}
+                                disabled={isSubmittingVerification || !paymentScreenshot}
+                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                            >
+                                {isSubmittingVerification ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Submitting...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Submit Payment
+                                    </span>
+                                )}
+                            </Button>
+                        </div>
+                    )}
+
+                    {paymentStep === 'success' && bookingConfirm && (
+                        <div className="text-center space-y-3">
+                            <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+                            <h3 className="text-lg font-black text-gray-900">Payment Successful</h3>
+                            <div className="space-y-2 text-left">
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Booking</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        #{String(bookingConfirm.id).padStart(6, '0')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Table</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        Table {bookingConfirm.tables?.join(', ') || 'N/A'}
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Payment Status</span>
+                                    <span className="text-sm font-bold text-green-600">Paid</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                    <span className="text-sm font-semibold text-gray-500">Time Remaining</span>
+                                    <span className="text-sm font-bold text-gray-900">{formatCountdown(countdown)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {bookingConfirm && (bookingConfirm.payment_status === 'paid' || bookingConfirm.payment_status === 'pending_verification') && paymentStep !== 'success' && (
+                        <div className={`rounded-xl p-4 text-center ${bookingConfirm.payment_status === 'paid' ? 'bg-green-50' : 'bg-yellow-50'}`}>
+                            <CheckCircle2 className={`mx-auto h-8 w-8 ${bookingConfirm.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`} />
+                            <p className={`mt-2 text-sm font-bold ${bookingConfirm.payment_status === 'paid' ? 'text-green-700' : 'text-yellow-700'}`}>
+                                {bookingConfirm.payment_status === 'paid' ? 'Payment Confirmed' : 'Pending Verification'}
+                            </p>
+                            <p className={`text-xs ${bookingConfirm.payment_status === 'paid' ? 'text-green-600' : 'text-yellow-600'}`}>
+                                {bookingConfirm.payment_status === 'paid'
+                                    ? 'Your booking payment has been received.'
+                                    : 'Your payment verification is pending manager approval.'}
                             </p>
                         </div>
                     )}
@@ -1282,6 +1719,7 @@ export function MenuView({
                     setShowMemberVerify(open);
 
                     if (!open) {
+                        setMemberVerifyPhone('');
                         setMemberVerifyPhone('');
                         setMemberVerifyError('');
                     }
@@ -2109,9 +2547,12 @@ export function MenuView({
                                     {cart.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="flex gap-4 rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
+                                            className="rounded-xl border border-red-100/80 bg-red-50/30 p-4 shadow-sm transition hover:border-red-300 hover:bg-red-100/50 hover:shadow-md"
                                         >
-                                            <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-red-100">
+                                            <h3 className="font-bold text-stone-800">
+                                                {item.name}
+                                            </h3>
+                                            <div className="mt-3 h-40 w-full overflow-hidden rounded-xl bg-red-100">
                                                 {item.image ? (
                                                     <img
                                                         src={`/storage/${item.image}`}
@@ -2120,28 +2561,13 @@ export function MenuView({
                                                     />
                                                 ) : (
                                                     <div className="flex h-full items-center justify-center text-red-400">
-                                                        <Utensils className="h-6 w-6" />
+                                                        <Utensils className="h-8 w-8" />
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="flex items-start justify-between">
-                                                    <h3 className="font-bold text-stone-800">
-                                                        {item.name}
-                                                    </h3>
-                                                    <span className="text-sm font-black whitespace-nowrap text-red-600">
-                                                        {(
-                                                            Number(item.price) *
-                                                            item.quantity
-                                                        ).toFixed(2)}{' '}
-                                                        ETB
-                                                    </span>
-                                                </div>
-                                                <p className="mt-0.5 text-xs text-red-600">
-                                                    {Number(item.price).toFixed(
-                                                        2,
-                                                    )}{' '}
-                                                    ETB each
+                                            <div className="mt-3">
+                                                <p className="text-sm font-bold text-stone-800">
+                                                    Special Preferences
                                                 </p>
                                                 <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
                                                     {SPECIAL_PREFERENCES.map(
@@ -2216,7 +2642,58 @@ export function MenuView({
                                                     >
                                                         Remove
                                                     </button>
+
                                                 </div>
+                                            </div>
+                                            <div className="mt-3 flex items-center justify-between">
+                                                <p className="text-xs text-red-600">
+                                                    {Number(item.price).toFixed(2)} ETB each
+                                                </p>
+                                                <span className="text-base font-black whitespace-nowrap text-red-600">
+                                                    {(
+                                                        Number(item.price) *
+                                                        item.quantity
+                                                    ).toFixed(2)}{' '}
+                                                    ETB
+                                                </span>
+                                            </div>
+                                            <div className="mt-3 flex items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        decreaseQuantity(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="flex h-7 w-7 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:border-red-400 hover:bg-red-100"
+                                                >
+                                                    <Minus className="h-3 w-3" />
+                                                </button>
+                                                <span className="w-6 text-center text-sm font-bold text-stone-800">
+                                                    {item.quantity}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        increaseQuantity(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm transition hover:from-red-600 hover:to-red-700 active:scale-90"
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeFromCart(
+                                                            item.id,
+                                                        )
+                                                    }
+                                                    className="ml-2 text-xs font-semibold text-red-400 transition hover:text-red-500"
+                                                >
+                                                    Remove
+                                                </button>
                                             </div>
                                         </div>
                                     ))}

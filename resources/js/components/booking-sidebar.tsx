@@ -49,6 +49,7 @@ type BookingData = {
     pending_payment: BookingPaymentInfo | null;
     pending_extension_payment: BookingPaymentInfo | null;
     can_extend: boolean;
+
 };
 
 export default function BookingSidebar() {
@@ -225,6 +226,7 @@ export default function BookingSidebar() {
                 setTransactionNumber('');
                 setPayerName('');
                 setPayerPhone('');
+
             } else {
                 setPaymentError(data.message || 'Payment submission failed.');
             }

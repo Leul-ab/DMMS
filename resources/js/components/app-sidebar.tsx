@@ -35,6 +35,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useCan } from '@/hooks/use-can';
+import { useVerificationCount } from '@/hooks/use-verification-count';
 
 import { dashboard, home } from '@/routes';
 import { index as branchesIndex } from '@/routes/admin/branches';
@@ -61,141 +62,146 @@ export function AppSidebar() {
             kitchen: number;
             serve: number;
             paymentVerification: number;
+            bookingPayment: number;
         };
     }>().props;
+    const verificationCounts = useVerificationCount();
+
+    const paymentVerificationCount = verificationCounts.paymentVerification + verificationCounts.bookingPayment;
 
     const mainNavItems: NavItem[] = [
         ...(can('view dashboard')
             ? [
-                  {
-                      title: 'Dashboard',
-                      href: dashboard(),
-                      icon: LayoutGrid,
-                  },
-              ]
+                {
+                    title: 'Dashboard',
+                    href: dashboard(),
+                    icon: LayoutGrid,
+                },
+            ]
             : []),
 
         ...(can('view branches')
             ? [
-                  {
-                      title: 'Branches',
-                      href: branchesIndex(),
-                      icon: Store,
-                  },
-              ]
+                {
+                    title: 'Branches',
+                    href: branchesIndex(),
+                    icon: Store,
+                },
+            ]
             : []),
 
         ...(can('view menu categories')
             ? [
-                  {
-                      title: 'Menu Categories',
-                      href: categoriesIndex(),
-                      icon: ListOrdered,
-                  },
-              ]
+                {
+                    title: 'Menu Categories',
+                    href: categoriesIndex(),
+                    icon: ListOrdered,
+                },
+            ]
             : []),
 
         ...(can('view menu items')
             ? [
-                  {
-                      title: 'Menu Items',
-                      href: itemsIndex(),
-                      icon: UtensilsCrossed,
-                  },
-              ]
+                {
+                    title: 'Menu Items',
+                    href: itemsIndex(),
+                    icon: UtensilsCrossed,
+                },
+            ]
             : []),
 
         ...(can('view tables')
             ? [
-                  {
-                      title: 'Tables',
-                      href: tablesIndex(),
-                      icon: Table2,
-                  },
-              ]
+                {
+                    title: 'Tables',
+                    href: tablesIndex(),
+                    icon: Table2,
+                },
+            ]
             : []),
 
         ...(can('view discounts')
             ? [
-                  {
-                      title: 'Discounts',
-                      href: discountsIndex(),
-                      icon: Percent,
-                  },
-              ]
+                {
+                    title: 'Discounts',
+                    href: discountsIndex(),
+                    icon: Percent,
+                },
+            ]
             : []),
 
         ...(can('view menu')
             ? [
-                  {
-                      title: 'Menu',
-                      href: menuIndex(),
-                      icon: Eye,
-                  },
-              ]
+                {
+                    title: 'Menu',
+                    href: menuIndex(),
+                    icon: Eye,
+                },
+            ]
             : []),
 
         ...(can('view orders')
             ? [
-                  {
-                      title: 'Orders',
-                      href: ordersIndex(),
-                      icon: ListOrdered,
-                  },
-              ]
+                {
+                    title: 'Orders',
+                    href: ordersIndex(),
+                    icon: ListOrdered,
+                },
+            ]
             : []),
 
         ...(can('view kitchen')
             ? [
-                  {
-                      title: 'Kitchen',
-                      href: '/kitchen/dashboard',
-                      icon: ChefHat,
-                      badge: notifications?.kitchen ?? 0,
-                  },
-              ]
+                {
+                    title: 'Kitchen',
+                    href: '/kitchen/dashboard',
+                    icon: ChefHat,
+                    badge: notifications?.kitchen ?? 0,
+                },
+            ]
             : []),
 
         ...(can('view serve')
             ? [
-                  {
-                      title: 'Serve',
-                      href: '/serve',
-                      icon: Utensils,
-                      badge: notifications?.serve ?? 0,
-                  },
-              ]
+                {
+                    title: 'Serve',
+                    href: '/serve',
+                    icon: Utensils,
+                    badge: notifications?.serve ?? 0,
+                },
+            ]
             : []),
 
         ...(can('view bookings')
             ? [
-                  {
-                      title: 'Bookings',
-                      href: bookingsIndex(),
-                      icon: Calendar,
-                  },
-              ]
+                {
+                    title: 'Bookings',
+                    href: bookingsIndex(),
+                    icon: Calendar,
+                },
+            ]
             : []),
 
         ...(can('view payments')
             ? [
-                  {
-                      title: 'Payment Verification',
-                      href: '/manager/payment-verification',
-                      icon: ShieldCheck,
-                      badge: notifications?.paymentVerification ?? 0,
-                  },
-              ]
+                {
+                    title: 'Verification',
+                    href: '/manager/payment-verification',
+                    icon: ShieldCheck,
+                    badge: paymentVerificationCount,
+                    activePaths: ['/manager/payment-verification', '/manager/booking-verification'],
+                },
+            ]
             : []),
 
         ...(can('view payments')
             ? [
-                  {
-                      title: 'Payment',
-                      href: '/admin/payments',
-                      icon: CreditCard,
-                  },
-              ]
+                {
+                    title: 'Payment',
+                    href: '/admin/payments',
+                    icon: CreditCard,
+                },
+            ]
             : []),
     ];
 
@@ -208,52 +214,52 @@ export function AppSidebar() {
     const adminNavItems: NavItem[] = [
         ...(can('view customers')
             ? [
-                  {
-                      title: 'Customers',
-                      href: customersIndex(),
-                      icon: Users,
-                  },
-              ]
+                {
+                    title: 'Customers',
+                    href: customersIndex(),
+                    icon: Users,
+                },
+            ]
             : []),
 
         ...(can('view staff')
             ? [
-                  {
-                      title: 'Staff',
-                      href: staffIndex(),
-                      icon: UserCog,
-                  },
-              ]
+                {
+                    title: 'Staff',
+                    href: staffIndex(),
+                    icon: UserCog,
+                },
+            ]
             : []),
 
         ...(can('view roles')
             ? [
-                  {
-                      title: 'Roles',
-                      href: rolesIndex(),
-                      icon: ShieldCheck,
-                  },
-              ]
+                {
+                    title: 'Roles',
+                    href: rolesIndex(),
+                    icon: ShieldCheck,
+                },
+            ]
             : []),
 
         ...(can('view users')
             ? [
-                  {
-                      title: 'Users',
-                      href: usersIndex(),
-                      icon: Users,
-                  },
-              ]
+                {
+                    title: 'Users',
+                    href: usersIndex(),
+                    icon: Users,
+                },
+            ]
             : []),
 
         ...(can('view reports')
             ? [
-                  {
-                      title: 'Reports',
-                      href: '/manager/reports',
-                      icon: BarChart3,
-                  },
-              ]
+                {
+                    title: 'Reports',
+                    href: '/manager/reports',
+                    icon: BarChart3,
+                },
+            ]
             : []),
     ];
 

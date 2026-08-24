@@ -417,6 +417,18 @@ export default function OrdersIndex({ orders, tables, menuItems }: Props) {
                                                             }
                                                         </p>
 
+                                                        {item.special_preferences && item.special_preferences.length > 0 && (
+                                                            <p className="mt-0.5 text-[10px] text-red-700">
+                                                                {item.special_preferences.join(', ')}
+                                                            </p>
+                                                        )}
+
+                                                        {item.special_preferences && item.special_preferences.length > 0 && (
+                                                            <p className="mt-0.5 text-[10px] text-red-700">
+                                                                {item.special_preferences.join(', ')}
+                                                            </p>
+                                                        )}
+
                                                         <p className="text-xs text-muted-foreground">
                                                             {item.quantity} ×{' '}
                                                             {Number(

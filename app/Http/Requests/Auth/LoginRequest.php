@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\ValidationRule;
 use Laravel\Fortify\Fortify;
 
 class LoginRequest extends FormRequest
@@ -24,7 +25,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, array<int, \Illuminate\Validation\ValidationRule|array<mixed>|string>>
+     * @return array<string, array<int, ValidationRule|array<mixed>|string>>
      */
     public function rules(): array
     {
@@ -140,4 +141,3 @@ class LoginRequest extends FormRequest
         return Str::transliterate($loginId.'|'.$this->ip());
     }
 }
-

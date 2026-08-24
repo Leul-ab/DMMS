@@ -5,14 +5,14 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Branch;
 use App\Models\RestaurantTable;
+use App\Models\TableSection;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Inertia\Inertia;
-use Endroid\QrCode\QrCode;
-use Endroid\QrCode\Writer\SvgWriter;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
+use Inertia\Inertia;
 
 class RestaurantTableController extends Controller
 {
@@ -21,7 +21,7 @@ class RestaurantTableController extends Controller
      */
     public function index()
     {
-        $sections = \App\Models\TableSection::query()
+        $sections = TableSection::query()
             ->withCount('tables')
             ->with(['tables' => function ($query) {
                 $query->orderBy('table_number');
@@ -29,7 +29,7 @@ class RestaurantTableController extends Controller
             ->ordered()
             ->get();
 
-        $tables = \App\Models\RestaurantTable::query()
+        $tables = RestaurantTable::query()
             ->with('section')
             ->latest()
             ->get();
@@ -79,13 +79,13 @@ class RestaurantTableController extends Controller
         ]);
 
         $qrPath = null;
-        if (!empty($validated['qr_code'])) {
+        if (! empty($validated['qr_code'])) {
             $qrPath = $validated['qr_code'];
         } else {
             try {
                 $qrPath = $this->generateQrCode((int) $validated['table_number'], Branch::current()?->id);
             } catch (\Exception $e) {
-                Log::error('QR code generation failed for table #' . $validated['table_number'], [
+                Log::error('QR code generation failed for table #'.$validated['table_number'], [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
@@ -154,21 +154,21 @@ class RestaurantTableController extends Controller
         ]);
 
         // Validate that the generated URL is not empty and the route exists
-        if (empty($menuUrl) || !filter_var($menuUrl, FILTER_VALIDATE_URL)) {
-            throw new \RuntimeException('Generated menu URL is invalid: ' . ($menuUrl ?: 'empty'));
+        if (empty($menuUrl) || ! filter_var($menuUrl, FILTER_VALIDATE_URL)) {
+            throw new \RuntimeException('Generated menu URL is invalid: '.($menuUrl ?: 'empty'));
         }
 
         // Ensure the qrcodes storage directory exists
         $qrcodeDir = 'qrcodes';
-        if (!Storage::disk('public')->exists($qrcodeDir)) {
+        if (! Storage::disk('public')->exists($qrcodeDir)) {
             Storage::disk('public')->makeDirectory($qrcodeDir);
         }
 
         $qrCode = new QrCode($menuUrl);
-        $writer = new SvgWriter();
+        $writer = new SvgWriter;
         $result = $writer->write($qrCode);
 
-        $fileName = $qrcodeDir . '/table_' . $tableNumber . '_' . uniqid('qr_', true) . '.svg';
+        $fileName = $qrcodeDir.'/table_'.$tableNumber.'_'.uniqid('qr_', true).'.svg';
         $saved = Storage::disk('public')->put($fileName, $result->getString());
 
         if ($saved === false) {
@@ -197,10 +197,10 @@ class RestaurantTableController extends Controller
 
             Inertia::flash('toast', [
                 'type' => 'success',
-                'message' => 'QR code regenerated successfully for Table ' . $table->table_number . '.',
+                'message' => 'QR code regenerated successfully for Table '.$table->table_number.'.',
             ]);
         } catch (\Exception $e) {
-            Log::error('QR code regeneration failed for table #' . $table->table_number, [
+            Log::error('QR code regeneration failed for table #'.$table->table_number, [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -242,7 +242,7 @@ class RestaurantTableController extends Controller
                 'nullable',
                 'string',
                 'max:255',
-                'unique:restaurant_tables,qr_code,' . $table->id,
+                'unique:restaurant_tables,qr_code,'.$table->id,
             ],
         ]);
 

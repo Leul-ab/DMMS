@@ -16,26 +16,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Step 1: Widen to string so any existing value is kept during transition
-        DB::statement("ALTER TABLE restaurant_tables MODIFY COLUMN status VARCHAR(32) NOT NULL DEFAULT 'available'");
-
-        // Step 2: Migrate old 'awaiting_payment' → 'unavailable'
+        // Step 1: Migrate old 'awaiting_payment' → 'unavailable'
         DB::table('restaurant_tables')
             ->where('status', 'awaiting_payment')
             ->update(['status' => 'unavailable']);
 
-        // Step 3: Reset any other unknown values to 'available' to avoid enum truncation errors
+        // Step 2: Reset any other unknown values to 'available'
         DB::table('restaurant_tables')
             ->whereNotIn('status', ['available', 'occupied', 'reserved', 'unavailable'])
             ->update(['status' => 'available']);
 
-        // Step 4: Apply the strict ENUM now that all rows have valid values
-        DB::statement("
-            ALTER TABLE restaurant_tables
-            MODIFY COLUMN status
-            ENUM('available','occupied','reserved','unavailable')
-            NOT NULL DEFAULT 'available'
-        ");
+        // Step 3: Apply column type and constraint
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE restaurant_tables ALTER COLUMN status TYPE VARCHAR(32)");
+            DB::statement("ALTER TABLE restaurant_tables ALTER COLUMN status SET DEFAULT 'available'");
+            DB::statement("ALTER TABLE restaurant_tables ALTER COLUMN status SET NOT NULL");
+            DB::statement("ALTER TABLE restaurant_tables ADD CONSTRAINT restaurant_tables_status_check CHECK (status IN ('available','occupied','reserved','unavailable'))");
+        } else {
+            DB::statement("ALTER TABLE restaurant_tables MODIFY COLUMN status VARCHAR(32) NOT NULL DEFAULT 'available'");
+            DB::statement("ALTER TABLE restaurant_tables MODIFY COLUMN status ENUM('available','occupied','reserved','unavailable') NOT NULL DEFAULT 'available'");
+        }
     }
 
     /**
@@ -51,11 +53,15 @@ return new class extends Migration
             ->where('status', 'reserved')
             ->update(['status' => 'available']);
 
-        DB::statement("
-            ALTER TABLE restaurant_tables
-            MODIFY COLUMN status
-            ENUM('available','occupied','awaiting_payment')
-            NOT NULL DEFAULT 'available'
-        ");
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE restaurant_tables DROP CONSTRAINT IF EXISTS restaurant_tables_status_check");
+            DB::statement("ALTER TABLE restaurant_tables ALTER COLUMN status TYPE VARCHAR(32)");
+            DB::statement("ALTER TABLE restaurant_tables ALTER COLUMN status SET DEFAULT 'available'");
+            DB::statement("ALTER TABLE restaurant_tables ADD CONSTRAINT restaurant_tables_status_check CHECK (status IN ('available','occupied','awaiting_payment'))");
+        } else {
+            DB::statement("ALTER TABLE restaurant_tables MODIFY COLUMN status ENUM('available','occupied','awaiting_payment') NOT NULL DEFAULT 'available'");
+        }
     }
 };

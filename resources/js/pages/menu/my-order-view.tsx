@@ -32,6 +32,7 @@ type OrderItem = {
     price: string;
     status: string;
     special_preferences: string[] | null;
+
     menu_item: MenuItem;
 };
 
@@ -810,6 +811,7 @@ export default function MyOrderView({
                                                                 className="rounded-xl border border-gray-100 bg-white px-4 py-3"
                                                             >
                                                                 <div className="flex items-start justify-between">
+
                                                                     <div>
                                                                         <p className="font-bold">
                                                                             {
@@ -851,6 +853,7 @@ export default function MyOrderView({
                                                                                     ))}
                                                                             </ul>
                                                                         )}
+
                                                                     </div>
                                                                     <p className="font-black whitespace-nowrap">
                                                                         {(
@@ -864,6 +867,7 @@ export default function MyOrderView({
                                                                         ETB
                                                                     </p>
                                                                 </div>
+
                                                             </div>
                                                         ),
                                                     )}

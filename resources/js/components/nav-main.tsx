@@ -25,7 +25,12 @@ export function NavMain({
             {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
             <SidebarMenu>
                 {items.map((item) => {
-                    const isActive = isCurrentUrl(item.href);
+                    const isActive =
+                        item.activePaths && item.activePaths.length > 0
+                            ? item.activePaths.some((path) =>
+                                isCurrentUrl(path, undefined, true)
+                            )
+                            : isCurrentUrl(item.href);
 
                     return (
                         <SidebarMenuItem key={item.title}>
