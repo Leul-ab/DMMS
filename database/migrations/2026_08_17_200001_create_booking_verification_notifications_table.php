@@ -25,7 +25,7 @@ return new class extends Migration
             $table->foreignId('rejected_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['branch_id', 'status', 'created_at']);
+            $table->index(['branch_id', 'status', 'created_at'], 'bvn_branch_status_created_idx');
         });
     }
 
