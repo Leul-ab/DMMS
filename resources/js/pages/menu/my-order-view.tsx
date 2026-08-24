@@ -31,11 +31,8 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
-<<<<<<< HEAD
     special_preferences: string[] | null;
-=======
-    special_preferences?: string[];
->>>>>>> origin/feature/update-booking
+
     menu_item: MenuItem;
 };
 
@@ -813,11 +810,8 @@ export default function MyOrderView({
                                                                 key={item.id}
                                                                 className="rounded-xl border border-gray-100 bg-white px-4 py-3"
                                                             >
-<<<<<<< HEAD
                                                                 <div className="flex items-start justify-between">
-=======
-                                                                <div className="flex items-center justify-between">
->>>>>>> origin/feature/update-booking
+
                                                                     <div>
                                                                         <p className="font-bold">
                                                                             {
@@ -838,7 +832,6 @@ export default function MyOrderView({
                                                                             )}{' '}
                                                                             ETB
                                                                         </p>
-<<<<<<< HEAD
                                                                          {item.special_preferences &&
                                                                             item.special_preferences
                                                                                 .length >
@@ -860,8 +853,7 @@ export default function MyOrderView({
                                                                                     ))}
                                                                             </ul>
                                                                         )}
-=======
->>>>>>> origin/feature/update-booking
+
                                                                     </div>
                                                                     <p className="font-black whitespace-nowrap">
                                                                         {(
@@ -875,35 +867,7 @@ export default function MyOrderView({
                                                                         ETB
                                                                     </p>
                                                                 </div>
-<<<<<<< HEAD
-=======
-                                                                {item.special_preferences &&
-                                                                    item.special_preferences.length >
-                                                                        0 && (
-                                                                        <div className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2">
-                                                                            <p className="text-xs font-bold text-red-800">
-                                                                                Special Preferences
-                                                                            </p>
-                                                                            <ul className="mt-1 list-inside list-disc text-xs text-red-900">
-                                                                                {item.special_preferences.map(
-                                                                                    (
-                                                                                        pref
-                                                                                    ) => (
-                                                                                        <li
-                                                                                            key={
-                                                                                                pref
-                                                                                            }
-                                                                                        >
-                                                                                            {
-                                                                                                pref
-                                                                                            }
-                                                                                        </li>
-                                                                                    ))
-                                                                                }
-                                                                            </ul>
-                                                                        </div>
-                                                                    )}
->>>>>>> origin/feature/update-booking
+
                                                             </div>
                                                         ),
                                                     )}

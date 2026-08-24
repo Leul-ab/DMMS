@@ -30,6 +30,9 @@ Route::post('/booking/{booking}/submit-extension-payment', [BookingController::c
 Route::post('/booking/{booking}/submit-payment', [BookingController::class, 'submitPaymentVerification'])
     ->name('booking.submit-payment');
 
+Route::post('/booking/{booking}/submit-payment', [BookingController::class, 'submitPaymentVerification'])
+    ->name('booking.submit-payment');
+
 // API route for booking sidebar
 Route::get('/api/active-booking', [BookingController::class, 'getActiveBooking']);
 

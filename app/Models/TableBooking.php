@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Models;
 
 use App\Concerns\BelongsToBranch;
@@ -33,6 +34,8 @@ class TableBooking extends Model
     protected function casts(): array
     {
         return [
+            'booking_amount' => 'decimal:2',
+            'extension_amount' => 'decimal:2',
             'booking_amount' => 'decimal:2',
             'extension_amount' => 'decimal:2',
             'booked_at' => 'datetime',

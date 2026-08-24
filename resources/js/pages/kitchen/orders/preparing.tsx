@@ -14,7 +14,6 @@ type OrderItem = {
     quantity: number;
     special_preferences: string[] | null;
     menu_item: MenuItem;
-    special_preferences?: string[];
 };
 
 type Table = {
@@ -99,22 +98,11 @@ export default function PreparingOrders({ orders }: Props) {
                                                 key={item.id}
                                                 className="flex flex-col rounded-md border p-3"
                                             >
-<<<<<<< HEAD
                                                 <div className="flex items-center justify-between">
                                                     <span>
                                                         {item.menu_item.name}
                                                     </span>
-=======
-                                                <span>
-                                                    {item.menu_item.name}
 
-                                                    {item.special_preferences && item.special_preferences.length > 0 && (
-                                                        <p className="mt-0.5 text-[10px] text-red-700">
-                                                            {item.special_preferences.join(', ')}
-                                                        </p>
-                                                    )}
-                                                </span>
->>>>>>> origin/feature/update-booking
 
                                                     <Badge variant="secondary">
                                                         x{item.quantity}

@@ -15,7 +15,6 @@ type OrderItem = {
     price?: number;
     special_preferences: string[] | null;
     menu_item: MenuItem;
-    special_preferences?: string[];
 };
 
 type Table = {

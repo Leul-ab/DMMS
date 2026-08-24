@@ -23,14 +23,9 @@ Route::post('/customer/register', [CustomerController::class, 'store'])
 
 Route::post('/customer/verify-member', [CustomerController::class, 'verifyMember'])
     ->name('customer.verify-member');
-<<<<<<< HEAD
-
 // Member-only discount notifications
 Route::get('/customer/member-discounts', [MemberDiscountController::class, 'index'])
     ->name('customer.member-discounts');
 
 Route::post('/customer/member-notifications/{discount}/read', [MemberDiscountController::class, 'markRead'])
     ->name('customer.member-notification.read');
-
-=======
->>>>>>> origin/feature/update-booking

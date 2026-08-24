@@ -30,7 +30,6 @@ type OrderItem = {
     id: number;
     quantity: number;
     price: string;
-    special_preferences?: string[];
     menu_item: MenuItem | null;
     special_preferences: string[] | null;
 };
@@ -398,7 +397,6 @@ export default function KitchenDashboard({
                                 key={item.id}
                                 className="text-xs"
                             >
-<<<<<<< HEAD
                                 <span className="text-gray-700">
                                     {item.menu_item?.name || 'Item'} ×{' '}
                                     {item.quantity}
@@ -418,19 +416,6 @@ export default function KitchenDashboard({
                                                 ),
                                             )}
                                         </div>
-=======
-                                <div className="flex items-center justify-between">
-                                    <span className="text-gray-700">
-                                        {item.menu_item?.name || 'Item'} ×{' '}
-                                        {item.quantity}
-                                    </span>
-                                </div>
-                                {item.special_preferences &&
-                                    item.special_preferences.length > 0 && (
-                                        <p className="mt-0.5 text-[10px] text-red-700">
-                                            {item.special_preferences.join(', ')}
-                                        </p>
->>>>>>> origin/feature/update-booking
                                     )}
                             </div>
                         ))}

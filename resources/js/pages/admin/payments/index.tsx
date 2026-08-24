@@ -74,7 +74,6 @@ type OrderItem = {
         name: string;
         image: string | null;
     };
-    special_preferences?: string[];
 };
 
 type Payment = {

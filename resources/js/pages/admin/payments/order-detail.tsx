@@ -45,11 +45,8 @@ type OrderItem = {
     quantity: number;
     price: string;
     menu_item: { id: number; name: string; image: string | null } | null;
-<<<<<<< HEAD
     special_preferences: string[] | null;
-=======
-    special_preferences?: string[];
->>>>>>> origin/feature/update-booking
+
 };
 
 type Order = {
@@ -315,34 +312,6 @@ export default function PaymentOrderDetail({ order }: Props) {
                                                             )}
                                                         </div>
                                                     )}
-<<<<<<< HEAD
-=======
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900">
-                                                            {item.menu_item
-                                                                ?.name ||
-                                                                'Item'}
-                                                        </p>
-
-                                                        {item.special_preferences && item.special_preferences.length > 0 && (
-                                                            <p className="mt-0.5 text-[10px] text-red-700">
-                                                                {item.special_preferences.join(', ')}
-                                                            </p>
-                                                        )}
-
-                                                        <p className="text-xs text-gray-500">
-                                                            × {item.quantity}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <p className="text-sm font-bold">
-                                                    {(
-                                                        Number(item.price) *
-                                                        item.quantity
-                                                    ).toFixed(2)}{' '}
-                                                    ETB
-                                                </p>
->>>>>>> origin/feature/update-booking
                                             </div>
                                         ))}
                                     </div>

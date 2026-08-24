@@ -52,11 +52,10 @@ type OrderItem = {
     quantity: number;
     price: string;
     menu_item: { id: number; name: string; image: string | null } | null;
-<<<<<<< HEAD
+
     special_preferences: string[] | null;
-=======
-    special_preferences?: string[];
->>>>>>> origin/feature/update-booking
+
+
 };
 
 type Order = {
@@ -315,6 +314,12 @@ export default function PaymentOrders({ orders, stats, filters }: Props) {
                                                                 ?.name ||
                                                                 'Item'}{' '}
                                                             × {item.quantity}
+
+                                                            {item.special_preferences && item.special_preferences.length > 0 && (
+                                                                <p className="mt-0.5 text-[10px] text-red-700">
+                                                                    {item.special_preferences.join(', ')}
+                                                                </p>
+                                                            )}
 
                                                             {item.special_preferences && item.special_preferences.length > 0 && (
                                                                 <p className="mt-0.5 text-[10px] text-red-700">

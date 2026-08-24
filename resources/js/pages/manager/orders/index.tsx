@@ -37,11 +37,7 @@ type OrderItem = {
     quantity: number;
     price: string;
     status: string;
-<<<<<<< HEAD
     special_preferences: string[] | null;
-=======
-    special_preferences?: string[];
->>>>>>> origin/feature/update-booking
     menu_item: MenuItem;
 };
 
@@ -420,6 +416,12 @@ export default function OrdersIndex({ orders, tables, menuItems }: Props) {
                                                                     .name
                                                             }
                                                         </p>
+
+                                                        {item.special_preferences && item.special_preferences.length > 0 && (
+                                                            <p className="mt-0.5 text-[10px] text-red-700">
+                                                                {item.special_preferences.join(', ')}
+                                                            </p>
+                                                        )}
 
                                                         {item.special_preferences && item.special_preferences.length > 0 && (
                                                             <p className="mt-0.5 text-[10px] text-red-700">

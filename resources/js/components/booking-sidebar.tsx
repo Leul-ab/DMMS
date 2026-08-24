@@ -41,7 +41,6 @@ type BookingData = {
     expires_at: string;
     time_remaining_seconds: number;
     payment_status: string;
-<<<<<<< HEAD
     status: string;
     extension_payment_status: string | null;
     booking_amount: number | null;
@@ -50,9 +49,7 @@ type BookingData = {
     pending_payment: BookingPaymentInfo | null;
     pending_extension_payment: BookingPaymentInfo | null;
     can_extend: boolean;
-=======
-    paid_at?: string | null;
->>>>>>> origin/feature/update-booking
+
 };
 
 export default function BookingSidebar() {
@@ -213,7 +210,6 @@ export default function BookingSidebar() {
             const data = await response.json();
 
             if (data.success) {
-<<<<<<< HEAD
                 toast.success('Payment submitted. Waiting for verification.');
                 setBooking((prev) => prev ? {
                     ...prev,
@@ -230,10 +226,7 @@ export default function BookingSidebar() {
                 setTransactionNumber('');
                 setPayerName('');
                 setPayerPhone('');
-=======
-                toast.success('Payment verification request submitted.\nPlease wait for manager approval.');
-                setBooking({ ...booking, payment_status: data.booking?.payment_status || 'pending_verification', expires_at: data.booking?.expires_at || new Date(Date.now() + 7200000).toISOString() });
->>>>>>> origin/feature/update-booking
+
             } else {
                 setPaymentError(data.message || 'Payment submission failed.');
             }

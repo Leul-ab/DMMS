@@ -127,6 +127,7 @@ class KitchenOrderController extends Controller
         );
     }
 
+
     /**
      * Update an entire kitchen order.
      */
@@ -268,3 +269,4 @@ class KitchenOrderController extends Controller
         );
     }
 }
+

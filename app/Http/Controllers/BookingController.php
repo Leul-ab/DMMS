@@ -3,17 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\BookingVerificationNotification;
-use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\BookingPayment;
 use App\Models\RestaurantTable;
 use App\Models\TableBooking;
+use App\Models\TableSection;
+use App\Models\User;
+use App\Notifications\BookingPaymentPending;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class BookingController extends Controller
 {
@@ -112,7 +115,7 @@ class BookingController extends Controller
     /**
      * Store a new booking.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
@@ -122,7 +125,6 @@ class BookingController extends Controller
             'booking_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        // Check if any of the selected tables are already booked
         $bookedTables = TableBooking::whereIn('status', ['active'])
             ->whereHas('tables', function ($query) use ($validated) {
                 $query->whereIn('restaurant_tables.id', $validated['table_ids']);
@@ -147,7 +149,6 @@ class BookingController extends Controller
             ], 422);
         }
 
-        // Start booking session - store in session
         $expiresAt = Carbon::now()->addMinutes(5);
 
         $booking = TableBooking::create([
@@ -156,37 +157,37 @@ class BookingController extends Controller
             'payment_status' => 'unpaid',
             'booked_at' => Carbon::now(),
             'expires_at' => $expiresAt,
+            'booking_amount' => 500,
         ]);
 
-        // Attach tables
         $booking->tables()->attach($validated['table_ids']);
 
-        // Update table statuses to 'reserved'
         RestaurantTable::whereIn('id', $validated['table_ids'])->update(['status' => 'reserved']);
 
-        // Store booking ID in session
         session(['active_booking_id' => $booking->id]);
 
-        // Build booking data for the success dialog
+        session(['customer_phone' => $booking->customer?->phone ?? '']);
+
         $customer = $booking->customer;
         $tablesList = $booking->tables->pluck('table_number')->toArray();
 
-        return redirect()
-            ->route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index')
-            ->with([
-                'booking_success' => true,
-                'booking_data' => [
-                    'id' => $booking->id,
-                    'customer_name' => $customer?->name ?? 'Unknown',
-                    'customer_phone' => $customer?->phone ?? '',
-                    'tables' => $tablesList,
-                    'booked_at' => $booking->booked_at,
-                    'expires_at' => $booking->expires_at,
-                    'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
-                    'payment_status' => $booking->payment_status,
-                ],
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking confirmed successfully.',
+            'booking' => [
+                'id' => $booking->id,
+                'customer_name' => $customer?->name ?? 'Unknown',
                 'customer_phone' => $customer?->phone ?? '',
-            ]);
+                'tables' => $tablesList,
+                'booked_at' => $booking->booked_at,
+                'expires_at' => $booking->expires_at,
+                'expires_in_seconds' => $booking->expires_at ? Carbon::now()->diffInSeconds($booking->expires_at, false) : 300,
+                'payment_status' => $booking->payment_status,
+                'booking_amount' => $booking->booking_amount,
+            ],
+            'customer_phone' => $customer?->phone ?? '',
+            'redirect' => route($validated['source'] === 'customer-booking' ? 'menu.customer' : 'menu.index'),
+        ]);
     }
 
     public function submitPayment(Request $request, TableBooking $booking): JsonResponse
@@ -523,7 +524,7 @@ class BookingController extends Controller
     public function cancel(TableBooking $booking): RedirectResponse
     {
         if ($booking->status !== 'active') {
-            return back()->withErrors(['booking' => 'This booking is already ' . $booking->status . '.']);
+            return back()->withErrors(['booking' => 'This booking is already '.$booking->status.'.']);
         }
 
         if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
@@ -573,20 +574,21 @@ class BookingController extends Controller
         if ($booking->status === 'active' && $booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
             $booking->update([
                 'status' => 'expired',
-                'payment_status' => 'expired',
-                'cancelled_at' => Carbon::now(),
             ]);
 
-            $tableIds = $booking->tables()->pluck('restaurant_tables.id');
-            RestaurantTable::whereIn('id', $tableIds)->update(['status' => 'available']);
+            // Expire any pending booking payment verification notifications
+            BookingVerificationNotification::where('booking_id', $booking->id)
+                ->whereIn('status', ['pending', 'read'])
+                ->update([
+                    'status' => 'expired',
+                    'expired_at' => now(),
+                ]);
 
-            session()->forget('active_booking_id');
-
-            return response()->json(['booking' => null, 'expired' => true]);
+            $isExpired = true;
         }
 
         $timeRemaining = null;
-        if ($booking->status === 'active' && $booking->expires_at) {
+        if ($booking->status === 'active' && $booking->expires_at && ! $isExpired) {
             $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
         }
 
@@ -701,11 +703,7 @@ class BookingController extends Controller
                 ];
             });
 
-        return response()->json([
-            'bookings' => $bookings,
-            'total' => $bookings->count(),
-            'active_count' => $bookings->where('status', 'active')->where('is_expired', false)->count(),
-        ]);
+        return response()->json(['bookings' => $bookings]);
     }
 
     /**
@@ -1032,7 +1030,7 @@ class BookingController extends Controller
         }
 
         $timeRemaining = null;
-        if ($booking->status === 'active' && $booking->expires_at && !$isExpired) {
+        if ($booking->status === 'active' && $booking->expires_at && ! $isExpired) {
             $timeRemaining = max(0, Carbon::now()->diffInSeconds($booking->expires_at, false));
         }
 
@@ -1060,6 +1058,10 @@ class BookingController extends Controller
                 'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
                 'is_expired' => $isExpired,
+                'extension_payment_status' => $booking->extension_payment_status,
+                'booking_amount' => $booking->booking_amount,
+                'verification_status' => $latestNotification?->status ?? null,
+                'rejection_reason' => $latestNotification?->rejection_reason ?? null,
             ],
         ]);
     }
@@ -1092,7 +1094,239 @@ class BookingController extends Controller
                 'booking_amount' => $booking->booking_amount,
                 'extension_amount' => $booking->extension_amount,
                 'is_expired' => $isExpired,
+                'extension_payment_status' => $booking->extension_payment_status,
             ],
         ]);
+    }
+
+    /**
+     * Copy account number and mark booking payment as Paid.
+     *
+     * Action 1: Copy the selected CBE / Telebirr account number to the
+     *           customer's clipboard (frontend handles the actual clipboard).
+     * Action 2: Mark the booking payment as Paid immediately.
+     * Action 3: Create a Pending Payment Verification record for the manager.
+     * Action 4: Send a Booking Payment Notification to the manager.
+     * Action 5: Update the manager's notification count.
+     * Action 6: Stop the 5-minute payment countdown and start the 2-hour booking timer.
+     */
+    public function copyAccount(Request $request, TableBooking $booking): JsonResponse
+    {
+        // 1. Validate that the booking belongs to the current customer
+        $customerPhone = session('customer_phone');
+        if (! $customerPhone || ! $booking->customer || $booking->customer->phone !== $customerPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: This booking does not belong to the current customer.',
+            ], 403);
+        }
+
+        // 2. Validate that the booking is still within its payment window (not expired or cancelled)
+        $isExpired = $booking->status === 'expired' || ($booking->expires_at && now()->greaterThan($booking->expires_at));
+        if ($booking->status === 'cancelled' || $isExpired) {
+            if ($booking->status === 'active' && $isExpired) {
+                $booking->update(['status' => 'expired']);
+                BookingVerificationNotification::where('booking_id', $booking->id)
+                    ->whereIn('status', ['pending', 'read'])
+                    ->update([
+                        'status' => 'expired',
+                        'expired_at' => now(),
+                    ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This booking has expired or been cancelled. You cannot create a payment verification request.',
+            ], 422);
+        }
+
+        // If already paid, return success without creating duplicate verification
+        if ($booking->payment_status === 'paid') {
+            $existingNotification = BookingVerificationNotification::where('booking_id', $booking->id)
+                ->whereIn('status', ['pending', 'read'])
+                ->latest()
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Account number copied. This booking has already been paid.',
+                'already_exists' => true,
+                'account_number' => config('payment_accounts.'.$booking->payment_method.'.number'),
+                'notification' => $existingNotification ? [
+                    'id' => $existingNotification->id,
+                    'booking_id' => $existingNotification->booking_id,
+                    'payment_method' => $existingNotification->payment_method,
+                    'payment_account' => $existingNotification->payment_account,
+                    'payment_attempt_reference' => $existingNotification->payment_attempt_reference,
+                    'amount' => $existingNotification->amount,
+                    'status' => $existingNotification->status,
+                    'copied_at' => $existingNotification->copied_at,
+                    'created_at' => $existingNotification->created_at,
+                ] : null,
+            ]);
+        }
+
+        $validated = $request->validate([
+            'payment_method' => ['required', 'string', 'in:telebirr,cbe_birr'],
+            'payment_screenshot' => ['nullable', 'image', 'max:5120'],
+        ]);
+
+        $accountNumber = config('payment_accounts.'.$validated['payment_method'].'.number');
+        $transactionReference = 'TXN-'.now()->format('YmdHis').'-'.$booking->id;
+
+        $screenshotPath = null;
+        if ($request->hasFile('payment_screenshot')) {
+            $screenshotPath = $request->file('payment_screenshot')
+                ->store('payment_screenshots', 'public');
+        }
+
+        $notificationError = null;
+        $notification = null;
+
+        try {
+            $booking->update([
+                'payment_method' => $validated['payment_method'],
+                'payment_status' => 'pending_verification',
+                'status' => 'active',
+                'expires_at' => now()->addHours(2),
+                'transaction_reference' => $transactionReference,
+            ]);
+
+            try {
+                $notification = $this->createBookingVerificationNotification($booking, $validated['payment_method'], $screenshotPath);
+            } catch (\InvalidArgumentException $e) {
+                $notificationError = $e->getMessage();
+            } catch (\Exception $e) {
+                \Log::error('Payment notification creation failed', [
+                    'booking_id' => $booking->id,
+                    'customer_id' => $booking->customer_id,
+                    'error' => $e->getMessage(),
+                ]);
+                $notificationError = 'Unable to create the payment notification. Please try again.';
+            }
+        } catch (\Exception $e) {
+            \Log::error('Booking update failed during copy account', [
+                'booking_id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to process the payment request. Please refresh the booking and try again.',
+            ], 500);
+        }
+
+        if (!$notification) {
+            $notification = BookingVerificationNotification::where('booking_id', $booking->id)
+                ->whereIn('status', ['pending', 'read'])
+                ->latest()
+                ->first();
+        }
+
+        $response = [
+            'success' => true,
+            'message' => $notificationError
+                ? 'Payment information copied successfully, but the payment notification could not be created. Please try again.'
+                : 'Payment verification request submitted. Please wait for manager approval.',
+            'already_exists' => false,
+            'account_number' => $accountNumber,
+            'booking' => [
+                'id' => $booking->id,
+                'payment_status' => 'pending_verification',
+                'paid_at' => $booking->paid_at,
+                'status' => 'active',
+                'expires_at' => $booking->expires_at,
+                'payment_method' => $validated['payment_method'],
+                'transaction_reference' => $transactionReference,
+            ],
+        ];
+
+        if ($notification) {
+            $response['notification'] = [
+                'id' => $notification->id,
+                'booking_id' => $notification->booking_id,
+                'payment_method' => $notification->payment_method,
+                'payment_account' => $notification->payment_account,
+                'payment_attempt_reference' => $notification->payment_attempt_reference,
+                'amount' => $notification->amount,
+                'status' => $notification->status,
+                'copied_at' => $notification->copied_at,
+                'created_at' => $notification->created_at,
+                'payment_screenshot' => $notification->payment_screenshot,
+            ];
+        }
+
+        if ($notificationError) {
+            $response['notification_error'] = true;
+            $response['notification_error_message'] = $notificationError;
+        }
+
+        return response()->json($response);
+    }
+
+    /**
+     * Create or update a BookingVerificationNotification for the given booking
+     * and send a pending notification to managers.
+     */
+    private function createBookingVerificationNotification(TableBooking $booking, string $paymentMethod, ?string $paymentScreenshot = null): ?BookingVerificationNotification
+    {
+        $accountNumber = config('payment_accounts.'.$paymentMethod.'.number');
+        $amount = $booking->booking_amount;
+
+        if ($amount === null || $amount <= 0) {
+            throw new \InvalidArgumentException('Booking payment amount could not be determined.');
+        }
+
+        $existingNotification = BookingVerificationNotification::where('booking_id', $booking->id)
+            ->whereIn('status', ['pending', 'read'])
+            ->latest()
+            ->first();
+
+        if ($existingNotification) {
+            $updateData = [
+                'copied_at' => now(),
+                'payment_account' => $accountNumber,
+                'payment_method' => $paymentMethod,
+                'payment_attempt_reference' => BookingVerificationNotification::generateAttemptReference(),
+                'status' => 'pending',
+            ];
+
+            if ($paymentScreenshot) {
+                $updateData['payment_screenshot'] = $paymentScreenshot;
+            }
+
+            $existingNotification->update($updateData);
+
+            $notification = $existingNotification->fresh();
+        } else {
+            $notification = BookingVerificationNotification::create([
+                'branch_id' => $booking->branch_id,
+                'booking_id' => $booking->id,
+                'customer_id' => $booking->customer_id,
+                'payment_method' => $paymentMethod,
+                'payment_account' => $accountNumber,
+                'payment_attempt_reference' => BookingVerificationNotification::generateAttemptReference(),
+                'amount' => $amount,
+                'notification_type' => 'booking_payment',
+                'status' => 'pending',
+                'copied_at' => now(),
+                'payment_screenshot' => $paymentScreenshot,
+            ]);
+        }
+
+        try {
+            $managers = User::whereHas('permissions', function ($q) {
+                $q->where('name', 'view payments');
+            })->get();
+
+            if ($managers->isNotEmpty()) {
+                NotificationFacade::send($managers, new BookingPaymentPending($booking, $notification));
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to send booking payment pending notification: '.$e->getMessage());
+        }
+
+        return $notification;
     }
 }

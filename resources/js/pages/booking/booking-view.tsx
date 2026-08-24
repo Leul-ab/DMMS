@@ -12,7 +12,6 @@ import {
     X,
     Sparkles,
     CheckCircle2,
-<<<<<<< HEAD
     AlertCircle,
     Wallet,
     Smartphone,
@@ -21,26 +20,23 @@ import {
     Hourglass,
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-=======
+import {
     Copy,
     Check,
     Upload,
     Trash2,
     RefreshCw,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
->>>>>>> origin/feature/update-booking
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-<<<<<<< HEAD
+import { Input } from '@/components/ui/input';
 import PhoneInput, {
     isValidEthiopianPhone,
 } from '@/components/phone-input';
 import { store as bookingStore } from '@/routes/booking';
-=======
 import {
     Dialog,
     DialogContent,
@@ -51,7 +47,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import MyBooking from '@/pages/booking/my-booking';
->>>>>>> origin/feature/update-booking
+
 
 type RestaurantTable = {
     id: number;
@@ -83,6 +79,7 @@ type BookingData = {
     verification_status?: string | null;
     rejection_reason?: string | null;
 };
+
 
 type Props = {
     availableTables: RestaurantTable[];
@@ -238,36 +235,25 @@ export default function BookingView({
         }
 
         setIsBooking(true);
-<<<<<<< HEAD
         setPaymentError(null);
-=======
->>>>>>> origin/feature/update-booking
+
 
         try {
             const getXsrfToken = () => {
                 const match = document.cookie.match(
                     new RegExp('(^|;\\s*)(XSRF-TOKEN)=([^;]*)'),
                 );
-<<<<<<< HEAD
                 return match ? decodeURIComponent(match[3]) : '';
             };
 
             const response = await fetch(bookingStore.url(), {
-=======
 
-                return match ? decodeURIComponent(match[3]) : '';
-            };
-
-            const response = await fetch('/booking', {
->>>>>>> origin/feature/update-booking
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-XSRF-TOKEN': getXsrfToken(),
-<<<<<<< HEAD
                     Accept: 'application/json',
-=======
->>>>>>> origin/feature/update-booking
+
                 },
                 body: JSON.stringify({
                     customer_id: customerId,
@@ -278,7 +264,6 @@ export default function BookingView({
 
             const data = await response.json();
 
-<<<<<<< HEAD
             if (data.success) {
                 setBookingData({
                     id: data.booking.id,
@@ -292,25 +277,12 @@ export default function BookingView({
             }
         } catch {
             toast.error('Failed to create booking. Please try again.');
-=======
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || 'Failed to create booking.');
-            }
 
-            setConfirmedBooking(data.booking);
-            setShowBookingConfirmedModal(true);
-            setCountdown(data.booking.expires_in_seconds ?? 300);
-        } catch (error: any) {
-            toast.error(
-                error.message || 'Failed to create booking. Please try again.',
-            );
->>>>>>> origin/feature/update-booking
         } finally {
             setIsBooking(false);
         }
     };
 
-<<<<<<< HEAD
     const startPaymentCountdown = (expiresAt: string) => {
         const calculateTime = () => {
             const expiresAtDate = new Date(expiresAt).getTime();
@@ -411,11 +383,7 @@ export default function BookingView({
 
     const handleBackToConfirm = () => {
         setStep('confirm');
-=======
-    const handleBackToSelect = () => {
-        setStep('select');
-        setVerificationError(null);
->>>>>>> origin/feature/update-booking
+
     };
 
     const formatCountdown = (seconds: number): string => {
@@ -1405,6 +1373,513 @@ export default function BookingView({
                             </div>
                         </div>
                     )}
+
+                    {/* ================= BOOKING CONFIRMED MODAL ================= */}
+                    <Dialog
+                        open={showBookingConfirmedModal}
+                        onOpenChange={(open) => {
+                            setShowBookingConfirmedModal(open);
+
+                            if (!open) {
+                                setConfirmedBooking(null);
+                                setPaymentStep('idle');
+                                setSelectedPaymentMethod(null);
+                                setPaymentScreenshot(null);
+                                setScreenshotPreview(null);
+                                setCopySuccess(false);
+                            }
+                        }}
+                    >
+                        <DialogContent className="border-red-200 sm:max-w-md">
+                            <DialogHeader className="text-center">
+                                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                                </div>
+                                <DialogTitle className="text-2xl font-black text-stone-800">
+                                    Booking Confirmed!
+                                </DialogTitle>
+                                <DialogDescription className="text-red-600">
+                                    Your table has been booked successfully.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            {confirmedBooking && (
+                                <div className="rounded-2xl border border-red-200/60 bg-red-50/50 p-5">
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Booking ID
+                                            </span>
+                                            <span className="text-sm font-bold text-stone-800">
+                                                #{confirmedBooking.id}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Customer
+                                            </span>
+                                            <span className="text-sm font-bold text-stone-800">
+                                                {confirmedBooking.customer_name}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Phone Number
+                                            </span>
+                                            <Badge
+                                                variant="secondary"
+                                                className="bg-red-200 font-mono font-bold text-red-800"
+                                            >
+                                                {customerData?.phone}
+                                            </Badge>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Table
+                                            </span>
+                                            <span className="text-sm font-bold text-stone-800">
+                                                {confirmedBooking.tables?.join(', ') ||
+                                                    'N/A'}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Date
+                                            </span>
+                                            <span className="text-sm font-bold text-stone-800">
+                                                {confirmedBooking.booked_at
+                                                    ? new Date(
+                                                          confirmedBooking.booked_at,
+                                                      ).toLocaleDateString(
+                                                          'en-US',
+                                                          {
+                                                              year: 'numeric',
+                                                              month: 'short',
+                                                              day: 'numeric',
+                                                          },
+                                                      )
+                                                    : '—'}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Time
+                                            </span>
+                                            <span className="text-sm font-bold text-stone-800">
+                                                {confirmedBooking.booked_at
+                                                    ? new Date(
+                                                          confirmedBooking.booked_at,
+                                                      ).toLocaleTimeString(
+                                                          'en-US',
+                                                          {
+                                                              hour: '2-digit',
+                                                              minute: '2-digit',
+                                                          },
+                                                      )
+                                                    : '—'}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Payment Status
+                                            </span>
+                                            <span
+                                                className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
+                                                    confirmedBooking.payment_status === 'paid'
+                                                        ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                                        : confirmedBooking.payment_status === 'pending_verification'
+                                                          ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                                          : confirmedBooking.payment_status === 'pending'
+                                                            ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                                            : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                                }`}
+                                            >
+                                                {confirmedBooking.payment_status === 'pending_verification' && (
+                                                    <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                                )}
+                                                {confirmedBooking.payment_status === 'paid'
+                                                    ? 'Paid'
+                                                    : confirmedBooking.payment_status === 'pending_verification'
+                                                      ? 'Pending Verification'
+                                                      : confirmedBooking.payment_status === 'pending'
+                                                        ? 'Pending Verification'
+                                                        : 'Unpaid'}
+                                            </span>
+                                        </div>
+                                        <Separator className="bg-red-200/40" />
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-red-600">
+                                                Expires In
+                                            </span>
+                                            <span
+                                                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold ${confirmedBooking.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}
+                                            >
+                                                {confirmedBooking.payment_status === 'paid' ? (
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                ) : (
+                                                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                                                )}
+                                                {formatCountdown(countdown)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="rounded-xl bg-red-100 p-4">
+                                <div className="flex items-start gap-3">
+                                    <span className="mt-0.5 font-bold text-red-700">
+                                        !
+                                    </span>
+                                    <div>
+                                        <p className="text-sm font-bold text-red-800">
+                                            Save Your Phone Number
+                                        </p>
+                                        <p className="mt-1 text-xs text-red-600">
+                                            Your phone number is required to
+                                            manage your booking. Please save it.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {paymentStep === 'idle' &&
+                                confirmedBooking &&
+                                countdown > 0 &&
+                                confirmedBooking.payment_status !==
+                                    'paid' && (
+                                    <Button
+                                        onClick={handlePayNow}
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        Pay Now
+                                    </Button>
+                                )}
+
+                            {/* Payment Flow UI */}
+                            {paymentStep === 'select' && (
+                                <div className="space-y-3">
+                                    <h3 className="text-lg font-black text-gray-900">
+                                        Make Payment
+                                    </h3>
+                                    <p className="text-sm text-gray-500">
+                                        Select Payment Method
+                                    </p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {Object.entries(
+                                            bookingPaymentAccounts,
+                                        ).map(([key, account]) => (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() =>
+                                                    handleSelectMethod(key)
+                                                }
+                                                className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-red-100 p-4 transition hover:border-red-300 hover:bg-red-50"
+                                            >
+                                                <span className="text-2xl">
+                                                    {key === 'telebirr'
+                                                        ? '📱'
+                                                        : '🏦'}
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    {account.label}
+                                                </span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={handleClosePayment}
+                                        className="w-full text-gray-500"
+                                    >
+                                        Cancel
+                                    </Button>
+                                </div>
+                            )}
+
+                            {paymentStep === 'account' &&
+                                selectedPaymentMethod &&
+                                confirmedBooking && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-black text-gray-900">
+                                            {bookingPaymentAccounts[selectedPaymentMethod].label}{' '}
+                                            Payment
+                                        </h3>
+                                        <p className="text-sm text-gray-500">
+                                            {bookingPaymentAccounts[selectedPaymentMethod].label}{' '}
+                                            Account Number
+                                        </p>
+                                        <div className="rounded-2xl border-2 border-dashed border-red-200 bg-red-50 p-4 text-center">
+                                            <p className="text-xs font-semibold tracking-widest text-gray-500 uppercase">
+                                                Account Number
+                                            </p>
+                                            <p className="mt-2 font-mono text-xl font-black tracking-wider text-stone-900 select-all">
+                                                {bookingPaymentAccounts[selectedPaymentMethod].number}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={handleCopyAccount}
+                                            disabled={copySuccess || isCopying}
+                                            className="w-full rounded-xl bg-gradient-to-r from-red-500 to-red-600 py-3.5 font-bold text-white hover:from-red-600 hover:to-red-700"
+                                        >
+                                            {isCopying ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                    Submitting...
+                                                </span>
+                                            ) : copySuccess ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Check className="h-4 w-4" />
+                                                    Copied
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <Copy className="h-4 w-4" />
+                                                    Copy
+                                                </span>
+                                            )}
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={handleClosePayment}
+                                            className="w-full text-gray-500"
+                                        >
+                                            Back
+                                        </Button>
+                                    </div>
+                                )}
+
+                            {paymentStep === 'verification' &&
+                                selectedPaymentMethod &&
+                                confirmedBooking && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-lg font-black text-gray-900">
+                                            Payment Verification
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Booking
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    #
+                                                    {String(confirmedBooking.id).padStart(
+                                                        6,
+                                                        '0',
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Table
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    Table{' '}
+                                                    {confirmedBooking.tables?.join(
+                                                        ', ',
+                                                    ) || 'N/A'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Payment Method
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    {bookingPaymentAccounts[selectedPaymentMethod].label}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Amount
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    0.00 ETB
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="mb-2 block text-sm font-bold text-gray-700">
+                                                Upload Payment Screenshot
+                                            </label>
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                                onChange={handleScreenshotChange}
+                                                className="hidden"
+                                                id="booking-payment-screenshot"
+                                            />
+                                            {!screenshotPreview ? (
+                                                <label
+                                                    htmlFor="booking-payment-screenshot"
+                                                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 p-6 transition hover:border-red-400"
+                                                >
+                                                    <Upload className="mb-2 h-8 w-8 text-gray-400" />
+                                                    <span className="text-sm font-semibold text-gray-600">
+                                                        Choose Screenshot
+                                                    </span>
+                                                    <span className="text-xs text-gray-400">
+                                                        JPG, PNG, WEBP up to 5MB
+                                                    </span>
+                                                </label>
+                                            ) : (
+                                                <div className="relative rounded-xl border border-gray-200 p-2">
+                                                    <img
+                                                        src={screenshotPreview}
+                                                        alt="Payment screenshot preview"
+                                                        className="mx-auto max-h-48 rounded-lg object-contain"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={
+                                                            handleRemoveScreenshot
+                                                        }
+                                                        className="absolute right-3 top-3 rounded-full bg-red-600 p-1 text-white transition hover:bg-red-700"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Button
+                                            onClick={handleSubmitVerification}
+                                            disabled={
+                                                isSubmittingVerification ||
+                                                !paymentScreenshot
+                                            }
+                                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                            {isSubmittingVerification ? (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                                    Submitting...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center justify-center gap-2">
+                                                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                    Submit Payment
+                                                </span>
+                                            )}
+                                        </Button>
+                                    </div>
+                                )}
+
+                            {paymentStep === 'success' &&
+                                confirmedBooking && (
+                                    <div className="text-center space-y-3">
+                                        <CheckCircle2 className="mx-auto h-12 w-12 text-green-500" />
+                                        <h3 className="text-lg font-black text-gray-900">
+                                            Payment Successful
+                                        </h3>
+                                        <div className="space-y-2 text-left">
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Booking
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    #
+                                                    {String(confirmedBooking.id).padStart(
+                                                        6,
+                                                        '0',
+                                                    )}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Table
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    Table{' '}
+                                                    {confirmedBooking.tables?.join(
+                                                        ', ',
+                                                    ) || 'N/A'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Payment Status
+                                                </span>
+                                                <span className="text-sm font-bold text-green-600">
+                                                    Paid
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between rounded-xl bg-stone-50 p-3">
+                                                <span className="text-sm font-semibold text-gray-500">
+                                                    Time Remaining
+                                                </span>
+                                                <span className="text-sm font-bold text-gray-900">
+                                                    {formatCountdown(countdown)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                            {confirmedBooking &&
+                                confirmedBooking.payment_status ===
+                                    'paid' &&
+                                paymentStep !== 'success' && (
+                                    <div className="rounded-xl bg-green-50 p-4 text-center">
+                                        <CheckCircle2 className="mx-auto h-8 w-8 text-green-600" />
+                                        <p className="mt-2 text-sm font-bold text-green-700">
+                                            Payment Confirmed
+                                        </p>
+                                        <p className="text-xs text-green-600">
+                                            Your booking payment has been
+                                            received.
+                                        </p>
+                                    </div>
+                                )}
+
+                            <DialogFooter className="gap-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        setShowBookingConfirmedModal(false);
+                                        setConfirmedBooking(null);
+                                        setPaymentStep('idle');
+                                        setSelectedPaymentMethod(null);
+                                        setPaymentScreenshot(null);
+                                        setScreenshotPreview(null);
+                                        setCopySuccess(false);
+                                    }}
+                                    className="flex-1 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-700"
+                                >
+                                    Done
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setShowBookingConfirmedModal(false);
+                                        setConfirmedBooking(null);
+                                        setPaymentStep('idle');
+                                        setSelectedPaymentMethod(null);
+                                        setPaymentScreenshot(null);
+                                        setScreenshotPreview(null);
+                                        setCopySuccess(false);
+                                        setShowMyBooking(true);
+                                    }}
+                                    className="flex-1"
+                                >
+                                    View My Booking
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    {showMyBooking &&
+                        createPortal(
+                            <MyBooking
+                                onClose={() => setShowMyBooking(false)}
+                            />,
+                            document.body,
+                        )}
 
                     {/* ================= BOOKING CONFIRMED MODAL ================= */}
                     <Dialog

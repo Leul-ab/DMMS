@@ -115,15 +115,7 @@ type CartItem = MenuItem & {
     special_preferences: string[];
 };
 
-const SPECIAL_PREFERENCES = [
-    'No Onion',
-    'No Garlic',
-    'No Spicy',
-    'Extra Spicy',
-    'Extra Cheese',
-    'Less Salt',
-    'No Sauce',
-] as const;
+
 
 type RestaurantTable = {
     id: number;
@@ -291,6 +283,8 @@ export function MenuView({
         cbe_birr: { label: 'CBE', number: '100012345678' },
     };
 
+
+
     useEffect(() => {
         if (booking_success && customer_phone && booking_data) {
             setBookingConfirm(booking_data);
@@ -308,12 +302,16 @@ export function MenuView({
             return;
         }
 
+        if (bookingConfirm?.payment_status === 'paid' || bookingConfirm?.payment_status === 'pending_verification') {
+            return;
+        }
+
         const interval = setInterval(() => {
             setCountdown((prev) => Math.max(0, prev - 1));
         }, 1000);
 
-        return () => clearInterval(interval);
     }, [showBookingSuccess, bookingConfirm?.payment_status]);
+
 
     useEffect(() => {
         const checkActiveBooking = async () => {
@@ -378,14 +376,8 @@ export function MenuView({
                 );
             }
 
-<<<<<<< HEAD
             return [...currentCart, { ...item, quantity: 1, special_preferences: [] }];
-=======
-            return [
-                ...currentCart,
-                { ...item, quantity: 1, special_preferences: [] },
-            ];
->>>>>>> origin/feature/update-booking
+
         });
         toast.success(`${item.name} added to order`, {
             duration: 2000,
@@ -409,6 +401,8 @@ export function MenuView({
             }),
         );
     };
+
+
 
     const increaseQuantity = (itemId: number) => {
         setCart((currentCart) =>
@@ -439,22 +433,7 @@ export function MenuView({
         toast.info('Item removed from order');
     };
 
-    const togglePreference = (itemId: number, preference: string) => {
-        setCart((currentCart) =>
-            currentCart.map((item) => {
-                if (item.id !== itemId) {
-                    return item;
-                }
 
-                const current = item.special_preferences ?? [];
-                const next = current.includes(preference)
-                    ? current.filter((p) => p !== preference)
-                    : [...current, preference];
-
-                return { ...item, special_preferences: next };
-            }),
-        );
-    };
 
     const cartTotal = cart.reduce(
         (total, item) => total + Number(item.price) * item.quantity,
@@ -953,7 +932,6 @@ export function MenuView({
                                     <p className="text-xs font-bold text-stone-800">
                                         Special Preferences
                                     </p>
-<<<<<<< HEAD
                                     <p className="text-xs text-red-600">
                                         {Number(item.price).toFixed(2)} ETB
                                     </p>
@@ -994,34 +972,7 @@ export function MenuView({
                                         )}
                                     </div>
                                     <div className="mt-2 flex items-center gap-2">
-=======
-                                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
-                                        {SPECIAL_PREFERENCES.map((pref) => (
-                                            <label
-                                                key={pref}
-                                                className="flex items-center gap-1.5 text-xs text-stone-700"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={(item.special_preferences ?? []).includes(pref)}
-                                                    onChange={() => togglePreference(item.id, pref)}
-                                                    className="h-3.5 w-3.5 rounded border-red-300 text-red-600 focus:ring-red-500"
-                                                />
-                                                {pref}
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="mt-2.5 flex items-center justify-between">
-                                    <span className="text-sm font-bold text-red-600">
-                                        {(
-                                            Number(item.price) *
-                                            item.quantity
-                                        ).toFixed(2)}{' '}
-                                        ETB
-                                    </span>
-                                    <div className="flex items-center gap-2">
->>>>>>> origin/feature/update-booking
+
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -1249,6 +1200,35 @@ export function MenuView({
                                               minute: '2-digit',
                                           })
                                         : '—'}
+                                </span>
+                            </div>
+                            <Separator className="bg-red-200/40" />
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-red-600">
+                                    Payment Status
+                                </span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-bold capitalize ${
+                                    bookingConfirm?.payment_status === 'paid'
+                                        ? 'text-green-600 bg-green-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-full'
+                                        : 'text-red-600 bg-red-50 px-2 py-0.5 rounded-full'
+                                }`}>
+                                    {bookingConfirm?.payment_status === 'pending_verification' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'pending' && (
+                                        <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                                    )}
+                                    {bookingConfirm?.payment_status === 'paid'
+                                        ? 'Paid'
+                                        : bookingConfirm?.payment_status === 'pending_verification'
+                                        ? 'Pending Verification'
+                                        : bookingConfirm?.payment_status === 'pending'
+                                        ? 'Pending Verification'
+                                        : 'Unpaid'}
                                 </span>
                             </div>
                             <Separator className="bg-red-200/40" />
@@ -1739,6 +1719,7 @@ export function MenuView({
                     setShowMemberVerify(open);
 
                     if (!open) {
+                        setMemberVerifyPhone('');
                         setMemberVerifyPhone('');
                         setMemberVerifyError('');
                     }
@@ -2588,7 +2569,6 @@ export function MenuView({
                                                 <p className="text-sm font-bold text-stone-800">
                                                     Special Preferences
                                                 </p>
-<<<<<<< HEAD
                                                 <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
                                                     {SPECIAL_PREFERENCES.map(
                                                         (pref) => {
@@ -2662,23 +2642,7 @@ export function MenuView({
                                                     >
                                                         Remove
                                                     </button>
-=======
-                                                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5">
-                                                    {SPECIAL_PREFERENCES.map((pref) => (
-                                                        <label
-                                                            key={pref}
-                                                            className="flex items-center gap-1.5 text-sm text-stone-700"
-                                                        >
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={(item.special_preferences ?? []).includes(pref)}
-                                                                onChange={() => togglePreference(item.id, pref)}
-                                                                className="h-4 w-4 rounded border-red-300 text-red-600 focus:ring-red-500"
-                                                            />
-                                                            {pref}
-                                                        </label>
-                                                    ))}
->>>>>>> origin/feature/update-booking
+
                                                 </div>
                                             </div>
                                             <div className="mt-3 flex items-center justify-between">
