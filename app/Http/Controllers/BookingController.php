@@ -352,23 +352,6 @@ class BookingController extends Controller
         ]);
     }
 
-    public function requestExtension(TableBooking $booking): JsonResponse
-    {
-        if (!$booking->canBeExtended()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This booking cannot be extended at this time.',
-            ], 422);
-        }
-
-        return response()->json([
-            'success' => true,
-            'extension_fee' => $booking->extension_fee,
-            'original_amount' => $booking->booking_amount,
-            'extension_percentage' => self::EXTENSION_PERCENTAGE * 100,
-        ]);
-    }
-
     public function submitExtensionPayment(Request $request, TableBooking $booking): JsonResponse
     {
         if (!$booking->canBeExtended()) {
@@ -616,48 +599,6 @@ class BookingController extends Controller
                 'paid_at' => $booking->paid_at,
                 'time_remaining_seconds' => $timeRemaining,
                 'is_expired' => $isExpired,
-            ],
-        ]);
-    }
-
-    /**
-     * Process payment for a booking within the 5-minute window.
-     */
-    public function pay(TableBooking $booking): JsonResponse
-    {
-        if ($booking->status !== 'active') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This booking is already ' . $booking->status . '.',
-            ], 422);
-        }
-
-        if ($booking->payment_status === 'paid') {
-            return response()->json([
-                'success' => false,
-                'message' => 'This booking has already been paid.',
-            ], 422);
-        }
-
-        if ($booking->expires_at && Carbon::now()->greaterThan($booking->expires_at)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'The 5-minute payment window has expired.',
-            ], 422);
-        }
-
-        $booking->update([
-            'payment_status' => 'paid',
-            'paid_at' => Carbon::now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment confirmed successfully.',
-            'booking' => [
-                'id' => $booking->id,
-                'payment_status' => $booking->payment_status,
-                'paid_at' => $booking->paid_at,
             ],
         ]);
     }
